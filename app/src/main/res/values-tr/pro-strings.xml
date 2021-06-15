@@ -82,6 +82,10 @@
     should try updating or reinstalling the app. Note: 'PsiCash' should not be translated or transliterated. -->
     <string name="psicash_transaction_invalid_tokens_message">Uygulama geçersiz bir duruma geçti. Lütfen PsiCash kullanmaya devam etmek için uygulamayı yeniden kurun.</string>
 
+    <!-- Alert error message informing user that the request failed due to a 'bad request' error.
+    Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_transaction_bad_request_message">PsiCash sunucusu isteğin geçersiz olduğunu bildirdi. Lütfen bir süre sonra yeniden deneyin.</string>
+
     <!-- Alert error message informing user that their Speed Boost purchase request failed due to a server error and that they should try again in a few minutes -->
     <string name="transaction_server_error_message">Sunucu sorunu. Lütfen birkaç dakika sonra yeniden deneyin</string>
 
@@ -148,30 +152,20 @@
     <!-- Title of the button that loads and plays a video ad that rewards users with PsiCash -->
     <string name="psicash_purchase_free_button_price">Ücretsiz</string>
 
-    <!-- PsiCash in-app purchase disclaimer that appears on the bottom of the screen where users can buy different amounts of PsiCash from the PlayStore.
-    Do not translate or transliterate terms PsiCash or Psiphon Pro-->
-    <string name="psicash_store_disclaimer">ÖNEMLİ: Psiphon Pro uygulamasını kaldırırsanız ya da uygulamanın deposunu temizlerseniz PsiCash kayıtlarınız korunmaz.</string>
-
     <!-- A message to the user indicating that they need to be connected to Psiphon in order to use Speed Boost.
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed. Do not translate or transliterate word Psiphon -->
     <string name="speed_boost_unavailable">Hız Artışı etkinleştirmek için Psiphon\'a bağlanmalısınız, aşağıdaki düğmeye tıklayın ve tekrar deneyin</string>
 
-    <!-- Title of the button that is presented next to 'Speed Boost is unavailable when you are not connected to Psiphon' message
+    <!-- Title of the button that is presented next to 'Speed Boost is unavailable when you are not connected to Psiphon' message,
+        Also appears on the PsiCash account 'log out' confirmation dialog when the user tries to log out of their PsiCash account while the Psiphon tunnel is not running.
         Do not translate or transliterate word Psiphon -->
     <string name="connect_to_psiphon_button_text">Psiphon ile Bağlantı Kur</string>
 
     <!-- A title message to the premium user (a user with a subscription when they are trying to navigate to PsiCash and Speed Boost screen
         Do not translate or transliterate words PsiCash or Psiphon -->
     <string name="psicash_store_subscription_title">Psiphon aboneliğiniz size ayrıcalıklı erişim sunuyor!</string>
-
-    <!-- A description message to the premium user (a user with a subscription) when they are trying to navigate to PsiCash and Speed Boost screen.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
-    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
-    indicates a fast or unrestricted speed.
-    Do not translate or transliterate words PsiCash or Psiphon -->
-    <string name="psicash_store_subscription_description">Psiphon aboneliğiniz size sürekli Hız Artışı kullanımı sağlıyor. Bu yüzden daha fazlasını satın almanıza gerek yok. Aboneliğinizi sonlandırmak isteyebilirsiniz diye PsiCash bakiyeniz tutulacak</string>
 
     <!-- A message to the user seen when the users are trying to navigate to PsiCash store screen while Psiphon has not finished connecting to the server
     Do not translate or transliterate words Psiphon -->
@@ -309,4 +303,82 @@
     A time pass is a single use license that is valid for a certain period of time from the moment it is purchased
     and does not automatically renew after its expiry, unlike a subscription -->
     <string name="PaymentChooserActivity.TimePassTab">Zaman Paketi</string>
-</resources>
+
+    <!-- PsiCash account login error message shown when the user is trying to log in with bad credentials -->
+    <string name="psicash_transaction_invalid_credentials_message">Girdiğiniz kullanıcı adı veya parola hatalı.</string>
+
+    <!-- An error message informing the user that PsiCash update could not be retrieved from the server because the tunnel is not running.
+            Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
+    <string name="psicash_connect_to_refresh_message">Psiphon çalışmadığı için PsiCash güncellemesi alınamıyor</string>
+
+    <!-- An error message informing the user that PsiCash update could not be retrieved from the server because the tunnel has not finished connecting yet.
+            Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
+    <string name="psicash_wait_to_connect_to_refresh_message">Psiphon bağlanmayı tamamlamadığı için PsiCash güncellemesi alınamıyor</string>
+
+    <!-- A title for the PsiCash store screen as it appears in the navigation.
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_store_title">PsiCash Mağazası</string>
+
+    <!-- An alert message to the user shown when a PsiCash login succeeds. There is a fixed number of times that a user can merge a pre-account balance into a PsiCash account. This message indicates that the user has hit that limit and the merge that occurred is the last one allowed.
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_last_tracker_merge_notification">PsiCash hesabınıza oturum açtınız. Bu aygıttaki bakiyeniz hesabınıza aktarıldı. Ancak bu bakiye aktarımı işlemi son kez yapıldı.</string>
+
+    <!-- Title of the PsiCash account log out alert confirmation dialog -->
+    <string name="psicash_logout_alert_title">Çıkış yap</string>
+
+    <!-- Button on the PsiCash account log out alert confirmation dialog for when Psiphon is running but has not finished connecting yet. Dismisses the log out dialog without any further action when clicked. -->
+    <string name="psicash_wait_lbl">Bekle</string>
+
+    <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Dismisses the log out dialog without any further action when clicked. -->
+    <string name="psicash_cancel_lbl">İptal</string>
+
+    <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Proceeds to log out the user of their PsiCash account when clicked. -->
+    <string name="psicash_continue_log_out_lbl">Oturum kapatmayı sürdür</string>
+
+    <!-- A message shown when the PsiCash account sign in option is not available for whatever reason. Do not translate or transliterate word PsiCash -->
+    <string name="psicash_account_not_available">PsiCash hesabı oturum açma mevcut değil</string>
+
+    <!-- A hint below the Log In and Manage Account preferences in the app's setting screen indicating that a working Psiphon tunnel connection is required in order to access the setting.
+            Note: 'Psiphon' should not be translated or transliterated. -->
+    <string name="psicash_account_preference_connection_required_hint">Psiphon bağlantısı gerekli</string>
+
+    <!-- Main text of the dialog shown to the user when they have a PsiCash account, but they are logged out while trying to access the PsiCash store screen.
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_account_login_required_message">PsiCash mağazasına erişmek için PsiCash hesabınızda oturum açın</string>
+
+    <!-- Label of the button on the dialog shown to the user when they have a PsiCash account, but they are logged out while trying to access the PsiCash store screen.
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_account_continue_to_sign_in_lbl">PsiCash oturum açmaya devam et</string>
+
+    <!-- PsiCash account generic title
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_account_generic_title">PsiCash Hesabı</string>
+
+    <!-- PsiCash account 'log out' preference title as it appears in the app's preference screen. -->
+    <string name="psicash_account_logout_pref_title">Çıkış yap</string>
+
+    <!-- PsiCash account 'log in' preference title as it appears in the app's preference screen. -->
+    <string name="psicash_account_login_pref_title">Giriş yap</string>
+
+    <!-- Input field caption for username on the PsiCash account sign screen -->
+    <string name="psicash_account_login_username_hint">Kullanıcı adı</string>
+
+    <!-- Input field caption for password on the PsiCash account sign screen -->
+    <string name="psicash_account_login_password_hint">Parola</string>
+
+    <!-- Label text for 'Log In' button on the PsiCash account sign in screen -->
+    <string name="psicash_account_log_in_btn_lbl">Giriş yap</string>
+
+    <!-- Separator text between the 'Log In' and 'Create Account' buttons on the PsiCash account sign in screen. -->
+    <string name="psicash_account_separator_text">ya da</string>
+
+    <!-- Button in the account creation encouragement dialog, proceeds with PsiCash purchase without account when clicked -->
+    <string name="psicash_continue_without_account_lbl">Hesap açmadan devam et</string>
+
+    <!--Generic 'close' alert prompt title-->
+    <string name="psicash_webview_close_alert_title">Kapat</string>
+
+    <!--Generic 'error' alert prompt title-->
+    <string name="psicash_webview_error_alert_title">Hata</string>
+
+    </resources>

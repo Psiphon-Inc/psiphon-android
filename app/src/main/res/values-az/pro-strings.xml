@@ -11,4 +11,25 @@
     <!-- Text on the button which takes user to subscription screen -->
     <string name="btn_get_subscription">Abunə ol</string>
 
+    <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Dismisses the log out dialog without any further action when clicked. -->
+    <string name="psicash_cancel_lbl">Ləğv et</string>
+
+    <!-- Input field caption for username on the PsiCash account sign screen -->
+    <string name="psicash_account_login_username_hint">İstifadəçi adı</string>
+
+    <!-- Input field caption for password on the PsiCash account sign screen -->
+    <string name="psicash_account_login_password_hint">Parol</string>
+
+    <!-- Separator text between the 'Log In' and 'Create Account' buttons on the PsiCash account sign in screen. -->
+    <string name="psicash_account_separator_text">və ya</string>
+
+    <!-- Label text for 'Create Account' button on the PsiCash account sign in screen. The button opens 'Create account' dialog when clicked -->
+    <string name="psicash_account_create_account_btn_lbl">Hesab yarat</string>
+
+    <!--Generic 'close' alert prompt title-->
+    <string name="psicash_webview_close_alert_title">Bağla</string>
+
+    <!--Generic 'error' alert prompt title-->
+    <string name="psicash_webview_error_alert_title">Xəta</string>
+
     </resources>

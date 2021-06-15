@@ -148,30 +148,20 @@
     <!-- Title of the button that loads and plays a video ad that rewards users with PsiCash -->
     <string name="psicash_purchase_free_button_price">Бесплатно</string>
 
-    <!-- PsiCash in-app purchase disclaimer that appears on the bottom of the screen where users can buy different amounts of PsiCash from the PlayStore.
-    Do not translate or transliterate terms PsiCash or Psiphon Pro-->
-    <string name="psicash_store_disclaimer">ВАЖНО: ваш PsiCash не сохранится, если вы удалите Psiphon или очистите хранилище приложения.</string>
-
     <!-- A message to the user indicating that they need to be connected to Psiphon in order to use Speed Boost.
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed. Do not translate or transliterate word Psiphon -->
     <string name="speed_boost_unavailable">Чтобы активировать Турбоскорость, нужно подключиться к Psiphon. Нажмите кнопку ниже и попробуйте снова</string>
 
-    <!-- Title of the button that is presented next to 'Speed Boost is unavailable when you are not connected to Psiphon' message
+    <!-- Title of the button that is presented next to 'Speed Boost is unavailable when you are not connected to Psiphon' message,
+        Also appears on the PsiCash account 'log out' confirmation dialog when the user tries to log out of their PsiCash account while the Psiphon tunnel is not running.
         Do not translate or transliterate word Psiphon -->
     <string name="connect_to_psiphon_button_text">Подключиться к Psiphon</string>
 
     <!-- A title message to the premium user (a user with a subscription when they are trying to navigate to PsiCash and Speed Boost screen
         Do not translate or transliterate words PsiCash or Psiphon -->
     <string name="psicash_store_subscription_title">Ваша подписка Psiphon дает вам право премиум-доступа!</string>
-
-    <!-- A description message to the premium user (a user with a subscription) when they are trying to navigate to PsiCash and Speed Boost screen.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
-    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
-    indicates a fast or unrestricted speed.
-    Do not translate or transliterate words PsiCash or Psiphon -->
-    <string name="psicash_store_subscription_description">Ваша текущая подписка Psiphon уже дает вам постоянную Турбоскорость. Нет нужды покупать снова. Ваш баланс PsiCash будет сохранен на случай, если вы захотите отменить подписку</string>
 
     <!-- A message to the user seen when the users are trying to navigate to PsiCash store screen while Psiphon has not finished connecting to the server
     Do not translate or transliterate words Psiphon -->
@@ -311,4 +301,38 @@
     A time pass is a single use license that is valid for a certain period of time from the moment it is purchased
     and does not automatically renew after its expiry, unlike a subscription -->
     <string name="PaymentChooserActivity.TimePassTab">На время</string>
-</resources>
+
+    <!-- Title of the PsiCash account log out alert confirmation dialog -->
+    <string name="psicash_logout_alert_title">Выход</string>
+
+    <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Dismisses the log out dialog without any further action when clicked. -->
+    <string name="psicash_cancel_lbl">Отменить</string>
+
+    <!-- PsiCash account 'log out' preference title as it appears in the app's preference screen. -->
+    <string name="psicash_account_logout_pref_title">Выход</string>
+
+    <!-- PsiCash account 'log in' preference title as it appears in the app's preference screen. -->
+    <string name="psicash_account_login_pref_title">Авторизоваться</string>
+
+    <!-- Input field caption for username on the PsiCash account sign screen -->
+    <string name="psicash_account_login_username_hint">Логин</string>
+
+    <!-- Input field caption for password on the PsiCash account sign screen -->
+    <string name="psicash_account_login_password_hint">Пароль</string>
+
+    <!-- Label text for 'Log In' button on the PsiCash account sign in screen -->
+    <string name="psicash_account_log_in_btn_lbl">Авторизоваться</string>
+
+    <!-- Separator text between the 'Log In' and 'Create Account' buttons on the PsiCash account sign in screen. -->
+    <string name="psicash_account_separator_text">или</string>
+
+    <!-- Label text for 'Create Account' button on the PsiCash account sign in screen. The button opens 'Create account' dialog when clicked -->
+    <string name="psicash_account_create_account_btn_lbl">Создать учетную запись</string>
+
+    <!--Generic 'close' alert prompt title-->
+    <string name="psicash_webview_close_alert_title">Закрыть</string>
+
+    <!--Generic 'error' alert prompt title-->
+    <string name="psicash_webview_error_alert_title">Ошибка</string>
+
+    </resources>
