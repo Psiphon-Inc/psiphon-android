@@ -63,12 +63,12 @@ import io.reactivex.disposables.CompositeDisposable;
 public class StoreTabHostFragment extends Fragment
         implements MviView<PsiCashStoreIntent, PsiCashStoreViewState> {
     private final PublishRelay<PsiCashStoreIntent> intentsPublishRelay = PublishRelay.create();
-    private final PublishRelay<Pair<Integer, Integer>> balanceAnimationRelay = PublishRelay.create();
+    private final PublishRelay<Pair<Long, Long>> balanceAnimationRelay = PublishRelay.create();
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private BroadcastReceiver broadcastReceiver;
 
     private ViewPager viewPager;
-    private Integer currentUiBalance;
+    private Long currentUiBalance;
     private TextView balanceLabel;
     private ImageView balanceIcon;
     private ViewGroup balanceLayout;

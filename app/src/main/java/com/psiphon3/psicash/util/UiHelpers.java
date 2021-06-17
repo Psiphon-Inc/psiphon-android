@@ -20,6 +20,7 @@ package com.psiphon3.psicash.util;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.animation.TypeEvaluator;
 import android.animation.ValueAnimator;
 import android.content.Intent;
 import android.graphics.Color;
@@ -113,9 +114,14 @@ public class UiHelpers {
         activity.startActivityForResult(intent, PsiCashAccountActivity.ACTIVITY_REQUEST_CODE);
     }
 
-    public static Observable<ValueAnimator> balanceLabelAnimationObservable(int fromVal, int toVal, final TextView view) {
+    public static Observable<ValueAnimator> balanceLabelAnimationObservable(long fromVal, long toVal, final TextView view) {
         return Observable.create(emitter -> {
-            ValueAnimator valueAnimator = ValueAnimator.ofInt(fromVal, toVal);
+            ValueAnimator valueAnimator = ValueAnimator.ofObject(
+                    (TypeEvaluator<Long>) (fraction, startValue, endValue) -> {
+                        long startLong = startValue;
+                        return (long) (startLong + fraction * (endValue - startLong));
+                    },
+                    fromVal, toVal);
             valueAnimator.setDuration(600);
             final NumberFormat nf = NumberFormat.getInstance();
             valueAnimator.addUpdateListener(va ->
@@ -124,6 +130,8 @@ public class UiHelpers {
                 @Override
                 public void onAnimationCancel(Animator animation) {
                     super.onAnimationCancel(animation);
+                    final NumberFormat nf = NumberFormat.getInstance();
+                    view.setText(nf.format(toVal));
                     view.requestLayout();
                     if (!emitter.isDisposed()) {
                         emitter.onComplete();
@@ -133,6 +141,8 @@ public class UiHelpers {
                 @Override
                 public void onAnimationEnd(Animator animation) {
                     super.onAnimationEnd(animation);
+                    final NumberFormat nf = NumberFormat.getInstance();
+                    view.setText(nf.format(toVal));
                     view.requestLayout();
                     if (!emitter.isDisposed()) {
                         emitter.onComplete();

@@ -175,7 +175,7 @@ public class SpeedBoostTabFragment extends Fragment {
             implements MviView<PsiCashStoreIntent, PsiCashStoreViewState> {
         private final CompositeDisposable compositeDisposable = new CompositeDisposable();
         private final PublishRelay<PsiCashStoreIntent> intentsPublishRelay = PublishRelay.create();
-        private int currentUiBalance;
+        private Long currentUiBalance;
         private List<PsiCashLib.PurchasePrice> currentPurchasePrices = new ArrayList<>();
 
         public SpeedBoostPurchaseFragment() {
@@ -248,7 +248,7 @@ public class SpeedBoostTabFragment extends Fragment {
             PSICASH_SKUS_TO_HOURS = Collections.unmodifiableMap(m);
         }
 
-        private void populateSpeedBoostPurchases(View view, int balance, @NonNull List<PsiCashLib.PurchasePrice> purchasePriceList) {
+        private void populateSpeedBoostPurchases(View view, long balance, @NonNull List<PsiCashLib.PurchasePrice> purchasePriceList) {
             if (view == null) {
                 return;
             }
@@ -413,7 +413,8 @@ public class SpeedBoostTabFragment extends Fragment {
             }
 
             // Redraw if either the balance or the purchase prices size have changed
-            if (state.uiBalance() != currentUiBalance ||
+            if (currentUiBalance == null ||
+                    state.uiBalance() != currentUiBalance ||
                     currentPurchasePrices.size() != state.purchasePrices().size()) {
                 currentUiBalance = state.uiBalance();
                 currentPurchasePrices = state.purchasePrices();

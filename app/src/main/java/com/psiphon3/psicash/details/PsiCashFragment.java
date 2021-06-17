@@ -79,7 +79,7 @@ public class PsiCashFragment extends Fragment
     private Flowable<TunnelState> tunnelStateFlowable;
 
     private final Relay<PsiCashDetailsIntent> intentsPublishRelay = PublishRelay.<PsiCashDetailsIntent>create().toSerialized();
-    private final PublishRelay<Pair<Integer, Integer>> balanceAnimationRelay = PublishRelay.create();
+    private final PublishRelay<Pair<Long, Long>> balanceAnimationRelay = PublishRelay.create();
 
     private View fragmentView;
     private TextView balanceLabel;
@@ -90,7 +90,7 @@ public class PsiCashFragment extends Fragment
     private ImageView balanceIcon;
     private ViewGroup balanceLayout;
 
-    private Integer currentUiBalance;
+    private Long currentUiBalance;
 
     private BroadcastReceiver broadcastReceiver;
     private boolean isStopped;

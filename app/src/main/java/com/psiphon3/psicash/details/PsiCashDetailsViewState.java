@@ -39,11 +39,11 @@ public abstract class PsiCashDetailsViewState implements MviViewState {
     @Nullable
     public abstract SingleViewEvent<Throwable> errorViewEvent();
 
-    public int uiBalance() {
+    public long uiBalance() {
         if (psiCashModel() == null) {
-            return 0;
+            return 0L;
         }
-        return (int) (Math.floor((long)
+        return (long) (Math.floor((long)
                 ((psiCashModel().reward() * 1e9 + psiCashModel().balance()) / 1e9)));
     }
 
