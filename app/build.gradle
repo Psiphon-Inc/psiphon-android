@@ -71,13 +71,38 @@ android {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
+        }
+        internalTestRelease.initWith(buildTypes.release)
+        internalTestRelease {
+            def getGitHash = { ->
+                def stdout = new ByteArrayOutputStream()
+                exec {
+                    commandLine 'git', 'rev-parse', '--short', 'HEAD'
+                    standardOutput = stdout
+                }
+                return stdout.toString().trim()
+            }
 
-            // TEMP override landing page for internal testing release
+            def getGitBranch = { ->
+                def stdout = new ByteArrayOutputStream()
+                exec {
+                    commandLine 'git', 'rev-parse', '--abbrev-ref', 'HEAD'
+                    standardOutput = stdout
+                }
+                return stdout.toString().trim()
+            }
+            matchingFallbacks = ['release']
+            // Override landing page for internal testing release
             buildConfigField "String", "STATIC_LANDING_PAGE_URL", '"https://landing.dev.psi.cash/dev-index.html"'
-            // TEMP override IAB verification server name for internal testing release
+            // Override IAB verification server name for internal testing release
             buildConfigField "String", "PURCHASE_VERIFICATION_SERVER_NAME", '"dev-subscription.psiphon3.com"'
-            // TEMP override PsiCash environment for internal testing release
+            // Override PsiCash environment for internal testing release
             buildConfigField "Boolean", "PSICASH_DEV_ENVIRONMENT", "true"
+            applicationVariants.all { variant ->
+                variant.outputs.all {
+                    outputFileName = "Psiphon_${getGitBranch}_${getGitHash}.apk"
+                }
+            }
         }
     }
 
