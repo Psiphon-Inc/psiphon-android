@@ -41,8 +41,8 @@ android {
                 //
                 // Specify non-null URL to override landing page from handshake
                 buildConfigField "String", "STATIC_LANDING_PAGE_URL", "null"
-                // Server for in-app purchase verification, default is production
-                buildConfigField "String", "PURCHASE_VERIFICATION_SERVER_NAME", '"subscription.psiphon3.com"'
+                // Specify purchase verification environment, default is production
+                buildConfigField "Boolean", "PURCHASE_VERIFIER_DEV_ENVIRONMENT", "false"
                 // Specify PsiCash environment, default is production
                 buildConfigField "Boolean", "PSICASH_DEV_ENVIRONMENT", "false"
             }
@@ -95,7 +95,7 @@ android {
             // Override landing page for internal testing release
             buildConfigField "String", "STATIC_LANDING_PAGE_URL", '"https://landing.dev.psi.cash/dev-index.html"'
             // Override IAB verification server name for internal testing release
-            buildConfigField "String", "PURCHASE_VERIFICATION_SERVER_NAME", '"dev-subscription.psiphon3.com"'
+            buildConfigField "Boolean", "PURCHASE_VERIFIER_DEV_ENVIRONMENT", "true"
             // Override PsiCash environment for internal testing release
             buildConfigField "Boolean", "PSICASH_DEV_ENVIRONMENT", "true"
             applicationVariants.all { variant ->

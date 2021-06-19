@@ -22,12 +22,14 @@ package com.psiphon3.psiphonlibrary;
 
 
 import android.content.Context;
+import android.text.TextUtils;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import android.text.TextUtils;
 
 import com.google.auto.value.AutoValue;
 import com.psiphon3.StringListPreferences;
+import com.psiphon3.subscription.BuildConfig;
 
 import net.grandcentrix.tray.core.ItemNotFoundException;
 
@@ -45,11 +47,19 @@ import static com.psiphon3.psiphonlibrary.Utils.parseRFC3339Date;
 
 @AutoValue
 public abstract class Authorization {
-    // TODO: PsiCash: production value for ACCESS_TYPE_SPEED_BOOST
-    public static final String ACCESS_TYPE_SPEED_BOOST = "speed-boost-test";
-    public static final String ACCESS_TYPE_GOOGLE_SUBSCRIPTION = "google-subscription";
-    public static final String ACCESS_TYPE_GOOGLE_SUBSCRIPTION_LIMITED = "google-subscription-limited";
+    public static final String ACCESS_TYPE_SPEED_BOOST;
+    public static final String ACCESS_TYPE_GOOGLE_SUBSCRIPTION;
+    public static final String ACCESS_TYPE_GOOGLE_SUBSCRIPTION_LIMITED;
     private static final String PREFERENCE_AUTHORIZATIONS_LIST = "preferenceAuthorizations";
+
+    static {
+        ACCESS_TYPE_SPEED_BOOST = BuildConfig.PSICASH_DEV_ENVIRONMENT ?
+                "speed-boost-test" : "speed-boost";
+        ACCESS_TYPE_GOOGLE_SUBSCRIPTION = BuildConfig.PURCHASE_VERIFIER_DEV_ENVIRONMENT ?
+                "google-subscription-test" : "google-subscription";
+        ACCESS_TYPE_GOOGLE_SUBSCRIPTION_LIMITED = BuildConfig.PURCHASE_VERIFIER_DEV_ENVIRONMENT ?
+                "google-subscription-limited-test" : "google-subscription-limited";
+    }
 
     @Nullable
     public static Authorization fromBase64Encoded(String base64EncodedAuthorization) {
