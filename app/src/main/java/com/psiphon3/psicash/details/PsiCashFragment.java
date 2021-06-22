@@ -30,6 +30,7 @@ import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -89,6 +90,8 @@ public class PsiCashFragment extends Fragment
     private View progressOverlay;
     private ImageView balanceIcon;
     private ViewGroup balanceLayout;
+    private Button psiCashPlusBtn;
+    private Button psiCashAccountBtn;
 
     private Long currentUiBalance;
 
@@ -124,7 +127,12 @@ public class PsiCashFragment extends Fragment
         balanceIcon = requireView().findViewById(R.id.psicash_balance_icon);
         balanceLayout = requireView().findViewById(R.id.psicash_balance_layout);
 
-        final View plusBtnView = requireView().findViewById(R.id.psicash_purchase_plus_btn);
+        psiCashPlusBtn = requireView().findViewById(R.id.psicash_purchase_plus_btn);
+
+        psiCashAccountBtn = requireView().findViewById(R.id.psicash_account_btn);
+        psiCashAccountBtn.setOnClickListener(v ->
+                UiHelpers.openPsiCashAccountActivity(requireActivity(), null));
+
         compositeDisposable.add(GooglePlayBillingHelper.getInstance(requireContext())
                 .subscriptionStateFlowable()
                 .distinctUntilChanged()
@@ -136,10 +144,10 @@ public class PsiCashFragment extends Fragment
                     }
                     if (subscriptionState.hasValidPurchase()) {
                         speedBoostBtnClickerLabel.setVisibility(View.GONE);
-                        plusBtnView.setVisibility(View.GONE);
+                        psiCashPlusBtn.setVisibility(View.GONE);
                     } else {
                         speedBoostBtnClickerLabel.setVisibility(View.VISIBLE);
-                        plusBtnView.setVisibility(View.VISIBLE);
+                        psiCashPlusBtn.setVisibility(View.VISIBLE);
                     }
                 })
                 .subscribe());
@@ -284,6 +292,8 @@ public class PsiCashFragment extends Fragment
         } // else
         fragmentView.setVisibility(View.VISIBLE);
         updateUiBalanceIcon(state);
+        updatePsiCashPlusButton(state);
+        updatePsiCashAccountButton(state);
         updateUiBalanceLabel(state);
         updateSpeedBoostButton(state);
         updateUiProgressView(state);
@@ -365,12 +375,16 @@ public class PsiCashFragment extends Fragment
             } else {
                 balanceIcon.setImageLevel(0);
             }
-            balanceLayout.setOnClickListener(v ->
-                    UiHelpers.openPsiCashStoreActivity(requireActivity(),
-                            getResources().getInteger(R.integer.psiCashTabIndex)));
         } else {
+            // balance out of date, show red alert icon
             balanceIcon.setImageLevel(1);
-            balanceLayout.setOnClickListener(view -> {
+        }
+    }
+
+    private void updatePsiCashPlusButton(PsiCashDetailsViewState state) {
+        View.OnClickListener clickListener;
+        if (state.pendingRefresh()) {
+            clickListener = v -> {
                 final Activity activity = requireActivity();
                 if (activity == null || activity.isFinishing()) {
                     return;
@@ -384,7 +398,25 @@ public class PsiCashFragment extends Fragment
                         .setCancelable(true)
                         .create()
                         .show();
-            });
+            };
+        } else {
+            clickListener = v ->
+                    UiHelpers.openPsiCashStoreActivity(PsiCashFragment.this.requireActivity(),
+                            PsiCashFragment.this.getResources().getInteger(R.integer.psiCashTabIndex));
+
+        }
+        balanceLayout.setOnClickListener(clickListener);
+        psiCashPlusBtn.setOnClickListener(clickListener);
+    }
+
+    private void updatePsiCashAccountButton(PsiCashDetailsViewState state) {
+        // if account and logged in then hide the account sign in button
+        if (state.psiCashModel() != null &&
+                state.psiCashModel().isAccount() &&
+                state.psiCashModel().hasTokens()) {
+            psiCashAccountBtn.setVisibility(View.GONE);
+        } else {
+            psiCashAccountBtn.setVisibility(View.VISIBLE);
         }
     }
 
