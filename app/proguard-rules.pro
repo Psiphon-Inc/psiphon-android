@@ -163,4 +163,44 @@
 -keep interface retrofit2.** {*;}
 -dontwarn retrofit2.**
 
+
+#nimbus
+-keepattributes Signature, *Annotation*
+
+-keep class com.google.ads.interactivemedia.** { *; }
+-keep class com.google.obf.** { *; }
+-keep class * extends java.util.ListResourceBundle {
+    protected Object[][] getContents();
+}
+
+-keepnames class okhttp3.internal.publicsuffix.PublicSuffixDatabase
+-dontwarn org.codehaus.mojo.animal_sniffer.*
+-dontwarn okhttp3.internal.platform.ConscryptPlatform
+-dontwarn sun.misc.**
+-dontwarn javax.annotation.**
+
+-keepclassmembers class com.adsbynimbus.openrtb.request.* {
+    public *;
+}
+
+-keepclassmembers class com.adsbynimbus.openrtb.response.NimbusResponse** {
+    public *;
+}
+
+-keep class * extends com.adsbynimbus.internal.Component { public *; }
+-keepclassmembers class com.adsbynimbus.render.web.MraidBridge { *; }
+-keepclassmembers class com.adsbynimbus.render.web.NimbusWebViewClient { *; }
+
+# If using the Nimbus GAM Adapter
+-keep class com.adsbynimbus.google.NimbusCustomEventBanner {
+    <methods>;
+    !static <methods>;
+}
+
+# If Using the Nimbus Mopub Adapter
+-keep class com.adsbynimbus.mopub.* {
+    <methods>;
+    !static <methods>;
+}
+
 # End of ProGuard rules for FreeStar Ads Mediation SDK

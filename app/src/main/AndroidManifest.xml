@@ -16,6 +16,7 @@ com.adsbynimbus.render.web,
 com.adsbynimbus.request,
 com.adsbynimbus.request.okhttp,
 com.adsbynimbus.ui,
+com.amazon.device.ads,
 com.applovin.sdk,
 com.criteo.publisher,
 com.freestar.android.ads,
@@ -27,8 +28,10 @@ com.freestar.android.ads.facebook,
 com.freestar.android.ads.google,
 com.freestar.android.ads.mopub,
 com.freestar.android.ads.nimbus,
+com.freestar.android.ads.tam,
 com.freestar.android.ads.unityads,
 com.freestar.android.ads.vungle,
+com.google.android.ads.consent,
 com.google.android.exoplayer2,
 com.google.android.exoplayer2.core,
 com.google.android.exoplayer2.source.dash,
@@ -199,7 +202,6 @@ com.mopub.mobileads.rewarded_video" />
             android:exported="false">
         </provider>
 
-        <activity android:name="com.google.android.gms.ads.AdActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize" />
     </application>
 
 </manifest>
