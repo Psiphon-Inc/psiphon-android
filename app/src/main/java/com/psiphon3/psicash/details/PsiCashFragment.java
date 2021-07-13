@@ -143,7 +143,7 @@ public class PsiCashFragment extends Fragment
                         progressOverlay.setVisibility(View.GONE);
                     }
                     if (subscriptionState.hasValidPurchase()) {
-                        speedBoostBtnClickerLabel.setVisibility(View.GONE);
+                        speedBoostBtnClicker.setVisibility(View.GONE);
                         psiCashPlusBtn.setVisibility(View.GONE);
                     } else {
                         speedBoostBtnClickerLabel.setVisibility(View.VISIBLE);
