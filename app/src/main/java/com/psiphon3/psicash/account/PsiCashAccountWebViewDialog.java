@@ -21,6 +21,7 @@ package com.psiphon3.psicash.account;
 import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Context;
+import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.view.LayoutInflater;
@@ -60,8 +61,11 @@ public class PsiCashAccountWebViewDialog {
         View contentView = inflater.inflate(R.layout.psicash_acount_webview_layout, null);
 
         View progressOverlay = contentView.findViewById(R.id.progress_overlay);
-        FloatingActionButton floatingActionButton = contentView.findViewById(R.id.close_btn);
+        // Give progress overlay an opaque background matching the accounts web page's
+        progressOverlay.setBackgroundColor(Color.parseColor("#F8F8F8"));
+        progressOverlay.setAlpha(1.0f);
 
+        FloatingActionButton floatingActionButton = contentView.findViewById(R.id.close_btn);
 
         dialog = new Dialog(context, R.style.Theme_AppCompat_Dialog) {
             // Hook up minimal web view navigation
