@@ -45,6 +45,7 @@
                     android:layout_height="wrap_content"
                     android:hint="@string/psicash_account_login_username_hint"
                     android:inputType="text"
+                    android:textAlignment="viewStart"
                     android:singleLine="true" />
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -59,6 +60,7 @@
                     android:layout_height="wrap_content"
                     android:hint="@string/psicash_account_login_password_hint"
                     android:inputType="textPassword"
+                    android:textAlignment="viewStart"
                     android:singleLine="true" />
             </com.google.android.material.textfield.TextInputLayout>
 
