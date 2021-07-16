@@ -64,6 +64,12 @@
                     android:singleLine="true" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <Button
+                android:id="@+id/psicash_account_login_btn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/psicash_account_log_in_btn_lbl" />
+
             <TextView
                 android:id="@+id/psicash_account_forgot_account_tv"
                 android:layout_width="wrap_content"
@@ -74,12 +80,6 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:text="@string/psicash_account_login_forgot_lbl" />
-
-            <Button
-                android:id="@+id/psicash_account_login_btn"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/psicash_account_log_in_btn_lbl" />
 
             <RelativeLayout
                 android:layout_width="match_parent"
@@ -113,10 +113,16 @@
 
             </RelativeLayout>
 
-            <Button
-                android:id="@+id/psicash_create_account_btn"
-                android:layout_width="match_parent"
+            <TextView
+                android:id="@+id/psicash_create_account_tv"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:textAppearance="@style/TextAppearance.AppCompat.Title"
+                android:layout_margin="16dp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
                 android:text="@string/psicash_account_create_account_btn_lbl" />
 
         </LinearLayout>

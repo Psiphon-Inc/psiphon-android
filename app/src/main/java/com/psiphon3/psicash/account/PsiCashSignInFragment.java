@@ -24,6 +24,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.URLSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -86,7 +89,7 @@ public class PsiCashSignInFragment extends Fragment
         loginUsernameTv = view.findViewById(R.id.psicash_account_username_textview);
         loginPasswordTv = view.findViewById(R.id.psicash_account_password_textview);
         Button loginBtn = view.findViewById(R.id.psicash_account_login_btn);
-        Button createAccountBtn = view.findViewById(R.id.psicash_create_account_btn);
+        TextView createAccountTv = view.findViewById(R.id.psicash_create_account_tv);
         TextView forgotAccountTv = view.findViewById(R.id.psicash_account_forgot_account_tv);
 
 
@@ -122,6 +125,18 @@ public class PsiCashSignInFragment extends Fragment
 
         psiCashAccountViewModel.processIntents(intents());
 
+        // Make forgot credentials text look like an HTML link
+        CharSequence charSequence = forgotAccountTv.getText();
+        SpannableString spannableString = new SpannableString(charSequence);
+        spannableString.setSpan(new URLSpan(""), 0, spannableString.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        forgotAccountTv.setText(spannableString, TextView.BufferType.SPANNABLE);
+
+        // Make create account text look like an HTML link
+        charSequence = createAccountTv.getText();
+        spannableString = new SpannableString(charSequence);
+        spannableString.setSpan(new URLSpan(""), 0, spannableString.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        createAccountTv.setText(spannableString, TextView.BufferType.SPANNABLE);
+
         // Hook up login button
         loginBtn.setOnClickListener(v ->
                 intentsPublishRelay.accept(PsiCashAccountIntent.LoginAccount.create(
@@ -129,19 +144,19 @@ public class PsiCashSignInFragment extends Fragment
                         loginUsernameTv.getText().toString(),
                         loginPasswordTv.getText().toString())));
 
-        // Hook up create account button
-        createAccountBtn.setOnClickListener(v -> {
-            if (createAccountUrl != null) {
-                new PsiCashAccountWebViewDialog(requireContext(), tunnelStateFlowable)
-                        .load(createAccountUrl);
-            }
-        });
-
-        // Hook up create account button
+        // Hook up forgot credentials click action
         forgotAccountTv.setOnClickListener(v -> {
             if (forgotAccountUrl != null) {
                 new PsiCashAccountWebViewDialog(requireContext(), tunnelStateFlowable)
                         .load(forgotAccountUrl);
+            }
+        });
+
+        // Hook up create account click action
+        createAccountTv.setOnClickListener(v -> {
+            if (createAccountUrl != null) {
+                new PsiCashAccountWebViewDialog(requireContext(), tunnelStateFlowable)
+                        .load(createAccountUrl);
             }
         });
 
