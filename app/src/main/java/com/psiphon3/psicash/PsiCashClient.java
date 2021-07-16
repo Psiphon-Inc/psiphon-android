@@ -498,7 +498,7 @@ public class PsiCashClient {
 
                             if (result.status != PsiCashLib.Status.SUCCESS) {
                                 Utils.MyLog.g("PsiCash: transaction error making expiring purchase: " + result.status);
-                                throw new PsiCashException.Transaction(result.status);
+                                throw new PsiCashException.Transaction(result.status, isAccount());
                             }
                             Utils.MyLog.g("PsiCash: got new purchase of transactionClass " + result.purchase.transactionClass);
                         })
@@ -586,7 +586,7 @@ public class PsiCashClient {
                                 }
                             }
                             if (result.status != PsiCashLib.Status.SUCCESS) {
-                                throw new PsiCashException.Transaction(result.status);
+                                throw new PsiCashException.Transaction(result.status, isAccount());
                             }
                             if (isConnected) {
                                 // reset optimistic reward if remote refresh succeeded
@@ -681,8 +681,8 @@ public class PsiCashClient {
                                     psiCashLibWrapper.accountLogin(username, password);
 
                             if (result.status != PsiCashLib.Status.SUCCESS) {
-                                Utils.MyLog.g("PsiCash: transaction error making expiring purchase: " + result.status);
-                                throw new PsiCashException.Transaction(result.status);
+                                Utils.MyLog.g("PsiCash: transaction error logging in: " + result.status);
+                                throw new PsiCashException.Transaction(result.status, isAccount());
                             }
                             if (result.error != null) {
                                 Utils.MyLog.g("PsiCash: error logging in: " + result.error.message);
