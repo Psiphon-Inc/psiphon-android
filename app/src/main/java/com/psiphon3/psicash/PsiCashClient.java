@@ -367,7 +367,7 @@ public class PsiCashClient {
 
             if (authStorageChanged) {
                 Utils.MyLog.g("PsiCash: authorization storage contents changed, send tunnel restart broadcast");
-                android.content.Intent intent = new android.content.Intent(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE);
+                android.content.Intent intent = new android.content.Intent(BroadcastIntent.TUNNEL_RESTART);
                 LocalBroadcastManager.getInstance(appContext).sendBroadcast(intent);
             }
         }

@@ -19,22 +19,23 @@
 package com.psiphon3.psicash.account;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
-import android.view.WindowManager;
-import android.view.inputmethod.InputMethodManager;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.psiphon3.TunnelState;
+import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.psiphonlibrary.TunnelServiceInteractor;
 import com.psiphon3.subscription.R;
@@ -45,6 +46,9 @@ import io.reactivex.disposables.CompositeDisposable;
 
 public class PsiCashAccountActivity extends LocalizedActivities.AppCompatActivity {
     public static final int ACTIVITY_REQUEST_CODE = 202;
+    private TunnelServiceInteractor tunnelServiceInteractor;
+    private BroadcastReceiver broadcastReceiver;
+    private View progressOverlay;
 
     public enum CallerActivity {
         MORE_OPTIONS,
@@ -56,10 +60,6 @@ public class PsiCashAccountActivity extends LocalizedActivities.AppCompatActivit
     public Flowable<TunnelState> tunnelStateFlowable() {
         return tunnelServiceInteractor.tunnelStateFlowable();
     }
-
-    private TunnelServiceInteractor tunnelServiceInteractor;
-    private View progressOverlay;
-
 
     private enum SceneState {
         NOT_AVAILABLE_WHILE_NOT_CONNECTED, NOT_AVAILABLE_WHILE_CONNECTING, PSICASH_SIGN_IN
@@ -74,6 +74,21 @@ public class PsiCashAccountActivity extends LocalizedActivities.AppCompatActivit
         progressOverlay = findViewById(R.id.progress_overlay);
 
         tunnelServiceInteractor = new TunnelServiceInteractor(this, true);
+
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(BroadcastIntent.TUNNEL_RESTART);
+        broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                if (action != null) {
+                    if (BroadcastIntent.TUNNEL_RESTART.equals(action)) {
+                        tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(context, false);
+                    }
+                }
+            }
+        };
+        LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, intentFilter);
 
         compositeDisposable.add(tunnelStateFlowable()
                 .filter(tunnelState -> !tunnelState.isUnknown())
@@ -117,6 +132,7 @@ public class PsiCashAccountActivity extends LocalizedActivities.AppCompatActivit
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
         tunnelServiceInteractor.onDestroy(getApplicationContext());
         compositeDisposable.dispose();
     }

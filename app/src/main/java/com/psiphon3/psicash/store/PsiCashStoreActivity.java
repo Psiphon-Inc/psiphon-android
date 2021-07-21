@@ -81,13 +81,13 @@ public class PsiCashStoreActivity extends LocalizedActivities.AppCompatActivity 
         tunnelServiceInteractor = new TunnelServiceInteractor(this, true);
 
         IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE);
-        this.broadcastReceiver = new BroadcastReceiver() {
+        intentFilter.addAction(BroadcastIntent.TUNNEL_RESTART);
+        broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 String action = intent.getAction();
                 if (action != null) {
-                    if (BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE.equals(action)) {
+                    if (BroadcastIntent.TUNNEL_RESTART.equals(action)) {
                         tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), false);
                         finish();
                     }

@@ -20,9 +20,11 @@
 package com.psiphon3.psiphonlibrary;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
@@ -31,11 +33,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.preference.CheckBoxPreference;
 import androidx.preference.ListPreference;
 import androidx.preference.Preference;
@@ -51,6 +53,7 @@ import com.psiphon3.psicash.account.PsiCashAccountWebViewDialog;
 import com.psiphon3.psicash.settings.PsiCashSettingsIntent;
 import com.psiphon3.psicash.settings.PsiCashSettingsViewModel;
 import com.psiphon3.psicash.settings.PsiCashSettingsViewState;
+import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psicash.util.UiHelpers;
 import com.psiphon3.subscription.R;
 
@@ -65,6 +68,8 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
     public static final String INTENT_EXTRA_LANGUAGE_CHANGED = "com.psiphon3.psiphonlibrary.MoreOptionsPreferenceActivity.LANGUAGE_CHANGED";
 
     private TunnelServiceInteractor tunnelServiceInteractor;
+    private BroadcastReceiver broadcastReceiver;
+
     public Flowable<TunnelState> tunnelStateFlowable() {
         return tunnelServiceInteractor.tunnelStateFlowable();
     }
@@ -80,11 +85,28 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
         }
 
         tunnelServiceInteractor = new TunnelServiceInteractor(this, true);
+
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(BroadcastIntent.TUNNEL_RESTART);
+        broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                if (action != null) {
+                    if (BroadcastIntent.TUNNEL_RESTART.equals(action)) {
+                        tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), false);
+                        finish();
+                    }
+                }
+            }
+        };
+        LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, intentFilter);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
         tunnelServiceInteractor.onDestroy(getApplicationContext());
     }
 
