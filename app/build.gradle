@@ -158,17 +158,17 @@ dependencies {
     implementation "androidx.preference:preference:$rootProject.ext.preferenceVersion"
 
     //begin Freestar
-    implementation 'com.freestar.android.ads:freestar:4.2.0'
-    implementation 'com.freestar.android.ads.admob:freestar-admob-adapter:20.2.0.0'
-    implementation 'com.freestar.android.ads.tam:freestar-tam-adapter:8.4.3.0'  //replaces freestar-amazon-adapter
-    implementation 'com.freestar.android.ads.applovin:freestar-applovin-adapter:9.14.8.2'
-    implementation 'com.freestar.android.ads.google:freestar-google-adapter:20.2.0.0'
-    implementation 'com.freestar.android.ads.criteo:freestar-criteo-adapter:4.2.1.1'
-    implementation 'com.freestar.android.ads.unityads:freestar-unity-adapter:3.7.1.1'
-    implementation 'com.freestar.android.ads.vungle:freestar-vungle-adapter:6.7.0'  //Fullscreen ads only
-    implementation 'com.freestar.android.ads.facebook:freestar-facebook-adapter:6.1.0.0'
-    implementation 'com.freestar.android.ads.mopub:freestar-mopub-adapter:5.16.4.1'
-    implementation 'com.freestar.android.ads.nimbus:freestar-nimbus-adapter:1.9.1.1'
+    implementation 'com.freestar.android.ads:freestar:4.3.0'
+    implementation 'com.freestar.android.ads.admob:freestar-admob-adapter:20.2.0.1'
+    implementation 'com.freestar.android.ads.applovin:freestar-applovin-adapter:9.14.8.3'
+    implementation 'com.freestar.android.ads.tam:freestar-tam-adapter:8.4.3.1'
+    implementation 'com.freestar.android.ads.google:freestar-google-adapter:20.2.0.1'
+    implementation 'com.freestar.android.ads.criteo:freestar-criteo-adapter:4.2.1.2'
+    implementation 'com.freestar.android.ads.unityads:freestar-unity-adapter:3.7.1.2'
+    implementation 'com.freestar.android.ads.vungle:freestar-vungle-adapter:6.7.0.1'  //Fullscreen ads only
+    implementation 'com.freestar.android.ads.facebook:freestar-facebook-adapter:6.1.0.1'
+    implementation 'com.freestar.android.ads.mopub:freestar-mopub-adapter:5.16.4.2'
+    implementation 'com.freestar.android.ads.nimbus:freestar-nimbus-adapter:1.9.1.2'
 
     implementation 'com.applovin:applovin-sdk:9.14.8'
     implementation 'com.criteo.publisher:criteo-publisher-sdk:4.2.1'
@@ -192,6 +192,7 @@ dependencies {
     //nimbus
     implementation "com.adsbynimbus.android:nimbus:1.9.1" // Full Nimbus SDK with NimbusAdManager
     implementation "com.adsbynimbus.android:extension-okhttp:1.9.1" // Use OkHttp with NimbusAdManager
+    implementation "com.adsbynimbus.android:extension-facebook:1.9.1"
 
     //Amazon Transparent Ads Marketplace
     implementation 'com.amazon.android:aps-sdk:8.4.3@aar'
