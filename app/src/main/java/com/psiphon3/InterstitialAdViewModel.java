@@ -1,5 +1,6 @@
 package com.psiphon3;
 
+import android.app.Activity;
 import android.app.Application;
 import android.widget.TextView;
 
@@ -29,7 +30,7 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 
 public class InterstitialAdViewModel extends AndroidViewModel implements LifecycleObserver {
-    private final Application application;
+    private WeakReference<Activity> activityWeakReference;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private final BehaviorRelay<Boolean> isForegroundRelay = BehaviorRelay.create();
     private final BehaviorRelay<ConsumableEvent<Object>> startSignalRelay = BehaviorRelay.create();
@@ -42,16 +43,26 @@ public class InterstitialAdViewModel extends AndroidViewModel implements Lifecyc
 
     public InterstitialAdViewModel(@NonNull Application app) {
         super(app);
-        this.application = app;
-        this.interstitialResultObservable = PsiphonAdManager.SdkInitializer.getFreeStar(application)
+        this.interstitialResultObservable = PsiphonAdManager.SdkInitializer.getFreeStar(app)
                 .andThen(Observable.<PsiphonAdManager.InterstitialResult>create(emitter -> {
-                    interstitialAd = new InterstitialAd(application, new InterstitialAdListener() {
+                    Activity mainActivity = activityWeakReference.get();
+                    if (mainActivity == null) {
+                        if (!emitter.isDisposed()) {
+                            emitter.onError(new RuntimeException("Freestar failed to create interstitial: activity is null"));
+                        }
+                        return;
+                    }
+                    interstitialAd = new InterstitialAd(mainActivity, new InterstitialAdListener() {
 
                         @Override
                         public void onInterstitialLoaded(String placement) {
                             if (!emitter.isDisposed()) {
-                                emitter.onNext(PsiphonAdManager.InterstitialResult.Freestar.create(interstitialAd,
-                                        PsiphonAdManager.InterstitialResult.State.READY));
+                                if (interstitialAd.isReady()) {
+                                    emitter.onNext(PsiphonAdManager.InterstitialResult.Freestar.create(interstitialAd,
+                                            PsiphonAdManager.InterstitialResult.State.READY));
+                                } else {
+                                    emitter.onError(new RuntimeException("Freestar interstitial loaded but the interstitial is not ready"));
+                                }
                             }
                         }
 
@@ -72,7 +83,6 @@ public class InterstitialAdViewModel extends AndroidViewModel implements Lifecyc
 
                         @Override
                         public void onInterstitialClicked(String placement) {
-
                         }
 
                         @Override
@@ -82,21 +92,18 @@ public class InterstitialAdViewModel extends AndroidViewModel implements Lifecyc
                             }
                         }
                     });
-                    if (interstitialAd.isReady()) {
-                        if (!emitter.isDisposed()) {
-                            emitter.onNext(PsiphonAdManager.InterstitialResult.Freestar.create(interstitialAd,
-                                    PsiphonAdManager.InterstitialResult.State.READY));
-                        }
-                    } else {
-                        if (!emitter.isDisposed()) {
-                            emitter.onNext(PsiphonAdManager.InterstitialResult.Freestar.create(interstitialAd,
-                                    PsiphonAdManager.InterstitialResult.State.LOADING));
-                            interstitialAd.loadAd(new AdRequest(application));
-                        }
+                    if (!emitter.isDisposed()) {
+                        emitter.onNext(PsiphonAdManager.InterstitialResult.Freestar.create(interstitialAd,
+                                PsiphonAdManager.InterstitialResult.State.LOADING));
+                        interstitialAd.loadAd(new AdRequest(mainActivity));
                     }
                 }))
                 .replay(1)
                 .refCount();
+    }
+
+    public void setActivityWeakReference(Activity activity) {
+        this.activityWeakReference = new WeakReference<>(activity);
     }
 
     public void setCountDownTextView(TextView tv) {
@@ -127,12 +134,18 @@ public class InterstitialAdViewModel extends AndroidViewModel implements Lifecyc
 
     @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
     protected void onLifeCyclePause() {
+        if (interstitialAd != null) {
+            interstitialAd.onPause();
+        }
         isForegroundRelay.accept(false);
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
     protected void onLifeCycleResume() {
         isForegroundRelay.accept(true);
+        if (interstitialAd != null) {
+            interstitialAd.onResume();
+        }
     }
 
     @Override
@@ -221,6 +234,10 @@ public class InterstitialAdViewModel extends AndroidViewModel implements Lifecyc
                 .andThen(isForegroundCompletable)
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnComplete(() -> {
+                    // Dispose any preload that is in progress
+                    if (preLoadInterstitialDisposable != null && !preLoadInterstitialDisposable.isDisposed()) {
+                        preLoadInterstitialDisposable.dispose();
+                    }
                     startSignalRelay.accept(new ConsumableEvent<>(new Object()));
                 })
                 .subscribe();

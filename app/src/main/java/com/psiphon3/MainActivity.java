@@ -185,6 +185,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 .get(InterstitialAdViewModel.class);
         getLifecycle().addObserver(interstitialAdViewModel);
 
+        interstitialAdViewModel.setActivityWeakReference(this);
         interstitialAdViewModel.setCountDownTextView(toggleButton);
 
         // Observe start tunnel signals from the InterstitialAdViewModel
