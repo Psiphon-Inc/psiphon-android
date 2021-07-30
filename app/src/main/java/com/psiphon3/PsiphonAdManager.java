@@ -168,9 +168,10 @@ public class PsiphonAdManager {
                                 // debounce the tunnel state result in case the activity gets resumed and
                                 // then immediately paused due to orientation change while the start up
                                 // interstitial is showing.
-                                .debounce(tunnelState -> tunnelState.isStopped() ?
-                                        Observable.timer(100, TimeUnit.MILLISECONDS) :
-                                        Observable.empty())
+                                // This also delays loading tunneled ads until the activity
+                                // is resumed after loading the landing page
+                                .debounce(tunnelState ->
+                                        Observable.timer(100, TimeUnit.MILLISECONDS))
                                 .switchMap(tunnelState -> {
                                     if (tunnelState.isRunning() && tunnelState.connectionData().isConnected()) {
                                         return Observable.just(AdResult.tunneled(tunnelState.connectionData()));
@@ -609,7 +610,15 @@ public class PsiphonAdManager {
                     };
                     MoPub.initializeSdk(context, sdkConfiguration, sdkInitializationListener);
                 })
+                        // This initializer may be called concurrently from both the interstitial
+                        // and the banner loaders. The second time that this is called,
+                        // MoPub.initializeSdk returns and the SdkInitializationListener is not
+                        // invoked, and this Completable does not complete normally.
+                        // In this case, we will timeout and retry.
+                        .ambWith(Completable.timer(500, TimeUnit.MILLISECONDS)
+                                .andThen(Completable.error(new TimeoutException("MoPub init timed out"))))
                         .subscribeOn(AndroidSchedulers.mainThread())
+                        .retryWhen(Flowable::retry)
                         .doOnError(e -> Utils.MyLog.d("MoPub SDK init error: " + e));
             }
             return moPub;
