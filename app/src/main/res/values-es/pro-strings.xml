@@ -416,8 +416,8 @@
     <!-- Input field caption for password on the PsiCash account sign screen -->
     <string name="psicash_account_login_password_hint">Contraseña</string>
 
-    <!-- Clickable text on the PsiCash account sign in screen, opens 'Forgot credentials' dialog when clicked -->
-    <string name="psicash_account_login_forgot_lbl">¿Olvidaste tu nombre de usuario o contraseña?</string>
+    <!-- Clickable text on the PsiCash account sign in screen, opens 'Forgot credentials' dialog when clicked. Note that we are not offering username recovery at the moment -->
+    <string name="psicash_account_login_forgot_lbl">¿Has olvidado la contraseña?</string>
 
     <!-- Label text for 'Log In' button on the PsiCash account sign in screen -->
     <string name="psicash_account_log_in_btn_lbl">Iniciar sesión</string>
