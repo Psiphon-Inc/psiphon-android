@@ -36,6 +36,8 @@ import android.view.View;
 
 import com.psiphon3.subscription.R;
 
+import net.grandcentrix.tray.AppPreferences;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -824,5 +826,11 @@ public class Utils
             d = s.parse(dateString);
         }
         return d;
+    }
+
+    public static boolean getUnsafeTrafficAlertsOptInState(Context context) {
+        return new AppPreferences(context)
+                .getBoolean(context.getString(R.string.unsafeTrafficAlertsOptInPreference),
+                        true);
     }
 }
