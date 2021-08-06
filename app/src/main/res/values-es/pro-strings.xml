@@ -82,6 +82,10 @@
     should try updating or reinstalling the app. Note: 'PsiCash' should not be translated or transliterated. -->
     <string name="psicash_transaction_invalid_tokens_message">La aplicación ha introducido un estado no válido. Instala la aplicación nuevamente para continuar usando PsiCash.</string>
 
+    <!-- Alert error message informing user that their Speed Boost purchase request failed because their PsiCash account tokens have expired and they need to
+    log in again prior to retrying last operation. Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_transaction_expired_tokens_message">Tus credenciales PsiCash han caducado. Inicia sesión en tu cuenta e intenta otra vez.</string>
+
     <!-- Alert error message informing user that the request failed due to a 'bad request' error.
     Note: 'PsiCash' should not be translated or transliterated. -->
     <string name="psicash_transaction_bad_request_message">El servidor PsiCash indicó que la solicitud fue inválida. Por favor intenta de nuevo más tarde.</string>
