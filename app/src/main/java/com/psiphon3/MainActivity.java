@@ -6,6 +6,8 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.graphics.drawable.Drawable;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.net.VpnService;
 import android.os.Build;
@@ -26,6 +28,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
@@ -84,6 +87,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     private CompositeDisposable uiUpdatesCompositeDisposable;
     private Button toggleButton;
     private ProgressBar connectionProgressBar;
+    private Drawable defaultProgressBarDrawable;
     private Button openBrowserButton;
     private MainActivityViewModel viewModel;
     private Toast invalidProxySettingsToast;
@@ -140,6 +144,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
         toggleButton = findViewById(R.id.toggleButton);
         connectionProgressBar = findViewById(R.id.connectionProgressBar);
+        defaultProgressBarDrawable = connectionProgressBar.getIndeterminateDrawable();
         openBrowserButton = findViewById(R.id.openBrowserButton);
         toggleButton.setOnClickListener(v ->
                 compositeDisposable.add(viewModel.tunnelStateFlowable()
@@ -426,6 +431,15 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             } else {
                 openBrowserButton.setEnabled(false);
                 connectionProgressBar.setVisibility(View.VISIBLE);
+                connectionProgressBar.setIndeterminate(false);
+                Rect bounds = connectionProgressBar.getIndeterminateDrawable().getBounds();
+                Drawable drawable =
+                        (tunnelState.connectionData().networkConnectionState() == TunnelState.ConnectionData.NetworkConnectionState.WAITING_FOR_NETWORK) ?
+                                ContextCompat.getDrawable(this, R.drawable.connection_progress_bar_animation) :
+                                defaultProgressBarDrawable;
+                connectionProgressBar.setIndeterminateDrawable(drawable);
+                connectionProgressBar.getIndeterminateDrawable().setBounds(bounds);
+                connectionProgressBar.setIndeterminate(true);
             }
         } else {
             // Service not running
