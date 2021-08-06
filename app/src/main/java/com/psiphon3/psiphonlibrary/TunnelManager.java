@@ -323,7 +323,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 .doOnNext(networkConnectionState -> {
                     m_tunnelState.networkConnectionState = networkConnectionState;
                     // Any subsequent onConnected after this first one will be a reconnect.
-                    if (networkConnectionState == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED)
+                    if (networkConnectionState == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED) {
                         // It is safe to call routeThroughTunnel multiple times because the library
                         // keeps track of these calls internally and allows only one call per tunnel
                         // run making all the consecutive calls essentially no-op.
@@ -345,7 +345,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     TunnelState tunnelState;
                     if (m_tunnelState.isRunning) {
                         TunnelState.ConnectionData connectionData = TunnelState.ConnectionData.builder()
-                                .setIsConnected(m_tunnelState.isConnected)
+                                .setNetworkConnectionState(m_tunnelState.networkConnectionState)
                                 .setClientRegion(m_tunnelState.clientRegion)
                                 .setClientVersion(EmbeddedValues.CLIENT_VERSION)
                                 .setPropagationChannelId(EmbeddedValues.PROPAGATION_CHANNEL_ID)
