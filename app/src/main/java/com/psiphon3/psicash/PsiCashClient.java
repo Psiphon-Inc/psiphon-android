@@ -720,6 +720,14 @@ public class PsiCashClient {
                                     throw new PsiCashException.Recoverable(result.error.message);
                                 }
                             }
+
+                            // Also clear our own WebView DOM storage on success.
+                            appContext.getSharedPreferences(appContext.getString(R.string.psicashWebStorage),
+                                    Context.MODE_PRIVATE)
+                                    .edit()
+                                    .clear()
+                                    .apply();
+
                             return result.reconnectRequired;
                         })
                 );

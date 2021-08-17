@@ -8,4 +8,5 @@
     <string name="psicashAccountLoginPreferenceKey" translatable="false">psicashAccountLoginPreferenceKey</string>
     <string name="psicashAccountManagePreferenceKey" translatable="false">psicashAccountManagePreferenceKey</string>
     <string name="psicashAccountPreferenceCategory" translatable="false">psicashAccountPreferenceCategory</string>
+    <string name="psicashWebStorage" translatable="false">psicashWebStorage</string>
 </resources>

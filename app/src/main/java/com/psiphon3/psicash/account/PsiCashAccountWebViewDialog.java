@@ -21,6 +21,8 @@ package com.psiphon3.psicash.account;
 import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
@@ -29,6 +31,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
@@ -55,7 +58,7 @@ public class PsiCashAccountWebViewDialog {
     private final Vector<AlertDialog> alertDialogs = new Vector<>();
     private Disposable tunnelStateDisposable;
 
-    @SuppressLint("SetJavaScriptEnabled")
+    @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
     public PsiCashAccountWebViewDialog(Context context, Flowable<TunnelState> tunnelStateFlowable) {
         LayoutInflater inflater = LayoutInflater.from(context);
         View contentView = inflater.inflate(R.layout.psicash_acount_webview_layout, null);
@@ -94,8 +97,27 @@ public class PsiCashAccountWebViewDialog {
         webView.getSettings().setLoadWithOverviewMode(true);
         webView.getSettings().setUseWideViewPort(true);
         webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
+        final PsiCashLocalStorageJavascriptInterface psiCashLocalStorageJavascriptInterface =
+                new PsiCashLocalStorageJavascriptInterface(context);
+        webView.addJavascriptInterface(psiCashLocalStorageJavascriptInterface, "PsiCashLocalStorage");
 
+        // Android's WebView doesn't give us a per origin control over the DOM storage, so we are
+        // overriding native storage with custom implementation for better control over clearing our
+        // own data when the user logs out of PsiCash account. The other alternative is to use global
+        // WebViewStorage.deleteAllData() which is much less desirable since it will potentially
+        // affect all app's WebViews, which may be bad for ads performance, etc.
         webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                super.onPageStarted(view, url, favicon);
+                webView.loadUrl(
+                        "javascript:localStorage.setItem=PsiCashLocalStorage.setItem.bind(PsiCashLocalStorage);" +
+                        "localStorage.getItem=PsiCashLocalStorage.getItem.bind(PsiCashLocalStorage);" +
+                        "localStorage.removeItem=PsiCashLocalStorage.removeItem.bind(PsiCashLocalStorage);" +
+                        "localStorage.clear=PsiCashLocalStorage.clear.bind(PsiCashLocalStorage);"
+                );
+            }
+
             @Override
             // hook up progress visibility
             public void onPageFinished(WebView view, String url) {
@@ -206,6 +228,44 @@ public class PsiCashAccountWebViewDialog {
         }
         if (dialog.isShowing()) {
             dialog.dismiss();
+        }
+    }
+
+    private static class PsiCashLocalStorageJavascriptInterface {
+        SharedPreferences sharedPreferences;
+
+        public PsiCashLocalStorageJavascriptInterface(Context context) {
+            sharedPreferences = context.getSharedPreferences(
+                    context.getString(R.string.psicashWebStorage), Context.MODE_PRIVATE);
+        }
+
+        @JavascriptInterface
+        public String getItem(String key) {
+            if (key == null) {
+                return "";
+            }
+            String value = sharedPreferences.getString(key, "");
+            return value;
+        }
+
+        @JavascriptInterface
+        public void setItem(String key, String value) {
+            if (key == null) {
+                return;
+            }
+            sharedPreferences.edit().putString(key, value).apply();
+        }
+
+        @JavascriptInterface
+        public void removeItem(String key) {
+            if (key == null) {
+                return;
+            }
+            sharedPreferences.edit().remove(key).apply();
+        }
+        @JavascriptInterface
+        public void clear() {
+            sharedPreferences.edit().clear().apply();
         }
     }
 }
