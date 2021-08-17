@@ -77,14 +77,14 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        tunnelServiceInteractor = new TunnelServiceInteractor(this, true);
+
         super.onCreate(savedInstanceState);
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
                     .add(android.R.id.content, new MoreOptionsPreferenceFragment())
                     .commit();
         }
-
-        tunnelServiceInteractor = new TunnelServiceInteractor(this, true);
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(BroadcastIntent.TUNNEL_RESTART);
