@@ -111,10 +111,10 @@ public class PsiCashAccountWebViewDialog {
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
                 super.onPageStarted(view, url, favicon);
                 webView.loadUrl(
-                        "javascript:localStorage.setItem=PsiCashLocalStorage.setItem.bind(PsiCashLocalStorage);" +
-                        "localStorage.getItem=PsiCashLocalStorage.getItem.bind(PsiCashLocalStorage);" +
-                        "localStorage.removeItem=PsiCashLocalStorage.removeItem.bind(PsiCashLocalStorage);" +
-                        "localStorage.clear=PsiCashLocalStorage.clear.bind(PsiCashLocalStorage);"
+                        "javascript:(function() {" +
+                                "Object.defineProperty(PsiCashLocalStorage, 'length', {get: function(){return this.getLength()}});" +
+                                "Object.defineProperty(window, 'localStorage', {value: PsiCashLocalStorage,configurable: false});" +
+                                "})()"
                 );
             }
 
@@ -174,6 +174,7 @@ public class PsiCashAccountWebViewDialog {
 
         dialog.setOnDismissListener(dialog -> {
             webView.stopLoading();
+            webView.destroy();
             if (tunnelStateDisposable != null) {
                 tunnelStateDisposable.dispose();
             }
@@ -263,9 +264,14 @@ public class PsiCashAccountWebViewDialog {
             }
             sharedPreferences.edit().remove(key).apply();
         }
+
         @JavascriptInterface
         public void clear() {
             sharedPreferences.edit().clear().apply();
+        }
+        @JavascriptInterface
+        public int getLength() {
+            return sharedPreferences.getAll().size();
         }
     }
 }
