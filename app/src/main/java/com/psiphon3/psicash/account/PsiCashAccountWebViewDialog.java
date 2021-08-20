@@ -20,12 +20,16 @@ package com.psiphon3.psicash.account;
 
 import android.annotation.SuppressLint;
 import android.app.Dialog;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
 import android.os.Build;
+import android.os.Message;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -96,6 +100,7 @@ public class PsiCashAccountWebViewDialog {
         webView.getSettings().setDomStorageEnabled(true);
         webView.getSettings().setLoadWithOverviewMode(true);
         webView.getSettings().setUseWideViewPort(true);
+        webView.getSettings().setSupportMultipleWindows(true);
         webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
         final PsiCashLocalStorageJavascriptInterface psiCashLocalStorageJavascriptInterface =
                 new PsiCashLocalStorageJavascriptInterface(context);
@@ -141,12 +146,51 @@ public class PsiCashAccountWebViewDialog {
             }
         });
 
-        // hook up window.close()
         webView.setWebChromeClient(new WebChromeClient() {
+            // hook up window.close()
             @Override
             public void onCloseWindow(WebView window) {
                 super.onCloseWindow(window);
                 close();
+            }
+
+            // hook up open in new window
+            @Override
+            public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
+                WebView newWebView = new WebView(context);
+                newWebView.setWebViewClient(new WebViewClient() {
+                    // Try and open new url in an external browser
+                    void handleUri(Uri uri) {
+                        try {
+                            final Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                            context.startActivity(intent);
+                        } catch (ActivityNotFoundException ignored) {
+                        }
+                    }
+
+                    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+                    @Override
+                    public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                        handleUri(request.getUrl());
+                        return true;
+                    }
+
+                    @Override
+                    public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                        // avoid potentially calling this twice
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+                            final Uri uri = Uri.parse(url);
+                            handleUri(uri);
+                        }
+                        return true;
+                    }
+                });
+
+                WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
+                transport.setWebView(newWebView);
+                resultMsg.sendToTarget();
+
+                return true;
             }
         });
 
