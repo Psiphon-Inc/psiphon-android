@@ -48,8 +48,8 @@ public class PsiCashInAppPurchaseFragment extends Fragment {
     private Scene sceneConnectToFinishPsiCashPurchase;
     private Scene sceneWaitFinishPsiCashPurchase;
     private Disposable purchaseDisposable;
-    private RewardedVideoHelper rewardedVideoHelper;
-    private Disposable rewardedVideoDisposable;
+    //private RewardedVideoHelper rewardedVideoHelper;
+    //private Disposable rewardedVideoDisposable;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -59,14 +59,14 @@ public class PsiCashInAppPurchaseFragment extends Fragment {
         psiCashViewModel = new ViewModelProvider(fragmentActivity,
                 new ViewModelProvider.AndroidViewModelFactory(fragmentActivity.getApplication()))
                 .get(PsiCashViewModel.class);
-        rewardedVideoHelper = new RewardedVideoHelper(getActivity(), amount -> {
+        /*rewardedVideoHelper = new RewardedVideoHelper(getActivity(), amount -> {
             // Store the reward amount and refresh PsiCash view state when video is rewarded.
             try {
                 PsiCashClient.getInstance(ctx).putVideoReward(amount);
                 psiCashViewModel.processIntents(Observable.just(PsiCashIntent.GetPsiCash.create()));
             } catch (PsiCashException ignored) {
             }
-        });
+        });*/
 
         View view = inflater.inflate(R.layout.psicash_store_scene_container_fragment, container, false);
 
@@ -80,6 +80,7 @@ public class PsiCashInAppPurchaseFragment extends Fragment {
         sceneBuyPsiCashFromPlayStore.setEnterAction(() -> {
             LinearLayout containerLayout = sceneBuyPsiCashFromPlayStore.getSceneRoot().findViewById(R.id.psicash_purchase_options_container);
 
+            /*
             // Set up the rewarded video FREE row
             final View rewardedVideoRowView = inflater.inflate(R.layout.psicash_purchase_template, container, false);
             // Show the PsiCash amount per rewarded video
@@ -179,6 +180,7 @@ public class PsiCashInAppPurchaseFragment extends Fragment {
                         }
                     })
                     .subscribe());
+            */
 
             compositeDisposable.add(psiCashViewModel.getPsiCashSkus()
                     .doOnSuccess(skuDetailsList -> {

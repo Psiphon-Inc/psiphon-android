@@ -81,7 +81,7 @@
     <string name="feedbackPreferenceKey" translatable="false">feedbackPreferenceKey</string>
     <string name="moreOptionsPreferenceKey" translatable="false">moreOptionsPreferenceKey</string>
     <string name="regionPreferenceKey" translatable="false">regionPreferenceKey</string>
-    <string name="persistent_show_ads_setting">persistentShowAdsSetting</string>
+    <string name="persistent_show_ads_setting" translatable="false">persistentShowAdsSetting</string>
     <string name="has_valid_subscription">hasValidSubscription</string>
     <string name="free_trial_active">freeTrialActive</string>
     <string name="persistentAuthorizationsRemovedFlag">persistentAuthorizationsRemovedFlag</string>

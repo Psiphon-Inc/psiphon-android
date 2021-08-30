@@ -21,30 +21,21 @@
 package com.psiphon3;
 
 import android.app.Activity;
-import android.app.Dialog;
+import android.content.Context;
 import android.os.Build;
-import android.os.Bundle;
-import android.util.Pair;
+import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentActivity;
-import androidx.lifecycle.ViewModelProvider;
 
-import com.google.ads.consent.ConsentForm;
-import com.google.ads.consent.ConsentFormListener;
-import com.google.ads.consent.ConsentInfoUpdateListener;
-import com.google.ads.consent.ConsentInformation;
-import com.google.ads.consent.ConsentStatus;
-import com.google.ads.mediation.admob.AdMobAdapter;
-import com.google.android.gms.ads.AdListener;
-import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.AdSize;
-import com.google.android.gms.ads.AdView;
-import com.google.android.gms.ads.InterstitialAd;
-import com.google.android.gms.ads.MobileAds;
+import com.freestar.android.ads.AdRequest;
+import com.freestar.android.ads.AdSize;
+import com.freestar.android.ads.BannerAd;
+import com.freestar.android.ads.BannerAdListener;
+import com.freestar.android.ads.FreeStarAds;
+import com.freestar.android.ads.InterstitialAd;
 import com.google.auto.value.AutoValue;
 import com.mopub.common.MoPub;
 import com.mopub.common.SdkConfiguration;
@@ -54,15 +45,9 @@ import com.mopub.common.privacy.PersonalInfoManager;
 import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubInterstitial;
 import com.mopub.mobileads.MoPubView;
-import com.psiphon3.billing.GooglePlayBillingHelper;
-import com.psiphon3.billing.SubscriptionState;
-import com.psiphon3.psicash.PsiCashViewModel;
-import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.Utils;
 
-import java.lang.reflect.Field;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -75,13 +60,12 @@ import io.reactivex.ObservableTransformer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.BiFunction;
 
 public class PsiphonAdManager {
 
     @AutoValue
     static abstract class AdResult {
-        public enum Type {UNKNOWN, TUNNELED, UNTUNNELED, NONE}
+        public enum Type {TUNNELED, UNTUNNELED, NONE}
 
         @NonNull
         static AdResult tunneled(TunnelState.ConnectionData connectionData) {
@@ -94,10 +78,6 @@ public class PsiphonAdManager {
 
         static AdResult none() {
             return new AutoValue_PsiphonAdManager_AdResult(Type.NONE, null);
-        }
-
-        static AdResult unknown() {
-            return new AutoValue_PsiphonAdManager_AdResult(Type.UNKNOWN, null);
         }
 
         public abstract Type type();
@@ -130,7 +110,7 @@ public class PsiphonAdManager {
         }
 
         @AutoValue
-        abstract class AdMob implements InterstitialResult {
+        abstract class Freestar implements InterstitialResult {
 
             public void show() {
                 interstitial().show();
@@ -141,182 +121,82 @@ public class PsiphonAdManager {
             public abstract State state();
 
             @NonNull
-            static AdMob create(InterstitialAd interstitial, State state) {
-                return new AutoValue_PsiphonAdManager_InterstitialResult_AdMob(interstitial, state);
+            static Freestar create(InterstitialAd interstitial, State state) {
+                return new AutoValue_PsiphonAdManager_InterstitialResult_Freestar(interstitial, state);
             }
         }
     }
 
     // ----------Production values -----------
-    private static final String ADMOB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID = "ca-app-pub-1072041961750291/1062483935";
     private static final String MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID = "6efb5aa4e0d74a679a6219f9b3aa6221";
     // MoPub test interstitial ID 24534e1901884e398f1253216226017e
     private static final String MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID = "1f9cb36809f04c8d9feaff5deb9f17ed";
-    // AdMob test interstitial ID ca-app-pub-3940256099942544/1033173712
-    private static final String ADMOB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID = "ca-app-pub-1072041961750291/6443217092";
 
-    private AdView unTunneledAdMobBannerAdView;
+    private BannerAd unTunneledFreestarBannerAdView;
     private MoPubView tunneledMoPubBannerAdView;
     private MoPubInterstitial tunneledMoPubInterstitial;
-    private InterstitialAd unTunneledAdMobInterstitial;
 
-    private ViewGroup bannerLayout;
-    private ConsentForm adMobConsentForm;
+    private final WeakReference<ViewGroup> bannerViewGroupWeakReference;
+    private final WeakReference<Activity> activityWeakReference;
+    private final Context appContext;
 
-    private Activity activity;
     private int tabChangedCount = 0;
-
-    private final Completable initializeAdMobSdk;
-    private final Runnable adMobPayOptionRunnable;
-
-    private final Completable initializeMoPubSdk;
-
-    private final Completable chainedAdsSdkInitializeCompletable;
 
     private final Observable<AdResult> currentAdTypeObservable;
     private Disposable loadBannersDisposable;
-    private Disposable loadUnTunneledInterstitialDisposable;
     private Disposable loadTunneledInterstitialDisposable;
     private Disposable showTunneledInterstitialDisposable;
-    private CompositeDisposable compositeDisposable = new CompositeDisposable();
+    private final CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     private final Observable<InterstitialResult> tunneledMoPubInterstitialObservable;
-    private final Observable<InterstitialResult> unTunneledAdMobInterstitialObservable;
 
     private TunnelState.ConnectionData interstitialConnectionData;
 
-    PsiphonAdManager(FragmentActivity activity, ViewGroup bannerLayout, Runnable adMobPayOptionRunnable,
+    PsiphonAdManager(Context appContext,
+                     FragmentActivity activity,
+                     ViewGroup bannerViewGroup,
+                     Observable<Boolean>hasBoostOrSubscriptionObservable,
                      Flowable<TunnelState> tunnelConnectionStateFlowable) {
-        this.activity = activity;
-        this.bannerLayout = bannerLayout;
-        this.adMobPayOptionRunnable = adMobPayOptionRunnable;
+        this.appContext = appContext;
+        this.activityWeakReference = new WeakReference<>(activity);
+        this.bannerViewGroupWeakReference = new WeakReference<>(bannerViewGroup);
 
-        this.initializeAdMobSdk = Completable.create(emitter -> {
-            try {
-                MobileAds.getInitializationStatus();
-                if (!emitter.isDisposed()) {
-                    emitter.onComplete();
-                }
-            } catch (IllegalStateException ignored) {
-                // Not initialized yed
-                MobileAds.initialize(activity, initializationStatus -> {
-                    if (!emitter.isDisposed()) {
-                        emitter.onComplete();
-                    }
-                });
-            }
-        })
-                // Unlike MoPub, AdMob consent update listener is not a part of SDK initialization
-                // and we need to run the check every time. This call doesn't need to be synced with
-                // creation and deletion of ad views.
-                //
-                // Also, do not perform the check too often either, as per
-                // https://developers.google.com/admob/android/eu-consent#update-status
-                // it is recommended that we determine the status of a user's consent at every app launch.
-                .doOnComplete(this::runAdMobGdprCheck)
-                .subscribeOn(AndroidSchedulers.mainThread())
-                // Make sure initialization runs only once, from .cache() documentation:
-                //
-                // Subscribes to this Completable only once, when the first CompletableObserver
-                // subscribes to the result Completable, caches its terminal event
-                // and relays/replays it to observers.
-                .cache();
-
-
-        // MoPub SDK is also tracking GDPR status and will present a GDPR consent collection dialog if needed.
-        this.initializeMoPubSdk = Completable.create(emitter -> {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-                if (!emitter.isDisposed()) {
-                    emitter.onError(new RuntimeException("MoPub initialization error: device SDK is less than 19"));
-                }
-                return;
-            }
-            if (MoPub.isSdkInitialized()) {
-                if (!emitter.isDisposed()) {
-                    emitter.onComplete();
-                }
-                return;
-            }
-            MoPub.setLocationAwareness(MoPub.LocationAwareness.DISABLED);
-            SdkConfiguration.Builder builder = new SdkConfiguration.Builder(MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID);
-            SdkConfiguration sdkConfiguration = builder.build();
-            SdkInitializationListener sdkInitializationListener = () -> {
-                final PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
-                if (personalInfoManager != null) {
-                    // subscribe to consent change state event
-                    personalInfoManager.subscribeConsentStatusChangeListener((oldConsentStatus, newConsentStatus, canCollectPersonalInformation) -> {
-                        if (personalInfoManager.shouldShowConsentDialog()) {
-                            personalInfoManager.loadConsentDialog(moPubConsentDialogListener());
-                        }
-                    });
-                    // If consent is required load the consent dialog
-                    if (personalInfoManager.shouldShowConsentDialog()) {
-                        personalInfoManager.loadConsentDialog(moPubConsentDialogListener());
-                    }
-                    if (!emitter.isDisposed()) {
-                        emitter.onComplete();
-                    }
-                } else {
-                    if (!emitter.isDisposed()) {
-                        emitter.onError(new RuntimeException("MoPub SDK has failed to initialize, MoPub.getPersonalInformationManager is null"));
-                    }
-                }
-            };
-            MoPub.initializeSdk(activity, sdkConfiguration, sdkInitializationListener);
-        })
-                .subscribeOn(AndroidSchedulers.mainThread())
-                // Make sure initialization runs only once, from .cache() documentation:
-                //
-                // Subscribes to this Completable only once, when the first CompletableObserver
-                // subscribes to the result Completable, caches its terminal event
-                // and relays/replays it to observers.
-                .cache();
-
-        // Use this chained initializer for all AdMob ads to initialize MoPub SDK before the AdMob.
-        // This order is important for mediating MoPub ads via AdMob.
-        chainedAdsSdkInitializeCompletable = initializeMoPubSdk
-                // Do not error out if MoPub SDK initialization fails.
-                // For example, it will always fail on OS < KitKat
-                .onErrorComplete()
-                .andThen(initializeAdMobSdk);
-
-        PsiCashViewModel psiCashViewModel = new ViewModelProvider(activity,
-                new ViewModelProvider.AndroidViewModelFactory(activity.getApplication()))
-                .get(PsiCashViewModel.class);
-        this.currentAdTypeObservable = psiCashViewModel.booleanActiveSpeedBoostObservable()
-                .switchMap(hasActiveSpeedBoost -> hasActiveSpeedBoost ?
-                        Observable.just(AdResult.none()) :
-                        Observable.combineLatest(
-                                tunnelConnectionStateFlowable.toObservable(),
-                                GooglePlayBillingHelper.getInstance(activity.getApplicationContext())
-                                        .subscriptionStateFlowable()
-                                        .toObservable(),
-                                ((BiFunction<TunnelState, SubscriptionState, Pair>) Pair::new))
-                                .switchMap(pair -> {
-                                    TunnelState s = (TunnelState) pair.first;
-                                    SubscriptionState subscriptionState = (SubscriptionState) pair.second;
-                                    if (subscriptionState.hasValidPurchase() ||
-                                            Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-                                        return Observable.just(AdResult.none());
-                                    }
-                                    if (s.isRunning() && s.connectionData().isConnected()) {
-                                        return Observable.just(AdResult.tunneled(s.connectionData()));
-                                    } else if (s.isStopped()) {
+        // If the user has a speed boost or a subscription disable all ads.
+        this.currentAdTypeObservable = hasBoostOrSubscriptionObservable.switchMap(noAds ->
+                noAds || !canShowAds() ? Observable.just(AdResult.none()) :
+                        tunnelConnectionStateFlowable.toObservable()
+                                // debounce the tunnel state result in case the activity gets resumed and
+                                // then immediately paused due to orientation change while the start up
+                                // interstitial is showing.
+                                // This also delays loading tunneled ads until the activity
+                                // is resumed after loading the landing page
+                                .debounce(tunnelState ->
+                                        Observable.timer(100, TimeUnit.MILLISECONDS))
+                                .switchMap(tunnelState -> {
+                                    if (tunnelState.isRunning() && tunnelState.connectionData().isConnected()) {
+                                        return Observable.just(AdResult.tunneled(tunnelState.connectionData()));
+                                    } else if (tunnelState.isStopped()) {
                                         return Observable.just(AdResult.unTunneled());
-                                    } else {
-                                        return Observable.just(AdResult.unknown());
                                     }
+                                    return Observable.empty();
                                 }))
                 .distinctUntilChanged()
                 .replay(1)
-                .autoConnect(0);
+                .refCount();
 
-        this.tunneledMoPubInterstitialObservable = initializeMoPubSdk
+        this.tunneledMoPubInterstitialObservable = SdkInitializer.getMoPub(appContext)
                 .andThen(Observable.<InterstitialResult>create(emitter -> {
                     if (tunneledMoPubInterstitial != null) {
                         tunneledMoPubInterstitial.destroy();
                     }
-                    tunneledMoPubInterstitial = new MoPubInterstitial(activity, MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID);
+                    Activity a = activityWeakReference.get();
+                    if (a == null) {
+                        if (!emitter.isDisposed()) {
+                            emitter.onError(new RuntimeException("MoPub failed to create interstitial: activity is null"));
+                        }
+                        return;
+                    }
+                    tunneledMoPubInterstitial = new MoPubInterstitial(a, MOPUB_TUNNELED_INTERSTITIAL_PROPERTY_ID);
                     // Set current client region keyword on the ad
                     if (interstitialConnectionData != null) {
                         tunneledMoPubInterstitial.setKeywords("client_region:" + interstitialConnectionData.clientRegion());
@@ -372,72 +252,6 @@ public class PsiphonAdManager {
                 .replay(1)
                 .refCount();
 
-        this.unTunneledAdMobInterstitialObservable = chainedAdsSdkInitializeCompletable
-                .andThen(Observable.<InterstitialResult>create(emitter -> {
-                    if (unTunneledAdMobInterstitial != null) {
-                        unTunneledAdMobInterstitial.setAdListener(null);
-                    }
-                    unTunneledAdMobInterstitial = new InterstitialAd(activity);
-                    this.unTunneledAdMobInterstitial.setAdUnitId(ADMOB_UNTUNNELED_INTERSTITIAL_PROPERTY_ID);
-                    unTunneledAdMobInterstitial.setAdListener(new AdListener() {
-                        @Override
-                        public void onAdLoaded() {
-                            if (!emitter.isDisposed()) {
-                                emitter.onNext(InterstitialResult.AdMob.create(unTunneledAdMobInterstitial, InterstitialResult.State.READY));
-                            }
-                        }
-
-                        @Override
-                        public void onAdFailedToLoad(int errorCode) {
-                            if (!emitter.isDisposed()) {
-                                emitter.onError(new RuntimeException("AdMob interstitial failed with error code: " + errorCode));
-                            }
-                        }
-
-                        @Override
-                        public void onAdOpened() {
-                            if (!emitter.isDisposed()) {
-                                emitter.onNext(InterstitialResult.AdMob.create(unTunneledAdMobInterstitial, InterstitialResult.State.SHOWING));
-                            }
-                        }
-
-                        @Override
-                        public void onAdLeftApplication() {
-                        }
-
-                        @Override
-                        public void onAdClosed() {
-                            if (!emitter.isDisposed()) {
-                                emitter.onComplete();
-                            }
-                        }
-                    });
-
-                    Bundle extras = new Bundle();
-                    if (ConsentInformation.getInstance(activity).getConsentStatus() == ConsentStatus.NON_PERSONALIZED) {
-                        extras.putString("npa", "1");
-                    }
-                    AdRequest adRequest = new AdRequest.Builder()
-                            .addNetworkExtrasBundle(AdMobAdapter.class, extras)
-                            .build();
-                    if (unTunneledAdMobInterstitial.isLoaded()) {
-                        if (!emitter.isDisposed()) {
-                            emitter.onNext(InterstitialResult.AdMob.create(unTunneledAdMobInterstitial, InterstitialResult.State.READY));
-                        }
-                    } else if (unTunneledAdMobInterstitial.isLoading()) {
-                        if (!emitter.isDisposed()) {
-                            emitter.onNext(InterstitialResult.AdMob.create(unTunneledAdMobInterstitial, InterstitialResult.State.LOADING));
-                        }
-                    } else {
-                        if (!emitter.isDisposed()) {
-                            emitter.onNext(InterstitialResult.AdMob.create(unTunneledAdMobInterstitial, InterstitialResult.State.LOADING));
-                            unTunneledAdMobInterstitial.loadAd(adRequest);
-                        }
-                    }
-                }))
-                .replay(1)
-                .refCount();
-
         // This disposable destroys ads according to subscription and/or
         // connection status without further delay.
         compositeDisposable.add(
@@ -448,11 +262,6 @@ public class PsiphonAdManager {
                                 case NONE:
                                     // No ads mode, destroy all ads
                                     destroyAllAds();
-                                    break;
-                                case UNKNOWN:
-                                    // App is backgrounded and tunnel state is unknown, destroy all banners
-                                    destroyTunneledBanners();
-                                    destroyUnTunneledBanners();
                                     break;
                                 case TUNNELED:
                                     // App is tunneled, destroy untunneled banners
@@ -468,73 +277,12 @@ public class PsiphonAdManager {
         );
     }
 
-    Observable<AdResult> getCurrentAdTypeObservable() {
-        return currentAdTypeObservable;
+    static boolean canShowAds() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
     }
 
-    private void runAdMobGdprCheck() {
-        String[] publisherIds = {"pub-1072041961750291"};
-        ConsentInformation.getInstance(activity).requestConsentInfoUpdate(publisherIds, new ConsentInfoUpdateListener() {
-            @Override
-            public void onConsentInfoUpdated(ConsentStatus consentStatus) {
-                if (consentStatus == ConsentStatus.UNKNOWN
-                        && ConsentInformation.getInstance(activity).isRequestLocationInEeaOrUnknown()) {
-                    URL privacyUrl;
-                    try {
-                        privacyUrl = new URL(EmbeddedValues.DATA_COLLECTION_INFO_URL);
-                    } catch (MalformedURLException e) {
-                        Utils.MyLog.d("Can't create privacy URL for AdMob consent form: " + e);
-                        return;
-                    }
-                    if (adMobConsentForm == null) {
-                        adMobConsentForm = new ConsentForm.Builder(activity, privacyUrl)
-                                .withListener(new ConsentFormListener() {
-                                    @Override
-                                    public void onConsentFormLoaded() {
-                                        // Consent form loaded successfully.
-                                        //
-                                        // See https://github.com/googleads/googleads-consent-sdk-android/issues/74
-                                        // Calling adMobConsentForm.show() may throw android.view.WindowManager$BadTokenException
-                                        // if activity is finishing, we will also surround the call with try/catch block just in case.
-                                        if (adMobConsentForm != null && !adMobConsentForm.isShowing() && !activity.isFinishing()) {
-                                            try {
-                                                adMobConsentForm.show();
-                                            } catch (WindowManager.BadTokenException e) {
-                                                Utils.MyLog.g("AdMob: consent form show error: " + e);
-                                            }
-                                        }
-                                    }
-
-                                    @Override
-                                    public void onConsentFormOpened() {
-                                    }
-
-                                    @Override
-                                    public void onConsentFormClosed(ConsentStatus consentStatus, Boolean userPrefersAdFree) {
-                                        if (userPrefersAdFree) {
-                                            adMobPayOptionRunnable.run();
-                                        }
-                                    }
-
-                                    @Override
-                                    public void onConsentFormError(String errorDescription) {
-                                        Utils.MyLog.d("AdMob consent form error: " + errorDescription);
-                                    }
-                                })
-                                .withPersonalizedAdsOption()
-                                .withNonPersonalizedAdsOption()
-                                .withAdFreeOption()
-                                .build();
-                    }
-                    adMobConsentForm.load();
-                }
-            }
-
-            @Override
-            public void onFailedToUpdateConsentInfo(String errorDescription) {
-                Utils.MyLog.d("AdMob consent failed to update: " + errorDescription);
-            }
-        });
+    Observable<AdResult> getCurrentAdTypeObservable() {
+        return currentAdTypeObservable;
     }
 
     void onTabChanged() {
@@ -570,24 +318,6 @@ public class PsiphonAdManager {
     }
 
     void startLoadingAds() {
-        // Preload exactly one untunneled interstitial if we are currently untunneled or complete
-        if (loadUnTunneledInterstitialDisposable == null || loadUnTunneledInterstitialDisposable.isDisposed()) {
-            loadUnTunneledInterstitialDisposable = getCurrentAdTypeObservable()
-                    // Filter out UNKNOWN
-                    .filter(adResult -> adResult.type() != AdResult.Type.UNKNOWN)
-                    .firstOrError()
-                    .flatMapObservable(adResult -> {
-                        if (adResult.type() != AdResult.Type.UNTUNNELED) {
-                            return Observable.empty();
-                        }
-                        return getInterstitialObservable(adResult)
-                                .doOnError(e -> Utils.MyLog.d("Error loading untunneled interstitial: " + e))
-                                .onErrorResumeNext(Observable.empty());
-                    })
-                    .subscribe();
-            compositeDisposable.add(loadUnTunneledInterstitialDisposable);
-        }
-
         // Keep pre-loading tunneled interstitial when we go tunneled indefinitely.
         // For this to be usable we want to keep a pre-loaded ad for as long as possible, i.e.
         // dispose of the preloaded ad only if tunnel state changes to untunneled or if tunnel
@@ -598,8 +328,6 @@ public class PsiphonAdManager {
         // of the connection data fields.
         if (loadTunneledInterstitialDisposable == null || loadTunneledInterstitialDisposable.isDisposed()) {
             loadTunneledInterstitialDisposable = getCurrentAdTypeObservable()
-                    // Filter out UNKNOWN
-                    .filter(adResult -> adResult.type() != AdResult.Type.UNKNOWN)
                     // We only want to react when the state changes between TUNNELED and UNTUNNELED.
                     // Note that distinctUntilChanged will still pass the result through if the upstream
                     // emits two TUNNELED ad results sequence with different connectionData fields
@@ -645,17 +373,16 @@ public class PsiphonAdManager {
         Completable completable;
         switch (adResult.type()) {
             case NONE:
-            case UNKNOWN:
                 completable = Completable.complete();
                 break;
             case TUNNELED:
-                completable = initializeMoPubSdk.andThen(Completable.fromAction(() -> {
+                completable = SdkInitializer.getMoPub(appContext).andThen(Completable.fromAction(() -> {
                     // Call 'destroy' on old instance before grabbing a new one to perform a
                     // proper cleanup so we are not leaking receivers, etc.
                     if (tunneledMoPubBannerAdView != null) {
                         tunneledMoPubBannerAdView.destroy();
                     }
-                    tunneledMoPubBannerAdView = new MoPubView(activity);
+                    tunneledMoPubBannerAdView = new MoPubView(appContext);
                     tunneledMoPubBannerAdView.setAdUnitId(MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID);
                     TunnelState.ConnectionData connectionData = adResult.connectionData();
                     if (connectionData != null) {
@@ -669,8 +396,11 @@ public class PsiphonAdManager {
                         public void onBannerLoaded(MoPubView banner) {
                             if (tunneledMoPubBannerAdView != null &&
                                     tunneledMoPubBannerAdView.getParent() == null) {
-                                bannerLayout.removeAllViewsInLayout();
-                                bannerLayout.addView(tunneledMoPubBannerAdView);
+                                ViewGroup viewGroup = bannerViewGroupWeakReference.get();
+                                if (viewGroup != null) {
+                                    viewGroup.removeAllViewsInLayout();
+                                    viewGroup.addView(tunneledMoPubBannerAdView);
+                                }
                             }
                         }
 
@@ -695,44 +425,35 @@ public class PsiphonAdManager {
                 }));
                 break;
             case UNTUNNELED:
-                completable = chainedAdsSdkInitializeCompletable.andThen(Completable.fromAction(() -> {
-                    unTunneledAdMobBannerAdView = new AdView(activity);
-                    unTunneledAdMobBannerAdView.setAdSize(AdSize.MEDIUM_RECTANGLE);
-                    unTunneledAdMobBannerAdView.setAdUnitId(ADMOB_UNTUNNELED_LARGE_BANNER_PROPERTY_ID);
-                    unTunneledAdMobBannerAdView.setAdListener(new AdListener() {
+                completable = SdkInitializer.getFreeStar(appContext).andThen(Completable.fromAction(() -> {
+                    unTunneledFreestarBannerAdView = new BannerAd(appContext);
+                    unTunneledFreestarBannerAdView.setAdSize(AdSize.MEDIUM_RECTANGLE_300_250);
+                    unTunneledFreestarBannerAdView.setBannerAdListener(new BannerAdListener() {
                         @Override
-                        public void onAdLoaded() {
-                            if (unTunneledAdMobBannerAdView != null &&
-                                    unTunneledAdMobBannerAdView.getParent() == null) {
-                                bannerLayout.removeAllViewsInLayout();
-                                bannerLayout.addView(unTunneledAdMobBannerAdView);
+                        public void onBannerAdLoaded(View bannerAd, String placement) {
+                            if (unTunneledFreestarBannerAdView != null &&
+                                    unTunneledFreestarBannerAdView.getParent() == null) {
+                                ViewGroup viewGroup = bannerViewGroupWeakReference.get();
+                                if (viewGroup != null) {
+                                    viewGroup.removeAllViewsInLayout();
+                                    viewGroup.addView(unTunneledFreestarBannerAdView);
+                                }
                             }
                         }
 
                         @Override
-                        public void onAdFailedToLoad(int errorCode) {
+                        public void onBannerAdFailed(View bannerAd, String placement, int errorCode) {
                         }
 
                         @Override
-                        public void onAdOpened() {
+                        public void onBannerAdClicked(View bannerAd, String placement) {
                         }
 
                         @Override
-                        public void onAdLeftApplication() {
-                        }
-
-                        @Override
-                        public void onAdClosed() {
+                        public void onBannerAdClosed(View bannerAd, String placement) {
                         }
                     });
-                    Bundle extras = new Bundle();
-                    if (ConsentInformation.getInstance(activity).getConsentStatus() == com.google.ads.consent.ConsentStatus.NON_PERSONALIZED) {
-                        extras.putString("npa", "1");
-                    }
-                    AdRequest adRequest = new AdRequest.Builder()
-                            .addNetworkExtrasBundle(AdMobAdapter.class, extras)
-                            .build();
-                    unTunneledAdMobBannerAdView.loadAd(adRequest);
+                    unTunneledFreestarBannerAdView.loadAd(new AdRequest(appContext));
                 }));
                 break;
             default:
@@ -747,15 +468,12 @@ public class PsiphonAdManager {
         AdResult.Type adType = adResult.type();
         switch (adType) {
             case NONE:
-            case UNKNOWN:
+            case UNTUNNELED:
                 interstitialResultObservable = Observable.empty();
                 break;
             case TUNNELED:
                 interstitialConnectionData = adResult.connectionData();
                 interstitialResultObservable = tunneledMoPubInterstitialObservable;
-                break;
-            case UNTUNNELED:
-                interstitialResultObservable = unTunneledAdMobInterstitialObservable;
                 break;
             default:
                 throw new IllegalArgumentException("getInterstitialObservable: unhandled AdResult.Type: " + adType);
@@ -771,18 +489,20 @@ public class PsiphonAdManager {
                 parent.removeView(tunneledMoPubBannerAdView);
             }
             tunneledMoPubBannerAdView.destroy();
+            tunneledMoPubBannerAdView = null;
         }
     }
 
     private void destroyUnTunneledBanners() {
-        if (unTunneledAdMobBannerAdView != null) {
-            // AdMob's AdView may still call its listener even after a call to destroy();
-            unTunneledAdMobBannerAdView.setAdListener(null);
-            ViewGroup parent = (ViewGroup) unTunneledAdMobBannerAdView.getParent();
+        if (unTunneledFreestarBannerAdView != null) {
+            // Freestar's AdView may still call its listener even after a call to destroy();
+            unTunneledFreestarBannerAdView.setBannerAdListener(null);
+            ViewGroup parent = (ViewGroup) unTunneledFreestarBannerAdView.getParent();
             if (parent != null) {
-                parent.removeView(unTunneledAdMobBannerAdView);
+                parent.removeView(unTunneledFreestarBannerAdView);
             }
-            unTunneledAdMobBannerAdView.destroy();
+            unTunneledFreestarBannerAdView.destroyView();
+            unTunneledFreestarBannerAdView = null;
         }
     }
 
@@ -791,23 +511,7 @@ public class PsiphonAdManager {
         destroyUnTunneledBanners();
         if (tunneledMoPubInterstitial != null) {
             tunneledMoPubInterstitial.destroy();
-        }
-        if (unTunneledAdMobInterstitial != null) {
-            unTunneledAdMobInterstitial.setAdListener(null);
-        }
-        // A hack to dismiss the private AdMob consent dialog if it is still showing when we are in
-        // the no ads mode when, for example, a new subscription was just purchased.
-        if (adMobConsentForm != null && adMobConsentForm.isShowing()) {
-            try {
-                Field f = adMobConsentForm.getClass().getDeclaredField("dialog");
-                f.setAccessible(true);
-                Dialog dialog = (Dialog) f.get(adMobConsentForm);
-                if (dialog != null && dialog.isShowing()) {
-                    dialog.dismiss();
-                }
-            } catch (NoSuchFieldException ignored) {
-            } catch (IllegalAccessException ignored) {
-            }
+            tunneledMoPubInterstitial = null;
         }
     }
 
@@ -832,4 +536,91 @@ public class PsiphonAdManager {
             }
         };
     }
-}
+
+    // A static ads SDKs initializer container
+    static class SdkInitializer {
+        private static Completable freeStar;
+        private static Completable moPub;
+
+        public static Completable getFreeStar(Context context) {
+            if (freeStar == null) {
+                // Call init only once
+                FreeStarAds.init(context.getApplicationContext(), "0P9gcV");
+
+                freeStar = Completable.create(
+                        emitter -> {
+                            if (!emitter.isDisposed()) {
+                                if (FreeStarAds.isInitialized()) {
+                                    emitter.onComplete();
+                                } else {
+                                    emitter.onError(new Throwable());
+                                }
+                            }})
+                        // Keep polling FreeStarAds.isInitialized every 250 ms
+                        .retryWhen(errors -> errors.delay(250, TimeUnit.MILLISECONDS))
+                        // Short delay as we have observed failures to load ads if requested too soon after
+                        // initialization
+                        .delay(500, TimeUnit.MILLISECONDS)
+                        .subscribeOn(AndroidSchedulers.mainThread())
+                        // Cache normal completion of the upstream or imeout after 5 seconds without
+                        // caching so the upstream could be retried again next time
+                        .cache()
+                        .ambWith(Completable.timer(5, TimeUnit.SECONDS)
+                                .andThen(Completable.error(new TimeoutException("FreeStarAds init timed out"))))
+                        .doOnError(e -> Utils.MyLog.d("FreeStarAds SDK init error: " + e));
+            }
+            return freeStar;
+        }
+
+        // Note: need to be initialized with activity context for rewarded videos
+        public static Completable getMoPub(Context context) {
+            if (moPub == null) {
+                // MoPub SDK is also tracking GDPR status and will present a GDPR consent collection dialog if needed.
+                moPub = Completable.create(emitter -> {
+                    if (MoPub.isSdkInitialized()) {
+                        if (!emitter.isDisposed()) {
+                            emitter.onComplete();
+                        }
+                        return;
+                    }
+                    MoPub.setLocationAwareness(MoPub.LocationAwareness.DISABLED);
+                    SdkConfiguration.Builder builder = new SdkConfiguration.Builder(MOPUB_TUNNELED_LARGE_BANNER_PROPERTY_ID);
+                    SdkConfiguration sdkConfiguration = builder.build();
+                    SdkInitializationListener sdkInitializationListener = () -> {
+                        final PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+                        if (personalInfoManager != null) {
+                            // subscribe to consent change state event
+                            personalInfoManager.subscribeConsentStatusChangeListener((oldConsentStatus, newConsentStatus, canCollectPersonalInformation) -> {
+                                if (personalInfoManager.shouldShowConsentDialog()) {
+                                    personalInfoManager.loadConsentDialog(moPubConsentDialogListener());
+                                }
+                            });
+                            // If consent is required load the consent dialog
+                            if (personalInfoManager.shouldShowConsentDialog()) {
+                                personalInfoManager.loadConsentDialog(moPubConsentDialogListener());
+                            }
+                            if (!emitter.isDisposed()) {
+                                emitter.onComplete();
+                            }
+                        } else {
+                            if (!emitter.isDisposed()) {
+                                emitter.onError(new RuntimeException("MoPub.getPersonalInformationManager is null"));
+                            }
+                        }
+                    };
+                    MoPub.initializeSdk(context, sdkConfiguration, sdkInitializationListener);
+                })
+                        // This initializer may be called concurrently from both the interstitial
+                        // and the banner loaders. The second time that this is called,
+                        // MoPub.initializeSdk returns and the SdkInitializationListener is not
+                        // invoked, and this Completable does not complete normally.
+                        // In this case, we will timeout and retry.
+                        .ambWith(Completable.timer(500, TimeUnit.MILLISECONDS)
+                                .andThen(Completable.error(new TimeoutException("MoPub init timed out"))))
+                        .subscribeOn(AndroidSchedulers.mainThread())
+                        .retryWhen(Flowable::retry)
+                        .doOnError(e -> Utils.MyLog.d("MoPub SDK init error: " + e));
+            }
+            return moPub;
+        }
+    }}
