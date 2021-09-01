@@ -18,6 +18,10 @@
 
 package com.psiphon3.psicash.settings;
 
+import static com.psiphon3.psicash.settings.PsiCashSettingsViewState.AccountState;
+import static com.psiphon3.psicash.settings.PsiCashSettingsViewState.Builder;
+import static com.psiphon3.psicash.settings.PsiCashSettingsViewState.initialViewState;
+
 import android.app.Application;
 import android.content.Context;
 
@@ -29,16 +33,10 @@ import com.psiphon3.psicash.PsiCashModel;
 import com.psiphon3.psicash.mvibase.MviViewModel;
 import com.psiphon3.psiphonlibrary.Utils;
 
-import org.jetbrains.annotations.NotNull;
-
 import io.reactivex.Observable;
 import io.reactivex.ObservableTransformer;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.functions.BiFunction;
-
-import static com.psiphon3.psicash.settings.PsiCashSettingsViewState.AccountState;
-import static com.psiphon3.psicash.settings.PsiCashSettingsViewState.Builder;
-import static com.psiphon3.psicash.settings.PsiCashSettingsViewState.initialViewState;
 
 public class PsiCashSettingsViewModel extends AndroidViewModel
         implements MviViewModel<PsiCashSettingsIntent, PsiCashSettingsViewState> {
@@ -89,7 +87,7 @@ public class PsiCashSettingsViewModel extends AndroidViewModel
                 .autoConnect(0);
     }
 
-    @NotNull
+    @NonNull
     private static BiFunction<PsiCashSettingsViewState, PsiCashSettingsResult, PsiCashSettingsViewState> reduce(Context appContext) {
         return (previousState, detailsResult) -> {
             Builder stateBuilder = previousState.withState();

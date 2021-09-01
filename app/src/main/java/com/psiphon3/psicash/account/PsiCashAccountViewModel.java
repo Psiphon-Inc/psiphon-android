@@ -30,8 +30,6 @@ import com.psiphon3.psicash.mvibase.MviViewModel;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
 
-import org.jetbrains.annotations.NotNull;
-
 import io.reactivex.Observable;
 import io.reactivex.ObservableTransformer;
 import io.reactivex.disposables.CompositeDisposable;
@@ -86,7 +84,7 @@ public class PsiCashAccountViewModel extends AndroidViewModel
                 .autoConnect(0);
     }
 
-    @NotNull
+    @NonNull
     private static BiFunction<PsiCashAccountViewState, PsiCashAccountResult, PsiCashAccountViewState> reduce(Context appContext) {
         return (previousState, psiCashAccountResult) -> {
             PsiCashAccountViewState.Builder stateBuilder = previousState.withState();

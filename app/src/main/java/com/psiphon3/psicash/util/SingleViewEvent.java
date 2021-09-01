@@ -18,22 +18,21 @@
 
 package com.psiphon3.psicash.util;
 
+import androidx.annotation.NonNull;
 import androidx.core.util.Consumer;
-
-import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SingleViewEvent<T> {
     private final T payload;
-    @NotNull
+    @NonNull
     private final AtomicBoolean isConsumed = new AtomicBoolean(false);
 
     public SingleViewEvent(T payload) {
         this.payload = payload;
     }
 
-    public final void consume(@NotNull Consumer<T> action) {
+    public final void consume(@NonNull Consumer<T> action) {
         if (!isConsumed.getAndSet(true)) {
             action.accept(payload);
         }

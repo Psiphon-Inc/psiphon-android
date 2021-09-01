@@ -30,6 +30,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.fragment.app.FragmentActivity;
 
@@ -39,15 +40,13 @@ import com.psiphon3.psicash.account.PsiCashAccountActivity;
 import com.psiphon3.psicash.store.PsiCashStoreActivity;
 import com.psiphon3.subscription.R;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.text.NumberFormat;
 
 import io.reactivex.Observable;
 
 public class UiHelpers {
 
-    @NotNull
+    @NonNull
     public static Snackbar getSnackbar(String messageText, View anchorView) {
         int timeOutMs = 4000;
         Snackbar snackbar = Snackbar.make(anchorView, messageText, timeOutMs);

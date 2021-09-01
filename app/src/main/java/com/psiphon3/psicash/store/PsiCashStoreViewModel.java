@@ -20,7 +20,6 @@ package com.psiphon3.psicash.store;
 
 import android.app.Application;
 import android.content.Context;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
@@ -28,8 +27,6 @@ import androidx.lifecycle.AndroidViewModel;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.psicash.PsiCashModel;
 import com.psiphon3.psicash.mvibase.MviViewModel;
-
-import org.jetbrains.annotations.NotNull;
 
 import io.reactivex.Observable;
 import io.reactivex.ObservableTransformer;
@@ -85,7 +82,7 @@ public class PsiCashStoreViewModel extends AndroidViewModel
                 .autoConnect(0);
     }
 
-    @NotNull
+    @NonNull
     private static BiFunction<PsiCashStoreViewState, PsiCashStoreResult, PsiCashStoreViewState> reduce(Context appContext) {
         return (previousState, storeResult) -> {
             PsiCashStoreViewState.Builder stateBuilder = previousState.withState();
