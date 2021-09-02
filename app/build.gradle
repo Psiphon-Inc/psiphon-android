@@ -24,7 +24,7 @@ android {
         if (props != null && props.containsKey('VERSION_CODE')) {
             def verName = props['VERSION_CODE']
             def verCode = verName.toInteger()
-            def admobAppId = getBuildProperty('PRO_ADMOB_APP_ID').replaceAll('^\"|\"$', "")
+            def admobAppId = getBuildProperty('PRO_FREESTAR_ADMOB_APP_ID').replaceAll('^\"|\"$', "")
 
             defaultConfig {
                 project.ext.set("archivesBaseName", "PsiphonAndroid");
@@ -140,7 +140,7 @@ android {
     buildTypes.each {
         it.buildConfigField 'String', 'SUBSCRIPTION_SPONSOR_ID', getBuildProperty('SUBSCRIPTION_SPONSOR_ID')
         it.buildConfigField 'String', 'IAB_PUBLIC_KEY', getBuildProperty('IAB_PUBLIC_KEY')
-        it.buildConfigField 'String', 'ADMOB_APP_ID', getBuildProperty('PRO_ADMOB_APP_ID')
+        it.buildConfigField 'String', 'ADMOB_APP_ID', getBuildProperty('PRO_FREESTAR_ADMOB_APP_ID')
     }
 }
 
@@ -161,8 +161,19 @@ def getBuildProperty(String propertyName) {
 
 repositories {
     jcenter()
+    maven { url 'https://jitpack.io' }
+    maven { url "https://freestar.jfrog.io/artifactory/freestar-mediation-android-sdk" }
+    maven { url "https://s3.amazonaws.com/moat-sdk-builds" }
     maven {
-        url 'https://jitpack.io'
+        url = uri("https://adsbynimbus-public.s3.amazonaws.com/android/sdks")
+        credentials {
+            username = "*"
+        }
+        // Publisher on SDK versions below 1.10.0 must add the following block
+        metadataSources {
+            mavenPom()
+            ignoreGradleMetadataRedirection()
+        }
     }
 }
 
@@ -186,19 +197,46 @@ dependencies {
     implementation "androidx.localbroadcastmanager:localbroadcastmanager:$rootProject.ext.localBroadCastManagerVersion"
     implementation "androidx.preference:preference:$rootProject.ext.preferenceVersion"
 
-    // Complete SDK is needed by AdMob mediation adapter
+    //begin Freestar
+    implementation 'com.freestar.android.ads:freestar:4.4.0'
+    implementation 'com.freestar.android.ads.admob:freestar-admob-adapter:20.2.0.1'
+    implementation 'com.freestar.android.ads.applovin:freestar-applovin-adapter:9.14.8.3'
+    implementation 'com.freestar.android.ads.tam:freestar-tam-adapter:8.4.3.1'
+    implementation 'com.freestar.android.ads.google:freestar-google-adapter:20.2.0.1'
+    implementation 'com.freestar.android.ads.criteo:freestar-criteo-adapter:4.2.1.2'
+    implementation 'com.freestar.android.ads.unityads:freestar-unity-adapter:3.7.1.2'
+    implementation 'com.freestar.android.ads.vungle:freestar-vungle-adapter:6.7.0.1'  //Fullscreen ads only
+    implementation 'com.freestar.android.ads.facebook:freestar-facebook-adapter:6.1.0.1'
+    implementation 'com.freestar.android.ads.mopub:freestar-mopub-adapter:5.16.4.2'
+    implementation 'com.freestar.android.ads.nimbus:freestar-nimbus-adapter:1.9.1.2'
+
+    implementation 'com.applovin:applovin-sdk:9.14.8'
+    implementation 'com.criteo.publisher:criteo-publisher-sdk:4.2.1'
+    implementation "com.google.android.gms:play-services-ads:$rootProject.ext.playServicesAdsVersion"
+    implementation("com.google.android.ads.consent:consent-library:$rootProject.ext.adsConsentLibraryVersion") {
+        exclude group: 'com.android.support'
+        exclude group: 'com.google.code.gson', module: 'gson'
+    }
+    implementation('com.facebook.android:audience-network-sdk:6.2.1') {
+        exclude group: 'com.google.android.exoplayer'
+        exclude group: 'com.google.android.gms'
+        exclude group: 'com.android.support'
+    }
+    implementation('com.github.vungle:vungle-android-sdk:6.7.0') {
+        exclude group: 'com.android.support'
+    }
     implementation("com.mopub:mopub-sdk:$rootProject.ext.mopubSdkVersion@aar") {
         transitive = true
+        exclude group: 'com.android.support'
     }
+    //nimbus
+    implementation "com.adsbynimbus.android:nimbus:1.9.1" // Full Nimbus SDK with NimbusAdManager
+    implementation "com.adsbynimbus.android:extension-okhttp:1.9.1" // Use OkHttp with NimbusAdManager
+    implementation "com.adsbynimbus.android:extension-facebook:1.9.1"
 
-    implementation "com.google.android.gms:play-services-ads:$rootProject.ext.playServicesAdsVersion"
-    implementation "com.google.android.ads.consent:consent-library:$rootProject.ext.adsConsentLibraryVersion"
-
-    // AdMob adapter to mediate MoPub ads, modified to pass custom data for rewarded video SSV callbacks.
-    // Source: https://github.com/Psiphon-Inc/googleads-mobile-android-mediation/tree/master/ThirdPartyAdapters/mopub
-    implementation(name: 'mopub-release', ext: 'aar')
-
-    implementation "com.google.ads.mediation:verizonmedia:$rootProject.ext.verizonmediaAdapterVersion"
+    //Amazon Transparent Ads Marketplace
+    implementation 'com.amazon.android:aps-sdk:8.4.3@aar'
+    //end, FreeStar
 
     implementation "io.reactivex.rxjava2:rxandroid:$rootProject.ext.rxandroidVersion"
     implementation "io.reactivex.rxjava2:rxjava:$rootProject.ext.rxjavaVersion"

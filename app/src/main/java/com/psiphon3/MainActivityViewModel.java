@@ -53,12 +53,12 @@ public class MainActivityViewModel extends AndroidViewModel implements Lifecycle
         LocalBroadcastManager.getInstance(getApplication()).registerReceiver(broadcastReceiver, intentFilter);
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
+    @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
     protected void onLifeCycleStop() {
         tunnelServiceInteractor.onStop(getApplication());
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_START)
+    @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
     protected void onLifeCycleStart() {
         tunnelServiceInteractor.onStart(getApplication());
     }

@@ -4,51 +4,56 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:installLocation="auto">
     <uses-sdk tools:overrideLibrary="ca.psiphon,
+androidx.media2.common,
+androidx.media2.player,
+androidx.media2.session,
+androidx.media2.widget,
+com.adsbynimbus.android.nimbus,
+com.adsbynimbus.core,
+com.adsbynimbus.openrtb,
+com.adsbynimbus.render,
+com.adsbynimbus.render.video,
+com.adsbynimbus.render.web,
+com.adsbynimbus.request,
+com.adsbynimbus.request.okhttp,
+com.adsbynimbus.ui,
+com.amazon.device.ads,
+com.applovin.sdk,
+com.criteo.publisher,
+com.freestar.android.ads,
+com.freestar.android.ads.admob,
+com.freestar.android.ads.amazon,
+com.freestar.android.ads.applovin,
+com.freestar.android.ads.criteo,
+com.freestar.android.ads.facebook,
+com.freestar.android.ads.google,
+com.freestar.android.ads.mopub,
+com.freestar.android.ads.nimbus,
+com.freestar.android.ads.tam,
+com.freestar.android.ads.unityads,
+com.freestar.android.ads.vungle,
+com.google.android.ads.consent,
+com.google.android.exoplayer2,
+com.google.android.exoplayer2.core,
+com.google.android.exoplayer2.source.dash,
+com.google.android.exoplayer2.source.hls,
+com.google.android.exoplayer2.source.smoothstreaming,
+com.google.android.exoplayer2.ui,
+com.google.android.gms.ads,
+com.google.android.gms.ads.impl,
+com.google.android.gms.ads_base,
+com.google.android.gms.gass,
+com.google.android.gms.measurement.sdk.api,
+com.google.android.gms.measurement_base,
+com.jakewharton.threetenabp,
+com.moat.analytics.mobile.mpub,
 com.mopub.mobileads,
 com.mopub.mobileads.banner,
 com.mopub.mobileads.base,
 com.mopub.mobileads.interstitial,
-com.mopub.mobileads.rewarded_video,
-com.moat.analytics.mobile.mpub,
-com.mopub.mobileads.admob,
-com.mopub.mobileads.dfp.adapters,
-com.mopub.mobileads.native_video,
 com.mopub.mobileads.native_static,
-androidx.media2.widget,
-androidx.media2.session,
-androidx.media2.player,
-androidx.media2.common,
-com.google.android.gms.ads.impl,
-com.google.android.gms.gass,
-com.google.android.gms.ads,
-com.google.android.exoplayer2,
-com.google.android.exoplayer2.ui,
-com.google.android.exoplayer2.source.dash,
-com.google.android.exoplayer2.source.hls,
-com.google.android.exoplayer2.source.smoothstreaming,
-com.google.android.exoplayer2.core,
-com.google.android.gms.ads_base,
-com.google.android.gms.measurement_base,
-com.google.android.gms.measurement.sdk.api,
-com.jakewharton.threetenabp,
-com.millennialmedia.adapter,
-com.verizon.ads,
-com.verizon.ads.edition,
-com.verizon.ads.inlineplacement,
-com.verizon.ads.inlinewebadapter,
-com.verizon.ads.interstitialplacement,
-com.verizon.ads.interstitialvastadapter,
-com.verizon.ads.interstitialwebadapter,
-com.verizon.ads.nativeplacement,
-com.verizon.ads.nativeverizonnativeadapter,
-com.verizon.ads.omsdk,
-com.verizon.ads.support,
-com.verizon.ads.uriexperience,
-com.verizon.ads.vastcontroller,
-com.verizon.ads.verizonnativecontroller,
-com.verizon.ads.videoplayer,
-com.verizon.ads.webcontroller,
-com.verizon.ads.webview" />
+com.mopub.mobileads.native_video,
+com.mopub.mobileads.rewarded_video" />
     <supports-screens
                   android:smallScreens="true"
                   android:normalScreens="true"
@@ -61,6 +66,9 @@ com.verizon.ads.webview" />
     <!-- instruct manifest merger to remove any location permissions from the final manifest -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" tools:node="remove"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" tools:node="remove"/>
+    <!-- instruct manifest merger to remove any external storage permissions from the final manifest -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="com.android.vending.BILLING"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
@@ -81,9 +89,15 @@ com.verizon.ads.webview" />
         <!-- Required for newer devices -->
         <uses-library android:name="org.apache.http.legacy" android:required="false"/>
 
+        <meta-data android:name="com.google.android.gms.version" android:value="@integer/google_play_services_version"/>
+
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="${admobAppId}"/>
+
+        <meta-data
+            android:name="applovin.sdk.key"
+            android:value="hO52kFtMvEo_AoeRzED0_XXfS1B1VQp9GW50yudJO-eUUTOmRBLl3c-2GyTevLNspll_fN5PLTbAHOakoTuHuP" />
 
         <activity
             android:name="com.psiphon3.MainActivity"
@@ -200,7 +214,6 @@ com.verizon.ads.webview" />
             android:exported="false">
         </provider>
 
-        <activity android:name="com.google.android.gms.ads.AdActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize" />
     </application>
 
 </manifest>
