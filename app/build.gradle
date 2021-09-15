@@ -93,11 +93,13 @@ android {
             }
             matchingFallbacks = ['release']
             // Override landing page for internal testing release
-            buildConfigField "String", "STATIC_LANDING_PAGE_URL", '"https://landing.dev.psi.cash/dev-index.html"'
+            buildConfigField "String", "STATIC_LANDING_PAGE_URL", '"https://landing.psi.cash/"'
+            /*
             // Override IAB verification server name for internal testing release
             buildConfigField "Boolean", "PURCHASE_VERIFIER_DEV_ENVIRONMENT", "true"
             // Override PsiCash environment for internal testing release
             buildConfigField "Boolean", "PSICASH_DEV_ENVIRONMENT", "true"
+             */
             applicationVariants.all { variant ->
                 variant.outputs.all {
                     outputFileName = "Psiphon_${getGitBranch}_${getGitHash}.apk"
