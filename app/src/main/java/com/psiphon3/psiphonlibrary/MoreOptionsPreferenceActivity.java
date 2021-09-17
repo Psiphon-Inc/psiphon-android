@@ -95,7 +95,6 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
                 if (action != null) {
                     if (BroadcastIntent.TUNNEL_RESTART.equals(action)) {
                         tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), false);
-                        finish();
                     }
                 }
             }
