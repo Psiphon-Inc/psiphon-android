@@ -296,7 +296,7 @@ public class SpeedBoostTabFragment extends Fragment {
 
                     button.setCompoundDrawables(buttonDrawable, null, null, null);
 
-                    String priceTag = String.format(Locale.US, "%d", priceInteger);
+                    String priceTag = String.format(Locale.getDefault(), "%d", priceInteger);
                     button.setText(priceTag);
 
                     if (balance >= priceInteger) {
