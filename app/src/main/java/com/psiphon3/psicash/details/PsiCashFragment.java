@@ -465,12 +465,12 @@ public class PsiCashFragment extends Fragment
         String countdownButtonText;
         if (TimeUnit.MILLISECONDS.toMinutes(l) >= 5) {
             // If remaining time is more than 5 minutes show HH:MM
-            countdownButtonText = String.format(Locale.US, "%02d:%02d", h, m);
+            countdownButtonText = String.format(Locale.getDefault(), "%02d:%02d", h, m);
         } else {
             // If remaining time is less than 5 minutes then show MM::SS
-            countdownButtonText = String.format(Locale.US, "%02d:%02d", m, s);
+            countdownButtonText = String.format(Locale.getDefault(), "%02d:%02d", m, s);
         }
-        speedBoostBtnClickerLabel.setText(String.format(Locale.US, "%s - %s",
+        speedBoostBtnClickerLabel.setText(String.format(Locale.getDefault(), "%s %s",
                 getString(R.string.speed_boost_active_label), countdownButtonText));
 
     }
