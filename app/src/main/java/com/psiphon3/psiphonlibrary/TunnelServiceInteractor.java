@@ -19,6 +19,8 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import static android.content.Context.ACTIVITY_SERVICE;
+
 import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -53,9 +55,12 @@ import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.disposables.Disposable;
 
-import static android.content.Context.ACTIVITY_SERVICE;
-
 public class TunnelServiceInteractor {
+    public enum RestartMode {
+        TUNNEL,
+        TUNNEL_NO_HOME_PAGE,
+        VPN,
+    }
     private static final String SERVICE_STARTING_BROADCAST_INTENT = "SERVICE_STARTING_BROADCAST_INTENT";
     public static final String AUTHORIZATIONS_REMOVED_BROADCAST_INTENT = "AUTHORIZATIONS_REMOVED_BROADCAST_INTENT";
     public static final String PSICASH_PURCHASE_REDEEMED_BROADCAST_INTENT = "PSICASH_PURCHASE_REDEEMED_BROADCAST_INTENT";
@@ -70,6 +75,7 @@ public class TunnelServiceInteractor {
     private boolean isStopped = true;
     private boolean shouldRegisterAsActivity = false;
     private Disposable serviceMessengerDisposable;
+    private Disposable restartServiceDisposable;
     private Context context;
 
     public TunnelServiceInteractor(Context context, boolean registerAsActivity) {
@@ -154,13 +160,21 @@ public class TunnelServiceInteractor {
         sendServiceMessage(TunnelManager.ClientToServiceMessage.STOP_SERVICE.ordinal(), null);
     }
 
-    public void scheduleRunningTunnelServiceRestart(Context context, boolean resetReconnectFlag) {
+    public void scheduleVpnServiceRestart(Context context) {
         String runningService = getRunningService(context);
         if (runningService == null) {
             // There is no running service, do nothing.
             return;
         }
-        commandTunnelRestart(resetReconnectFlag);
+        if (restartServiceDisposable != null && !restartServiceDisposable.isDisposed()) {
+            // call in progress, do nothing
+            return;
+        }
+        // Start observing service connection for disconnected message then command service stop.
+        restartServiceDisposable = serviceBindingFactory.getMessengerObservable()
+                .doOnComplete(() -> startTunnelService(context))
+                .subscribe();
+        stopTunnelService();
     }
 
     public void sendLocaleChangedMessage() {
@@ -196,10 +210,14 @@ public class TunnelServiceInteractor {
         return null;
     }
 
-    private void commandTunnelRestart(boolean resetReconnectFlag) {
+    /**
+     * @param resetReconnectFlag If true then a home page intent will fire after the reconnect,
+     *                           Otherwise the tunnel should reconnect without opening a home page.
+     */
+    public void commandTunnelRestart(boolean resetReconnectFlag) {
         Bundle data = new Bundle();
-        data.putBoolean(TunnelManager.RESET_RECONNECT_FLAG,resetReconnectFlag);
-        sendServiceMessage(TunnelManager.ClientToServiceMessage.RESTART_SERVICE.ordinal(), data);
+        data.putBoolean(TunnelManager.RESET_RECONNECT_FLAG, resetReconnectFlag);
+        sendServiceMessage(TunnelManager.ClientToServiceMessage.RESTART_TUNNEL.ordinal(), data);
     }
 
     private void bindTunnelService(Context context, Intent intent) {

@@ -33,6 +33,7 @@ import com.psiphon3.psicash.PsiCashFragment;
 import com.psiphon3.psicash.PsiCashSubscribedFragment;
 import com.psiphon3.psicash.PsiCashViewModel;
 import com.psiphon3.psicash.util.BroadcastIntent;
+import com.psiphon3.psiphonlibrary.TunnelServiceInteractor;
 import com.psiphon3.subscription.R;
 
 import java.util.ArrayList;
@@ -177,7 +178,7 @@ public class HomeTabFragment extends Fragment {
                 String action = intent.getAction();
                 if (action != null) {
                     if (action.equals(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE)) {
-                        viewModel.restartTunnelService(false);
+                        viewModel.restartPsiphon(TunnelServiceInteractor.RestartMode.TUNNEL_NO_HOME_PAGE);
                     }
                 }
             }
