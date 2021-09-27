@@ -304,17 +304,28 @@
     and does not automatically renew after its expiry, unlike a subscription -->
     <string name="PaymentChooserActivity.TimePassTab">المرور المؤقت</string>
 
+    <!-- An alert message to the user shown when a PsiCash login succeeds. There is a fixed number of times that a user can merge a pre-account balance into a PsiCash account. This message indicates that the user has hit that limit and the merge that occurred is the last one allowed.
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_last_tracker_merge_notification">لقد ولجت حسابك في PsiCash. لقد نُقل رصيدك السابق من هذا الجهاز إلى حسابك، لكن هذه هي آخر مرة سيحدث دمج الرصيد.</string>
+
     <!-- Title of the PsiCash account log out alert confirmation dialog -->
     <string name="psicash_logout_alert_title">تسجيل الخروج</string>
 
     <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Dismisses the log out dialog without any further action when clicked. -->
     <string name="psicash_cancel_lbl">إلغاء</string>
 
+    <!-- PsiCash account generic title
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_account_generic_title">حساب PsiCash</string>
+
     <!-- PsiCash account 'log out' preference title as it appears in the app's preference screen. -->
     <string name="psicash_account_logout_pref_title">تسجيل الخروج</string>
 
     <!-- PsiCash account 'log in' preference title as it appears in the app's preference screen. -->
     <string name="psicash_account_login_pref_title">تسجيل الدخول</string>
+
+    <!-- PsiCash account 'manage account' preference title as it appears in the app's preference screen. -->
+    <string name="psicash_account_manage_pref_title">إدارة الحساب</string>
 
     <!-- Input field caption for username on the PsiCash account sign screen -->
     <string name="psicash_account_login_username_hint">اسم المستخدم</string>
@@ -333,6 +344,9 @@
 
     <!-- Label text for 'Create Account' button on the PsiCash account sign in screen. The button opens 'Create account' dialog when clicked -->
     <string name="psicash_account_create_account_btn_lbl">إنشاء حساب</string>
+
+    <!-- Button in the account creation encouragement dialog, proceeds with PsiCash purchase without account when clicked -->
+    <string name="psicash_continue_without_account_lbl">اﻻستمرار بدون حساب</string>
 
     <!--Generic 'close' alert prompt title-->
     <string name="psicash_webview_close_alert_title">‮إغلاق</string>

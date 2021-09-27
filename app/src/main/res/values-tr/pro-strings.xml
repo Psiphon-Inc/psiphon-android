@@ -84,7 +84,7 @@
 
     <!-- Alert error message informing user that their Speed Boost purchase request failed because their PsiCash account tokens have expired and they need to
     log in again prior to retrying last operation. Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_transaction_expired_tokens_message">PsiCash oturumunuzun süresi geçmiş. Hesabınıza giriş yaparak yeniden deneyin.</string>
+    <string name="psicash_transaction_expired_tokens_message">PsiCash oturumunuzun süresi dolmuş. Hesabınıza oturum açarak yeniden deneyin.</string>
 
     <!-- Alert error message informing user that the request failed due to a 'bad request' error.
     Note: 'PsiCash' should not be translated or transliterated. -->
@@ -421,7 +421,7 @@
     <string name="psicash_account_login_password_hint">Parola</string>
 
     <!-- Clickable text on the PsiCash account sign in screen, opens 'Forgot credentials' dialog when clicked. Note that we are not offering username recovery at the moment -->
-    <string name="psicash_account_login_forgot_lbl">Parolayı mı unuttunuz?</string>
+    <string name="psicash_account_login_forgot_lbl">Parolamı unuttum</string>
 
     <!-- Label text for 'Log In' button on the PsiCash account sign in screen -->
     <string name="psicash_account_log_in_btn_lbl">Oturum açın</string>
