@@ -42,11 +42,8 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.billing.SubscriptionState;
-import com.psiphon3.psicash.PsiCashFragment;
-import com.psiphon3.psicash.PsiCashSubscribedFragment;
-import com.psiphon3.psicash.PsiCashViewModel;
-import com.psiphon3.psicash.util.BroadcastIntent;
-import com.psiphon3.psiphonlibrary.TunnelServiceInteractor;
+import com.psiphon3.psicash.details.PsiCashDetailsViewModel;
+import com.psiphon3.psicash.details.PsiCashFragment;
 import com.psiphon3.subscription.R;
 
 import java.util.ArrayList;
@@ -146,6 +143,7 @@ public class HomeTabFragment extends Fragment {
                 })
                 .doOnNext(this::loadEmbeddedWebView)
                 .subscribe());
+
 
         PsiCashDetailsViewModel psiCashDetailsViewModel = new ViewModelProvider(requireActivity(),
                 new ViewModelProvider.AndroidViewModelFactory(requireActivity().getApplication()))

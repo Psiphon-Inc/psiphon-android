@@ -88,7 +88,7 @@ public class PsiCashStoreActivity extends LocalizedActivities.AppCompatActivity 
                 String action = intent.getAction();
                 if (action != null) {
                     if (BroadcastIntent.TUNNEL_RESTART.equals(action)) {
-                        tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(getApplicationContext(), false);
+                        tunnelServiceInteractor.commandTunnelRestart(false);
                         finish();
                     }
                 }

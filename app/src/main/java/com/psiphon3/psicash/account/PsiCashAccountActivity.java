@@ -83,7 +83,7 @@ public class PsiCashAccountActivity extends LocalizedActivities.AppCompatActivit
                 String action = intent.getAction();
                 if (action != null) {
                     if (BroadcastIntent.TUNNEL_RESTART.equals(action)) {
-                        tunnelServiceInteractor.scheduleRunningTunnelServiceRestart(context, false);
+                        tunnelServiceInteractor.commandTunnelRestart(false);
                     }
                 }
             }
