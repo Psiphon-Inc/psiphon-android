@@ -37,6 +37,7 @@ android {
                 testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
                 multiDexEnabled true
                 manifestPlaceholders = [ admobAppId:admobAppId ]
+                vectorDrawables.useSupportLibrary = true
                 // Build type specific defaults below
                 //
                 // Specify non-null URL to override landing page from handshake

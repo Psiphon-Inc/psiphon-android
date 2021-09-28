@@ -86,7 +86,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         REGISTER,
         UNREGISTER,
         STOP_SERVICE,
-        RESTART_SERVICE,
+        RESTART_TUNNEL,
         CHANGED_LOCALE,
         ON_RESUME,
     }
@@ -713,7 +713,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     }
                     break;
 
-                case RESTART_SERVICE:
+                case RESTART_TUNNEL:
                     if (manager != null) {
                         final boolean resetReconnectFlag;
                         Bundle data = msg.getData();
@@ -728,8 +728,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                         manager.m_compositeDisposable.add(
                                 manager.getTunnelConfigSingle()
                                         .doOnSuccess(config -> {
+                                            if (resetReconnectFlag) {
+                                                manager.m_isReconnect.set(false);
+                                            }
                                             manager.setTunnelConfig(config);
-                                            manager.onRestartCommand(resetReconnectFlag);
+                                            manager.onRestartTunnel();
                                         })
                                         .subscribe());
                     }
@@ -934,16 +937,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         }
     }
 
-    private void onRestartCommand(boolean resetReconnectFlag) {
+    private void onRestartTunnel() {
         m_Handler.post(new Runnable() {
             @Override
             public void run() {
-                if (resetReconnectFlag) {
-                    m_isReconnect.set(false);
-                }
                 try {
-                    Builder vpnBuilder = ((TunnelVpnService) m_parentService).newBuilder();
-                    m_tunnel.seamlessVpnRestart(vpnBuilder);
+                    m_tunnel.restartPsiphon();
                 } catch (PsiphonTunnel.Exception e) {
                     MyLog.e(R.string.start_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
                 }
@@ -1179,6 +1178,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             }
 
             json.put("EmitServerAlerts", true);
+
+            if (Utils.getUnsafeTrafficAlertsOptInState(context)) {
+                json.put("ClientFeatures", new JSONArray("[\"unsafe-traffic-alerts\"]"));
+            }
 
             return json.toString();
         } catch (JSONException e) {
