@@ -441,8 +441,8 @@ public class PsiCashClient {
         return bcp47Tag.toString();
     }
 
-    public String getDiagnosticInfoJson() {
-        PsiCashLib.GetDiagnosticInfoResult diagnosticInfoResult = psiCashLibWrapper.getDiagnosticInfo();
+    public String getDiagnosticInfoJson(boolean lite) {
+        PsiCashLib.GetDiagnosticInfoResult diagnosticInfoResult = psiCashLibWrapper.getDiagnosticInfo(lite);
         if (diagnosticInfoResult.error != null) {
             return JSONObject.quote(diagnosticInfoResult.error.message);
         }

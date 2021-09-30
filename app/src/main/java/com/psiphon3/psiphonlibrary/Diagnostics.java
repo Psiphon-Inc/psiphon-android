@@ -200,8 +200,8 @@ public class Diagnostics {
             diagnosticInfo.put("DiagnosticHistory", diagnosticHistory);
             diagnosticInfo.put("StatusHistory", statusHistory);
 
-            // Append PsiCash diagnostic info
-            String psiCashJson = PsiCashClient.getInstance(context).getDiagnosticInfoJson();
+            // Append PsiCash diagnostic info sans purchase prices
+            String psiCashJson = PsiCashClient.getInstance(context).getDiagnosticInfoJson(true);
             diagnosticInfo.put("PsiCash", (psiCashJson == null) ? JSONObject.NULL : new JSONObject(psiCashJson));
 
             JSONObject diagnosticObject = new JSONObject();
