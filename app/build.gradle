@@ -125,15 +125,15 @@ repositories {
     maven { url 'https://jitpack.io' }
     maven { url "https://freestar.jfrog.io/artifactory/freestar-mediation-android-sdk" }
     maven { url "https://s3.amazonaws.com/moat-sdk-builds" }
+    maven { url "https://artifact.bytedance.com/repository/pangle" }
     maven {
         url = uri("https://adsbynimbus-public.s3.amazonaws.com/android/sdks")
         credentials {
             username = "*"
         }
-        // Publisher on SDK versions below 1.10.0 must add the following block
-        metadataSources {
-            mavenPom()
-            ignoreGradleMetadataRedirection()
+        content {
+            includeGroup("com.adsbynimbus.openrtb")
+            includeGroup("com.adsbynimbus.android")
         }
     }
 }
@@ -159,44 +159,49 @@ dependencies {
     implementation "androidx.preference:preference:$rootProject.ext.preferenceVersion"
 
     //begin Freestar
-    implementation 'com.freestar.android.ads:freestar:4.4.0'
-    implementation 'com.freestar.android.ads.admob:freestar-admob-adapter:20.2.0.1'
-    implementation 'com.freestar.android.ads.applovin:freestar-applovin-adapter:9.14.8.3'
-    implementation 'com.freestar.android.ads.tam:freestar-tam-adapter:8.4.3.1'
-    implementation 'com.freestar.android.ads.google:freestar-google-adapter:20.2.0.1'
+    implementation 'com.freestar.android.ads:freestar:4.6.0'
+    implementation 'com.freestar.android.ads.admob:freestar-admob-adapter:20.3.0.0'
+    implementation 'com.freestar.android.ads.applovin:freestar-applovin-adapter:10.3.1.0'
+    implementation 'com.freestar.android.ads.tam:freestar-tam-adapter:8.4.3.2'
+    implementation 'com.freestar.android.ads.google:freestar-google-adapter:20.3.0.0'
     implementation 'com.freestar.android.ads.criteo:freestar-criteo-adapter:4.2.1.2'
     implementation 'com.freestar.android.ads.unityads:freestar-unity-adapter:3.7.1.2'
-    implementation 'com.freestar.android.ads.vungle:freestar-vungle-adapter:6.7.0.1'  //Fullscreen ads only
+    implementation 'com.freestar.android.ads.vungle:freestar-vungle-adapter:6.10.2.1'
     implementation 'com.freestar.android.ads.facebook:freestar-facebook-adapter:6.1.0.1'
-    implementation 'com.freestar.android.ads.mopub:freestar-mopub-adapter:5.16.4.2'
-    implementation 'com.freestar.android.ads.nimbus:freestar-nimbus-adapter:1.9.1.2'
+    implementation 'com.freestar.android.ads.mopub:freestar-mopub-adapter:5.18.0.0'
+    implementation 'com.freestar.android.ads.nimbus:freestar-nimbus-adapter:1.10.4.0'
+    implementation 'com.freestar.android.ads.pangle:freestar-pangle-adapter:3.6.0.0'
 
-    implementation 'com.applovin:applovin-sdk:9.14.8'
+    implementation 'com.applovin:applovin-sdk:10.3.1'
     implementation 'com.criteo.publisher:criteo-publisher-sdk:4.2.1'
     implementation "com.google.android.gms:play-services-ads:$rootProject.ext.playServicesAdsVersion"
     implementation("com.google.android.ads.consent:consent-library:$rootProject.ext.adsConsentLibraryVersion") {
         exclude group: 'com.android.support'
         exclude group: 'com.google.code.gson', module: 'gson'
     }
-    implementation('com.facebook.android:audience-network-sdk:6.2.1') {
+    implementation 'com.mopub.mediation:facebookaudiencenetwork:6.5.1.0'
+    implementation('com.facebook.android:audience-network-sdk:6.5.1') {
         exclude group: 'com.google.android.exoplayer'
         exclude group: 'com.google.android.gms'
         exclude group: 'com.android.support'
     }
-    implementation('com.github.vungle:vungle-android-sdk:6.7.0') {
-        exclude group: 'com.android.support'
-    }
-    implementation("com.mopub:mopub-sdk:$rootProject.ext.mopubSdkVersion@aar") {
+    implementation 'com.vungle:publisher-sdk-android:6.10.2'
+    implementation('com.mopub:mopub-sdk:5.18.0@aar') {
         transitive = true
         exclude group: 'com.android.support'
     }
+
     //nimbus
-    implementation "com.adsbynimbus.android:nimbus:1.9.1" // Full Nimbus SDK with NimbusAdManager
-    implementation "com.adsbynimbus.android:extension-okhttp:1.9.1" // Use OkHttp with NimbusAdManager
-    implementation "com.adsbynimbus.android:extension-facebook:1.9.1"
+    implementation "com.adsbynimbus.android:nimbus:1.10.4" // Full Nimbus SDK with NimbusAdManager
+    implementation "com.adsbynimbus.android:extension-okhttp:1.10.4" // Use OkHttp with NimbusAdManager
+    implementation "com.adsbynimbus.android:extension-facebook:1.10.4"
+    implementation "com.adsbynimbus.openrtb:kotlin:0.7.4"
 
     //Amazon Transparent Ads Marketplace
     implementation 'com.amazon.android:aps-sdk:8.4.3@aar'
+
+    //Pangle; also requires play-services-ads-identifier but already in Criteo
+    implementation 'com.pangle.global:ads-sdk:3.6.0.4'
     //end, FreeStar
 
     implementation "io.reactivex.rxjava2:rxandroid:$rootProject.ext.rxandroidVersion"
