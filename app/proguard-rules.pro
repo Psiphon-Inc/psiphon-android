@@ -210,5 +210,9 @@
 -keep class com.bytedance.sdk.** { *; }
 -keep class com.pgl.sys.ces.* {*;}
 
+#hyprmx
+-keep class com.hyprmx.** { *; }
+-keep interface com.hyprmx.** { *; }
+
 # End of ProGuard rules for FreeStar Ads Mediation SDK
 
