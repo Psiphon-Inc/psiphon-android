@@ -1,15 +1,12 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 30
     useLibrary 'org.apache.http.legacy'
 
     android.defaultConfig.vectorDrawables.useSupportLibrary = true
 
     repositories{
-        flatDir{
-            dirs 'libs'
-        }
         maven {
             url "https://maven.google.com"
         }
@@ -31,7 +28,7 @@ android {
                 applicationId "com.psiphon3.subscription"
                 resValue "string", "tray__authority", "${applicationId}.tray"
                 minSdkVersion 14
-                targetSdkVersion 29
+                targetSdkVersion 30
                 versionCode verCode
                 versionName verName
                 testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -75,6 +72,11 @@ android {
     }
 
     def propFile = new File('signing.properties')
+    compileOptions {
+        sourceCompatibility = '1.8'
+        targetCompatibility = '1.8'
+    }
+
     if (propFile.canRead()) {
         def Properties props = new Properties()
         props.load(new FileInputStream(propFile))
@@ -91,12 +93,6 @@ android {
     } else {
         throw new GradleException('signing.properties not found!')
     }
-
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
-    buildToolsVersion = '29.0.3'
 
     buildTypes.each {
         it.buildConfigField 'String', 'SUBSCRIPTION_SPONSOR_ID', getBuildProperty('SUBSCRIPTION_SPONSOR_ID')
@@ -142,11 +138,11 @@ dependencies {
     implementation files('libs/jackson-core-2.2.0.jar')
     implementation files('libs/achartengine-1.0.0.jar')
     implementation files('libs/snakeyaml-1.10-android.jar')
-    implementation(name: 'ca.psiphon', ext: 'aar')
+    implementation files('libs/ca.psiphon.aar')
 
     implementation project(':tray')
 
-    implementation(name: 'psicashlib-release', ext: 'aar')
+    implementation files('libs/psicashlib-release.aar')
 
     implementation "androidx.multidex:multidex:$rootProject.ext.multidexVersion"
     implementation "androidx.appcompat:appcompat:$rootProject.ext.appcompatVersion"
