@@ -10,6 +10,7 @@ androidx.media2.session,
 androidx.media2.widget,
 com.adsbynimbus.android.nimbus,
 com.adsbynimbus.core,
+com.adsbynimbus.facebook,
 com.adsbynimbus.openrtb,
 com.adsbynimbus.render,
 com.adsbynimbus.render.video,
@@ -29,6 +30,7 @@ com.freestar.android.ads.facebook,
 com.freestar.android.ads.google,
 com.freestar.android.ads.mopub,
 com.freestar.android.ads.nimbus,
+com.freestar.android.ads.pangle,
 com.freestar.android.ads.tam,
 com.freestar.android.ads.unityads,
 com.freestar.android.ads.vungle,
@@ -50,10 +52,13 @@ com.moat.analytics.mobile.mpub,
 com.mopub.mobileads,
 com.mopub.mobileads.banner,
 com.mopub.mobileads.base,
+com.mopub.mobileads.facebookaudiencenetwork,
 com.mopub.mobileads.interstitial,
 com.mopub.mobileads.native_static,
 com.mopub.mobileads.native_video,
-com.mopub.mobileads.rewarded_video" />
+com.mopub.mobileads.networking,
+com.mopub.mobileads.rewarded_video,
+com.mopub.mobileads.utils" />
     <supports-screens
                   android:smallScreens="true"
                   android:normalScreens="true"
@@ -63,6 +68,8 @@ com.mopub.mobileads.rewarded_video" />
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <!-- required for targetSdk 30+ to show all apps in the VPN exclusions dialog -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
     <!-- instruct manifest merger to remove any location permissions from the final manifest -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" tools:node="remove"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" tools:node="remove"/>
