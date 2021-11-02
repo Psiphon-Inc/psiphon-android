@@ -74,6 +74,11 @@ public class PsiCashAccountWebViewDialog {
 
         FloatingActionButton floatingActionButton = contentView.findViewById(R.id.close_btn);
 
+        View psiphonConnectingBlockingOverlay = contentView.findViewById(R.id.psiphon_connecting_blocking_overlay);
+        // Give "Wait while connecting" blocking overlay dark gray background with 10% transparency
+        psiphonConnectingBlockingOverlay.setBackgroundColor(Color.DKGRAY);
+        psiphonConnectingBlockingOverlay.setAlpha(0.9f);
+
         dialog = new Dialog(context, R.style.Theme_AppCompat_Dialog) {
             // Hook up minimal web view navigation
             @Override
@@ -209,9 +214,14 @@ public class PsiCashAccountWebViewDialog {
                 tunnelStateDisposable = tunnelStateFlowable
                         .filter(tunnelState -> !tunnelState.isUnknown())
                         .doOnNext(tunnelState -> {
-                            if (!tunnelState.isRunning() ||
-                                    !tunnelState.connectionData().isConnected()) {
+                            if (!tunnelState.isRunning()) {
                                 close();
+                            } else {
+                                if (tunnelState.connectionData().isConnected()) {
+                                    psiphonConnectingBlockingOverlay.setVisibility(View.GONE);
+                                } else {
+                                    psiphonConnectingBlockingOverlay.setVisibility(View.VISIBLE);
+                                }
                             }
                         })
                         .subscribe());

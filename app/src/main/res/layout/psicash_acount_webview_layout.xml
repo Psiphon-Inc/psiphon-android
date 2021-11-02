@@ -36,10 +36,23 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/dummy_view" />
 
-    <include layout="@layout/include_progress_overlay"
+    <include
+        layout="@layout/include_progress_overlay"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/dummy_view"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/dummy_view" />
+
+    <include
+        layout="@layout/psicash_web_psiphon_connecting_overlay"
+        android:id="@+id/psiphon_connecting_blocking_overlay"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/dummy_view"
         app:layout_constraintStart_toStartOf="parent"
