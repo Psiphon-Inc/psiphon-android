@@ -82,6 +82,14 @@
     should try updating or reinstalling the app. Note: 'PsiCash' should not be translated or transliterated. -->
     <string name="psicash_transaction_invalid_tokens_message">Aplikasi memasuki keadaan tidak sah. Silakan pasang ulang aplikasi untuk dapat terus menggunakan PsiCash.</string>
 
+    <!-- Alert error message informing user that their Speed Boost purchase request failed because their PsiCash account tokens have expired and they need to
+    log in again prior to retrying last operation. Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_transaction_expired_tokens_message">Akun PsiCash Anda telah kedaluwarsa. Masuk ke akun Anda dan coba lagi.</string>
+
+    <!-- Alert error message informing user that the request failed due to a 'bad request' error.
+    Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_transaction_bad_request_message">Server PsiCash menunjukkan permintaan tersebut tidak valid. Silakan coba lagi nanti.</string>
+
     <!-- Alert error message informing user that their Speed Boost purchase request failed due to a server error and that they should try again in a few minutes -->
     <string name="transaction_server_error_message">Kesalahan server. Silakan coba lagi dalam beberapa menit</string>
 
@@ -147,6 +155,10 @@
 
     <!-- Title of the button that loads and plays a video ad that rewards users with PsiCash -->
     <string name="psicash_purchase_free_button_price">Gratis</string>
+
+    <!-- PsiCash in-app purchase disclaimer that appears on the bottom of the screen where users can buy different amounts of PsiCash from the PlayStore.
+    Do not translate or transliterate terms PsiCash or Psiphon Pro, preserve the HTML <b/> tag in <b>Creating a PsiCash account</b> if possible -->
+    <string name="psicash_store_disclaimer">PENTING: <b>Membuat akun PsiCash</b> akan membantu anda menjaga PsiCash anda apabila anda mencopot pemasangan Psiphon Pro, kosongkan penyimpanan aplikasi atau gunakan Psiphon di perangkat lain</string>
 
     <!-- A message to the user indicating that they need to be connected to Psiphon in order to use Speed Boost.
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
@@ -299,17 +311,34 @@
     and does not automatically renew after its expiry, unlike a subscription -->
     <string name="PaymentChooserActivity.TimePassTab">Pass Waktu</string>
 
+    <!-- A title for the PsiCash store screen as it appears in the navigation.
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_store_title">Toko PsiCash</string>
+
     <!-- Title of the PsiCash account log out alert confirmation dialog -->
     <string name="psicash_logout_alert_title">Keluar</string>
 
+    <!-- Button on the PsiCash account log out alert confirmation dialog for when Psiphon is running but has not finished connecting yet. Dismisses the log out dialog without any further action when clicked. -->
+    <string name="psicash_wait_lbl">Tunggu</string>
+
     <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Dismisses the log out dialog without any further action when clicked. -->
     <string name="psicash_cancel_lbl">Batal</string>
+
+    <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Proceeds to log out the user of their PsiCash account when clicked. -->
+    <string name="psicash_continue_log_out_lbl">Lanjutkan untuk keluar</string>
+
+    <!-- PsiCash account generic title
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_account_generic_title">Akun PsiCash</string>
 
     <!-- PsiCash account 'log out' preference title as it appears in the app's preference screen. -->
     <string name="psicash_account_logout_pref_title">Keluar</string>
 
     <!-- PsiCash account 'log in' preference title as it appears in the app's preference screen. -->
     <string name="psicash_account_login_pref_title">Masuk</string>
+
+    <!-- PsiCash account 'manage account' preference title as it appears in the app's preference screen. -->
+    <string name="psicash_account_manage_pref_title">Kelola akun</string>
 
     <!-- Input field caption for username on the PsiCash account sign screen -->
     <string name="psicash_account_login_username_hint">Nama pengguna</string>
@@ -325,6 +354,9 @@
 
     <!-- Separator text between the 'Log In' and 'Create Account' buttons on the PsiCash account sign in screen. -->
     <string name="psicash_account_separator_text">Atau</string>
+
+    <!-- Label text for 'Create Account' button on the PsiCash account sign in screen. The button opens 'Create account' dialog when clicked -->
+    <string name="psicash_account_create_account_btn_lbl">Membuat Akun</string>
 
     <!--Generic 'close' alert prompt title-->
     <string name="psicash_webview_close_alert_title">Tutup</string>

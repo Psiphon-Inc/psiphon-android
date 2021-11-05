@@ -457,4 +457,5 @@
 
     <!--Generic 'error' alert prompt message-->
     <string name="psicash_webview_error_alert_message">Bir sorun çıktı. Lütfen bir süre sonra yeniden deneyin.</string>
-</resources>
+
+    </resources>
