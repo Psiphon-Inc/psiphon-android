@@ -1411,16 +1411,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     }
 
     @Override
-    public void onSplitTunnelRegion(final String region) {
-        m_Handler.post(new Runnable() {
-            @Override
-            public void run() {
-                MyLog.v(R.string.split_tunnel_region, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, region);
-            }
-        });
-    }
-
-    @Override
     public void onUntunneledAddress(final String address) {
         m_Handler.post(new Runnable() {
             @Override
