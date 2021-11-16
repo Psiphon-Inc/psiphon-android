@@ -358,6 +358,9 @@
     <!-- Label text for 'Create Account' button on the PsiCash account sign in screen. The button opens 'Create account' dialog when clicked -->
     <string name="psicash_account_create_account_btn_lbl">Membuat Akun</string>
 
+    <!-- Button in the account creation encouragement dialog, proceeds with PsiCash purchase without account when clicked -->
+    <string name="psicash_continue_without_account_lbl">Lanjutkan tanpa akun</string>
+
     <!--Generic 'close' alert prompt title-->
     <string name="psicash_webview_close_alert_title">Tutup</string>
 
