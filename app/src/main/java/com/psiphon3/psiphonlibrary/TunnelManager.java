@@ -884,8 +884,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         m_startedTunneling.set(false);
         m_networkConnectionStateBehaviorRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
 
-        MyLog.v(R.string.current_network_type, MyLog.Sensitivity.NOT_SENSITIVE, Utils.getNetworkTypeName(m_parentService));
-
         MyLog.v(R.string.starting_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
 
         m_tunnelState.homePages.clear();
