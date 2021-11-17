@@ -458,4 +458,9 @@
     <!--Generic 'error' alert prompt message-->
     <string name="psicash_webview_error_alert_message">Bir sorun çıktı. Lütfen bir süre sonra yeniden deneyin.</string>
 
-    </resources>
+    <!-- A message shown on the blocking overlay when the users are trying to interact with
+    PsiCash account Create,Forgot Password, or Manage Account web page loaded internally while
+    Psiphon is connecting to the server.
+    Note: 'Psiphon' should not be translated or transliterated. -->
+    <string name="psicash_web_wait_tunnel_connecting">Lütfen Psiphon bağlantı kurarken bekleyin</string>
+</resources>

@@ -98,8 +98,10 @@ public class ProxyOptionsPreferenceActivity extends LocalizedActivities.AppCompa
                     .findPreference(getString(R.string.useCustomProxySettingsHostPreference));
             proxyPort = (EditTextPreference) preferences
                     .findPreference(getString(R.string.useCustomProxySettingsPortPreference));
-            proxyPort.setOnBindEditTextListener(editText ->
-                    editText.setInputType(InputType.TYPE_CLASS_NUMBER));
+            proxyPort.setOnBindEditTextListener(editText -> {
+                    editText.setInputType(InputType.TYPE_CLASS_NUMBER);
+                    editText.setSelection(editText.length());
+            });
 
             useProxyAuthentication = (CheckBoxPreference) preferences
                     .findPreference(getString(R.string.useProxyAuthenticationPreference));
@@ -107,8 +109,10 @@ public class ProxyOptionsPreferenceActivity extends LocalizedActivities.AppCompa
                     .findPreference(getString(R.string.useProxyUsernamePreference));
             proxyPassword = (EditTextPreference) preferences
                     .findPreference(getString(R.string.useProxyPasswordPreference));
-            proxyPassword.setOnBindEditTextListener(editText ->
-                    editText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD));
+            proxyPassword.setOnBindEditTextListener(editText -> {
+                    editText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                    editText.setSelection(editText.length());
+            });
             proxyDomain = (EditTextPreference) preferences
                     .findPreference(getString(R.string.useProxyDomainPreference));
 
