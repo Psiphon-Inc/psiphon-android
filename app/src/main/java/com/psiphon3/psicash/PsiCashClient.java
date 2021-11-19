@@ -175,15 +175,14 @@ public class PsiCashClient {
         metaData.put("propagation_channel_id", connectionData.propagationChannelId());
         metaData.put("client_region", connectionData.clientRegion());
         metaData.put("sponsor_id", connectionData.sponsorId());
-        for (Map.Entry<String, String> h : metaData.entrySet()) {
-            PsiCashLib.Error error = psiCashLibWrapper.setRequestMetadataItem(h.getKey(), h.getValue());
-            if (error != null) {
-                String errorMessage = error.message;
-                if (error.critical) {
-                    throw new PsiCashException.Critical(errorMessage);
-                } else {
-                    throw new PsiCashException.Recoverable(errorMessage);
-                }
+
+        PsiCashLib.Error error = psiCashLibWrapper.setRequestMetadataItems(metaData);
+        if (error != null) {
+            String errorMessage = error.message;
+            if (error.critical) {
+                throw new PsiCashException.Critical(errorMessage);
+            } else {
+                throw new PsiCashException.Recoverable(errorMessage);
             }
         }
     }
