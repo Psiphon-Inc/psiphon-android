@@ -6,8 +6,8 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.graphics.drawable.Drawable;
 import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.net.VpnService;
 import android.os.Build;
@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.text.TextUtils;
+import android.text.util.Linkify;
 import android.util.Pair;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -73,6 +74,8 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 
 public class MainActivity extends LocalizedActivities.AppCompatActivity {
+    private AlertDialog unsafeTrafficAlertsDialog;
+
     public MainActivity() {
         Utils.initializeSecureRandom();
     }
@@ -359,12 +362,17 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             multiProcessPreferences.getBoolean(getString(R.string.unsafeTrafficAlertsPreference));
             return false;
         } catch (ItemNotFoundException e) {
+            // Do not show multiple alerts.
+            if(unsafeTrafficAlertsDialog != null && unsafeTrafficAlertsDialog.isShowing()) {
+                return true;
+            }
             LayoutInflater inflater = this.getLayoutInflater();
             View dialogView = inflater.inflate(R.layout.unsafe_traffic_alert_prompt_layout, null);
             TextView tv = dialogView.findViewById(R.id.textViewMore);
             tv.append(String.format(Locale.US, "\n%s", getString(R.string.AboutMalAwareLink)));
+            Linkify.addLinks(tv, Linkify.WEB_URLS);
 
-            new AlertDialog.Builder(this)
+            unsafeTrafficAlertsDialog = new AlertDialog.Builder(this)
                     .setCancelable(false)
                     .setTitle(R.string.unsafe_traffic_alert_prompt_title)
                     .setView(dialogView)
@@ -681,6 +689,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                         tv.append(String.format(Locale.US, "\n%s", unsafeTrafficActionUrl));
                     }
                 }
+                Linkify.addLinks(tv, Linkify.WEB_URLS);
 
                 new AlertDialog.Builder(this)
                         .setCancelable(true)
