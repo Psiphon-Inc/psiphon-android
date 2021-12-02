@@ -30,7 +30,6 @@ import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.ActionBar;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
@@ -49,11 +48,6 @@ public class PsiCashAccountActivity extends LocalizedActivities.AppCompatActivit
     private TunnelServiceInteractor tunnelServiceInteractor;
     private BroadcastReceiver broadcastReceiver;
     private View progressOverlay;
-
-    public enum CallerActivity {
-        MORE_OPTIONS,
-        PSICASH_STORE,
-    }
 
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
 
@@ -140,14 +134,9 @@ public class PsiCashAccountActivity extends LocalizedActivities.AppCompatActivit
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
-            Intent intent = getIntent();
-            CallerActivity result =
-                    (CallerActivity) intent.getSerializableExtra(CallerActivity.class.getName());
-            if (result != null) {
-                setResult(Activity.RESULT_OK);
-                finish();
-                return true;
-            }
+            setResult(Activity.RESULT_OK);
+            finish();
+            return true;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -157,25 +146,6 @@ public class PsiCashAccountActivity extends LocalizedActivities.AppCompatActivit
         super.onResume();
         tunnelServiceInteractor.onResume();
         Intent intent = getIntent();
-        if (intent != null) {
-            CallerActivity result =
-                    (CallerActivity) intent.getSerializableExtra(CallerActivity.class.getName());
-            if (result != null) {
-                ActionBar actionBar = getSupportActionBar();
-                if (actionBar != null) {
-                    switch (result) {
-                        case PSICASH_STORE:
-                            actionBar.setTitle(R.string.psicash_store_title);
-                            break;
-                        case MORE_OPTIONS:
-                            actionBar.setTitle(R.string.moreOptions);
-                            break;
-                        default:
-                            break;
-                    }
-                }
-            }
-        }
     }
 
     @Override

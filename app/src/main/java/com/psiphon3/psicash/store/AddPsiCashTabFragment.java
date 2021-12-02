@@ -35,8 +35,6 @@ import com.psiphon3.TunnelState;
 import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.billing.PurchaseState;
 import com.psiphon3.psicash.PsiCashClient;
-import com.psiphon3.psicash.PsiCashException;
-import com.psiphon3.psicash.account.PsiCashAccountActivity;
 import com.psiphon3.psicash.util.UiHelpers;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
@@ -331,8 +329,7 @@ public class AddPsiCashTabFragment extends Fragment {
                         .setPositiveButton(R.string.psicash_account_continue_to_sign_in_lbl, (dialog, which) -> {
                             createAccount.set(true);
                             try {
-                                UiHelpers.openPsiCashAccountActivity(requireActivity(),
-                                        PsiCashAccountActivity.CallerActivity.PSICASH_STORE);
+                                UiHelpers.openPsiCashAccountActivity(requireActivity());
                             } catch (RuntimeException ignored) {
                             }
                         })

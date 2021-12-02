@@ -48,7 +48,6 @@ import com.google.ads.consent.ConsentStatus;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.MainActivity;
 import com.psiphon3.TunnelState;
-import com.psiphon3.psicash.account.PsiCashAccountActivity;
 import com.psiphon3.psicash.account.PsiCashAccountWebViewDialog;
 import com.psiphon3.psicash.settings.PsiCashSettingsIntent;
 import com.psiphon3.psicash.settings.PsiCashSettingsViewModel;
@@ -411,8 +410,7 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
             psiCashAccountLoginPref.setOnPreferenceClickListener(preference -> {
                 if (preference.isVisible() && preference.isEnabled()) {
                     try {
-                        UiHelpers.openPsiCashAccountActivity(requireActivity(),
-                                PsiCashAccountActivity.CallerActivity.MORE_OPTIONS);
+                        UiHelpers.openPsiCashAccountActivity(requireActivity());
                     } catch (RuntimeException ignored) {
                     }
                 }

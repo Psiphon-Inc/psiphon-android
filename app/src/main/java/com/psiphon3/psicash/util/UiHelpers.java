@@ -101,15 +101,11 @@ public class UiHelpers {
         activity.startActivityForResult(intent, PsiCashStoreActivity.ACTIVITY_REQUEST_CODE);
     }
 
-    public static void openPsiCashAccountActivity(final FragmentActivity activity,
-                                                  PsiCashAccountActivity.CallerActivity callerActivity) {
+    public static void openPsiCashAccountActivity(final FragmentActivity activity) {
         if (activity == null) {
             return;
         }
         Intent intent = new Intent(activity, PsiCashAccountActivity.class);
-        if (callerActivity != null) {
-            intent.putExtra(PsiCashAccountActivity.CallerActivity.class.getName(), callerActivity);
-        }
         activity.startActivityForResult(intent, PsiCashAccountActivity.ACTIVITY_REQUEST_CODE);
     }
 

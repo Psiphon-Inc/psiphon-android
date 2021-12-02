@@ -25,7 +25,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import com.psiphon3.psicash.account.PsiCashAccountActivity;
 import com.psiphon3.psicash.util.UiHelpers;
 import com.psiphon3.subscription.R;
 
@@ -41,8 +40,7 @@ public class LoginRequiredFragment extends Fragment {
 
         view.findViewById(R.id.continue_button).setOnClickListener(v -> {
             try {
-                UiHelpers.openPsiCashAccountActivity(requireActivity(),
-                        PsiCashAccountActivity.CallerActivity.PSICASH_STORE);
+                UiHelpers.openPsiCashAccountActivity(requireActivity());
             } catch (RuntimeException ignored) {
             }
         });

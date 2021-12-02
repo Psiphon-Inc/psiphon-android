@@ -45,7 +45,6 @@ import androidx.viewpager.widget.ViewPager;
 import com.google.android.material.tabs.TabLayout;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.billing.GooglePlayBillingHelper;
-import com.psiphon3.psicash.account.PsiCashAccountActivity;
 import com.psiphon3.psicash.mvibase.MviView;
 import com.psiphon3.psicash.util.UiHelpers;
 import com.psiphon3.psiphonlibrary.TunnelServiceInteractor;
@@ -231,8 +230,7 @@ public class StoreTabHostFragment extends Fragment
                 // show create account button
                 noAccountSignUpView.findViewById(R.id.sign_up_clicker).setOnClickListener(v -> {
                     try {
-                        UiHelpers.openPsiCashAccountActivity(requireActivity(),
-                                PsiCashAccountActivity.CallerActivity.PSICASH_STORE);
+                        UiHelpers.openPsiCashAccountActivity(requireActivity());
                     } catch (RuntimeException ignored) {
                     }
                 });

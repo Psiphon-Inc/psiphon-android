@@ -131,7 +131,7 @@ public class PsiCashFragment extends Fragment
 
         psiCashAccountBtn = requireView().findViewById(R.id.psicash_account_btn);
         psiCashAccountBtn.setOnClickListener(v ->
-                UiHelpers.openPsiCashAccountActivity(requireActivity(), null));
+                UiHelpers.openPsiCashAccountActivity(requireActivity()));
 
         compositeDisposable.add(GooglePlayBillingHelper.getInstance(requireContext())
                 .subscriptionStateFlowable()
