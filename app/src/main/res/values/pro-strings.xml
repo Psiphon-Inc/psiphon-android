@@ -128,6 +128,22 @@
     likely succeed next time.  Note: 'PsiCash' should not be translated or transliterated. -->
     <string name="psicash_cant_get_balance_recoverable_message">Cannot retrieve PsiCash balance from the server at the moment. Please try again later.</string>
 
+    <!-- Alert error message informing user that a critical error has occurred while trying to log in into PsiCash account and encouraging the user to
+    send feedback diagnostics.  Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_cannot_login_critical_message">The PsiCash server responded with an error while trying to log you in. Please send feedback.</string>
+
+    <!-- Alert error message informing user that a recoverable error has occurred while trying to log in into PsiCash account.
+    Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_cannot_login_recoverable_message">The PsiCash server responded with an error while trying to log you in. Please try again later.</string>
+
+    <!-- Alert error message informing user that a critical error has occurred while trying to make a Speed Boost purchase with PsiCash and encouraging the user to
+    send feedback diagnostics.  Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_cannot_make_purchase_critical_message">The PsiCash server responded with an error while trying to make the purchase. Please send feedback.</string>
+
+    <!-- Alert error message informing user that a recoverable error has occurred while trying to make a Speed Boost purchase with PsiCash.
+    Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_cannot_make_purchase_recoverable_message">The PsiCash server responded with an error while trying make the purchase. Please try again later.</string>
+
     <!-- Text which appears in the Speed Boost meter when the user has activated Speed Boost accompanied with a countdown timer showing how much time
     of the Speed Boost mode has left, like following 'Speed Boost Active - 16:49'. Please keep this text concise as the width of the text box
     is restricted in size. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
