@@ -486,19 +486,22 @@ public class PsiCashClient {
                             if (result.error != null) {
                                 Utils.MyLog.g("PsiCash: error making expiring purchase: " + result.error.message);
                                 if (result.error.critical) {
-                                    throw new PsiCashException.Critical(result.error.message);
+                                    throw new PsiCashException.Critical(result.error.message,
+                                            appContext.getString(R.string.psicash_cannot_make_purchase_critical_message));
                                 } else {
-                                    throw new PsiCashException.Recoverable(result.error.message);
+                                    throw new PsiCashException.Recoverable(result.error.message,
+                                            appContext.getString(R.string.psicash_cannot_make_purchase_recoverable_message));
                                 }
+                            }
+
+                            if (result.status != null && result.status != PsiCashLib.Status.SUCCESS) {
+                                Utils.MyLog.g("PsiCash: transaction error making expiring purchase: " + result.status);
+                                throw new PsiCashException.Transaction(result.status, isAccount());
                             }
 
                             // Reset optimistic reward if there's a response from the server
                             resetVideoReward();
 
-                            if (result.status != PsiCashLib.Status.SUCCESS) {
-                                Utils.MyLog.g("PsiCash: transaction error making expiring purchase: " + result.status);
-                                throw new PsiCashException.Transaction(result.status, isAccount());
-                            }
                             Utils.MyLog.g("PsiCash: got new purchase of transactionClass " + result.purchase.transactionClass);
                         })
                 )
@@ -584,7 +587,7 @@ public class PsiCashClient {
                                             appContext.getString(R.string.psicash_cant_get_balance_recoverable_message));
                                 }
                             }
-                            if (result.status != PsiCashLib.Status.SUCCESS) {
+                            if (result.status != null && result.status != PsiCashLib.Status.SUCCESS) {
                                 throw new PsiCashException.Transaction(result.status, isAccount());
                             }
                             if (isConnected) {
@@ -679,17 +682,19 @@ public class PsiCashClient {
                             PsiCashLib.AccountLoginResult result =
                                     psiCashLibWrapper.accountLogin(username, password);
 
-                            if (result.status != PsiCashLib.Status.SUCCESS) {
-                                Utils.MyLog.g("PsiCash: transaction error logging in: " + result.status);
-                                throw new PsiCashException.Transaction(result.status, isAccount());
-                            }
                             if (result.error != null) {
                                 Utils.MyLog.g("PsiCash: error logging in: " + result.error.message);
                                 if (result.error.critical) {
-                                    throw new PsiCashException.Critical(result.error.message);
+                                    throw new PsiCashException.Critical(result.error.message,
+                                            appContext.getString(R.string.psicash_cannot_login_critical_message));
                                 } else {
-                                    throw new PsiCashException.Recoverable(result.error.message);
+                                    throw new PsiCashException.Recoverable(result.error.message,
+                                            appContext.getString(R.string.psicash_cannot_login_recoverable_message));
                                 }
+                            }
+                            if (result.status != null && result.status != PsiCashLib.Status.SUCCESS) {
+                                Utils.MyLog.g("PsiCash: transaction error logging in: " + result.status);
+                                throw new PsiCashException.Transaction(result.status, isAccount());
                             }
 
                             Utils.MyLog.g("PsiCash: got new login with lastTrackerMerge: " + result.lastTrackerMerge);
