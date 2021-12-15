@@ -128,6 +128,10 @@
     likely succeed next time.  Note: 'PsiCash' should not be translated or transliterated. -->
     <string name="psicash_cant_get_balance_recoverable_message">Il est impossible d’obtenir le solde PsiCash du serveur pour l’instant. Veuillez réessayer plus tard.</string>
 
+    <!-- Alert error message informing user that a recoverable error has occurred while trying to log in into PsiCash account.
+    Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_cannot_login_recoverable_message">Le serveur PsiCash a répondu par une erreur lors de la tentative de connexion. Veuillez réessayer votre achat plus tard.</string>
+
     <!-- Text which appears in the Speed Boost meter when the user has activated Speed Boost accompanied with a countdown timer showing how much time
     of the Speed Boost mode has left, like following 'Speed Boost Active - 16:49'. Please keep this text concise as the width of the text box
     is restricted in size. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through

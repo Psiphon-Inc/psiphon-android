@@ -128,6 +128,10 @@
     likely succeed next time.  Note: 'PsiCash' should not be translated or transliterated. -->
     <string name="psicash_cant_get_balance_recoverable_message">此时不能从服务器找回PsiCash余额。请稍后再试。</string>
 
+    <!-- Alert error message informing user that a recoverable error has occurred while trying to log in into PsiCash account.
+    Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_cannot_login_recoverable_message">当尝试登录时，PsiCash服务器返回一个错误。请稍后再尝试。</string>
+
     <!-- Text which appears in the Speed Boost meter when the user has activated Speed Boost accompanied with a countdown timer showing how much time
     of the Speed Boost mode has left, like following 'Speed Boost Active - 16:49'. Please keep this text concise as the width of the text box
     is restricted in size. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
@@ -418,6 +422,9 @@
 
     <!-- Input field caption for password on the PsiCash account sign screen -->
     <string name="psicash_account_login_password_hint">密码</string>
+
+    <!-- Clickable text on the PsiCash account sign in screen, opens 'Forgot credentials' dialog when clicked. -->
+    <string name="psicash_account_login_forgot_lbl">忘记用户名或密码?</string>
 
     <!-- Label text for 'Log In' button on the PsiCash account sign in screen -->
     <string name="psicash_account_log_in_btn_lbl">登录</string>
