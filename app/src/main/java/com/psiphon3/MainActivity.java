@@ -1,6 +1,25 @@
+/*
+ * Copyright (c) 2021, Psiphon Inc.
+ * All rights reserved.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package com.psiphon3;
 
 import android.annotation.SuppressLint;
+import android.app.UiAutomation;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
@@ -43,9 +62,10 @@ import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.billing.SubscriptionState;
 import com.psiphon3.psicash.PsiCashClient;
 import com.psiphon3.psicash.PsiCashException;
-import com.psiphon3.psicash.PsiCashFragment;
-import com.psiphon3.psicash.PsiCashStoreActivity;
-import com.psiphon3.psicash.PsiCashViewModel;
+import com.psiphon3.psicash.account.PsiCashAccountActivity;
+import com.psiphon3.psicash.details.PsiCashDetailsViewModel;
+import com.psiphon3.psicash.store.PsiCashStoreActivity;
+import com.psiphon3.psicash.util.UiHelpers;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.psiphonlibrary.LoggingObserver;
@@ -53,6 +73,7 @@ import com.psiphon3.psiphonlibrary.LoggingProvider;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.VpnAppsUtils;
+import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
@@ -81,6 +102,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     }
 
     public static final String INTENT_EXTRA_PREVENT_AUTO_START = "com.psiphon3.MainActivity.PREVENT_AUTO_START";
+    public static final String PSICASH_CONNECT_PSIPHON_INTENT_ACTION = "com.psiphon3.MainActivity.PSICASH_CONNECT_PSIPHON_INTENT_ACTION";
+
     private static final String CURRENT_TAB = "currentTab";
     private static final int PAYMENT_CHOOSER_ACTIVITY = 20001;
 
@@ -163,13 +186,13 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                         .subscribe()));
 
         // ads
-        PsiCashViewModel psiCashViewModel = new ViewModelProvider(this,
+        PsiCashDetailsViewModel psiCashDetailsViewModel = new ViewModelProvider(this,
                 new ViewModelProvider.AndroidViewModelFactory(getApplication()))
-                .get(PsiCashViewModel.class);
+                .get(PsiCashDetailsViewModel.class);
 
         // This helper observable emits true if the user has a subscription or an active speed boost
         // and false if none of the above.
-        hasBoostOrSubscriptionObservable = Observable.combineLatest(psiCashViewModel.booleanActiveSpeedBoostObservable(),
+        hasBoostOrSubscriptionObservable = Observable.combineLatest(psiCashDetailsViewModel.hasActiveSpeedBoostObservable(),
                 googlePlayBillingHelper.subscriptionStateFlowable().toObservable(),
                 Pair::new)
                 .switchMap(pair -> {
@@ -427,18 +450,27 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             } else {
                 Utils.MyLog.g("MainActivity::onActivityResult: PaymentChooserActivity: canceled");
             }
-        } else if (requestCode == PsiCashFragment.PSICASH_STORE_ACTIVITY) {
-            if(resultCode == RESULT_OK) {
-                if (data != null && PsiCashStoreActivity.PSICASH_CONNECT_PSIPHON_INTENT.equals(data.getAction())) {
-                    startUp();
+        } else if (requestCode == PsiCashStoreActivity.ACTIVITY_REQUEST_CODE ||
+                requestCode == PsiCashAccountActivity.ACTIVITY_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                if (data != null && PSICASH_CONNECT_PSIPHON_INTENT_ACTION.equals(data.getAction())) {
+                    startUpIfNotRunning();
                 }
-            }
-            PsiCashFragment psiCashFragment = (PsiCashFragment) getSupportFragmentManager().findFragmentByTag("PsiCashFragment");
-            if (psiCashFragment != null) {
-                psiCashFragment.onActivityResult(requestCode, resultCode, data);
             }
         }
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    public void startUpIfNotRunning() {
+        compositeDisposable.add(viewModel.tunnelStateFlowable()
+                .filter(tunnelState -> !tunnelState.isUnknown())
+                .firstOrError()
+                .doOnSuccess(tunnelState -> {
+                    if (tunnelState.isStopped()) {
+                        startUp();
+                    }
+                })
+                .subscribe());
     }
 
     @Override
@@ -504,6 +536,10 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     }
 
     private void displayBrowser(Context context, String urlString) {
+        // Override landing page URL if there is a static landing page URL in the build config
+        if (BuildConfig.STATIC_LANDING_PAGE_URL != null) {
+            urlString  = BuildConfig.STATIC_LANDING_PAGE_URL;
+        }
         // PsiCash modify URLs by default
         displayBrowser(context, urlString, true);
     }
@@ -669,7 +705,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                             dialog.dismiss();
                         });
                 builder.setNegativeButton(R.string.btn_get_speed_boost, (dialog, which) -> {
-                    PsiCashFragment.openPsiCashStoreActivity(this,
+                    UiHelpers.openPsiCashStoreActivity(this,
                             getResources().getInteger(R.integer.speedBoostTabIndex));
                     dialog.dismiss();
                 });
@@ -758,7 +794,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                     }
                 }
 
-                PsiCashFragment.openPsiCashStoreActivity(this, tabIndex);
+                UiHelpers.openPsiCashStoreActivity(this, tabIndex);
                 // intent handled
                 return true;
 

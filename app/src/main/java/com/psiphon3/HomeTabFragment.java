@@ -1,10 +1,24 @@
+/*
+ * Copyright (c) 2021, Psiphon Inc.
+ * All rights reserved.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package com.psiphon3;
 
 import android.annotation.TargetApi;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Pair;
@@ -25,15 +39,11 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.billing.SubscriptionState;
-import com.psiphon3.psicash.PsiCashFragment;
-import com.psiphon3.psicash.PsiCashSubscribedFragment;
-import com.psiphon3.psicash.PsiCashViewModel;
-import com.psiphon3.psicash.util.BroadcastIntent;
-import com.psiphon3.psiphonlibrary.TunnelServiceInteractor;
+import com.psiphon3.psicash.details.PsiCashDetailsViewModel;
+import com.psiphon3.psicash.details.PsiCashFragment;
 import com.psiphon3.subscription.R;
 
 import java.util.ArrayList;
@@ -57,7 +67,6 @@ public class HomeTabFragment extends Fragment {
     private TextView rateUnlimitedText;
     private Button rateLimitUpgradeButton;
     private CompositeDisposable compositeDisposable = new CompositeDisposable();
-    private BroadcastReceiver broadcastReceiver;
 
 
     @Nullable
@@ -78,6 +87,14 @@ public class HomeTabFragment extends Fragment {
         rateLimitUpgradeButton.setOnClickListener(v ->
                 MainActivity.openPaymentChooserActivity(requireActivity(),
                         getResources().getInteger(R.integer.subscriptionTabIndex)));
+
+        if (savedInstanceState == null) {
+            getChildFragmentManager()
+                    .beginTransaction()
+                    .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
+                    .add(R.id.psicash_fragment_container, new PsiCashFragment())
+                    .commit();
+        }
 
         viewModel = new ViewModelProvider(requireActivity(),
                 new ViewModelProvider.AndroidViewModelFactory(requireActivity().getApplication()))
@@ -127,9 +144,10 @@ public class HomeTabFragment extends Fragment {
                 .doOnNext(this::loadEmbeddedWebView)
                 .subscribe());
 
-        PsiCashViewModel psiCashViewModel = new ViewModelProvider(requireActivity(),
+
+        PsiCashDetailsViewModel psiCashDetailsViewModel = new ViewModelProvider(requireActivity(),
                 new ViewModelProvider.AndroidViewModelFactory(requireActivity().getApplication()))
-                .get(PsiCashViewModel.class);
+                .get(PsiCashDetailsViewModel.class);
 
         GooglePlayBillingHelper googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(requireContext());
 
@@ -138,7 +156,7 @@ public class HomeTabFragment extends Fragment {
                 googlePlayBillingHelper.subscriptionStateFlowable()
                         .distinctUntilChanged()
                         .toObservable(),
-                psiCashViewModel.booleanActiveSpeedBoostObservable(),
+                psiCashDetailsViewModel.hasActiveSpeedBoostObservable(),
                 ((BiFunction<SubscriptionState, Boolean, Pair>) Pair::new))
                 .distinctUntilChanged()
                 .map(pair -> {
@@ -159,38 +177,12 @@ public class HomeTabFragment extends Fragment {
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(this::setRateLimitUI)
                 .subscribe());
-
-        // Observe subscription state and set ad container layout visibility,
-        // also set the appropriate PsiCash fragment
-        compositeDisposable.add(
-                googlePlayBillingHelper.subscriptionStateFlowable()
-                        .distinctUntilChanged()
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .doOnNext(this::setPsiCashFragment)
-                        .subscribe());
-
-        // Listen to GOT_NEW_EXPIRING_PURCHASE intent from PsiCash module
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE);
-        broadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                if (action != null) {
-                    if (action.equals(BroadcastIntent.GOT_NEW_EXPIRING_PURCHASE)) {
-                        viewModel.restartPsiphon(TunnelServiceInteractor.RestartMode.TUNNEL_NO_HOME_PAGE);
-                    }
-                }
-            }
-        };
-        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(broadcastReceiver, intentFilter);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         compositeDisposable.dispose();
-        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(broadcastReceiver);
         if (sponsorHomePage != null) {
             sponsorHomePage.stop();
         }
@@ -218,33 +210,6 @@ public class HomeTabFragment extends Fragment {
             rateLimitUpgradeButton.setVisibility(View.VISIBLE);
             rateLimitedTextSection.setVisibility(View.VISIBLE);
         }
-    }
-
-    private void setPsiCashFragment(SubscriptionState subscriptionState) {
-        // Do nothing if host activity is finishing or destroyed
-        if (requireActivity().isFinishing() ||
-                // isDestroyed() is API 17+
-                (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && requireActivity().isDestroyed())) {
-            return;
-        }
-        // Do nothing if not added to activity, otherwise getParentFragmentManager will
-        // throw IllegalStateException
-        if (!isAdded()) {
-            return;
-        }
-        FragmentTransaction transaction = getParentFragmentManager()
-                .beginTransaction()
-                .setCustomAnimations(android.R.animator.fade_in, android.R.animator.fade_out)
-                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
-        if (subscriptionState.hasValidPurchase()) {
-            transaction.replace(R.id.psicash_fragment_container, new PsiCashSubscribedFragment());
-        } else {
-            transaction.replace(R.id.psicash_fragment_container, new PsiCashFragment(), "PsiCashFragment");
-        }
-        // Allow transaction to be committed even after FragmentManager has saved its state.
-        // In case the host activity is killed and re-created this function will be called again
-        // with the most up to date subscription state data.
-        transaction.commitAllowingStateLoss();
     }
 
     private void loadEmbeddedWebView(String url) {

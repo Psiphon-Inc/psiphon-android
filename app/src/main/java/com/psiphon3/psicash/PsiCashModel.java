@@ -1,6 +1,5 @@
 /*
- *
- * Copyright (c) 2019, Psiphon Inc.
+ * Copyright (c) 2021, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -15,7 +14,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 package com.psiphon3.psicash;
@@ -28,56 +26,65 @@ import java.util.List;
 
 import ca.psiphon.psicashlib.PsiCashLib;
 
-public interface PsiCashModel {
-    @AutoValue
-    abstract class PsiCash implements PsiCashModel {
-        static Builder builder() {
-            return new AutoValue_PsiCashModel_PsiCash.Builder();
-        }
-
-        public abstract boolean hasValidTokens();
-
-        public abstract long balance();
-
-        public abstract long reward();
-
-        public abstract String diagnosticInfo();
-
-        @Nullable
-        public abstract List<PsiCashLib.PurchasePrice> purchasePrices();
-
-        @Nullable
-        public abstract PsiCashLib.Purchase nextExpiringPurchase();
-
-        public abstract boolean pendingRefresh();
-
-        @AutoValue.Builder
-        abstract static class Builder {
-            abstract  Builder hasValidTokens(boolean b);
-
-            abstract Builder balance(long balance);
-
-            abstract Builder reward(long reward);
-
-            abstract Builder diagnosticInfo(String info);
-
-            abstract Builder purchasePrices(@Nullable List<PsiCashLib.PurchasePrice> purchasePrices);
-
-            abstract Builder nextExpiringPurchase(@Nullable PsiCashLib.Purchase purchase);
-
-            abstract Builder pendingRefresh(boolean pendingRefresh);
-
-            abstract PsiCash build();
-
-        }
+@AutoValue
+public abstract class PsiCashModel {
+    public static Builder builder() {
+        return new AutoValue_PsiCashModel.Builder();
     }
 
-    @AutoValue
-    abstract class ExpiringPurchase implements PsiCashModel {
-        public abstract PsiCashLib.Purchase expiringPurchase();
+    public abstract boolean hasTokens();
 
-        public static ExpiringPurchase create(PsiCashLib.Purchase purchase) {
-            return new AutoValue_PsiCashModel_ExpiringPurchase(purchase);
-        }
+    public abstract boolean isAccount();
+
+    public abstract long balance();
+
+    public abstract long reward();
+
+    @Nullable
+    public abstract List<PsiCashLib.PurchasePrice> purchasePrices();
+
+    @Nullable
+    public abstract PsiCashLib.Purchase nextExpiringPurchase();
+
+    public abstract boolean pendingRefresh();
+
+    @Nullable
+    public abstract String accountSignupUrl();
+
+    @Nullable
+    public abstract String accountForgotUrl();
+
+    @Nullable
+    public abstract String accountManagementUrl();
+
+    @Nullable
+    public abstract String accountUsername();
+
+    @AutoValue.Builder
+    public abstract static class Builder {
+        public abstract Builder hasTokens(boolean b);
+
+        public abstract Builder isAccount(boolean b);
+
+        public abstract Builder balance(long balance);
+
+        public abstract Builder reward(long reward);
+
+        abstract Builder purchasePrices(@Nullable List<PsiCashLib.PurchasePrice> purchasePrices);
+
+        abstract Builder nextExpiringPurchase(@Nullable PsiCashLib.Purchase purchase);
+
+        public abstract Builder pendingRefresh(boolean pendingRefresh);
+
+        abstract Builder accountSignupUrl(@Nullable String accountSignupUrl);
+
+        abstract Builder accountForgotUrl(@Nullable String accountForgotUrl);
+
+        abstract Builder accountManagementUrl(@Nullable String accountManagementUrl);
+
+        abstract Builder accountUsername(@Nullable String accountUsername);
+
+        public abstract PsiCashModel build();
+
     }
 }

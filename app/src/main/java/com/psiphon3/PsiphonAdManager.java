@@ -45,6 +45,10 @@ import com.mopub.common.privacy.PersonalInfoManager;
 import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubInterstitial;
 import com.mopub.mobileads.MoPubView;
+import com.psiphon3.billing.GooglePlayBillingHelper;
+import com.psiphon3.billing.SubscriptionState;
+import com.psiphon3.psicash.details.PsiCashDetailsViewModel;
+import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.Utils;
 
 import java.lang.ref.WeakReference;

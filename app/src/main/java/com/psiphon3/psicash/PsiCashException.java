@@ -40,9 +40,11 @@ public abstract class PsiCashException extends Exception {
 
     static class Transaction extends PsiCashException {
         private final PsiCashLib.Status status;
+        private final boolean isAccount;
 
-        Transaction(PsiCashLib.Status s) {
-            status = s;
+        Transaction(PsiCashLib.Status status, boolean isAccount) {
+            this.status = status;
+            this.isAccount = isAccount;
         }
 
         PsiCashLib.Status getStatus() {
@@ -72,7 +74,17 @@ public abstract class PsiCashException extends Exception {
                     uiMessage = ctx.getString(R.string.psicash_transaction_type_not_found_message);
                     break;
                 case INVALID_TOKENS:
-                    uiMessage = ctx.getString(R.string.psicash_transaction_invalid_tokens_message);
+                    if (isAccount) {
+                        uiMessage = ctx.getString(R.string.psicash_transaction_expired_tokens_message);
+                    } else {
+                        uiMessage = ctx.getString(R.string.psicash_transaction_invalid_tokens_message);
+                    }
+                    break;
+                case INVALID_CREDENTIALS:
+                    uiMessage = ctx.getString(R.string.psicash_transaction_invalid_credentials_message);
+                    break;
+                case BAD_REQUEST:
+                    uiMessage = ctx.getString(R.string.psicash_transaction_bad_request_message);
                     break;
                 case SERVER_ERROR:
                     uiMessage = ctx.getString(R.string.transaction_server_error_message);

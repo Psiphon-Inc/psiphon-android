@@ -34,6 +34,14 @@ android {
                 multiDexEnabled true
                 manifestPlaceholders = [ admobAppId:admobAppId ]
                 vectorDrawables.useSupportLibrary = true
+                // Build type specific defaults below
+                //
+                // Specify non-null URL to override landing page from handshake
+                buildConfigField "String", "STATIC_LANDING_PAGE_URL", "null"
+                // Specify purchase verification environment, default is production
+                buildConfigField "Boolean", "PURCHASE_VERIFIER_DEV_ENVIRONMENT", "false"
+                // Specify PsiCash environment, default is production
+                buildConfigField "Boolean", "PSICASH_DEV_ENVIRONMENT", "false"
             }
         } else {
             throw new GradleException('version.properties found but entries are missing')

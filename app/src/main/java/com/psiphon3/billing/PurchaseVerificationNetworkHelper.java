@@ -25,6 +25,7 @@ import android.os.Build;
 import com.android.billingclient.api.Purchase;
 import com.psiphon3.TunnelState;
 import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import com.psiphon3.subscription.BuildConfig;
 
 import org.json.JSONObject;
 
@@ -49,13 +50,21 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class PurchaseVerificationNetworkHelper {
-
     private static final int TIMEOUT_SECONDS = 30;
-    private static final String SUBSCRIPTION_VERIFICATION_URL = "https://subscription.psiphon3.com/v2/playstore/subscription";
-    private static final String PSICASH_VERIFICATION_URL = "https://subscription.psiphon3.com/v2/playstore/psicash";
+
+    private static final String SUBSCRIPTION_VERIFICATION_URL;
+    private static final String PSICASH_VERIFICATION_URL;
     private static final MediaType JSON = MediaType.parse("application/json");
     private static final String HTTP_USER_AGENT = "Psiphon-Verifier-Android";
     private static final int TRIES_COUNT = 5;
+
+    static {
+        String serverName = BuildConfig.PURCHASE_VERIFIER_DEV_ENVIRONMENT ?
+                "dev-subscription.psiphon3.com" :
+                "subscription.psiphon3.com";
+        SUBSCRIPTION_VERIFICATION_URL = "https://" + serverName + "/v2/playstore/subscription";
+        PSICASH_VERIFICATION_URL = "https://" + serverName + "/v2/playstore/psicash";
+    }
 
     private OkHttpClient.Builder okHttpClientBuilder;
     private Context ctx;
