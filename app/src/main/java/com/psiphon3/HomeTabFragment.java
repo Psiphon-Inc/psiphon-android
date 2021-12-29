@@ -188,7 +188,7 @@ public class HomeTabFragment extends Fragment {
         }
     }
 
-    enum RateLimitMode {AD_MODE_LIMITED, LIMITED_SUBSCRIPTION, UNLIMITED_SUBSCRIPTION, SPEED_BOOST}
+    public enum RateLimitMode {AD_MODE_LIMITED, LIMITED_SUBSCRIPTION, UNLIMITED_SUBSCRIPTION, SPEED_BOOST}
 
     private void setRateLimitUI(RateLimitMode rateLimitMode) {
         // Update UI elements showing the current speed.
