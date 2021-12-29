@@ -157,11 +157,11 @@ public class HomeTabFragment extends Fragment {
                         .distinctUntilChanged()
                         .toObservable(),
                 psiCashDetailsViewModel.hasActiveSpeedBoostObservable(),
-                ((BiFunction<SubscriptionState, Boolean, Pair>) Pair::new))
+                ((BiFunction<SubscriptionState, Boolean, Pair<SubscriptionState, Boolean>>) Pair::new))
                 .distinctUntilChanged()
                 .map(pair -> {
-                    SubscriptionState subscriptionState = (SubscriptionState) pair.first;
-                    Boolean hasActiveSpeedBoost = (Boolean) pair.second;
+                    SubscriptionState subscriptionState = pair.first;
+                    Boolean hasActiveSpeedBoost = pair.second;
                     switch (subscriptionState.status()) {
                         case HAS_UNLIMITED_SUBSCRIPTION:
                         case HAS_TIME_PASS:
