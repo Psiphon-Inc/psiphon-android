@@ -124,7 +124,7 @@ public class SpeedBoostTabFragment extends Fragment {
                             return false;
                         })
                         .distinctUntilChanged(),
-                ((BiFunction<TunnelState, Boolean, Pair>) Pair::new))
+                ((BiFunction<TunnelState, Boolean, Pair<TunnelState, Boolean>>) Pair::new))
                 .distinctUntilChanged()
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(pair -> {
@@ -133,8 +133,8 @@ public class SpeedBoostTabFragment extends Fragment {
                         return;
                     }
 
-                    TunnelState state = (TunnelState) pair.first;
-                    boolean hasActiveSpeedBoost = (boolean) pair.second;
+                    TunnelState state = pair.first;
+                    boolean hasActiveSpeedBoost = pair.second;
 
                     FragmentTransaction transaction = getChildFragmentManager()
                             .beginTransaction()
