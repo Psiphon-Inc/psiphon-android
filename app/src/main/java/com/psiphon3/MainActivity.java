@@ -19,7 +19,6 @@
 package com.psiphon3;
 
 import android.annotation.SuppressLint;
-import android.app.UiAutomation;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
@@ -84,7 +83,6 @@ import org.json.JSONException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 
 import io.reactivex.Completable;

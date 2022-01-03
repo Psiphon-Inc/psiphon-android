@@ -46,25 +46,30 @@ import android.widget.LinearLayout;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
+import androidx.fragment.app.FragmentActivity;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.psiphon3.TunnelState;
 import com.psiphon3.subscription.R;
 
+import java.lang.ref.WeakReference;
 import java.util.Vector;
 
 import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
 
 public class PsiCashAccountWebViewDialog {
+    private final WeakReference<FragmentActivity> activityWeakReference;
     private final WebView webView;
     private final Dialog dialog;
     private final Vector<AlertDialog> alertDialogs = new Vector<>();
     private Disposable tunnelStateDisposable;
 
     @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
-    public PsiCashAccountWebViewDialog(Context context, Flowable<TunnelState> tunnelStateFlowable) {
-        LayoutInflater inflater = LayoutInflater.from(context);
+    public PsiCashAccountWebViewDialog(FragmentActivity fragmentActivity, Flowable<TunnelState> tunnelStateFlowable) {
+        activityWeakReference = new WeakReference<>(fragmentActivity);
+
+        LayoutInflater inflater = LayoutInflater.from(fragmentActivity);
         View contentView = inflater.inflate(R.layout.psicash_acount_webview_layout, null);
 
         View progressOverlay = contentView.findViewById(R.id.progress_overlay);
@@ -79,7 +84,7 @@ public class PsiCashAccountWebViewDialog {
         psiphonConnectingBlockingOverlay.setBackgroundColor(Color.DKGRAY);
         psiphonConnectingBlockingOverlay.setAlpha(0.9f);
 
-        dialog = new Dialog(context, R.style.Theme_AppCompat_Dialog) {
+        dialog = new Dialog(fragmentActivity, R.style.Theme_AppCompat_Dialog) {
             // Hook up minimal web view navigation
             @Override
             public void onBackPressed() {
@@ -94,7 +99,7 @@ public class PsiCashAccountWebViewDialog {
         dialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
         dialog.setCancelable(false);
 
-        webView = new WebView(context) {
+        webView = new WebView(fragmentActivity) {
             @Override
             public boolean onCheckIsTextEditor() {
                 return true;
@@ -108,7 +113,7 @@ public class PsiCashAccountWebViewDialog {
         webView.getSettings().setSupportMultipleWindows(true);
         webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
         final PsiCashLocalStorageJavascriptInterface psiCashLocalStorageJavascriptInterface =
-                new PsiCashLocalStorageJavascriptInterface(context);
+                new PsiCashLocalStorageJavascriptInterface(fragmentActivity);
         webView.addJavascriptInterface(psiCashLocalStorageJavascriptInterface, "PsiCashLocalStorage");
 
         // Android's WebView doesn't give us a per origin control over the DOM storage, so we are
@@ -162,13 +167,17 @@ public class PsiCashAccountWebViewDialog {
             // hook up open in new window
             @Override
             public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
-                WebView newWebView = new WebView(context);
+                FragmentActivity activity = activityWeakReference.get();
+                if (activity == null || activity.isFinishing()) {
+                    return false;
+                }
+                WebView newWebView = new WebView(activity);
                 newWebView.setWebViewClient(new WebViewClient() {
                     // Try and open new url in an external browser
                     void handleUri(Uri uri) {
                         try {
                             final Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-                            context.startActivity(intent);
+                            activity.startActivity(intent);
                         } catch (ActivityNotFoundException ignored) {
                         }
                     }
@@ -236,8 +245,12 @@ public class PsiCashAccountWebViewDialog {
 
 
         floatingActionButton.setOnClickListener(view -> {
+            FragmentActivity activity = activityWeakReference.get();
+            if (activity == null || activity.isFinishing()) {
+                return;
+            }
             try {
-                alertDialogs.add(new AlertDialog.Builder(context)
+                alertDialogs.add(new AlertDialog.Builder(activity)
                         .setIcon(R.drawable.psicash_coin)
                         .setTitle(R.string.psicash_webview_close_alert_title)
                         .setCancelable(true)
@@ -249,18 +262,24 @@ public class PsiCashAccountWebViewDialog {
             } catch (RuntimeException ignored) {
             }
         });
-
     }
 
     private void showErrorClosePrompt(Context context) {
-        alertDialogs.add(new AlertDialog.Builder(context)
-                .setIcon(R.drawable.psicash_coin)
-                .setTitle(R.string.psicash_webview_error_alert_title)
-                .setMessage(R.string.psicash_webview_error_alert_message)
-                .setPositiveButton(R.string.label_ok, (dialog, which) -> {
-                })
-                .setOnDismissListener(dialog -> close())
-                .show());
+        FragmentActivity activity = activityWeakReference.get();
+        if (activity == null || activity.isFinishing()) {
+            return;
+        }
+        try {
+            alertDialogs.add(new AlertDialog.Builder(context)
+                    .setIcon(R.drawable.psicash_coin)
+                    .setTitle(R.string.psicash_webview_error_alert_title)
+                    .setMessage(R.string.psicash_webview_error_alert_message)
+                    .setPositiveButton(R.string.label_ok, (dialog, which) -> {
+                    })
+                    .setOnDismissListener(dialog -> close())
+                    .show());
+        } catch (RuntimeException ignored) {
+        }
     }
 
     public void load(String url) {
@@ -323,6 +342,7 @@ public class PsiCashAccountWebViewDialog {
         public void clear() {
             sharedPreferences.edit().clear().apply();
         }
+
         @JavascriptInterface
         public int getLength() {
             return sharedPreferences.getAll().size();

@@ -147,7 +147,7 @@ public class PsiCashSignInFragment extends Fragment
         // Hook up forgot credentials click action
         forgotAccountTv.setOnClickListener(v -> {
             if (forgotAccountUrl != null) {
-                new PsiCashAccountWebViewDialog(requireContext(), tunnelStateFlowable)
+                new PsiCashAccountWebViewDialog(requireActivity(), tunnelStateFlowable)
                         .load(forgotAccountUrl);
             }
         });
@@ -155,7 +155,7 @@ public class PsiCashSignInFragment extends Fragment
         // Hook up create account click action
         createAccountTv.setOnClickListener(v -> {
             if (createAccountUrl != null) {
-                new PsiCashAccountWebViewDialog(requireContext(), tunnelStateFlowable)
+                new PsiCashAccountWebViewDialog(requireActivity(), tunnelStateFlowable)
                         .load(createAccountUrl);
             }
         });

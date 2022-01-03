@@ -175,7 +175,7 @@ public class HomeTabFragment extends Fragment {
                 })
                 .distinctUntilChanged()
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext(this::setRateLimitUI)
+                .doOnNext(rateLimitMode -> setRateLimitUI(rateLimitMode))
                 .subscribe());
     }
 
@@ -187,8 +187,6 @@ public class HomeTabFragment extends Fragment {
             sponsorHomePage.stop();
         }
     }
-
-    public enum RateLimitMode {AD_MODE_LIMITED, LIMITED_SUBSCRIPTION, UNLIMITED_SUBSCRIPTION, SPEED_BOOST}
 
     private void setRateLimitUI(RateLimitMode rateLimitMode) {
         // Update UI elements showing the current speed.
