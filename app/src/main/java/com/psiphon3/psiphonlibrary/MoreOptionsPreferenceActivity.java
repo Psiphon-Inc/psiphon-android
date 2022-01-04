@@ -467,7 +467,7 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
             psiCashAccountManagePref.setOnPreferenceClickListener(preference -> {
                 String manageAccountUrl = preference.getExtras().getString(PSICASH_MANAGEMENT_URL);
                 if (preference.isVisible() && preference.isEnabled() && manageAccountUrl != null) {
-                    new PsiCashAccountWebViewDialog(requireContext(), tunnelStateFlowable)
+                    new PsiCashAccountWebViewDialog(requireActivity(), tunnelStateFlowable)
                             .load(manageAccountUrl);
                 }
                 return true;

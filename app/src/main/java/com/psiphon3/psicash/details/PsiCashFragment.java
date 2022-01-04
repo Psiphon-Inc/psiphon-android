@@ -382,7 +382,7 @@ public class PsiCashFragment extends Fragment
         if (state.pendingRefresh()) {
             clickListener = v -> {
                 final Activity activity = requireActivity();
-                if (activity == null || activity.isFinishing()) {
+                if (activity.isFinishing()) {
                     return;
                 }
                 new AlertDialog.Builder(activity)
