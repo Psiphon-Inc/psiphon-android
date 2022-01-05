@@ -142,7 +142,7 @@
 
     <!-- Alert error message informing user that a recoverable error has occurred while trying to make a Speed Boost purchase with PsiCash.
     Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cannot_make_purchase_recoverable_message">The PsiCash server responded with an error while trying make the purchase. Please try again later.</string>
+    <string name="psicash_cannot_make_purchase_recoverable_message">The PsiCash server responded with an error while trying to make the purchase. Please try again later.</string>
 
     <!-- Text which appears in the Speed Boost meter when the user has activated Speed Boost accompanied with a countdown timer showing how much time
     of the Speed Boost mode has left, like following 'Speed Boost Active - 16:49'. Please keep this text concise as the width of the text box
