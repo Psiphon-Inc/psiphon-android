@@ -335,7 +335,11 @@ public class SpeedBoostTabFragment extends Fragment {
                                 .setNegativeButton(R.string.lbl_no, (dialog, which) -> {
                                 })
                                 .setPositiveButton(R.string.lbl_yes, (dialog, which) -> {
-                                    final ViewPager viewPager = requireActivity().findViewById(R.id.psicash_store_viewpager);
+                                    FragmentActivity activity = getActivity();
+                                    if (activity == null || activity.isFinishing()) {
+                                        return;
+                                    }
+                                    final ViewPager viewPager = activity.findViewById(R.id.psicash_store_viewpager);
                                     viewPager.setCurrentItem(getResources().getInteger(R.integer.psiCashTabIndex));
                                 })
                                 .setCancelable(true)

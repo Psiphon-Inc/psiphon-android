@@ -270,7 +270,7 @@ public class PsiCashAccountWebViewDialog {
             return;
         }
         try {
-            alertDialogs.add(new AlertDialog.Builder(context)
+            alertDialogs.add(new AlertDialog.Builder(activity)
                     .setIcon(R.drawable.psicash_coin)
                     .setTitle(R.string.psicash_webview_error_alert_title)
                     .setMessage(R.string.psicash_webview_error_alert_message)
