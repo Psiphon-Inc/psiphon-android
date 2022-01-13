@@ -66,6 +66,9 @@ import okhttp3.Response;
 
 public class PsiCashClient {
     private static final String TAG = "PsiCashClient";
+    private static final int HTTP_CLIENT_CONNECT_TIMEOUT_SECONDS = 30;
+    private static final int HTTP_CLIENT_READ_TIMEOUT_SECONDS = 30;
+    private static final int HTTP_CLIENT_WRITE_TIMEOUT_SECONDS = 30;
 
     private static final String PSICASH_PERSISTED_VIDEO_REWARD_KEY = "psiCashPersistedVideoRewardKey";
     public static final String PSICASH_PREFERENCES_KEY = "app_prefs";
@@ -108,6 +111,9 @@ public class PsiCashClient {
                     public void connectFailed(URI uri, SocketAddress socketAddress, IOException e) {
                     }
                 })
+                .connectTimeout(HTTP_CLIENT_CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .writeTimeout(HTTP_CLIENT_WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .readTimeout(HTTP_CLIENT_READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .build();
 
         final PsiCashLib.HTTPRequester httpRequester = reqParams -> {
