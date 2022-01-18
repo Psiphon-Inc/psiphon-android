@@ -1435,9 +1435,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         m_Handler.post(new Runnable() {
             @Override
             public void run() {
-                MyLog.v(R.string.waiting_for_network_connectivity, MyLog.Sensitivity.NOT_SENSITIVE);
-                sendClientMessage(ServiceToClientMessage.TUNNEL_CONNECTION_STATE.ordinal(), getTunnelStateBundle());
                 m_networkConnectionStateBehaviorRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.WAITING_FOR_NETWORK);
+                MyLog.v(R.string.waiting_for_network_connectivity, MyLog.Sensitivity.NOT_SENSITIVE);
             }
         });
     }
@@ -1501,6 +1500,16 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
     @Override
     public void onStoppedWaitingForNetworkConnectivity() {
+        m_Handler.post(new Runnable() {
+            @Override
+            public void run() {
+                m_networkConnectionStateBehaviorRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
+                // Do not log "Connecting" if tunnel is stopping
+                if (!m_isStopping.get()) {
+                    MyLog.v(R.string.tunnel_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
+                }
+            }
+        });
     }
 
     @Override
