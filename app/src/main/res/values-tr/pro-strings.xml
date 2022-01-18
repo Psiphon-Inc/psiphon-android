@@ -130,7 +130,7 @@
 
     <!-- Alert error message informing user that a critical error has occurred while trying to log in into PsiCash account and encouraging the user to
     send feedback diagnostics.  Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cannot_login_critical_message">PsiCash oturumu açılmaya çalışılırken sunucudan bir hata yanıtı alındı. Lütfen geri bildirim gönderin.</string>
+    <string name="psicash_cannot_login_critical_message">Oturum açılmaya çalışılırken PsiCash sunucusundan bir hata yanıtı alındı. Lütfen geri bildirim gönderin.</string>
 
     <!-- Alert error message informing user that a recoverable error has occurred while trying to log in into PsiCash account.
     Note: 'PsiCash' should not be translated or transliterated. -->
@@ -437,7 +437,7 @@
     <string name="psicash_account_login_password_hint">Parola</string>
 
     <!-- Clickable text on the PsiCash account sign in screen, opens 'Forgot credentials' dialog when clicked. -->
-    <string name="psicash_account_login_forgot_lbl">Kullanıcı adınızı veya parolanızı mı unuttunuz?</string>
+    <string name="psicash_account_login_forgot_lbl">Kullanıcı adınızı ya da parolanızı mı unuttunuz?</string>
 
     <!-- Label text for 'Log In' button on the PsiCash account sign in screen -->
     <string name="psicash_account_log_in_btn_lbl">Oturum açın</string>
