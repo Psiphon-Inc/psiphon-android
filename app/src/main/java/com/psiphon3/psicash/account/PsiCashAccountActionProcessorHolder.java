@@ -23,7 +23,6 @@ import android.content.Context;
 import androidx.core.util.Pair;
 
 import com.psiphon3.psicash.PsiCashClient;
-import com.psiphon3.psicash.PsiCashModel;
 
 import java.util.Arrays;
 
@@ -73,9 +72,9 @@ public class PsiCashAccountActionProcessorHolder {
                                         .flatMap(lastTrackerMerge ->
                                                 psiCashClient.refreshState(action.tunnelStateFlowable(), true)
                                                         .flatMap(psiCashClient::getPsiCashModel)
-                                                        .map(psiCashModel -> new Pair(psiCashModel, lastTrackerMerge))))
-                                .map(pair -> PsiCashAccountResult.AccountLogin.success((PsiCashModel) pair.first,
-                                        (boolean) pair.second))
+                                                        .map(psiCashModel -> new Pair<>(psiCashModel, lastTrackerMerge))))
+                                .map(pair -> PsiCashAccountResult.AccountLogin.success(pair.first,
+                                        pair.second))
                                 .onErrorReturn(PsiCashAccountResult.AccountLogin::failure)
                                 .toObservable()
                                 .startWith(PsiCashAccountResult.AccountLogin.inFlight()));

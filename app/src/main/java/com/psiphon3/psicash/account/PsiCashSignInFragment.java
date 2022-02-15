@@ -51,7 +51,6 @@ import com.psiphon3.log.MyLog;
 import com.psiphon3.psicash.PsiCashException;
 import com.psiphon3.psicash.mvibase.MviView;
 import com.psiphon3.psicash.util.SingleViewEvent;
-import com.psiphon3.psicash.util.UiHelpers;
 import com.psiphon3.psiphonlibrary.TunnelServiceInteractor;
 import com.psiphon3.subscription.R;
 
@@ -253,7 +252,7 @@ public class PsiCashSignInFragment extends Fragment
                                     .setIcon(R.drawable.psicash_coin)
                                     .setTitle(requireContext().getString(R.string.psicash_generic_title))
                                     .setMessage(requireContext().getString(R.string.psicash_last_tracker_merge_notification))
-                                    .setNeutralButton(R.string.label_ok, (dialog, which) -> {
+                                    .setPositiveButton(R.string.label_ok, (dialog, which) -> {
                                     })
                                     .setCancelable(true)
                                     .setOnDismissListener(dialog -> dismissActivity())
@@ -298,9 +297,17 @@ public class PsiCashSignInFragment extends Fragment
                 MyLog.e("Unexpected PsiCash error: " + error.toString());
                 errorMessage = getString(R.string.unexpected_error_occured_send_feedback_message);
             }
-            UiHelpers.getSnackbar(errorMessage,
-                    requireActivity().findViewById(R.id.snackbar_anchor_layout))
-                    .show();
+            try {
+                new AlertDialog.Builder(requireActivity())
+                        .setIcon(R.drawable.ic_psiphon_alert_notification)
+                        .setTitle(requireContext().getString(R.string.psicash_account_login_failed_title))
+                        .setMessage(errorMessage)
+                        .setPositiveButton(R.string.psicash_login_error_alert_dismiss, (dialog, which) -> {
+                        })
+                        .setCancelable(true)
+                        .show();
+            } catch (RuntimeException ignored) {
+            }
         });
     }
 
