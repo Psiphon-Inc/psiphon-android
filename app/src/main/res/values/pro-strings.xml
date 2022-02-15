@@ -338,6 +338,13 @@
     and does not automatically renew after its expiry, unlike a subscription -->
     <string name="PaymentChooserActivity.TimePassTab">Time Pass</string>
 
+    <!-- PsiCash account login error dialog title
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_account_login_failed_title">PsiCash Login Failed</string>
+
+    <!-- Title of the button that dismisses PsiCash account login error alert dialog-->
+    <string name="psicash_login_error_alert_dismiss">Dismiss</string>
+
     <!-- PsiCash account login error message shown when the user is trying to log in with bad credentials -->
     <string name="psicash_transaction_invalid_credentials_message">The username or password entered was incorrect</string>
 
