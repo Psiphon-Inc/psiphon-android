@@ -50,11 +50,11 @@ import androidx.viewpager.widget.ViewPager;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.MainActivity;
 import com.psiphon3.TunnelState;
+import com.psiphon3.log.MyLog;
 import com.psiphon3.psicash.PsiCashException;
 import com.psiphon3.psicash.mvibase.MviView;
 import com.psiphon3.psicash.util.SingleViewEvent;
 import com.psiphon3.psicash.util.UiHelpers;
-import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
 
 import java.util.ArrayList;
@@ -387,7 +387,7 @@ public class SpeedBoostTabFragment extends Fragment {
                     PsiCashException e = (PsiCashException) error;
                     errorMessage = e.getUIMessage(requireActivity());
                 } else {
-                    Utils.MyLog.g("Unexpected PsiCash error: " + error.toString());
+                    MyLog.e("Unexpected PsiCash error: " + error);
                     errorMessage = getString(R.string.unexpected_error_occured_send_feedback_message);
                 }
                 UiHelpers.getSnackbar(errorMessage,

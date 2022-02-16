@@ -34,9 +34,9 @@ import com.psiphon3.MainActivity;
 import com.psiphon3.TunnelState;
 import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.billing.PurchaseState;
+import com.psiphon3.log.MyLog;
 import com.psiphon3.psicash.PsiCashClient;
 import com.psiphon3.psicash.util.UiHelpers;
-import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
 
 import java.text.NumberFormat;
@@ -235,7 +235,7 @@ public class AddPsiCashTabFragment extends Fragment {
                             try {
                                 itemValue = GooglePlayBillingHelper.IAB_PSICASH_SKUS_TO_VALUE.get(skuDetails.getSku());
                             } catch (NullPointerException e) {
-                                Utils.MyLog.g("PsiCashStoreActivity: error getting price for sku: " + skuDetails.getSku());
+                                MyLog.e("PsiCashStoreActivity: error getting price for sku: " + skuDetails.getSku());
                                 continue;
                             }
                             String itemTitle = nf.format(itemValue);

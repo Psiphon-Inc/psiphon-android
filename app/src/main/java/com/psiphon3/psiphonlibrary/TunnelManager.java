@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Psiphon Inc.
+ * Copyright (c) 2022, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,6 +18,8 @@
  */
 
 package com.psiphon3.psiphonlibrary;
+
+import static android.os.Build.VERSION_CODES.LOLLIPOP;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -46,7 +48,7 @@ import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.TunnelState;
 import com.psiphon3.billing.PurchaseVerifier;
-import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import com.psiphon3.log.MyLog;
 import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
 
@@ -77,8 +79,6 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.schedulers.Schedulers;
 
-import static android.os.Build.VERSION_CODES.LOLLIPOP;
-
 public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifier.VerificationResultListener {
     // Android IPC messages
     // Client -> Service
@@ -88,7 +88,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         STOP_SERVICE,
         RESTART_TUNNEL,
         CHANGED_LOCALE,
-        ON_RESUME,
     }
 
     // Service -> Client
@@ -261,7 +260,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         }
 
         if (m_firstStart) {
-            MyLog.v(R.string.client_version, MyLog.Sensitivity.NOT_SENSITIVE, EmbeddedValues.CLIENT_VERSION);
+            MyLog.i(R.string.client_version, MyLog.Sensitivity.NOT_SENSITIVE, EmbeddedValues.CLIENT_VERSION);
             m_firstStart = false;
             m_tunnelThreadStopSignal = new CountDownLatch(1);
             m_compositeDisposable.add(
@@ -418,7 +417,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             try {
                 vpnRevokedPendingIntent.send(m_parentService, 0, null);
             } catch (PendingIntent.CanceledException e) {
-                MyLog.g(String.format("vpnRevokedPendingIntent failed: %s", e.getMessage()));
+                MyLog.w("vpnRevokedPendingIntent send failed: " + e);
             }
         } else {
             if (mNotificationManager == null) {
@@ -672,7 +671,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 case REGISTER:
                     if (manager != null) {
                         if (msg.replyTo == null) {
-                            MyLog.d("Error registering a client: client's messenger is null.");
+                            MyLog.w("Error registering a client: client's messenger is null.");
                             return;
                         }
                         MessengerWrapper client = new MessengerWrapper(msg.replyTo, msg.getData());
@@ -694,6 +693,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                         }
                         manager.mClients.put(msg.replyTo.hashCode(), client);
                         manager.m_newClientPublishRelay.accept(new Object());
+
+                        // Pro only: for each new client that is an activity trigger IAB check and
+                        // upgrade current connection if there is a new valid subscription purchase.
+                        if (client.isActivity) {
+                            manager.purchaseVerifier.queryAllPurchases();
+                        }
                     }
                     break;
 
@@ -705,6 +710,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
                 case STOP_SERVICE:
                     if (manager != null) {
+                        // Ignore the message if the sender is not registered
+                        if (manager.mClients.get(msg.replyTo.hashCode()) == null) {
+                            return;
+                        }
                         // Do not send any more messages after a stop was commanded.
                         // Client side will receive a ServiceConnection.onServiceDisconnected callback
                         // when the service finally stops.
@@ -715,6 +724,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
                 case RESTART_TUNNEL:
                     if (manager != null) {
+                        // Ignore the message if the sender is not registered
+                        if (manager.mClients.get(msg.replyTo.hashCode()) == null) {
+                            return;
+                        }
+
                         final boolean resetReconnectFlag;
                         Bundle data = msg.getData();
                         if (data != null) {
@@ -740,16 +754,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
                 case CHANGED_LOCALE:
                     if (manager != null) {
+                        // Ignore the message if the sender is not registered
+                        if (manager.mClients.get(msg.replyTo.hashCode()) == null) {
+                            return;
+                        }
                         setLocale(manager);
                     }
                     break;
-
-                case ON_RESUME:
-                    if (manager != null) {
-                        manager.purchaseVerifier.queryAllPurchases();
-                    }
-                    break;
-
                 default:
                     super.handleMessage(msg);
             }
@@ -811,7 +822,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         try {
             handshakePendingIntent.send(m_parentService, 0, fillInExtras);
         } catch (PendingIntent.CanceledException e) {
-            MyLog.g(String.format("sendHandshakeIntent failed: %s", e.getMessage()));
+            MyLog.w("handshakePendingIntent send failed: " + e);
         }
     }
 
@@ -868,16 +879,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         }
     };
 
-    private Handler periodicMaintenanceHandler = new Handler();
-    private final long periodicMaintenanceIntervalMs = 12 * 60 * 60 * 1000;
-    private final Runnable periodicMaintenance = new Runnable() {
-        @Override
-        public void run() {
-            LoggingProvider.LogDatabaseHelper.truncateLogs(getContext(), false);
-            periodicMaintenanceHandler.postDelayed(this, periodicMaintenanceIntervalMs);
-        }
-    };
-
     private void runTunnel() {
         Utils.initializeSecureRandom();
         // Also set locale
@@ -888,19 +889,18 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         m_startedTunneling.set(false);
         m_networkConnectionStateBehaviorRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
 
-        MyLog.v(R.string.starting_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
+        MyLog.i(R.string.starting_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
 
         m_tunnelState.homePages.clear();
 
         DataTransferStats.getDataTransferStatsForService().startSession();
         sendDataTransferStatsHandler.postDelayed(sendDataTransferStats, sendDataTransferStatsIntervalMs);
-        periodicMaintenanceHandler.postDelayed(periodicMaintenance, periodicMaintenanceIntervalMs);
 
         try {
             if (!m_tunnel.startRouting()) {
                 throw new PsiphonTunnel.Exception("application is not prepared or revoked");
             }
-            MyLog.v(R.string.vpn_service_running, MyLog.Sensitivity.NOT_SENSITIVE);
+            MyLog.i(R.string.vpn_service_running, MyLog.Sensitivity.NOT_SENSITIVE);
 
             m_tunnel.startTunneling(getServerEntries(m_parentService));
             m_startedTunneling.set(true);
@@ -914,20 +914,19 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             MyLog.e(R.string.start_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE, errorMessage);
             if ((errorMessage.startsWith("get package uid:") || errorMessage.startsWith("getPackageUid:"))
                     && errorMessage.endsWith("android.permission.INTERACT_ACROSS_USERS.")) {
-                MyLog.v(R.string.vpn_exclusions_conflict, MyLog.Sensitivity.NOT_SENSITIVE);
+                MyLog.i(R.string.vpn_exclusions_conflict, MyLog.Sensitivity.NOT_SENSITIVE);
             }
         } finally {
-            MyLog.v(R.string.stopping_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
+            MyLog.i(R.string.stopping_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
 
             m_isStopping.set(true);
             m_networkConnectionStateBehaviorRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
             m_tunnel.stop();
 
-            periodicMaintenanceHandler.removeCallbacks(periodicMaintenance);
             sendDataTransferStatsHandler.removeCallbacks(sendDataTransferStats);
             DataTransferStats.getDataTransferStatsForService().stop();
 
-            MyLog.v(R.string.stopped_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
+            MyLog.i(R.string.stopped_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
 
             // Stop service
             m_parentService.stopForeground(true);
@@ -988,7 +987,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             case ALL_APPS:
                 vpnAppsExclusionSetting = VpnAppsUtils.VpnAppsExclusionSetting.ALL_APPS;
                 vpnAppsExclusionCount = 0;
-                MyLog.v(R.string.no_apps_excluded, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS);
+                MyLog.i(R.string.no_apps_excluded, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS);
                 break;
 
             case INCLUDE_APPS:
@@ -1003,7 +1002,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                         // Therefore we will perform our own check first.
                         pm.getApplicationInfo(packageId, 0);
                         vpnBuilder.addAllowedApplication(packageId);
-                        MyLog.v(R.string.individual_app_included, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, packageId);
+                        MyLog.i(R.string.individual_app_included, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, packageId);
                     } catch (PackageManager.NameNotFoundException e) {
                         iterator.remove();
                     }
@@ -1026,7 +1025,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     // There's no included apps, we're tunnelling all
                     vpnAppsExclusionSetting = VpnAppsUtils.VpnAppsExclusionSetting.ALL_APPS;
                     vpnAppsExclusionCount = 0;
-                    MyLog.v(R.string.no_apps_excluded, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS);
+                    MyLog.i(R.string.no_apps_excluded, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS);
                 }
                 break;
 
@@ -1042,7 +1041,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                         // Therefore we will perform our own check first.
                         pm.getApplicationInfo(packageId, 0);
                         vpnBuilder.addDisallowedApplication(packageId);
-                        MyLog.v(R.string.individual_app_excluded, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, packageId);
+                        MyLog.i(R.string.individual_app_excluded, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, packageId);
                     } catch (PackageManager.NameNotFoundException e) {
                         iterator.remove();
                     }
@@ -1053,7 +1052,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     excludedAppsCount = excludedApps.size();
                 }
                 if (excludedAppsCount == 0) {
-                    MyLog.v(R.string.no_apps_excluded, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS);
+                    MyLog.i(R.string.no_apps_excluded, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS);
                 }
                 vpnAppsExclusionSetting = VpnAppsUtils.VpnAppsExclusionSetting.EXCLUDE_APPS;
                 vpnAppsExclusionCount = excludedAppsCount;
@@ -1165,13 +1164,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 json.put("EgressRegion", "");
             } else {
                 String egressRegion = tunnelConfig.egressRegion;
-                MyLog.g("EgressRegion", "regionCode", egressRegion);
+                MyLog.i("EgressRegion", "regionCode", egressRegion);
                 json.put("EgressRegion", egressRegion);
             }
 
             if (tunnelConfig.disableTimeouts) {
                 //disable timeouts
-                MyLog.g("DisableTimeouts", "disableTimeouts", true);
+                MyLog.i("DisableTimeouts", "disableTimeouts", true);
                 json.put("NetworkLatencyMultiplierLambda", 0.1);
             }
 
@@ -1229,7 +1228,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         m_Handler.post(new Runnable() {
             @Override
             public void run() {
-                MyLog.g(message, "msg", message);
+                MyLog.i(message);
             }
         });
     }
@@ -1261,7 +1260,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                         try {
                             regionNotAvailablePendingIntent.send(m_parentService, 0, null);
                         } catch (PendingIntent.CanceledException e) {
-                            MyLog.g(String.format("regionNotAvailablePendingIntent failed: %s", e.getMessage()));
+                            MyLog.w("regionNotAvailablePendingIntent send failed: " + e);
                         }
                     } else {
                         if (mNotificationManager == null) {
@@ -1315,7 +1314,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         m_Handler.post(new Runnable() {
             @Override
             public void run() {
-                MyLog.v(R.string.socks_running, MyLog.Sensitivity.NOT_SENSITIVE, port);
+                MyLog.i(R.string.socks_running, MyLog.Sensitivity.NOT_SENSITIVE, port);
                 m_tunnelState.listeningLocalSocksProxyPort = port;
             }
         });
@@ -1326,7 +1325,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         m_Handler.post(new Runnable() {
             @Override
             public void run() {
-                MyLog.v(R.string.http_proxy_running, MyLog.Sensitivity.NOT_SENSITIVE, port);
+                MyLog.i(R.string.http_proxy_running, MyLog.Sensitivity.NOT_SENSITIVE, port);
                 m_tunnelState.listeningLocalHttpProxyPort = port;
 
                 final AppPreferences multiProcessPreferences = new AppPreferences(getContext());
@@ -1345,7 +1344,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 // Display the error message only once, and continue trying to connect in
                 // case the issue is temporary.
                 if (m_lastUpstreamProxyErrorMessage == null || !m_lastUpstreamProxyErrorMessage.equals(message)) {
-                    MyLog.v(R.string.upstream_proxy_error, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, message);
+                    MyLog.w(R.string.upstream_proxy_error, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, message);
                     m_lastUpstreamProxyErrorMessage = message;
                 }
             }
@@ -1363,7 +1362,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
                 // Do not log "Connecting" if tunnel is stopping
                 if (!m_isStopping.get()) {
-                    MyLog.v(R.string.tunnel_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
+                    MyLog.i(R.string.tunnel_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
                 }
             }
         });
@@ -1376,7 +1375,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             public void run() {
                 DataTransferStats.getDataTransferStatsForService().startConnected();
 
-                MyLog.v(R.string.tunnel_connected, MyLog.Sensitivity.NOT_SENSITIVE);
+                MyLog.i(R.string.tunnel_connected, MyLog.Sensitivity.NOT_SENSITIVE);
 
                 m_networkConnectionStateBehaviorRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTED);
             }
@@ -1413,7 +1412,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         m_Handler.post(new Runnable() {
             @Override
             public void run() {
-                MyLog.v(R.string.untunneled_address, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, address);
+                MyLog.i(R.string.untunneled_address, MyLog.Sensitivity.SENSITIVE_FORMAT_ARGS, address);
             }
         });
     }
@@ -1436,7 +1435,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             @Override
             public void run() {
                 m_networkConnectionStateBehaviorRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.WAITING_FOR_NETWORK);
-                MyLog.v(R.string.waiting_for_network_connectivity, MyLog.Sensitivity.NOT_SENSITIVE);
+                MyLog.i(R.string.waiting_for_network_connectivity, MyLog.Sensitivity.NOT_SENSITIVE);
             }
         });
     }
@@ -1452,7 +1451,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 for (Authorization a : m_tunnelConfigAuthorizations) {
                     if (a.Id().equals(Id)) {
                         acceptedAuthorizations.add(a);
-                        MyLog.g("TunnelManager::onActiveAuthorizationIDs: accepted authorization of accessType: " +
+                        MyLog.i("TunnelManager::onActiveAuthorizationIDs: accepted authorization of accessType: " +
                                 a.accessType() + ", expires: " +
                                 Utils.getISO8601String(a.expires()));
                     }
@@ -1472,7 +1471,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
                 // Try to remove all not accepted authorizations from the persistent storage
                 // NOTE: empty list check is performed and logged in Authorization::removeAuthorizations
-                MyLog.g("TunnelManager::onActiveAuthorizationIDs: check not accepted authorizations");
+                MyLog.i("TunnelManager::onActiveAuthorizationIDs: check not accepted authorizations");
                 boolean hasChanged = Authorization.removeAuthorizations(getContext(), notAcceptedAuthorizations);
                 if (hasChanged) {
                     final AppPreferences mp = new AppPreferences(getContext());
@@ -1480,7 +1479,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     sendClientMessage(ServiceToClientMessage.AUTHORIZATIONS_REMOVED.ordinal(), null);
                 }
             } else {
-                MyLog.g("TunnelManager::onActiveAuthorizationIDs: current config authorizations list is empty");
+                MyLog.i("TunnelManager::onActiveAuthorizationIDs: current config authorizations list is empty");
             }
 
             // Determine if user has a speed boost or subscription auth in the current tunnel run
@@ -1506,7 +1505,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 m_networkConnectionStateBehaviorRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
                 // Do not log "Connecting" if tunnel is stopping
                 if (!m_isStopping.get()) {
-                    MyLog.v(R.string.tunnel_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
+                    MyLog.i(R.string.tunnel_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
                 }
             }
         });
@@ -1514,7 +1513,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
     @Override
     public void onServerAlert(String reason, String subject, List<String> actionURLs) {
-        MyLog.g("Server alert", "reason", reason, "subject", subject);
+        MyLog.i("Server alert", "reason", reason, "subject", subject);
         if ("disallowed-traffic".equals(reason)) {
             // Do not show alerts when user has Speed Boost or a subscription.
             // Note that this is an extra measure preventing accidental server alerts since
@@ -1597,17 +1596,17 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     public void onVerificationResult(PurchaseVerifier.VerificationResult action) {
         switch (action) {
             case RESTART_AS_NON_SUBSCRIBER:
-                MyLog.g("TunnelManager: purchase verification: will restart as a non subscriber");
+                MyLog.i("TunnelManager: purchase verification: will restart as a non subscriber");
                 m_tunnelConfig.sponsorId = EmbeddedValues.SPONSOR_ID;
                 restartTunnel();
                 break;
             case RESTART_AS_SUBSCRIBER:
-                MyLog.g("TunnelManager: purchase verification: will restart as a subscriber");
+                MyLog.i("TunnelManager: purchase verification: will restart as a subscriber");
                 m_tunnelConfig.sponsorId = BuildConfig.SUBSCRIPTION_SPONSOR_ID;
                 restartTunnel();
                 break;
             case PSICASH_PURCHASE_REDEEMED:
-                MyLog.g("TunnelManager: purchase verification: PsiCash purchase redeemed");
+                MyLog.i("TunnelManager: purchase verification: PsiCash purchase redeemed");
                 final AppPreferences mp = new AppPreferences(getContext());
                 mp.put(m_parentService.getString(R.string.persistentPsiCashPurchaseRedeemedFlag), true);
                 sendClientMessage(ServiceToClientMessage.PSICASH_PURCHASE_REDEEMED.ordinal(), null);

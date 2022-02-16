@@ -212,12 +212,6 @@ com.mopub.mobileads.utils" />
                 android:value="com.psiphon3.MainActivity" />
         </activity>
 
-        <provider
-            android:name="com.psiphon3.psiphonlibrary.LoggingProvider"
-            android:authorities="com.psiphon3.subscription.LoggingProvider"
-            android:exported="false">
-        </provider>
-
     </application>
 
 </manifest>

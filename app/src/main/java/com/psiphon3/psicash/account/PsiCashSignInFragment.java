@@ -47,12 +47,12 @@ import com.jakewharton.rxrelay2.PublishRelay;
 import com.jakewharton.rxrelay2.Relay;
 import com.psiphon3.TunnelState;
 import com.psiphon3.billing.GooglePlayBillingHelper;
+import com.psiphon3.log.MyLog;
 import com.psiphon3.psicash.PsiCashException;
 import com.psiphon3.psicash.mvibase.MviView;
 import com.psiphon3.psicash.util.SingleViewEvent;
 import com.psiphon3.psicash.util.UiHelpers;
 import com.psiphon3.psiphonlibrary.TunnelServiceInteractor;
-import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
 
 import io.reactivex.Flowable;
@@ -268,7 +268,7 @@ public class PsiCashSignInFragment extends Fragment
         } else {
             if (!state.psiCashModel().isAccount()) {
                 // PsiCash state is not initialized, we shouldn't be here, log and close the activity
-                Utils.MyLog.g("PsiCashAccountFragment: PsiCash state is not initialized, closing the activity.");
+                MyLog.w("PsiCashAccountFragment: PsiCash state is not initialized, closing the activity.");
                 requireActivity().finish();
             }
         }
@@ -295,7 +295,7 @@ public class PsiCashSignInFragment extends Fragment
                 PsiCashException e = (PsiCashException) error;
                 errorMessage = e.getUIMessage(requireActivity());
             } else {
-                Utils.MyLog.g("Unexpected PsiCash error: " + error.toString());
+                MyLog.e("Unexpected PsiCash error: " + error.toString());
                 errorMessage = getString(R.string.unexpected_error_occured_send_feedback_message);
             }
             UiHelpers.getSnackbar(errorMessage,

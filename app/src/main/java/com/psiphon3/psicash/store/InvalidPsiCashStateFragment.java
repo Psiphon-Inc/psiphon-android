@@ -26,7 +26,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import com.psiphon3.psiphonlibrary.Utils;
+import com.psiphon3.log.MyLog;
 import com.psiphon3.subscription.R;
 
 public class InvalidPsiCashStateFragment extends Fragment {
@@ -40,7 +40,7 @@ public class InvalidPsiCashStateFragment extends Fragment {
         ((PsiCashStoreActivity) requireActivity()).hideProgress();
 
         // Log finish the activity with a fade out if we somehow ended up here
-        Utils.MyLog.g("PsiCashStoreFragment: invalid state, finishing the container activity.");
+        MyLog.w("PsiCashStoreFragment: invalid state, finishing the container activity.");
         try {
             requireActivity().setResult(Activity.RESULT_OK);
             requireActivity().finish();

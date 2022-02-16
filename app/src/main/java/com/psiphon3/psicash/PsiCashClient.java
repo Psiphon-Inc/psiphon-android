@@ -28,6 +28,7 @@ import androidx.annotation.NonNull;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.psiphon3.TunnelState;
+import com.psiphon3.log.MyLog;
 import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psiphonlibrary.Authorization;
 import com.psiphon3.psiphonlibrary.Utils;
@@ -153,7 +154,7 @@ public class PsiCashClient {
 
         if (err != null) {
             String errorMessage = "Could not initialize PsiCash lib: error: " + err.message;
-            Utils.MyLog.g("PsiCash: " + errorMessage);
+            MyLog.e("PsiCash: " + errorMessage);
             if (err.critical) {
                 // Reset the datastore and throw original error.
                 psiCashLibWrapper.init(ctx.getFilesDir().toString(), httpRequester, true);
@@ -267,7 +268,7 @@ public class PsiCashClient {
         PsiCashLib.BalanceResult balanceResult = psiCashLibWrapper.balance();
         if (balanceResult.error != null) {
             String errorMessage = "PsiCashLib.BalanceResult error: " + balanceResult.error.message;
-            Utils.MyLog.g("PsiCash: " + errorMessage);
+            MyLog.e("PsiCash: " + errorMessage);
             if (balanceResult.error.critical) {
                 throw new PsiCashException.Critical(errorMessage);
             } else {
@@ -279,7 +280,7 @@ public class PsiCashClient {
         PsiCashLib.GetPurchasePricesResult getPurchasePricesResult = psiCashLibWrapper.getPurchasePrices();
         if (getPurchasePricesResult.error != null) {
             String errorMessage = "PsiCashLib.GetPurchasePricesResult error: " + balanceResult.error.message;
-            Utils.MyLog.g("PsiCash: " + errorMessage);
+            MyLog.e("PsiCash: " + errorMessage);
             if (getPurchasePricesResult.error.critical) {
                 throw new PsiCashException.Critical(errorMessage);
             } else {
@@ -291,7 +292,7 @@ public class PsiCashClient {
         PsiCashLib.GetPurchasesResult getPurchasesResult = psiCashLibWrapper.getPurchases();
         if (getPurchasesResult.error != null) {
             String errorMessage = "PsiCashLib.GetPurchasesResult error: " + getPurchasesResult.error.message;
-            Utils.MyLog.g("PsiCash: " + errorMessage);
+            MyLog.e("PsiCash: " + errorMessage);
             if (getPurchasesResult.error.critical) {
                 throw new PsiCashException.Critical(errorMessage);
             } else {
@@ -351,27 +352,27 @@ public class PsiCashClient {
 
         if (forceCheckPurchases) {
             boolean authStorageChanged;
-            Utils.MyLog.g("PsiCash: force checking next expiring purchase for new authorizations.");
+            MyLog.i("PsiCash: force checking next expiring purchase for new authorizations.");
             // If there are new authorizations in the purchases list then signal a tunnel restart
             PsiCashLib.Purchase purchase = psiCashModel.nextExpiringPurchase();
             if (purchase != null) {
                 Authorization authorization = Authorization.fromBase64Encoded(purchase.authorization.encoded);
                 authStorageChanged = Authorization.storeAuthorization(appContext, authorization);
                 if (authStorageChanged) {
-                    Utils.MyLog.g("PsiCash: stored a new authorization of accessType: " +
+                    MyLog.i("PsiCash: stored a new authorization of accessType: " +
                             purchase.authorization.accessType + ", expires: " +
                             Utils.getISO8601String(purchase.authorization.expires)
                     );
                 } else {
-                    Utils.MyLog.g("PsiCash: there are no new authorizations, continue.");
+                    MyLog.i("PsiCash: there are no new authorizations, continue.");
                 }
             } else {
-                Utils.MyLog.g("PsiCash: purchases list is empty, will remove all authorizations of accessType: " + Authorization.ACCESS_TYPE_SPEED_BOOST);
+                MyLog.i("PsiCash: purchases list is empty, will remove all authorizations of accessType: " + Authorization.ACCESS_TYPE_SPEED_BOOST);
                 authStorageChanged = Authorization.purgeAuthorizationsOfAccessType(appContext, Authorization.ACCESS_TYPE_SPEED_BOOST);
             }
 
             if (authStorageChanged) {
-                Utils.MyLog.g("PsiCash: authorization storage contents changed, send tunnel restart broadcast");
+                MyLog.i("PsiCash: authorization storage contents changed, send tunnel restart broadcast");
                 android.content.Intent intent = new android.content.Intent(BroadcastIntent.TUNNEL_RESTART);
                 LocalBroadcastManager.getInstance(appContext).sendBroadcast(intent);
             }
@@ -490,7 +491,7 @@ public class PsiCashClient {
                                             distinguisher, price);
 
                             if (result.error != null) {
-                                Utils.MyLog.g("PsiCash: error making expiring purchase: " + result.error.message);
+                                MyLog.e("PsiCash: error making expiring purchase: " + result.error.message);
                                 if (result.error.critical) {
                                     throw new PsiCashException.Critical(result.error.message,
                                             appContext.getString(R.string.psicash_cannot_make_purchase_critical_message));
@@ -501,14 +502,14 @@ public class PsiCashClient {
                             }
 
                             if (result.status != null && result.status != PsiCashLib.Status.SUCCESS) {
-                                Utils.MyLog.g("PsiCash: transaction error making expiring purchase: " + result.status);
+                                MyLog.e("PsiCash: transaction error making expiring purchase: " + result.status);
                                 throw new PsiCashException.Transaction(result.status, isAccount());
                             }
 
                             // Reset optimistic reward if there's a response from the server
                             resetVideoReward();
 
-                            Utils.MyLog.g("PsiCash: got new purchase of transactionClass " + result.purchase.transactionClass);
+                            MyLog.i("PsiCash: got new purchase of transactionClass " + result.purchase.transactionClass);
                         })
                 )
                 // If INSUFFICIENT_BALANCE retry for up to 30 seconds
@@ -689,7 +690,7 @@ public class PsiCashClient {
                                     psiCashLibWrapper.accountLogin(username, password);
 
                             if (result.error != null) {
-                                Utils.MyLog.g("PsiCash: error logging in: " + result.error.message);
+                                MyLog.w("PsiCash: error logging in: " + result.error.message);
                                 if (result.error.critical) {
                                     throw new PsiCashException.Critical(result.error.message,
                                             appContext.getString(R.string.psicash_cannot_login_critical_message));
@@ -699,11 +700,11 @@ public class PsiCashClient {
                                 }
                             }
                             if (result.status != null && result.status != PsiCashLib.Status.SUCCESS) {
-                                Utils.MyLog.g("PsiCash: transaction error logging in: " + result.status);
+                                MyLog.w("PsiCash: transaction error logging in: " + result.status);
                                 throw new PsiCashException.Transaction(result.status, isAccount());
                             }
 
-                            Utils.MyLog.g("PsiCash: got new login with lastTrackerMerge: " + result.lastTrackerMerge);
+                            MyLog.i("PsiCash: got new login with lastTrackerMerge: " + result.lastTrackerMerge);
                             return result.lastTrackerMerge != null && result.lastTrackerMerge;
                         })
                 );
@@ -723,7 +724,7 @@ public class PsiCashClient {
 
                             PsiCashLib.AccountLogoutResult result = psiCashLibWrapper.accountLogout();
                             if (result.error != null) {
-                                Utils.MyLog.g("PsiCash: error logging out: " + result.error.message);
+                                MyLog.w("PsiCash: error logging out: " + result.error.message);
                                 if (result.error.critical) {
                                     throw new PsiCashException.Critical(result.error.message);
                                 } else {

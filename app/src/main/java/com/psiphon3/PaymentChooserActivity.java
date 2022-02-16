@@ -40,8 +40,8 @@ import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.SkuDetails;
 import com.google.android.material.tabs.TabLayout;
 import com.psiphon3.billing.GooglePlayBillingHelper;
+import com.psiphon3.log.MyLog;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
-import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
 
 import org.threeten.bp.Period;
@@ -200,7 +200,7 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                     .toList()
                     .doOnSuccess(skuDetailsList -> {
                         if (skuDetailsList == null || skuDetailsList.size() == 0) {
-                            Utils.MyLog.g("PaymentChooserActivity: subscription SKU error: sku details list is empty.");
+                            MyLog.e("PaymentChooserActivity: subscription SKU error: sku details list is empty.");
                             // finish the activity and show "Subscription options not available" toast.
                             if (!activity.isFinishing()) {
                                 activity.finishActivity(RESULT_OK);
@@ -209,7 +209,7 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                         } // else
                         for (SkuDetails skuDetails : skuDetailsList) {
                             if (skuDetails == null) {
-                                Utils.MyLog.g("PaymentChooserActivity: subscription SKU error: sku details is null.");
+                                MyLog.e("PaymentChooserActivity: subscription SKU error: sku details is null.");
                                 continue;
                             }
 
@@ -251,7 +251,7 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                             clickable.setVisibility(View.VISIBLE);
                             clickable.setOnClickListener(v -> {
                                 if (!activity.isFinishing()) {
-                                    Utils.MyLog.g("PaymentChooserActivity: subscription purchase button clicked.");
+                                    MyLog.i("PaymentChooserActivity: subscription purchase button clicked.");
                                     Intent data = new Intent();
                                     data.putExtra(USER_PICKED_SKU_DETAILS_EXTRA, skuDetails.getOriginalJson());
                                     if (limitedSubscriptionPurchase != null) {
@@ -277,7 +277,7 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                                         freeTrialTv.setVisibility(View.VISIBLE);
                                     }
                                 } catch (DateTimeParseException e) {
-                                    Utils.MyLog.g("PaymentChooserActivity: failed to parse free trial period: " + freeTrialPeriodISO8061);
+                                    MyLog.w("PaymentChooserActivity: failed to parse free trial period: " + freeTrialPeriodISO8061);
                                 }
                             }
                         }
@@ -323,7 +323,7 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                     .toList()
                     .doOnSuccess(skuDetailsList -> {
                         if (skuDetailsList == null || skuDetailsList.size() == 0) {
-                            Utils.MyLog.g("PaymentChooserActivity: time pass SKU error: sku details list is empty.");
+                            MyLog.e("PaymentChooserActivity: time pass SKU error: sku details list is empty.");
                             // finish the activity and show "Subscription options not available" toast.
                             if (!activity.isFinishing()) {
                                 activity.finishActivity(RESULT_OK);
@@ -332,13 +332,13 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                         } // else
                         for (SkuDetails skuDetails : skuDetailsList) {
                             if (skuDetails == null) {
-                                Utils.MyLog.g("PaymentChooserActivity: time pass SKU error: sku details is null.");
+                                MyLog.e("PaymentChooserActivity: time pass SKU error: sku details is null.");
                                 continue;
                             }
                             // Get pre-calculated life time in days for time passes
                             Long lifetimeInDays = GooglePlayBillingHelper.IAB_TIMEPASS_SKUS_TO_DAYS.get(skuDetails.getSku());
                             if (lifetimeInDays == null || lifetimeInDays == 0L) {
-                                Utils.MyLog.g("PaymentChooserActivity error: unknown time pass period for sku: " + skuDetails);
+                                MyLog.w("PaymentChooserActivity error: unknown time pass period for sku: " + skuDetails);
                                 continue;
                             }
                             // Calculate price per day
@@ -378,7 +378,7 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                             clickable.setVisibility(View.VISIBLE);
                             clickable.setOnClickListener(v -> {
                                 if (!activity.isFinishing()) {
-                                    Utils.MyLog.g("PaymentChooserActivity: time pass purchase button clicked.");
+                                    MyLog.i("PaymentChooserActivity: time pass purchase button clicked.");
                                     Intent data = new Intent();
                                     data.putExtra(USER_PICKED_SKU_DETAILS_EXTRA, skuDetails.getOriginalJson());
                                     activity.setResult(RESULT_OK, data);

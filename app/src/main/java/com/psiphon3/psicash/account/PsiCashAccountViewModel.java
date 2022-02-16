@@ -25,9 +25,9 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 
 import com.jakewharton.rxrelay2.PublishRelay;
+import com.psiphon3.log.MyLog;
 import com.psiphon3.psicash.PsiCashModel;
 import com.psiphon3.psicash.mvibase.MviViewModel;
-import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
 
 import io.reactivex.Observable;
@@ -100,7 +100,7 @@ public class PsiCashAccountViewModel extends AndroidViewModel
                                 .psiCashTransactionInFlight(false)
                                 .build();
                     case FAILURE:
-                        Utils.MyLog.g("PsiCash view state error: " + result.getClass().getSimpleName() + ": " + result.error());
+                        MyLog.e("PsiCash view state error: " + result.getClass().getSimpleName() + ": " + result.error());
                         return stateBuilder
                                 .psiCashTransactionInFlight(false)
                                 .error(result.error())
@@ -125,7 +125,7 @@ public class PsiCashAccountViewModel extends AndroidViewModel
                                 .psiCashTransactionInFlight(false)
                                 .build();
                     case FAILURE:
-                        Utils.MyLog.g("PsiCash view state error: " + result.getClass().getSimpleName() + ": " + result.error());
+                        MyLog.e("PsiCash view state error: " + result.getClass().getSimpleName() + ": " + result.error());
                         return stateBuilder
                                 .psiCashTransactionInFlight(false)
                                 .error(result.error())

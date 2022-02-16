@@ -142,22 +142,15 @@ public class PsiCashAccountActivity extends LocalizedActivities.AppCompatActivit
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        tunnelServiceInteractor.onStop(getApplicationContext());
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
-        tunnelServiceInteractor.onResume();
-        Intent intent = getIntent();
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
         tunnelServiceInteractor.onStart(getApplicationContext());
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        tunnelServiceInteractor.onStop(getApplicationContext());
     }
 
     void hideProgress() {

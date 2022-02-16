@@ -45,10 +45,10 @@ import androidx.viewpager.widget.ViewPager;
 import com.google.android.material.tabs.TabLayout;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.billing.GooglePlayBillingHelper;
+import com.psiphon3.log.MyLog;
 import com.psiphon3.psicash.mvibase.MviView;
 import com.psiphon3.psicash.util.UiHelpers;
 import com.psiphon3.psiphonlibrary.TunnelServiceInteractor;
-import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
@@ -119,7 +119,7 @@ public class StoreTabHostFragment extends Fragment
                         UiHelpers.balanceLabelAnimationObservable(pair.first, pair.second, balanceLabel)
                 )
                 .subscribe(ValueAnimator::start, err -> {
-                    Utils.MyLog.g("Balance label increase animation error: " + err);
+                    MyLog.e("Balance label increase animation error: " + err);
                 }));
 
         TabLayout tabLayout = view.findViewById(R.id.psicash_store_tablayout);
@@ -247,7 +247,7 @@ public class StoreTabHostFragment extends Fragment
         final AppPreferences mp = new AppPreferences(requireContext());
         String psiCashCustomData = mp.getString(requireContext().getString(R.string.persistentPsiCashCustomData), "");
         if (TextUtils.isEmpty(psiCashCustomData)) {
-            Utils.MyLog.g("PsiCashStoreActivity error: PsiCash custom data is empty.");
+            MyLog.e("PsiCashStoreActivity error: PsiCash custom data is empty.");
             requireActivity().finish();
             return;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Psiphon Inc.
+ * Copyright (c) 2022, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -14,28 +14,21 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 package com.psiphon3;
 
-import android.annotation.TargetApi;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.WebChromeClient;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.Button;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
@@ -46,27 +39,19 @@ import com.psiphon3.psicash.details.PsiCashDetailsViewModel;
 import com.psiphon3.psicash.details.PsiCashFragment;
 import com.psiphon3.subscription.R;
 
-import java.util.ArrayList;
-import java.util.Timer;
-import java.util.TimerTask;
-
-import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.functions.BiFunction;
 
 public class HomeTabFragment extends Fragment {
-    private static boolean seenHandshake = false;
-    private MainActivityViewModel viewModel;
-    private View mainView;
-    private SponsorHomePage sponsorHomePage;
-    private boolean isWebViewLoaded = false;
     private View rateLimitedTextSection;
     private TextView rateLimitedText;
     private TextView rateUnlimitedText;
     private Button rateLimitUpgradeButton;
-    private CompositeDisposable compositeDisposable = new CompositeDisposable();
+    private final CompositeDisposable compositeDisposable = new CompositeDisposable();
+    private PsiCashDetailsViewModel psiCashDetailsViewModel;
+    private GooglePlayBillingHelper googlePlayBillingHelper;
 
 
     @Nullable
@@ -78,7 +63,6 @@ public class HomeTabFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        mainView = view;
 
         rateLimitedTextSection = view.findViewById(R.id.rateLimitedTextSection);
         rateLimitedText = view.findViewById(R.id.rateLimitedText);
@@ -96,60 +80,22 @@ public class HomeTabFragment extends Fragment {
                     .commit();
         }
 
-        viewModel = new ViewModelProvider(requireActivity(),
-                new ViewModelProvider.AndroidViewModelFactory(requireActivity().getApplication()))
-                .get(MainActivityViewModel.class);
-
-        // Observe tunnel state for CONNECTED status and load sponsor home pages in the embedded web view if needed
-        compositeDisposable.add(viewModel.tunnelStateFlowable()
-                .observeOn(AndroidSchedulers.mainThread())
-                // Check for URLs to be opened in the embedded web view.
-                .doOnNext(tunnelState -> {
-                    // If the tunnel is either stopped or running but not connected
-                    // then stop loading the sponsor page and flip to status view.
-                    if (tunnelState.isStopped() ||
-                            (tunnelState.isRunning() && !tunnelState.connectionData().isConnected())) {
-                        if (sponsorHomePage != null) {
-                            sponsorHomePage.stop();
-                        }
-                        // Also reset isWebViewLoaded
-                        isWebViewLoaded = false;
-                    }
-                })
-                // Only pass through if tunnel is running and connected
-                .filter(tunnelState -> tunnelState.isRunning() && tunnelState.connectionData().isConnected())
-                .flatMap(tunnelState -> {
-                    ArrayList<String> homePages = tunnelState.connectionData().homePages();
-                    if (homePages == null || homePages.size() == 0) {
-                        // There's no URL to load
-                        return Flowable.empty();
-                    }
-                    String url = homePages.get(0);
-
-                    // Unlike non-Pro clients we want to load the home page ONLY when the handshake completes
-                    // because the embedded web view is shown not as a part of the tab but in a popup.
-                    // Showing the popup every time when the main activity is created by clicking running tunnel
-                    // service notification would be a bad UX.
-                    if (!seenHandshake ||
-                            isWebViewLoaded ||
-                            !MainActivity.shouldLoadInEmbeddedWebView(url)) {
-                        // There either was no handshake or the embedded view has loaded the URL
-                        // already or the URL should not be loaded in the embedded view
-                        return Flowable.empty();
-                    }
-                    setSeenHandshake(false);
-                    // Pass the URL downstream to be loaded in the embedded web view
-                    return Flowable.just(url);
-                })
-                .doOnNext(this::loadEmbeddedWebView)
-                .subscribe());
-
-
-        PsiCashDetailsViewModel psiCashDetailsViewModel = new ViewModelProvider(requireActivity(),
+        psiCashDetailsViewModel = new ViewModelProvider(requireActivity(),
                 new ViewModelProvider.AndroidViewModelFactory(requireActivity().getApplication()))
                 .get(PsiCashDetailsViewModel.class);
 
-        GooglePlayBillingHelper googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(requireContext());
+         googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(requireContext());
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        compositeDisposable.clear();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
 
         // Observe subscription and speed boost states and update rate limit badge and 'Subscribe' button UI
         compositeDisposable.add(Observable.combineLatest(
@@ -175,7 +121,7 @@ public class HomeTabFragment extends Fragment {
                 })
                 .distinctUntilChanged()
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext(rateLimitMode -> setRateLimitUI(rateLimitMode))
+                .doOnNext(this::setRateLimitUI)
                 .subscribe());
     }
 
@@ -183,9 +129,6 @@ public class HomeTabFragment extends Fragment {
     public void onDestroy() {
         super.onDestroy();
         compositeDisposable.dispose();
-        if (sponsorHomePage != null) {
-            sponsorHomePage.stop();
-        }
     }
 
     private void setRateLimitUI(RateLimitMode rateLimitMode) {
@@ -207,146 +150,6 @@ public class HomeTabFragment extends Fragment {
             rateUnlimitedText.setVisibility(View.GONE);
             rateLimitUpgradeButton.setVisibility(View.VISIBLE);
             rateLimitedTextSection.setVisibility(View.VISIBLE);
-        }
-    }
-
-    private void loadEmbeddedWebView(String url) {
-        isWebViewLoaded = true;
-
-        LayoutInflater inflater = LayoutInflater.from(requireContext());
-        View webViewContainer = inflater.inflate(R.layout.embedded_webview_layout, null);
-        final WebView webView = webViewContainer.findViewById(R.id.sponsorWebView);
-        final ProgressBar progressBar = webViewContainer.findViewById(R.id.sponsorWebViewProgressBar);
-
-        sponsorHomePage = new SponsorHomePage(webView, progressBar);
-        sponsorHomePage.load(url);
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-        builder.setView(webViewContainer);
-        builder.setPositiveButton(android.R.string.ok, (dialog, which) -> {
-            dialog.dismiss();
-        });
-
-        AlertDialog alertDialog = builder.create();
-        alertDialog.setOnDismissListener(dialogInterface -> {
-            webView.loadUrl("about:blank");
-            ((ViewGroup)webViewContainer.getParent()).removeView(webViewContainer);
-        });
-
-        alertDialog.show();
-    }
-
-    public static void setSeenHandshake(boolean b) {
-        HomeTabFragment.seenHandshake = b;
-    }
-
-    protected class SponsorHomePage {
-        private class SponsorWebChromeClient extends WebChromeClient {
-            private final ProgressBar mProgressBar;
-
-            public SponsorWebChromeClient(ProgressBar progressBar) {
-                super();
-                mProgressBar = progressBar;
-            }
-
-            private boolean mStopped = false;
-
-            public void stop() {
-                mStopped = true;
-            }
-
-            @Override
-            public void onProgressChanged(WebView webView, int progress) {
-                if (mStopped) {
-                    return;
-                }
-
-                mProgressBar.setProgress(progress);
-                mProgressBar.setVisibility(progress == 100 ? View.GONE : View.VISIBLE);
-            }
-        }
-
-        private class SponsorWebViewClient extends WebViewClient {
-            private Timer mTimer;
-            private boolean mWebViewLoaded = false;
-            private boolean mStopped = false;
-
-            public void stop() {
-                mStopped = true;
-                if (mTimer != null) {
-                    mTimer.cancel();
-                    mTimer = null;
-                }
-            }
-
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView webView, String url) {
-                if (mStopped) {
-                    return true;
-                }
-
-                if (mTimer != null) {
-                    mTimer.cancel();
-                    mTimer = null;
-                }
-
-                if (mWebViewLoaded) {
-                    viewModel.signalExternalBrowserUrl(url);
-                }
-                return mWebViewLoaded;
-            }
-
-            @Override
-            public void onPageFinished(WebView webView, String url) {
-                if (mStopped) {
-                    return;
-                }
-
-                if (!mWebViewLoaded) {
-                    mTimer = new Timer();
-                    mTimer.schedule(new TimerTask() {
-                        @Override
-                        public void run() {
-                            if (mStopped) {
-                                return;
-                            }
-                            mWebViewLoaded = true;
-                        }
-                    }, 2000);
-                }
-            }
-        }
-
-        private final WebView mWebView;
-        private final SponsorWebViewClient mWebViewClient;
-        private final SponsorWebChromeClient mWebChromeClient;
-        private final ProgressBar mProgressBar;
-
-        @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-        public SponsorHomePage(WebView webView, ProgressBar progressBar) {
-            mWebView = webView;
-            mProgressBar = progressBar;
-            mWebChromeClient = new SponsorWebChromeClient(mProgressBar);
-            mWebViewClient = new SponsorWebViewClient();
-
-            mWebView.setWebChromeClient(mWebChromeClient);
-            mWebView.setWebViewClient(mWebViewClient);
-
-            WebSettings webSettings = mWebView.getSettings();
-            webSettings.setJavaScriptEnabled(true);
-            webSettings.setDomStorageEnabled(true);
-            webSettings.setLoadWithOverviewMode(true);
-            webSettings.setUseWideViewPort(true);
-        }
-
-        public void stop() {
-            mWebViewClient.stop();
-            mWebChromeClient.stop();
-        }
-
-        public void load(String url) {
-            mProgressBar.setVisibility(View.VISIBLE);
-            mWebView.loadUrl(url);
         }
     }
 }

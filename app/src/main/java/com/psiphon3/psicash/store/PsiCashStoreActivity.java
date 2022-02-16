@@ -175,20 +175,9 @@ public class PsiCashStoreActivity extends LocalizedActivities.AppCompatActivity 
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
-        tunnelServiceInteractor.onStart(getApplicationContext());
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        tunnelServiceInteractor.onStop(getApplicationContext());
-    }
-
-    @Override
     public void onPause() {
         super.onPause();
+        tunnelServiceInteractor.onStop(getApplicationContext());
         if (psiCashUpdatesDisposable != null) {
             psiCashUpdatesDisposable.dispose();
         }
@@ -197,7 +186,8 @@ public class PsiCashStoreActivity extends LocalizedActivities.AppCompatActivity 
     @Override
     protected void onResume() {
         super.onResume();
-        tunnelServiceInteractor.onResume();
+        tunnelServiceInteractor.onStart(getApplicationContext());
+
         // Get PsiCash updates when foregrounded and on tunnel state changes after
         psiCashUpdatesDisposable = tunnelStateFlowable()
                 .filter(tunnelState -> !tunnelState.isUnknown())

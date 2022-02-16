@@ -1,3 +1,22 @@
+/*
+ * Copyright (c) 2022, Psiphon Inc.
+ * All rights reserved.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 package com.psiphon3;
 
 import android.app.Application;
@@ -12,8 +31,13 @@ import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.OnLifecycleEvent;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.paging.PagedList;
+import androidx.paging.RxPagedListBuilder;
 
 import com.jakewharton.rxrelay2.PublishRelay;
+import com.psiphon3.log.LogEntry;
+import com.psiphon3.log.LoggingRoomDatabase;
+import com.psiphon3.log.MyLog;
 import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psiphonlibrary.TunnelServiceInteractor;
 import com.psiphon3.psiphonlibrary.UpstreamProxySettings;
@@ -30,8 +54,8 @@ public class MainActivityViewModel extends AndroidViewModel implements Lifecycle
     private final PublishRelay<Object> openProxySettingsRelay = PublishRelay.create();
     private final PublishRelay<Object> openMoreOptionsRelay = PublishRelay.create();
     private final PublishRelay<String> externalBrowserUrlRelay = PublishRelay.create();
-    private final PublishRelay<String> lastLogEntryRelay = PublishRelay.create();
-    private boolean isFirstRun = true;
+    private final Flowable<LogEntry> lastLogEntryFlowable;
+    private final Flowable<PagedList<LogEntry>> logsPagedListFlowable;
 
     public MainActivityViewModel(@NonNull Application application) {
         super(application);
@@ -51,6 +75,27 @@ public class MainActivityViewModel extends AndroidViewModel implements Lifecycle
             }
         };
         LocalBroadcastManager.getInstance(getApplication()).registerReceiver(broadcastReceiver, intentFilter);
+
+        LoggingRoomDatabase db = LoggingRoomDatabase.getDatabase(application.getApplicationContext());
+
+        PagedList.Config pagedListConfig = new PagedList.Config.Builder()
+                .setPageSize(60)
+                .setPrefetchDistance(20)
+                .setEnablePlaceholders(true)
+                .setInitialLoadSizeHint(60)
+                .setMaxSize(100)
+                .build();
+
+        logsPagedListFlowable =
+                new RxPagedListBuilder<>(
+                        db.getPagedStatusLogs(), pagedListConfig)
+                        .buildFlowable(BackpressureStrategy.LATEST)
+                        .replay(1)
+                        .autoConnect(0);
+
+        lastLogEntryFlowable = db.getLastStatusLogEntry()
+                .replay(1)
+                .autoConnect(0);
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
@@ -170,27 +215,17 @@ public class MainActivityViewModel extends AndroidViewModel implements Lifecycle
         return externalBrowserUrlRelay.toFlowable(BackpressureStrategy.LATEST);
     }
 
-    public void signalLastLogEntryAdded(String log) {
-        lastLogEntryRelay.accept(log);
+    public Flowable<PagedList<LogEntry>> logsPagedListFlowable() {
+        return logsPagedListFlowable;
     }
 
     public Flowable<String> lastLogEntryFlowable() {
-        return lastLogEntryRelay.toFlowable(BackpressureStrategy.LATEST);
-    }
-
-    public boolean isFirstRun() {
-        return isFirstRun;
-    }
-
-    public void setFirstRun(boolean firstRun) {
-        isFirstRun = firstRun;
+        return lastLogEntryFlowable
+                .map(logEntry -> MyLog.getStatusLogMessageForDisplay(logEntry.getLogJson(), getApplication()));
     }
 
     public boolean isServiceRunning(Context context) {
         return tunnelServiceInteractor.isServiceRunning(context);
     }
 
-    public void notifyTunnelServiceResume() {
-        tunnelServiceInteractor.onResume();
-    }
 }
