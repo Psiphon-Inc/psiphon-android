@@ -36,6 +36,8 @@ import android.util.Pair;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
+import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -342,6 +344,13 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 .doOnNext(this::setAdBannerPlaceholderVisibility)
                 .subscribe());
 
+        // Observe link clicks in the modal web view to open in the external browser
+        // NOTE: do not PsiCash modify links clicked from the view
+        compositeDisposable.add(viewModel.externalBrowserUrlFlowable()
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext(url -> displayBrowser(this, url, false))
+                .subscribe());
+
         // Check if the unsafe traffic alerts preference should be gathered
         // and then if the tunnel should be started automatically
         compositeDisposable.add(
@@ -523,8 +532,15 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         if (BuildConfig.STATIC_LANDING_PAGE_URL != null) {
             urlString  = BuildConfig.STATIC_LANDING_PAGE_URL;
         }
-        // Add PsiCash parameters
-        urlString = PsiCashModifyUrl(urlString);
+        // PsiCash modify URLs by default
+        displayBrowser(context, urlString, true);
+    }
+
+    private void displayBrowser(Context context, String urlString, boolean shouldPsiCashModifyUrls) {
+        if (shouldPsiCashModifyUrls) {
+            // Add PsiCash parameters
+            urlString = PsiCashModifyUrl(urlString);
+        }
 
         // TODO: support multiple home pages in whole device mode. This is
         // disabled due to the case where users haven't set a default browser
@@ -636,7 +652,13 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 ArrayList<String> homePages = data.getStringArrayList(TunnelManager.DATA_TUNNEL_STATE_HOME_PAGES);
                 if (homePages != null && homePages.size() > 0) {
                     String url = homePages.get(0);
-                    displayBrowser(this, url);
+                    // Check whether the URL should be opened in an internal modal WebView container
+                    // or in an external browser.
+                    if (shouldLoadInEmbeddedWebView(url)) {
+                        openModalWebView(url);
+                    } else {
+                        displayBrowser(this, url);
+                    }
                 }
             }
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_SELECTED_REGION_NOT_AVAILABLE)) {
@@ -909,6 +931,15 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         });
     }
 
+    public static boolean shouldLoadInEmbeddedWebView(String url) {
+        for (String homeTabUrlExclusion : EmbeddedValues.HOME_TAB_URL_EXCLUSIONS) {
+            if (url.contains(homeTabUrlExclusion)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private void startUp() {
         if (interstitialAdViewModel.inProgress()) {
             // already in progress, do nothing
@@ -975,6 +1006,41 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         });
     }
 
+    private void openModalWebView(String url) {
+        if (isFinishing()) {
+            return;
+        }
+
+        try {
+            LayoutInflater inflater = LayoutInflater.from(this);
+            View webViewContainer = inflater.inflate(R.layout.embedded_webview_layout, null);
+
+            final WebView webView = webViewContainer.findViewById(R.id.sponsorWebView);
+            final ProgressBar progressBar = webViewContainer.findViewById(R.id.sponsorWebViewProgressBar);
+
+            SponsorHomePage sponsorHomePage = new SponsorHomePage(webView, progressBar);
+            sponsorHomePage.setOnUrlClickListener(u -> viewModel.signalExternalBrowserUrl(u));
+
+            final AlertDialog alertDialog = new AlertDialog.Builder(this)
+                    .setCancelable(false)
+                    .setTitle(R.string.waiting) // start with "Wating..." title
+                    .setView(webViewContainer)
+                    .setPositiveButton(R.string.label_close,
+                            (dialog, whichButton) -> {
+                            })
+                    .setOnDismissListener(dialog -> sponsorHomePage.destroy())
+                    .show();
+            WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
+            lp.copyFrom(alertDialog.getWindow().getAttributes());
+            lp.width = WindowManager.LayoutParams.MATCH_PARENT;
+            lp.height = WindowManager.LayoutParams.MATCH_PARENT;
+            alertDialog.getWindow().setAttributes(lp);
+
+            sponsorHomePage.setOnTitleChangedListener(alertDialog::setTitle);
+            sponsorHomePage.load(url);
+        } catch (RuntimeException ignored) {
+        }
+    }
 
     static class PageAdapter extends FragmentPagerAdapter {
         private int numOfTabs;

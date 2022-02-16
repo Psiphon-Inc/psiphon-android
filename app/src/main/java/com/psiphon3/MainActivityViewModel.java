@@ -223,9 +223,4 @@ public class MainActivityViewModel extends AndroidViewModel implements Lifecycle
         return lastLogEntryFlowable
                 .map(logEntry -> MyLog.getStatusLogMessageForDisplay(logEntry.getLogJson(), getApplication()));
     }
-
-    public boolean isServiceRunning(Context context) {
-        return tunnelServiceInteractor.isServiceRunning(context);
-    }
-
 }

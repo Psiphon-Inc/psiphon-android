@@ -482,4 +482,7 @@
     Psiphon is connecting to the server.
     Note: 'Psiphon' should not be translated or transliterated. -->
     <string name="psicash_web_wait_tunnel_connecting">Please wait while Psiphon is connecting</string>
+
+    <!--Generic 'close' button label -->
+    <string name="label_close">Close</string>
 </resources>
