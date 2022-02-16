@@ -115,12 +115,6 @@
                 android:value="true" />
         </service>
 
-        <provider
-            android:name=".psiphonlibrary.LoggingProvider"
-            android:authorities="com.psiphon3.LoggingProvider"
-            android:exported="false">
-        </provider>
-
     </application>
 
 </manifest>
