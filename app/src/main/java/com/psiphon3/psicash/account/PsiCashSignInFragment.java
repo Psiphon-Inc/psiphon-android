@@ -304,6 +304,7 @@ public class PsiCashSignInFragment extends Fragment
                         .setMessage(errorMessage)
                         .setPositiveButton(R.string.psicash_login_error_alert_dismiss, (dialog, which) -> {
                         })
+                        .setOnDismissListener(__ -> loginPasswordTv.getText().clear())
                         .setCancelable(true)
                         .show();
             } catch (RuntimeException ignored) {
