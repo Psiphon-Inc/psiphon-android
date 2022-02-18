@@ -24,7 +24,7 @@ import android.os.Build;
 
 import com.android.billingclient.api.Purchase;
 import com.psiphon3.TunnelState;
-import com.psiphon3.psiphonlibrary.Utils.MyLog;
+import com.psiphon3.log.MyLog;
 import com.psiphon3.subscription.BuildConfig;
 
 import org.json.JSONObject;
@@ -172,7 +172,7 @@ public class PurchaseVerificationNetworkHelper {
                 } else {
                     String msg = "PurchaseVerifier: bad response code from verification server: " +
                             response.code();
-                    MyLog.g(msg);
+                    MyLog.w(msg);
                     if (!emitter.isDisposed()) {
                         final RuntimeException e;
                         if (response.code() >= 400 && response.code() <= 499) {
@@ -199,7 +199,7 @@ public class PurchaseVerificationNetworkHelper {
                             if (i < TRIES_COUNT && (err instanceof RetriableException)) {
                                 // exponential backoff with timer
                                 int retryInSeconds = (int) Math.pow(4, i);
-                                MyLog.g("PurchaseVerifier: will retry purchase verification request in " +
+                                MyLog.w("PurchaseVerifier: will retry purchase verification request in " +
                                         retryInSeconds +
                                         " seconds" +
                                         " due to error: " + err);

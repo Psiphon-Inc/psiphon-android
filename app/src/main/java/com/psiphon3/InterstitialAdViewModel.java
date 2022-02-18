@@ -32,7 +32,6 @@ import io.reactivex.disposables.Disposable;
 public class InterstitialAdViewModel extends AndroidViewModel implements LifecycleObserver {
     private WeakReference<Activity> activityWeakReference;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
-    private final BehaviorRelay<Boolean> isForegroundRelay = BehaviorRelay.create();
     private final BehaviorRelay<ConsumableEvent<Object>> startSignalRelay = BehaviorRelay.create();
     private final Observable<PsiphonAdManager.InterstitialResult> interstitialResultObservable;
     private InterstitialAd interstitialAd;
@@ -137,12 +136,10 @@ public class InterstitialAdViewModel extends AndroidViewModel implements Lifecyc
         if (interstitialAd != null) {
             interstitialAd.onPause();
         }
-        isForegroundRelay.accept(false);
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
     protected void onLifeCycleResume() {
-        isForegroundRelay.accept(true);
         if (interstitialAd != null) {
             interstitialAd.onResume();
         }
@@ -207,13 +204,6 @@ public class InterstitialAdViewModel extends AndroidViewModel implements Lifecyc
                         .filter(interstitialResult ->
                                 interstitialResult.state() == PsiphonAdManager.InterstitialResult.State.SHOWING);
 
-        // When subscribed to completes as soon as the lifecycle owner is resumed.
-        Completable isForegroundCompletable =
-                isForegroundRelay
-                        .filter(isForeground -> isForeground)
-                        .take(1)
-                        .ignoreElements();
-
         startUpInterstitialDisposable = countdownCompletable
                 // Convert to observable to apply `ambWith`.
                 .toObservable()
@@ -230,8 +220,7 @@ public class InterstitialAdViewModel extends AndroidViewModel implements Lifecyc
                 // 3. There was an error emission from interstitial observable.
                 // 4. Interstitial observable completed because it was closed.
                 //
-                // Now, signal start tunnel as soon as the app is in foreground.
-                .andThen(isForegroundCompletable)
+                // Now, signal start tunnel.
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnComplete(() -> {
                     // Dispose any preload that is in progress

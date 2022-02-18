@@ -22,7 +22,7 @@ package com.psiphon3.psicash;
 
 import android.content.Context;
 
-import com.psiphon3.psiphonlibrary.Utils;
+import com.psiphon3.log.MyLog;
 import com.psiphon3.subscription.R;
 
 import ca.psiphon.psicashlib.PsiCashLib;
@@ -90,7 +90,7 @@ public abstract class PsiCashException extends Exception {
                     uiMessage = ctx.getString(R.string.transaction_server_error_message);
                     break;
                 default:
-                    Utils.MyLog.g("Unexpected PsiCash transaction status: " + status);
+                    MyLog.w("Unexpected PsiCash transaction status: " + status);
                     uiMessage = ctx.getString(R.string.unexpected_error_occured_send_feedback_message);
                     break;
             }

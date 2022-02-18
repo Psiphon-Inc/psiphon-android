@@ -5,7 +5,7 @@ import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
 
-import com.psiphon3.psiphonlibrary.Utils;
+import com.psiphon3.log.MyLog;
 
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.ItemNotFoundException;
@@ -41,7 +41,7 @@ public class StringListPreferences extends AppPreferences {
             }
             return result;
         } catch (JSONException e) {
-            Utils.MyLog.g(String.format("%s : JSON exception parsing '%s': %s", getClass().getSimpleName(), key, e.toString()));
+            MyLog.e(String.format("%s : JSON exception parsing '%s': %s", getClass().getSimpleName(), key, e));
             return result;
         }
     }

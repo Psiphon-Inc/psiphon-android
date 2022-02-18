@@ -22,8 +22,9 @@ package com.psiphon3.billing;
 
 import android.app.Activity;
 import android.content.Context;
-import androidx.annotation.NonNull;
 import android.text.TextUtils;
+
+import androidx.annotation.NonNull;
 
 import com.android.billingclient.api.AcknowledgePurchaseParams;
 import com.android.billingclient.api.BillingClient;
@@ -38,7 +39,7 @@ import com.android.billingclient.api.SkuDetails;
 import com.android.billingclient.api.SkuDetailsParams;
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
-import com.psiphon3.psiphonlibrary.Utils;
+import com.psiphon3.log.MyLog;
 import com.psiphon3.subscription.BuildConfig;
 
 import java.util.ArrayList;
@@ -205,7 +206,7 @@ public class GooglePlayBillingHelper {
                             } else if (purchasesUpdate.responseCode() == BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED) {
                                 queryAllPurchases();
                             } else {
-                                Utils.MyLog.g("GooglePlayBillingHelper::observeUpdates purchase update error response code: " + purchasesUpdate.responseCode());
+                                MyLog.e("GooglePlayBillingHelper::observeUpdates purchase update error response code: " + purchasesUpdate.responseCode());
                             }
                         },
                         err -> {
@@ -278,7 +279,7 @@ public class GooglePlayBillingHelper {
             // Remove purchase that doesn't pass signature verification.
             if (!Security.verifyPurchase(IAB_PUBLIC_KEY,
                     purchase.getOriginalJson(), purchase.getSignature())) {
-                Utils.MyLog.g("GooglePlayBillingHelper::processPurchases: failed verification for purchase: " + purchase);
+                MyLog.e("GooglePlayBillingHelper::processPurchases: failed verification for purchase: " + purchase);
                 purchaseList.remove(i);
                 continue;
             }
@@ -336,7 +337,7 @@ public class GooglePlayBillingHelper {
                     if (type.equals(BillingClient.SkuType.SUBS)) {
                         BillingResult billingResult = client.isFeatureSupported(BillingClient.FeatureType.SUBSCRIPTIONS);
                         if (billingResult.getResponseCode() != BillingResponseCode.OK) {
-                            Utils.MyLog.g("Subscriptions are not supported, billing response code: " + billingResult.getResponseCode());
+                            MyLog.w("Subscriptions are not supported, billing response code: " + billingResult.getResponseCode());
                             List<Purchase> purchaseList = Collections.emptyList();
                             return Flowable.just(purchaseList);
                         }
@@ -354,7 +355,7 @@ public class GooglePlayBillingHelper {
                     }
                 })
                 .firstOrError()
-                .doOnError(err -> Utils.MyLog.g("GooglePlayBillingHelper::getOwnedItems type: " + type + " error: " + err));
+                .doOnError(err -> MyLog.e("GooglePlayBillingHelper::getOwnedItems type: " + type + " error: " + err));
     }
 
     public Single<List<SkuDetails>> getSkuDetails(List<String> ids, String type) {
@@ -381,7 +382,7 @@ public class GooglePlayBillingHelper {
                             });
                         }, BackpressureStrategy.LATEST))
                 .firstOrError()
-                .doOnError(err -> Utils.MyLog.g("GooglePlayBillingHelper::getSkuDetails error: " + err));
+                .doOnError(err -> MyLog.e("GooglePlayBillingHelper::getSkuDetails error: " + err));
     }
 
     public Completable launchFlow(Activity activity, String oldSku, String oldPurchaseToken, SkuDetails skuDetails) {
@@ -405,7 +406,7 @@ public class GooglePlayBillingHelper {
                         return Completable.error(new BillingException(billingResult.getResponseCode()));
                     }
                 })
-                .doOnError(err -> Utils.MyLog.g("GooglePlayBillingHelper::launchFlow error: " + err));
+                .doOnError(err -> MyLog.e("GooglePlayBillingHelper::launchFlow error: " + err));
     }
 
     public Completable launchFlow(Activity activity, SkuDetails skuDetails) {
@@ -435,7 +436,7 @@ public class GooglePlayBillingHelper {
                                 }
                             });
                         }))
-                .doOnError(err -> Utils.MyLog.g("GooglePlayBillingHelper::acknowledgePurchase error: " + err))
+                .doOnError(err -> MyLog.e("GooglePlayBillingHelper::acknowledgePurchase error: " + err))
                 .onErrorComplete();
     }
 
@@ -484,7 +485,7 @@ public class GooglePlayBillingHelper {
                             });
                         }, BackpressureStrategy.LATEST))
                 .firstOrError()
-                .doOnError(err -> Utils.MyLog.g("GooglePlayBillingHelper::consumePurchase error: " + err))
+                .doOnError(err -> MyLog.e("GooglePlayBillingHelper::consumePurchase error: " + err))
                 .onErrorReturnItem("");
     }
 

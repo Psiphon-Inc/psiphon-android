@@ -45,11 +45,7 @@ import com.mopub.common.privacy.PersonalInfoManager;
 import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubInterstitial;
 import com.mopub.mobileads.MoPubView;
-import com.psiphon3.billing.GooglePlayBillingHelper;
-import com.psiphon3.billing.SubscriptionState;
-import com.psiphon3.psicash.details.PsiCashDetailsViewModel;
-import com.psiphon3.psiphonlibrary.EmbeddedValues;
-import com.psiphon3.psiphonlibrary.Utils;
+import com.psiphon3.log.MyLog;
 
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
@@ -345,7 +341,6 @@ public class PsiphonAdManager {
                         return getInterstitialObservable(adResult)
                                 // Load a new one right after a current one is shown and dismissed
                                 .repeat()
-                                .doOnError(e -> Utils.MyLog.d("Error loading tunneled interstitial: " + e))
                                 .onErrorResumeNext(Observable.empty());
                     })
                     .subscribe();
@@ -357,7 +352,6 @@ public class PsiphonAdManager {
             loadBannersDisposable = getCurrentAdTypeObservable()
                     .switchMapCompletable(adResult ->
                             loadAndShowBanner(adResult)
-                                    .doOnError(e -> Utils.MyLog.d("loadAndShowBanner: error: " + e))
                                     .onErrorComplete()
                     )
                     .subscribe();
@@ -536,7 +530,7 @@ public class PsiphonAdManager {
 
             @Override
             public void onConsentDialogLoadFailed(@NonNull MoPubErrorCode moPubErrorCode) {
-                Utils.MyLog.d("MoPub consent dialog load error: " + moPubErrorCode.toString());
+                MyLog.w("MoPub consent dialog load error: " + moPubErrorCode.toString());
             }
         };
     }
@@ -571,7 +565,7 @@ public class PsiphonAdManager {
                         .cache()
                         .ambWith(Completable.timer(5, TimeUnit.SECONDS)
                                 .andThen(Completable.error(new TimeoutException("FreeStarAds init timed out"))))
-                        .doOnError(e -> Utils.MyLog.d("FreeStarAds SDK init error: " + e));
+                        .doOnError(e -> MyLog.e("FreeStarAds SDK init error: " + e));
             }
             return freeStar;
         }
@@ -623,7 +617,7 @@ public class PsiphonAdManager {
                                 .andThen(Completable.error(new TimeoutException("MoPub init timed out"))))
                         .subscribeOn(AndroidSchedulers.mainThread())
                         .retryWhen(Flowable::retry)
-                        .doOnError(e -> Utils.MyLog.d("MoPub SDK init error: " + e));
+                        .doOnError(e -> MyLog.e("MoPub SDK init error: " + e));
             }
             return moPub;
         }

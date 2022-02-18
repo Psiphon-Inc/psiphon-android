@@ -109,21 +109,15 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
-        tunnelServiceInteractor.onStart(getApplicationContext());
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
+    protected void onPause() {
+        super.onPause();
         tunnelServiceInteractor.onStop(getApplicationContext());
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        tunnelServiceInteractor.onResume();
+        tunnelServiceInteractor.onStart(getApplicationContext());
     }
 
     public static class MoreOptionsPreferenceFragment extends PsiphonPreferenceFragmentCompat

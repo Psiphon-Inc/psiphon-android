@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Psiphon Inc.
+ * Copyright (c) 2022, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -14,6 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 package com.psiphon3;
@@ -28,16 +29,15 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.net.VpnService;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.HandlerThread;
 import android.text.TextUtils;
 import android.text.util.Linkify;
 import android.util.Pair;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
+import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -59,6 +59,8 @@ import com.android.billingclient.api.SkuDetails;
 import com.google.android.material.tabs.TabLayout;
 import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.billing.SubscriptionState;
+import com.psiphon3.log.LogsMaintenanceWorker;
+import com.psiphon3.log.MyLog;
 import com.psiphon3.psicash.PsiCashClient;
 import com.psiphon3.psicash.PsiCashException;
 import com.psiphon3.psicash.account.PsiCashAccountActivity;
@@ -67,8 +69,6 @@ import com.psiphon3.psicash.store.PsiCashStoreActivity;
 import com.psiphon3.psicash.util.UiHelpers;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
-import com.psiphon3.psiphonlibrary.LoggingObserver;
-import com.psiphon3.psiphonlibrary.LoggingProvider;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.VpnAppsUtils;
@@ -90,10 +90,8 @@ import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.disposables.Disposable;
 
 public class MainActivity extends LocalizedActivities.AppCompatActivity {
-    private AlertDialog unsafeTrafficAlertsDialog;
 
     public MainActivity() {
         Utils.initializeSecureRandom();
@@ -107,9 +105,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
     private static final int REQUEST_CODE_PREPARE_VPN = 100;
 
-    private LoggingObserver loggingObserver;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
-    private CompositeDisposable uiUpdatesCompositeDisposable;
     private Button toggleButton;
     private ProgressBar connectionProgressBar;
     private Drawable defaultProgressBarDrawable;
@@ -119,19 +115,32 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     private AppPreferences multiProcessPreferences;
     private ViewPager viewPager;
     private PsiphonTabLayout tabLayout;
-    private Disposable autoStartDisposable;
     private GooglePlayBillingHelper googlePlayBillingHelper;
     // Ads
     private PsiphonAdManager psiphonAdManager;
     private boolean disableInterstitialOnNextTabChange;
     private InterstitialAdViewModel interstitialAdViewModel;
     private Observable<Boolean> hasBoostOrSubscriptionObservable;
+    private boolean checkPreloadInterstitial;
 
+
+    private boolean isFirstRun = true;
+
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        outState.putBoolean("isFirstRun", isFirstRun);
+        super.onSaveInstanceState(outState);
+    }
 
     @SuppressLint("SourceLockedOrientationActivity")
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (savedInstanceState != null) {
+            isFirstRun = savedInstanceState.getBoolean("isFirstRun", isFirstRun);
+        }
+
         setContentView(R.layout.main_activity);
 
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
@@ -156,16 +165,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 .get(MainActivityViewModel.class);
         getLifecycle().addObserver(viewModel);
 
-        // On first run remove logs from previous sessions if tunnel service is not running.
-        if (viewModel.isFirstRun() && !viewModel.isServiceRunning(getApplication())) {
-            LoggingProvider.LogDatabaseHelper.truncateLogs(getApplication(), true);
-        }
-
-        // The LoggingObserver will run in a separate thread
-        HandlerThread loggingObserverThread = new HandlerThread("LoggingObserverThread");
-        loggingObserverThread.start();
-        loggingObserver = new LoggingObserver(getApplicationContext(),
-                new Handler(loggingObserverThread.getLooper()));
+        // Schedule db maintenance
+        LogsMaintenanceWorker.schedule(getApplicationContext());
 
         toggleButton = findViewById(R.id.toggleButton);
         connectionProgressBar = findViewById(R.id.connectionProgressBar);
@@ -173,6 +174,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         openBrowserButton = findViewById(R.id.openBrowserButton);
         toggleButton.setOnClickListener(v ->
                 compositeDisposable.add(viewModel.tunnelStateFlowable()
+                        .filter(state -> !state.isUnknown())
                         .take(1)
                         .doOnNext(state -> {
                             if (state.isRunning()) {
@@ -218,30 +220,12 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         interstitialAdViewModel.setActivityWeakReference(this);
         interstitialAdViewModel.setCountDownTextView(toggleButton);
 
-        // Observe start tunnel signals from the InterstitialAdViewModel
-        compositeDisposable.add(interstitialAdViewModel.startSignalFlowable()
-                .doOnNext(consumableEvent -> consumableEvent.consume(__ -> doStartUp()))
-                .subscribe());
-
-        // Preload an interstitial iff all of the below is true
-        // 1. The activity is not being recreated due to an orientation change.
-        // 2. We are not in "no-ads" mode
-        // 3. The tunnel is not running
+        // If the activity is not being recreated due to configuration change then
+        // check if we need to preload an interstitial in onResume
         if (savedInstanceState == null) {
-            compositeDisposable.add(hasBoostOrSubscriptionObservable
-                    .firstOrError()
-                    .flatMapCompletable(noAds -> noAds ?
-                            Completable.complete() :
-                            viewModel.tunnelStateFlowable()
-                                    .filter(tunnelState -> !tunnelState.isUnknown())
-                                    .firstOrError()
-                                    .doOnSuccess(state -> {
-                                        if (state.isStopped()) {
-                                            interstitialAdViewModel.preloadInterstitial();
-                                        }
-                                    })
-                                    .ignoreElement())
-                    .subscribe());
+            checkPreloadInterstitial = true;
+        } else {
+            checkPreloadInterstitial = false;
         }
 
         tabLayout = findViewById(R.id.main_activity_tablayout);
@@ -298,9 +282,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        getContentResolver().unregisterContentObserver(loggingObserver);
         cancelInvalidProxySettingsToast();
-        uiUpdatesCompositeDisposable.dispose();
+        compositeDisposable.clear();
     }
 
     @Override
@@ -309,28 +292,14 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         googlePlayBillingHelper.queryAllPurchases();
         googlePlayBillingHelper.queryAllSkuDetails();
 
-        // Notify tunnel service if it is running so it may trigger purchase check and
-        // upgrade current connection if there is a new valid subscription purchase.
-        viewModel.notifyTunnelServiceResume();
-
-        // Load new logs from the logging provider now
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            loggingObserver.dispatchChange(false, LoggingProvider.INSERT_URI);
-        } else {
-            loggingObserver.dispatchChange(false);
-        }
-        // Load new logs from the logging provider when it changes
-        getContentResolver().registerContentObserver(LoggingProvider.INSERT_URI, true, loggingObserver);
-
-        uiUpdatesCompositeDisposable = new CompositeDisposable();
         // Observe tunnel state changes to update UI
-        uiUpdatesCompositeDisposable.add(viewModel.tunnelStateFlowable()
+        compositeDisposable.add(viewModel.tunnelStateFlowable()
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(this::updateServiceStateUI)
                 .subscribe());
 
         // Observe custom proxy validation results to show a toast for invalid ones
-        uiUpdatesCompositeDisposable.add(viewModel.customProxyValidationResultFlowable()
+        compositeDisposable.add(viewModel.customProxyValidationResultFlowable()
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(isValidResult -> {
                     if (!isValidResult) {
@@ -342,76 +311,101 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 })
                 .subscribe());
 
-        // Observe link clicks in the embedded web view to open in the external browser
-        // NOTE: do not PsiCash modify links clicked from the embedded view
-        uiUpdatesCompositeDisposable.add(viewModel.externalBrowserUrlFlowable()
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext(url -> displayBrowser(this, url, false))
+        if (checkPreloadInterstitial) {
+            checkPreloadInterstitial = false;
+            // If the activity has not been recreated due to configuration change then try and
+            // preload an interstitial if we are not in "no-ads" mode and if the tunnel is not
+            // running
+            compositeDisposable.add(hasBoostOrSubscriptionObservable
+                    .firstOrError()
+                    .flatMapCompletable(noAds -> noAds ?
+                            Completable.complete() :
+                            viewModel.tunnelStateFlowable()
+                                    .filter(tunnelState -> !tunnelState.isUnknown())
+                                    .firstOrError()
+                                    .doOnSuccess(state -> {
+                                        if (state.isStopped()) {
+                                            interstitialAdViewModel.preloadInterstitial();
+                                        }
+                                    })
+                                    .ignoreElement())
+                    .subscribe());
+        }
+
+        // Observe start tunnel signals from the InterstitialAdViewModel
+        compositeDisposable.add(interstitialAdViewModel.startSignalFlowable()
+                .doOnNext(consumableEvent -> consumableEvent.consume(__ -> doStartUp()))
                 .subscribe());
 
         // Observe subscription state and set ad container layout visibility
-        uiUpdatesCompositeDisposable.add(googlePlayBillingHelper.subscriptionStateFlowable()
+        compositeDisposable.add(googlePlayBillingHelper.subscriptionStateFlowable()
                 .distinctUntilChanged()
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(this::setAdBannerPlaceholderVisibility)
                 .subscribe());
 
-        boolean shouldAutoStart = shouldAutoStart();
-        preventAutoStart();
+        // Observe link clicks in the modal web view to open in the external browser
+        // NOTE: do not PsiCash modify links clicked from the view
+        compositeDisposable.add(viewModel.externalBrowserUrlFlowable()
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext(url -> displayBrowser(this, url, false))
+                .subscribe());
 
-        if (unsafeTrafficAlertsPrompt(shouldAutoStart)) {
-            shouldAutoStart = false;
-        }
-
-        autoStartIfNecessary(shouldAutoStart);
+        // Check if the unsafe traffic alerts preference should be gathered
+        // and then if the tunnel should be started automatically
+        compositeDisposable.add(
+                unsafeTrafficAlertsCompletable()
+                        .andThen(autoStartMaybe())
+                        .doOnSuccess(__ -> startTunnel())
+                        .subscribe());
     }
 
-    private void autoStartIfNecessary(boolean shouldAutoStart) {
-        if (autoStartDisposable == null || autoStartDisposable.isDisposed()) {
-            autoStartDisposable = autoStartMaybe(shouldAutoStart)
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .doOnSuccess(__ -> doStartUp())
-                    .subscribe();
-            compositeDisposable.add(autoStartDisposable);
-        }
-    }
+    // Completes right away if unsafe traffic alerts preference exists, otherwise displays an alert
+    // and waits until the user picks an answer and preference is stored, then completes.
+    Completable unsafeTrafficAlertsCompletable() {
+        return Completable.create(emitter -> {
+            try {
+                multiProcessPreferences.getBoolean(getString(R.string.unsafeTrafficAlertsPreference));
+                if (!emitter.isDisposed()) {
+                    emitter.onComplete();
+                }
+            } catch (ItemNotFoundException e) {
+                LayoutInflater inflater = this.getLayoutInflater();
+                View dialogView = inflater.inflate(R.layout.unsafe_traffic_alert_prompt_layout, null);
+                TextView tv = dialogView.findViewById(R.id.textViewMore);
+                tv.append(String.format(Locale.US, "\n%s", getString(R.string.AboutMalAwareLink)));
+                Linkify.addLinks(tv, Linkify.WEB_URLS);
 
-    private boolean unsafeTrafficAlertsPrompt(boolean startTunnelAfterPrompt) {
-        // Prompt the user only once to choose to enable unsafe traffic alerts.
-        // Returns true if the prompt is shown.
-        try {
-            multiProcessPreferences.getBoolean(getString(R.string.unsafeTrafficAlertsPreference));
-            return false;
-        } catch (ItemNotFoundException e) {
-            // Do not show multiple alerts.
-            if(unsafeTrafficAlertsDialog != null && unsafeTrafficAlertsDialog.isShowing()) {
-                return true;
+                final AlertDialog alertDialog = new AlertDialog.Builder(this)
+                        .setCancelable(false)
+                        .setTitle(R.string.unsafe_traffic_alert_prompt_title)
+                        .setView(dialogView)
+                        // Only emit a completion event if we have a positive or negative response
+                        .setPositiveButton(R.string.lbl_yes,
+                                (dialog, whichButton) -> {
+                                    multiProcessPreferences.put(getString(R.string.unsafeTrafficAlertsPreference), true);
+                                    if (!emitter.isDisposed()) {
+                                        emitter.onComplete();
+                                    }
+                                })
+                        .setNegativeButton(R.string.lbl_no,
+                                (dialog, whichButton) -> {
+                                    multiProcessPreferences.put(getString(R.string.unsafeTrafficAlertsPreference), false);
+                                    if (!emitter.isDisposed()) {
+                                        emitter.onComplete();
+                                    }
+                                })
+                        .show();
+                // Also dismiss the alert when subscription is disposed, for example, on orientation
+                // change or when the app is backgrounded.
+                emitter.setCancellable(() -> {
+                    if (alertDialog != null && alertDialog.isShowing()) {
+                        alertDialog.dismiss();
+                    }
+                });
             }
-            LayoutInflater inflater = this.getLayoutInflater();
-            View dialogView = inflater.inflate(R.layout.unsafe_traffic_alert_prompt_layout, null);
-            TextView tv = dialogView.findViewById(R.id.textViewMore);
-            tv.append(String.format(Locale.US, "\n%s", getString(R.string.AboutMalAwareLink)));
-            Linkify.addLinks(tv, Linkify.WEB_URLS);
-
-            unsafeTrafficAlertsDialog = new AlertDialog.Builder(this)
-                    .setCancelable(false)
-                    .setTitle(R.string.unsafe_traffic_alert_prompt_title)
-                    .setView(dialogView)
-                    .setPositiveButton(R.string.lbl_yes,
-                            (dialog, whichButton) -> {
-                                multiProcessPreferences.put(getString(R.string.unsafeTrafficAlertsPreference), true);
-                            })
-                    .setNegativeButton(R.string.lbl_no,
-                            (dialog, whichButton) -> {
-                                multiProcessPreferences.put(getString(R.string.unsafeTrafficAlertsPreference), false);
-                            })
-                    .setOnDismissListener(
-                            dialog -> {
-                                autoStartIfNecessary(startTunnelAfterPrompt);
-                            })
-                    .show();
-        }
-        return true;
+        })
+                .subscribeOn(AndroidSchedulers.mainThread());
     }
 
     @Override
@@ -441,12 +435,12 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                             .onErrorComplete()
                             .subscribe());
                 } catch (JSONException | IllegalArgumentException e) {
-                    Utils.MyLog.g("MainActivity::onActivityResult purchase SKU error: " + e);
+                    MyLog.e("MainActivity::onActivityResult purchase SKU error: " + e);
                     // Show "Subscription options not available" toast.
                     showToast(R.string.subscription_options_currently_not_available);
                 }
             } else {
-                Utils.MyLog.g("MainActivity::onActivityResult: PaymentChooserActivity: canceled");
+                MyLog.i("MainActivity::onActivityResult: PaymentChooserActivity: canceled");
             }
         } else if (requestCode == PsiCashStoreActivity.ACTIVITY_REQUEST_CODE ||
                 requestCode == PsiCashAccountActivity.ACTIVITY_REQUEST_CODE) {
@@ -658,15 +652,12 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 ArrayList<String> homePages = data.getStringArrayList(TunnelManager.DATA_TUNNEL_STATE_HOME_PAGES);
                 if (homePages != null && homePages.size() > 0) {
                     String url = homePages.get(0);
-                    // If the URL should not be open in the embedded web view then try and open it
-                    // in an external browser. The home tab fragment will make a decision to open
-                    // the URL in an embedded web view independently, if needed.
-                    HomeTabFragment.setSeenHandshake(true);
-                    if (!shouldLoadInEmbeddedWebView(url)) {
-                        displayBrowser(this, url);
+                    // Check whether the URL should be opened in an internal modal WebView container
+                    // or in an external browser.
+                    if (shouldLoadInEmbeddedWebView(url)) {
+                        openModalWebView(url);
                     } else {
-                        disableInterstitialOnNextTabChange = true;
-                        selectTabByTag("home");
+                        displayBrowser(this, url);
                     }
                 }
             }
@@ -884,7 +875,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             }
             return false;
         } catch (Exception e) {
-            Utils.MyLog.e(R.string.tunnel_whole_device_exception, Utils.MyLog.Sensitivity.NOT_SENSITIVE);
+            MyLog.e(R.string.tunnel_whole_device_exception, MyLog.Sensitivity.NOT_SENSITIVE);
             // true = waiting for prompt, although we can't start the
             // activity so onActivityResult won't be called
             return true;
@@ -903,34 +894,41 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     }
 
     private void preventAutoStart() {
-        viewModel.setFirstRun(false);
+        isFirstRun = false;
     }
 
     private boolean shouldAutoStart() {
-        return viewModel.isFirstRun() &&
+        return isFirstRun &&
                 !getIntent().getBooleanExtra(INTENT_EXTRA_PREVENT_AUTO_START, false);
     }
 
     // Returns an object only if tunnel should be auto-started,
     // completes with no value otherwise.
-    private Maybe<Object> autoStartMaybe(boolean isFirstRun) {
-        // If not the first app run then do not auto-start
-        if (!isFirstRun) {
-            return Maybe.empty();
-        }
-
-        // If this is a first app run then check subscription state and
-        // return a value if user has a valid purchase or if IAB check failed,
-        // the IAB status check will be triggered again in onResume
-        return googlePlayBillingHelper.subscriptionStateFlowable()
-                .firstOrError()
-                .flatMapMaybe(subscriptionState -> {
-                    if (subscriptionState.hasValidPurchase()
-                            || subscriptionState.status() == SubscriptionState.Status.IAB_FAILURE) {
-                        return Maybe.just(new Object());
-                    }
-                    return Maybe.empty();
-                });
+    private Maybe<Object> autoStartMaybe() {
+        return Maybe.create(emitter -> {
+            boolean shouldAutoStart = shouldAutoStart();
+            preventAutoStart();
+            if (!emitter.isDisposed()) {
+                if (shouldAutoStart) {
+                    emitter.onSuccess(new Object());
+                } else {
+                    emitter.onComplete();
+                }
+            }
+        }).flatMap(autoStart -> {
+            // If this is a first app run then check subscription state and
+            // return a value if user has a valid purchase or if IAB check failed,
+            // the IAB status check will be triggered again in onResume
+            return googlePlayBillingHelper.subscriptionStateFlowable()
+                    .firstOrError()
+                    .flatMapMaybe(subscriptionState -> {
+                        if (subscriptionState.hasValidPurchase()
+                                || subscriptionState.status() == SubscriptionState.Status.IAB_FAILURE) {
+                            return Maybe.just(new Object());
+                        }
+                        return Maybe.empty();
+                    });
+        });
     }
 
     public static boolean shouldLoadInEmbeddedWebView(String url) {
@@ -981,17 +979,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         toast.show();
     }
 
-    private boolean isPsiCashIntentUri(Uri intentUri) {
-        if (intentUri != null) {
-            // Handle psiphon://psicash
-            if ("psiphon".equals(intentUri.getScheme()) &&
-                    "psicash".equals(intentUri.getHost())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private String PsiCashModifyUrl(String originalUrlString) {
         if (TextUtils.isEmpty(originalUrlString)) {
             return originalUrlString;
@@ -1000,7 +987,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         try {
             return PsiCashClient.getInstance(getApplicationContext()).modifiedHomePageURL(originalUrlString);
         } catch (PsiCashException e) {
-            Utils.MyLog.g("PsiCash: error modifying home page: " + e);
+            MyLog.e("PsiCash: error modifying home page: " + e);
         }
         return originalUrlString;
     }
@@ -1019,6 +1006,41 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         });
     }
 
+    private void openModalWebView(String url) {
+        if (isFinishing()) {
+            return;
+        }
+
+        try {
+            LayoutInflater inflater = LayoutInflater.from(this);
+            View webViewContainer = inflater.inflate(R.layout.embedded_webview_layout, null);
+
+            final WebView webView = webViewContainer.findViewById(R.id.sponsorWebView);
+            final ProgressBar progressBar = webViewContainer.findViewById(R.id.sponsorWebViewProgressBar);
+
+            SponsorHomePage sponsorHomePage = new SponsorHomePage(webView, progressBar);
+            sponsorHomePage.setOnUrlClickListener(u -> viewModel.signalExternalBrowserUrl(u));
+
+            final AlertDialog alertDialog = new AlertDialog.Builder(this)
+                    .setCancelable(false)
+                    .setTitle(R.string.waiting) // start with "Wating..." title
+                    .setView(webViewContainer)
+                    .setPositiveButton(R.string.label_close,
+                            (dialog, whichButton) -> {
+                            })
+                    .setOnDismissListener(dialog -> sponsorHomePage.destroy())
+                    .show();
+            WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
+            lp.copyFrom(alertDialog.getWindow().getAttributes());
+            lp.width = WindowManager.LayoutParams.MATCH_PARENT;
+            lp.height = WindowManager.LayoutParams.MATCH_PARENT;
+            alertDialog.getWindow().setAttributes(lp);
+
+            sponsorHomePage.setOnTitleChangedListener(alertDialog::setTitle);
+            sponsorHomePage.load(url);
+        } catch (RuntimeException ignored) {
+        }
+    }
 
     static class PageAdapter extends FragmentPagerAdapter {
         private int numOfTabs;

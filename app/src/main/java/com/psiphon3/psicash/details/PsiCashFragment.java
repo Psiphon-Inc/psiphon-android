@@ -44,6 +44,7 @@ import com.jakewharton.rxrelay2.Relay;
 import com.psiphon3.MainActivityViewModel;
 import com.psiphon3.TunnelState;
 import com.psiphon3.billing.GooglePlayBillingHelper;
+import com.psiphon3.log.MyLog;
 import com.psiphon3.psicash.PsiCashClient;
 import com.psiphon3.psicash.PsiCashException;
 import com.psiphon3.psicash.mvibase.MviView;
@@ -156,7 +157,7 @@ public class PsiCashFragment extends Fragment
                         UiHelpers.balanceLabelAnimationObservable(pair.first, pair.second, balanceLabel)
                 )
                 .subscribe(ValueAnimator::start, err -> {
-                    Utils.MyLog.g("Balance label increase animation error: " + err);
+                    MyLog.e("Balance label increase animation error: " + err);
                 }));
 
         IntentFilter intentFilter = new IntentFilter();
@@ -256,7 +257,7 @@ public class PsiCashFragment extends Fragment
             for (PsiCashLib.Purchase purchase : purchases) {
                 if (!persistedAuthIds.contains(purchase.authorization.id)) {
                     purchasesToRemove.add(purchase.id);
-                    Utils.MyLog.g("PsiCash: will remove purchase of transactionClass: " +
+                    MyLog.i("PsiCash: will remove purchase of transactionClass: " +
                             purchase.transactionClass + ", auth expires: " +
                             Utils.getISO8601String(purchase.authorization.expires)
                     );
@@ -266,7 +267,7 @@ public class PsiCashFragment extends Fragment
                 intentsPublishRelay.accept(PsiCashDetailsIntent.RemovePurchases.create(purchasesToRemove));
             }
         } catch (PsiCashException e) {
-            Utils.MyLog.g("PsiCash: error removing expired purchases: " + e);
+            MyLog.e("PsiCash: error removing expired purchases: " + e);
         }
     }
 
@@ -308,7 +309,7 @@ public class PsiCashFragment extends Fragment
                 PsiCashException e = (PsiCashException) error;
                 errorMessage = e.getUIMessage(requireActivity());
             } else {
-                Utils.MyLog.g("Unexpected PsiCash error: " + error.toString());
+                MyLog.e("Unexpected PsiCash error: " + error);
                 errorMessage = getString(R.string.unexpected_error_occured_send_feedback_message);
             }
             if (getParentFragment() != null) {

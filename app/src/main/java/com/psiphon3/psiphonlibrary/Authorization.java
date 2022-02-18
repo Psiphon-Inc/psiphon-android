@@ -21,6 +21,8 @@
 package com.psiphon3.psiphonlibrary;
 
 
+import static com.psiphon3.psiphonlibrary.Utils.parseRFC3339Date;
+
 import android.content.Context;
 import android.text.TextUtils;
 
@@ -29,6 +31,7 @@ import androidx.annotation.Nullable;
 
 import com.google.auto.value.AutoValue;
 import com.psiphon3.StringListPreferences;
+import com.psiphon3.log.MyLog;
 import com.psiphon3.subscription.BuildConfig;
 
 import net.grandcentrix.tray.core.ItemNotFoundException;
@@ -41,9 +44,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-
-import static com.psiphon3.psiphonlibrary.Utils.MyLog;
-import static com.psiphon3.psiphonlibrary.Utils.parseRFC3339Date;
 
 @AutoValue
 public abstract class Authorization {
@@ -77,30 +77,30 @@ public abstract class Authorization {
 
             Id = authorizationObject.getString("ID");
             if (TextUtils.isEmpty(Id)) {
-                MyLog.g("authorization 'ID' is empty");
+                MyLog.w("authorization 'ID' is empty");
                 return null;
             }
 
             accessType = authorizationObject.getString("AccessType");
             if (TextUtils.isEmpty(accessType)) {
-                MyLog.g("authorization 'AccessType' is empty");
+                MyLog.w("authorization 'AccessType' is empty");
                 return null;
             }
 
             expiresDateString = authorizationObject.getString("Expires");
             if (TextUtils.isEmpty(expiresDateString)) {
-                MyLog.g("authorization 'Expires' is empty");
+                MyLog.w("authorization 'Expires' is empty");
                 return null;
             }
         } catch (JSONException e) {
-            MyLog.g("JSON exception parsing authorization token: " + e.getMessage());
+            MyLog.e("JSON exception parsing authorization token: " + e.getMessage());
             return null;
         }
 
         try {
             expires = parseRFC3339Date(expiresDateString);
         } catch (ParseException e) {
-            MyLog.g("ParseException: " + e.getMessage() + " while parsing 'Expires' field: " + expiresDateString);
+            MyLog.e("ParseException: " + e.getMessage() + " while parsing 'Expires' field: " + expiresDateString);
             return null;
         }
 
@@ -163,20 +163,20 @@ public abstract class Authorization {
 
     public synchronized static boolean removeAuthorizations(Context context, List<Authorization> toRemove) {
         if (toRemove == null || toRemove.size() == 0) {
-            MyLog.g("Authorization::removeAuthorizations: remove list is empty");
+            MyLog.w("Authorization::removeAuthorizations: remove list is empty");
             return false;
         }
         List<Authorization> authorizations = Authorization.geAllPersistedAuthorizations(context);
         boolean hasChanged = authorizations.removeAll(toRemove);
         if (hasChanged) {
             for (Authorization auth : toRemove) {
-                Utils.MyLog.g("Authorization::removeAuthorizations: removing persisted authorization of accessType: " +
+                MyLog.i("Authorization::removeAuthorizations: removing persisted authorization of accessType: " +
                         auth.accessType() + ", expires: " +
                         Utils.getISO8601String(auth.expires()));
             }
             replaceAllPersistedAuthorizations(context, authorizations);
         } else {
-            MyLog.g("Authorization::removeAuthorizations: persisted authorizations list has not changed");
+            MyLog.i("Authorization::removeAuthorizations: persisted authorizations list has not changed");
         }
         return hasChanged;
     }
