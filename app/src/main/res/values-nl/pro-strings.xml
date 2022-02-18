@@ -169,6 +169,13 @@
     <!-- Label text for tab that once selected takes the user to the screen displaying all available subscriptions -->
     <string name="PaymentChooserActivity.SubscriptionTab">Abonnement</string>
 
+    <!-- PsiCash account login error dialog title
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_account_login_failed_title">Inloggen bij PsiCash mislukt</string>
+
+    <!-- Title of the button that dismisses PsiCash account login error alert dialog-->
+    <string name="psicash_login_error_alert_dismiss">Afwijzen</string>
+
     <!-- An alert message to the user shown when a PsiCash login succeeds. There is a fixed number of times that a user can merge a pre-account balance into a PsiCash account. This message indicates that the user has hit that limit and the merge that occurred is the last one allowed.
         Note: 'PsiCash' should not be translated or transliterated. -->
     <string name="psicash_last_tracker_merge_notification">U bent ingelogd op uw PsiCash-account. Het bestaande saldo van dit apparaat is overgezet naar uw account, maar dit is de laatste keer dat een saldo wordt samengevoegd. </string>
@@ -188,9 +195,6 @@
 
     <!-- PsiCash account 'log in' preference title as it appears in the app's preference screen. -->
     <string name="psicash_account_login_pref_title">Inloggen</string>
-
-    <!-- Input field caption for username on the PsiCash account sign screen -->
-    <string name="psicash_account_login_username_hint">Gebruikersnaam</string>
 
     <!-- Input field caption for password on the PsiCash account sign screen -->
     <string name="psicash_account_login_password_hint">Wachtwoord</string>

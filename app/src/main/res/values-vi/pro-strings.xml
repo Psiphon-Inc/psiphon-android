@@ -99,9 +99,6 @@
     <!-- PsiCash account 'log in' preference title as it appears in the app's preference screen. -->
     <string name="psicash_account_login_pref_title">Đăng nhập</string>
 
-    <!-- Input field caption for username on the PsiCash account sign screen -->
-    <string name="psicash_account_login_username_hint">Tên đăng nhập</string>
-
     <!-- Input field caption for password on the PsiCash account sign screen -->
     <string name="psicash_account_login_password_hint">Mật mã</string>
 

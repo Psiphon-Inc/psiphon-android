@@ -311,6 +311,9 @@
     and does not automatically renew after its expiry, unlike a subscription -->
     <string name="PaymentChooserActivity.TimePassTab">Pass Waktu</string>
 
+    <!-- Title of the button that dismisses PsiCash account login error alert dialog-->
+    <string name="psicash_login_error_alert_dismiss">Abaikan</string>
+
     <!-- A title for the PsiCash store screen as it appears in the navigation.
         Note: 'PsiCash' should not be translated or transliterated. -->
     <string name="psicash_store_title">Toko PsiCash</string>
@@ -339,9 +342,6 @@
 
     <!-- PsiCash account 'manage account' preference title as it appears in the app's preference screen. -->
     <string name="psicash_account_manage_pref_title">Kelola akun</string>
-
-    <!-- Input field caption for username on the PsiCash account sign screen -->
-    <string name="psicash_account_login_username_hint">Nama pengguna</string>
 
     <!-- Input field caption for password on the PsiCash account sign screen -->
     <string name="psicash_account_login_password_hint">Kata sandi</string>

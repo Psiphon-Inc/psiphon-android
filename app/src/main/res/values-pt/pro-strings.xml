@@ -61,6 +61,9 @@
         <item quantity="other"> %d horas</item>
     </plurals>
 
+    <!-- Title of the button that dismisses PsiCash account login error alert dialog-->
+    <string name="psicash_login_error_alert_dismiss">Ignorar</string>
+
     <!-- Title of the PsiCash account log out alert confirmation dialog -->
     <string name="psicash_logout_alert_title">Terminar sessão</string>
 
@@ -72,9 +75,6 @@
 
     <!-- PsiCash account 'log in' preference title as it appears in the app's preference screen. -->
     <string name="psicash_account_login_pref_title">Entrar</string>
-
-    <!-- Input field caption for username on the PsiCash account sign screen -->
-    <string name="psicash_account_login_username_hint">Nome de utilizador</string>
 
     <!-- Input field caption for password on the PsiCash account sign screen -->
     <string name="psicash_account_login_password_hint">Palavra-passe</string>

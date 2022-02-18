@@ -335,6 +335,13 @@
     and does not automatically renew after its expiry, unlike a subscription -->
     <string name="PaymentChooserActivity.TimePassTab">Accès à durée limitée</string>
 
+    <!-- PsiCash account login error dialog title
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_account_login_failed_title">Échec de connexion à PsiCash</string>
+
+    <!-- Title of the button that dismisses PsiCash account login error alert dialog-->
+    <string name="psicash_login_error_alert_dismiss">Fermer</string>
+
     <!-- PsiCash account login error message shown when the user is trying to log in with bad credentials -->
     <string name="psicash_transaction_invalid_credentials_message">Le nom d’utilisateur ou le mot de passe saisi était erroné</string>
 
@@ -430,8 +437,9 @@
     <!-- PsiCash account 'manage account' preference title as it appears in the app's preference screen. -->
     <string name="psicash_account_manage_pref_title">Gérer le compte</string>
 
-    <!-- Input field caption for username on the PsiCash account sign screen -->
-    <string name="psicash_account_login_username_hint">Nom d’utilisateur</string>
+    <!-- Input field caption for username on the PsiCash account sign screen
+            Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_account_login_username_hint">Nom d’utilisateur PsiCash</string>
 
     <!-- Input field caption for password on the PsiCash account sign screen -->
     <string name="psicash_account_login_password_hint">Mot de passe</string>

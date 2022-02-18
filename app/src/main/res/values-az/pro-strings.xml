@@ -14,9 +14,6 @@
     <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Dismisses the log out dialog without any further action when clicked. -->
     <string name="psicash_cancel_lbl">Ləğv et</string>
 
-    <!-- Input field caption for username on the PsiCash account sign screen -->
-    <string name="psicash_account_login_username_hint">İstifadəçi adı</string>
-
     <!-- Input field caption for password on the PsiCash account sign screen -->
     <string name="psicash_account_login_password_hint">Parol</string>
 

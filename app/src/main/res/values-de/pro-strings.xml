@@ -1,5 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- New option title in the 'More options' dialog. It appears in the Proxy Setting category.
+        When clicked a new screen opens where users can specify additional HTTP headers to be added to
+        to HTTP proxy requests. Users may specify up to 3 custom headers -->
+    <string name="custom_proxy_headers_title">Benutzerdefinierte HTTP-Kopfzeilen</string>
+
+    <!--  Summary text for 'Custom HTTP header' option, appears underneath the option title -->
+    <string name="custom_proxy_headers_summary">Benutzerdefinierte HTTP-Kopfzeilen für Proxyanforderungen einrichten</string>
+
+    <!-- Checkbox that toggles adding custom headers feature-->
+    <string name="custom_proxy_headers_checkbox_title">Benutzerdefinierte HTTP-Kopfzeilen hinzufügen</string>
+
+    <!--  Summary text for 'Add custom HTTP headers' checkbox, appears underneath the checkbox title -->
+    <string name="custom_proxy_headers_checkbox_description">Benutzerdefinierte HTTP-Kopfzeilen für alle ausgehenden Proxyanforderungen hinzufügen</string>
     <string name="custom_proxy_header_group_1">Überschrift 1</string>
     <string name="custom_proxy_header_group_2">Überschrift 2</string>
     <string name="custom_proxy_header_group_3">Überschrift 3</string>
@@ -8,6 +21,8 @@
     <string name="custom_proxy_header_group_6">Überschrift 6</string>
     <string name="custom_proxy_header_name">Kopfdatennamen eingeben</string>
     <string name="custom_proxy_header_value">Kopfdatenwert eingeben</string>
+    <string name="custom_proxy_header_ignored_values">Warnung: Kopfzeilen mit leeren Namen werden ignoriert!</string>
+    <string name="custom_proxy_header_invalid_name">Fehler: Kopfzeilenname enthält ungültige Zeichen!</string>
     <!-- Indicates that the user has no speed limit. They have paid for premium service and therefore
          have access to a full-speed connection. Users have limited speed if they have not paid for
          premium service. -->
@@ -25,6 +40,9 @@
     <!-- Label text for tab that once selected takes the user to the screen displaying all available subscriptions -->
     <string name="PaymentChooserActivity.SubscriptionTab">Abonnement</string>
 
+    <!-- Title of the button that dismisses PsiCash account login error alert dialog-->
+    <string name="psicash_login_error_alert_dismiss">Verwerfen</string>
+
     <!-- Title of the PsiCash account log out alert confirmation dialog -->
     <string name="psicash_logout_alert_title">Abmelden</string>
 
@@ -36,9 +54,6 @@
 
     <!-- PsiCash account 'log in' preference title as it appears in the app's preference screen. -->
     <string name="psicash_account_login_pref_title">Anmelden</string>
-
-    <!-- Input field caption for username on the PsiCash account sign screen -->
-    <string name="psicash_account_login_username_hint">Benutzername</string>
 
     <!-- Input field caption for password on the PsiCash account sign screen -->
     <string name="psicash_account_login_password_hint">Passwort</string>

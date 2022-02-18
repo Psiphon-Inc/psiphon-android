@@ -299,6 +299,9 @@
     and does not automatically renew after its expiry, unlike a subscription -->
     <string name="PaymentChooserActivity.TimePassTab">အချိန်လိုက်သုံးခွင့်</string>
 
+    <!-- Title of the button that dismisses PsiCash account login error alert dialog-->
+    <string name="psicash_login_error_alert_dismiss">ဖြုတ်မယ်</string>
+
     <!-- Title of the PsiCash account log out alert confirmation dialog -->
     <string name="psicash_logout_alert_title">ထွက်မယ်</string>
 
@@ -310,9 +313,6 @@
 
     <!-- PsiCash account 'log in' preference title as it appears in the app's preference screen. -->
     <string name="psicash_account_login_pref_title">လော့အင်ဝင်ရန်</string>
-
-    <!-- Input field caption for username on the PsiCash account sign screen -->
-    <string name="psicash_account_login_username_hint">အသုံးပြုသူအမည်</string>
 
     <!-- Input field caption for password on the PsiCash account sign screen -->
     <string name="psicash_account_login_password_hint">စကားဝှက်</string>
