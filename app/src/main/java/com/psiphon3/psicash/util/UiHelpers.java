@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Psiphon Inc.
+ * Copyright (c) 2022, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -149,5 +149,15 @@ public class UiHelpers {
                 emitter.onNext(valueAnimator);
             }
         });
+    }
+
+    public static void setEnabledControls(boolean enable, ViewGroup viewGroup) {
+        for (int i = 0; i < viewGroup.getChildCount(); i++) {
+            View child = viewGroup.getChildAt(i);
+            child.setEnabled(enable);
+            if (child instanceof ViewGroup) {
+                setEnabledControls(enable, (ViewGroup) child);
+            }
+        }
     }
 }
