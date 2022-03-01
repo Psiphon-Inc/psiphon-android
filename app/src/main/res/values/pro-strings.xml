@@ -500,7 +500,7 @@
     <!-- Explanation text that appears below "Create account" button on the PsiCash sign in screen.
     Do not translate or transliterate terms PsiCash or Psiphon, do not change or add HTML tags to the https://psiphon.ca/faq.html#psicash-account URL,
     it will be 'linkified' programmatically in the app. -->
-    <string name="psicash_create_account_explanation_text">Creating a PsiCash account will help preserve your PsiCash if you reinstall the app or use Psiphon on another device. Please follow https://psiphon.ca/faq.html#psicash-account to learn more.</string>
+    <string name="psicash_create_account_explanation_text">Creating a PsiCash account will help preserve your PsiCash if you reinstall the app or use Psiphon on another device. Please visit https://psiphon.ca/faq.html#psicash-account to learn more.</string>
 
     <!-- Text that appears above the "Log in" button on the PsiCash sign in screen. -->
     <string name="psicash_already_have_account_text">Already have an account?</string>
