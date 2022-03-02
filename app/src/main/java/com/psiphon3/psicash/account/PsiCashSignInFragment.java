@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Psiphon Inc.
+ * Copyright (c) 2022, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,10 +27,10 @@ import android.os.Bundle;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.URLSpan;
+import android.text.util.Linkify;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -42,7 +42,6 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-import com.google.android.material.textfield.TextInputEditText;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.jakewharton.rxrelay2.Relay;
 import com.psiphon3.TunnelState;
@@ -69,10 +68,8 @@ public class PsiCashSignInFragment extends Fragment
     private BroadcastReceiver broadcastReceiver;
     private boolean isStopped;
     private View progressOverlay;
-    private TextInputEditText loginUsernameTv;
-    private TextInputEditText loginPasswordTv;
     private String createAccountUrl;
-    private String forgotAccountUrl;
+    private PsiCashAccountSignInDialog psiCashAccountSignInDialog;
 
 
     @Override
@@ -86,11 +83,8 @@ public class PsiCashSignInFragment extends Fragment
         ((PsiCashAccountActivity) requireActivity()).hideProgress();
 
         progressOverlay = view.findViewById(R.id.progress_overlay);
-        loginUsernameTv = view.findViewById(R.id.psicash_account_username_textview);
-        loginPasswordTv = view.findViewById(R.id.psicash_account_password_textview);
-        Button loginBtn = view.findViewById(R.id.psicash_account_login_btn);
-        TextView createAccountTv = view.findViewById(R.id.psicash_create_account_tv);
-        TextView forgotAccountTv = view.findViewById(R.id.psicash_account_forgot_account_tv);
+        Button loginBtn = view.findViewById(R.id.psicash_login_account_btn);
+        Button createAccountBtn = view.findViewById(R.id.psicash_create_account_btn);
 
 
         PsiCashAccountViewModel psiCashAccountViewModel = new ViewModelProvider(requireActivity(),
@@ -125,51 +119,22 @@ public class PsiCashSignInFragment extends Fragment
 
         psiCashAccountViewModel.processIntents(intents());
 
-        // Make forgot credentials text look like an HTML link
-        CharSequence charSequence = forgotAccountTv.getText();
-        SpannableString spannableString = new SpannableString(charSequence);
-        spannableString.setSpan(new URLSpan(""), 0, spannableString.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        forgotAccountTv.setText(spannableString, TextView.BufferType.SPANNABLE);
+        // Linkify "create account" explanation text
+        TextView tv = view.findViewById(R.id.psicash_create_account_explanation_text_id);
+        Linkify.addLinks(tv, Linkify.WEB_URLS);
 
-        // Make create account text look like an HTML link
-        charSequence = createAccountTv.getText();
-        spannableString = new SpannableString(charSequence);
-        spannableString.setSpan(new URLSpan(""), 0, spannableString.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        createAccountTv.setText(spannableString, TextView.BufferType.SPANNABLE);
-
-        // Hook up login button
-        loginBtn.setOnClickListener(v ->
-                intentsPublishRelay.accept(PsiCashAccountIntent.LoginAccount.create(
-                        tunnelStateFlowable,
-                        loginUsernameTv.getText().toString(),
-                        loginPasswordTv.getText().toString())));
-
-        // Hook up forgot credentials click action
-        forgotAccountTv.setOnClickListener(v -> {
-            if (forgotAccountUrl != null) {
-                new PsiCashAccountWebViewDialog(requireActivity(), tunnelStateFlowable)
-                        .load(forgotAccountUrl);
-            }
+        // Hook up log into existing account click action
+        loginBtn.setOnClickListener(v -> {
+            psiCashAccountSignInDialog = new PsiCashAccountSignInDialog(requireActivity(), tunnelStateFlowable);
+            psiCashAccountSignInDialog.show();
         });
 
         // Hook up create account click action
-        createAccountTv.setOnClickListener(v -> {
+        createAccountBtn.setOnClickListener(v -> {
             if (createAccountUrl != null) {
                 new PsiCashAccountWebViewDialog(requireActivity(), tunnelStateFlowable)
                         .load(createAccountUrl);
             }
-        });
-
-        // Hook up keyboard "done" action
-        loginPasswordTv.setOnEditorActionListener((v, actionId, event) -> {
-            if (actionId == EditorInfo.IME_ACTION_DONE) {
-                intentsPublishRelay.accept(PsiCashAccountIntent.LoginAccount.create(
-                        tunnelStateFlowable,
-                        loginUsernameTv.getText().toString(),
-                        loginPasswordTv.getText().toString()));
-                return true;
-            }
-            return false;
         });
     }
 
@@ -230,14 +195,12 @@ public class PsiCashSignInFragment extends Fragment
             return;
         }
         createAccountUrl = state.psiCashModel() == null ? null : state.psiCashModel().accountSignupUrl();
-        forgotAccountUrl = state.psiCashModel() == null ? null : state.psiCashModel().accountForgotUrl();
 
         updateUiProgressView(state);
         updateUiPsiCashError(state);
 
-        setEnabledControls(!state.psiCashTransactionInFlight(),
-                requireView().findViewById(R.id.psicash_login_layout));
-
+        UiHelpers.setEnabledControls(!state.psiCashTransactionInFlight(),
+                requireView().findViewById(R.id.psicash_account_sign_in_layout));
 
         if (state.psiCashModel() == null) {
             return;
@@ -245,6 +208,9 @@ public class PsiCashSignInFragment extends Fragment
 
         if (state.psiCashModel().hasTokens()) {
             if (state.psiCashModel().isAccount()) {
+                if (psiCashAccountSignInDialog != null && psiCashAccountSignInDialog.isShowing()) {
+                    psiCashAccountSignInDialog.close();
+                }
                 SingleViewEvent<String> notificationViewEvent = state.notificationViewEvent();
                 if (notificationViewEvent != null) {
                     notificationViewEvent.consume((notificationMsg) -> {
@@ -253,7 +219,7 @@ public class PsiCashSignInFragment extends Fragment
                                     .setIcon(R.drawable.psicash_coin)
                                     .setTitle(requireContext().getString(R.string.psicash_generic_title))
                                     .setMessage(requireContext().getString(R.string.psicash_last_tracker_merge_notification))
-                                    .setNeutralButton(R.string.label_ok, (dialog, which) -> {
+                                    .setPositiveButton(R.string.label_ok, (dialog, which) -> {
                                     })
                                     .setCancelable(true)
                                     .setOnDismissListener(dialog -> dismissActivity())
@@ -298,10 +264,25 @@ public class PsiCashSignInFragment extends Fragment
                 MyLog.e("Unexpected PsiCash error: " + error.toString());
                 errorMessage = getString(R.string.unexpected_error_occured_send_feedback_message);
             }
-            UiHelpers.getSnackbar(errorMessage,
-                    requireActivity().findViewById(R.id.snackbar_anchor_layout))
-                    .show();
+            try {
+                new AlertDialog.Builder(requireActivity())
+                        .setIcon(R.drawable.ic_psiphon_alert_notification)
+                        .setTitle(requireContext().getString(R.string.psicash_account_login_failed_title))
+                        .setMessage(errorMessage)
+                        .setPositiveButton(R.string.psicash_login_error_alert_dismiss, (dialog, which) -> {
+                        })
+                        .setOnDismissListener(__ -> clearPasswordField())
+                        .setCancelable(true)
+                        .show();
+            } catch (RuntimeException ignored) {
+            }
         });
+    }
+
+    private void clearPasswordField() {
+        if (psiCashAccountSignInDialog != null && psiCashAccountSignInDialog.isShowing()) {
+            psiCashAccountSignInDialog.clearPasswordField();
+        }
     }
 
     private void updateUiProgressView(PsiCashAccountViewState state) {
@@ -309,16 +290,6 @@ public class PsiCashSignInFragment extends Fragment
             progressOverlay.setVisibility(View.VISIBLE);
         } else {
             progressOverlay.setVisibility(View.GONE);
-        }
-    }
-
-    private void setEnabledControls(boolean enable, ViewGroup viewGroup) {
-        for (int i = 0; i < viewGroup.getChildCount(); i++) {
-            View child = viewGroup.getChildAt(i);
-            child.setEnabled(enable);
-            if (child instanceof ViewGroup) {
-                setEnabledControls(enable, (ViewGroup) child);
-            }
         }
     }
 }

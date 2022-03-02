@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Psiphon Inc.
+ * Copyright (c) 2022, Psiphon Inc.
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,6 +19,7 @@
 package com.psiphon3.psicash.account;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.Dialog;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
@@ -26,14 +27,12 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Message;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
@@ -52,14 +51,12 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.psiphon3.TunnelState;
 import com.psiphon3.subscription.R;
 
-import java.lang.ref.WeakReference;
 import java.util.Vector;
 
 import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
 
 public class PsiCashAccountWebViewDialog {
-    private final WeakReference<FragmentActivity> activityWeakReference;
     private final WebView webView;
     private final Dialog dialog;
     private final Vector<AlertDialog> alertDialogs = new Vector<>();
@@ -67,10 +64,8 @@ public class PsiCashAccountWebViewDialog {
 
     @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
     public PsiCashAccountWebViewDialog(FragmentActivity fragmentActivity, Flowable<TunnelState> tunnelStateFlowable) {
-        activityWeakReference = new WeakReference<>(fragmentActivity);
-
         LayoutInflater inflater = LayoutInflater.from(fragmentActivity);
-        View contentView = inflater.inflate(R.layout.psicash_acount_webview_layout, null);
+        View contentView = inflater.inflate(R.layout.psicash_account_webview_dialog_layout, null);
 
         View progressOverlay = contentView.findViewById(R.id.progress_overlay);
         // Give progress overlay an opaque background matching the accounts web page's
@@ -84,7 +79,7 @@ public class PsiCashAccountWebViewDialog {
         psiphonConnectingBlockingOverlay.setBackgroundColor(Color.DKGRAY);
         psiphonConnectingBlockingOverlay.setAlpha(0.9f);
 
-        dialog = new Dialog(fragmentActivity, R.style.Theme_AppCompat_Dialog) {
+        dialog = new Dialog(fragmentActivity, R.style.Theme_NoTitleDialog_Transparent) {
             // Hook up minimal web view navigation
             @Override
             public void onBackPressed() {
@@ -95,8 +90,6 @@ public class PsiCashAccountWebViewDialog {
                 }
             }
         };
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
         dialog.setCancelable(false);
 
         webView = new WebView(fragmentActivity) {
@@ -143,7 +136,7 @@ public class PsiCashAccountWebViewDialog {
             @Override
             public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
                 if (failingUrl != null && failingUrl.equals(view.getUrl())) {
-                    showErrorClosePrompt(view.getContext());
+                    showErrorClosePrompt();
                 }
             }
 
@@ -151,7 +144,7 @@ public class PsiCashAccountWebViewDialog {
             @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 if (request.isForMainFrame()) {
-                    showErrorClosePrompt(view.getContext());
+                    showErrorClosePrompt();
                 }
             }
         });
@@ -167,17 +160,16 @@ public class PsiCashAccountWebViewDialog {
             // hook up open in new window
             @Override
             public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
-                FragmentActivity activity = activityWeakReference.get();
-                if (activity == null || activity.isFinishing()) {
+                if (fragmentActivity == null || fragmentActivity.isFinishing()) {
                     return false;
                 }
-                WebView newWebView = new WebView(activity);
+                WebView newWebView = new WebView(fragmentActivity);
                 newWebView.setWebViewClient(new WebViewClient() {
                     // Try and open new url in an external browser
                     void handleUri(Uri uri) {
                         try {
                             final Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-                            activity.startActivity(intent);
+                            fragmentActivity.startActivity(intent);
                         } catch (ActivityNotFoundException ignored) {
                         }
                     }
@@ -245,12 +237,11 @@ public class PsiCashAccountWebViewDialog {
 
 
         floatingActionButton.setOnClickListener(view -> {
-            FragmentActivity activity = activityWeakReference.get();
-            if (activity == null || activity.isFinishing()) {
+            if (fragmentActivity == null || fragmentActivity.isFinishing()) {
                 return;
             }
             try {
-                alertDialogs.add(new AlertDialog.Builder(activity)
+                alertDialogs.add(new AlertDialog.Builder(fragmentActivity)
                         .setIcon(R.drawable.psicash_coin)
                         .setTitle(R.string.psicash_webview_close_alert_title)
                         .setCancelable(true)
@@ -264,8 +255,8 @@ public class PsiCashAccountWebViewDialog {
         });
     }
 
-    private void showErrorClosePrompt(Context context) {
-        FragmentActivity activity = activityWeakReference.get();
+    private void showErrorClosePrompt() {
+        Activity activity = dialog.getOwnerActivity();
         if (activity == null || activity.isFinishing()) {
             return;
         }
