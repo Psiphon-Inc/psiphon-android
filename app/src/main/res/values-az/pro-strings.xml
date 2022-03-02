@@ -29,4 +29,7 @@
     <!--Generic 'error' alert prompt title-->
     <string name="psicash_webview_error_alert_title">Xəta</string>
 
+    <!--Generic 'close' button label -->
+    <string name="label_close">Bağla</string>
+
     </resources>

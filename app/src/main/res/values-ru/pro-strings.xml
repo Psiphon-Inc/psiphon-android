@@ -335,4 +335,7 @@
     <!--Generic 'error' alert prompt title-->
     <string name="psicash_webview_error_alert_title">Ошибка</string>
 
+    <!--Generic 'close' button label -->
+    <string name="label_close">Закрыть</string>
+
     </resources>

@@ -94,4 +94,7 @@
     <!--Generic 'error' alert prompt title-->
     <string name="psicash_webview_error_alert_title">錯誤</string>
 
+    <!--Generic 'close' button label -->
+    <string name="label_close">關閉</string>
+
     </resources>

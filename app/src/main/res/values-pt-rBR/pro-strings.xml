@@ -330,4 +330,9 @@
     <!--Generic 'error' alert prompt title-->
     <string name="psicash_webview_error_alert_title">Erro</string>
 
-    </resources>
+    <!--Generic 'close' button label -->
+    <string name="label_close">Fechar</string>
+
+    <!-- Text that appears above the "Log in" button on the PsiCash sign in screen. -->
+    <string name="psicash_already_have_account_text">Já tem uma conta?</string>
+</resources>
