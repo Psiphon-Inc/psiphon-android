@@ -166,7 +166,7 @@ public class PsiCashAccountSignInDialog {
         if (state == null) {
             return;
         }
-        forgetAccountUrl = state.psiCashModel() == null ? null : state.psiCashModel().accountSignupUrl();
+        forgetAccountUrl = state.psiCashModel() == null ? null : state.psiCashModel().accountForgotUrl();
 
         progressOverlay.setVisibility(state.psiCashTransactionInFlight() ?
                 View.VISIBLE :
