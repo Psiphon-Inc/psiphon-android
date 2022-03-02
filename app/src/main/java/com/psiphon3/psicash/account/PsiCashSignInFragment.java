@@ -24,9 +24,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.text.SpannableString;
-import android.text.Spanned;
-import android.text.style.URLSpan;
 import android.text.util.Linkify;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -68,7 +65,7 @@ public class PsiCashSignInFragment extends Fragment
     private BroadcastReceiver broadcastReceiver;
     private boolean isStopped;
     private View progressOverlay;
-    private String createAccountUrl;
+    private String accountSignupUrl;
     private PsiCashAccountSignInDialog psiCashAccountSignInDialog;
 
 
@@ -131,9 +128,9 @@ public class PsiCashSignInFragment extends Fragment
 
         // Hook up create account click action
         createAccountBtn.setOnClickListener(v -> {
-            if (createAccountUrl != null) {
+            if (accountSignupUrl != null) {
                 new PsiCashAccountWebViewDialog(requireActivity(), tunnelStateFlowable)
-                        .load(createAccountUrl);
+                        .load(accountSignupUrl);
             }
         });
     }
@@ -194,7 +191,7 @@ public class PsiCashSignInFragment extends Fragment
         if (activity == null || activity.isFinishing() || !isAdded()) {
             return;
         }
-        createAccountUrl = state.psiCashModel() == null ? null : state.psiCashModel().accountSignupUrl();
+        accountSignupUrl = state.psiCashModel() == null ? null : state.psiCashModel().accountSignupUrl();
 
         updateUiProgressView(state);
         updateUiPsiCashError(state);

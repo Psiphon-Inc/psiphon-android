@@ -54,7 +54,7 @@ public class PsiCashAccountSignInDialog {
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private final View progressOverlay;
     private final View contentView;
-    private String forgetAccountUrl;
+    private String accountForgotUrl;
     private TextInputEditText loginUsernameTv;
     private TextInputEditText loginPasswordTv;
 
@@ -152,10 +152,10 @@ public class PsiCashAccountSignInDialog {
 
         // Hook up forgot credentials click action
         forgotAccountTv.setOnClickListener(v -> {
-            if (forgetAccountUrl != null) {
+            if (accountForgotUrl != null) {
                 try {
                     new PsiCashAccountWebViewDialog(fragmentActivity, tunnelStateFlowable)
-                            .load(forgetAccountUrl);
+                            .load(accountForgotUrl);
                 } catch (RuntimeException ignored) {
                 }
             }
@@ -166,7 +166,7 @@ public class PsiCashAccountSignInDialog {
         if (state == null) {
             return;
         }
-        forgetAccountUrl = state.psiCashModel() == null ? null : state.psiCashModel().accountForgotUrl();
+        accountForgotUrl = state.psiCashModel() == null ? null : state.psiCashModel().accountForgotUrl();
 
         progressOverlay.setVisibility(state.psiCashTransactionInFlight() ?
                 View.VISIBLE :
