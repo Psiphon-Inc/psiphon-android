@@ -174,7 +174,7 @@
 
     <!-- PsiCash in-app purchase disclaimer that appears on the bottom of the screen where users can buy different amounts of PsiCash from the PlayStore.
     Do not translate or transliterate terms PsiCash or Psiphon Pro, preserve the HTML <b/> tag in <b>Creating a PsiCash account</b> if possible -->
-    <string name="psicash_store_disclaimer">IMPORTANT : <b>La création d\'un compte PsiCash</b> vous aidera à conserver votre PsiCash si vous désinstallez Psiphon Pro, si vous effacer la mémoire de l\'appli ou si vous utilisez Psiphon sur un autre appareil.</string>
+    <string name="psicash_store_disclaimer">IMPORTANT : <b>La création d’un compte PsiCash</b> vous aidera à conserver votre PsiCash si vous désinstallez Psiphon Pro, si vous effacer la mémoire de l’appli ou si vous utilisez Psiphon sur un autre appareil.</string>
 
     <!-- A message to the user indicating that they need to be connected to Psiphon in order to use Speed Boost.
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
@@ -489,8 +489,15 @@
     <string name="psicash_web_wait_tunnel_connecting">Veuillez patienter alors que Psiphon se connecte</string>
 
     <!--Generic 'close' button label -->
-    <string name="label_close">Fermer
-</string>
+    <string name="label_close">Fermer</string>
+
+    <!-- Text that appears above the "Create account" button on the PsiCash sign in screen. -->
+    <string name="psicash_protect_psicash_text">Protégez votre PsiCash !</string>
+
+    <!-- Explanation text that appears below "Create account" button on the PsiCash sign in screen.
+    Do not translate or transliterate terms PsiCash or Psiphon, do not change or add HTML tags to the https://psiphon.ca/faq.html#psicash-account URL,
+    it will be 'linkified' programmatically in the app. -->
+    <string name="psicash_create_account_explanation_text">La création d’un compte PsiCash vous aidera à conserver votre PsiCash si vous réinstallez l’appli ou si vous utilisez Psiphon sur un autre appareil. Veuillez visiter https://psiphon.ca/faq.html#psicash-account pour en apprendre davantage.</string>
 
     <!-- Text that appears above the "Log in" button on the PsiCash sign in screen. -->
     <string name="psicash_already_have_account_text">Avez-vous déjà un compte?</string>
