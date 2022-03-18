@@ -114,6 +114,11 @@
                 android:name="android.net.VpnService.SUPPORTS_ALWAYS_ON"
                 android:value="true" />
         </service>
+        <provider
+            android:name=".log.LoggingContentProvider"
+            android:exported="false"
+            android:process=":LoggingContentProvider"
+            android:authorities="com.psiphon3.LoggingContentProvider" />
 
     </application>
 
