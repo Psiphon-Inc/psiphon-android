@@ -22,6 +22,7 @@ package com.psiphon3;
 import android.app.Application;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.database.ContentObserver;
 import android.content.Intent;
 import android.content.IntentFilter;
 
@@ -36,7 +37,9 @@ import androidx.paging.RxPagedListBuilder;
 
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.log.LogEntry;
-import com.psiphon3.log.LoggingRoomDatabase;
+import com.psiphon3.log.LoggingContentProvider;
+import com.psiphon3.log.LogsDataSourceFactory;
+import com.psiphon3.log.LogsLastEntryHelper;
 import com.psiphon3.log.MyLog;
 import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psiphonlibrary.TunnelServiceInteractor;
@@ -56,6 +59,7 @@ public class MainActivityViewModel extends AndroidViewModel implements Lifecycle
     private final PublishRelay<String> externalBrowserUrlRelay = PublishRelay.create();
     private final Flowable<LogEntry> lastLogEntryFlowable;
     private final Flowable<PagedList<LogEntry>> logsPagedListFlowable;
+    private final ContentObserver loggingObserver;
 
     public MainActivityViewModel(@NonNull Application application) {
         super(application);
@@ -76,7 +80,19 @@ public class MainActivityViewModel extends AndroidViewModel implements Lifecycle
         };
         LocalBroadcastManager.getInstance(getApplication()).registerReceiver(broadcastReceiver, intentFilter);
 
-        LoggingRoomDatabase db = LoggingRoomDatabase.getDatabase(application.getApplicationContext());
+        LogsLastEntryHelper logsLastEntryHelper = new LogsLastEntryHelper(application.getContentResolver());
+        LogsDataSourceFactory logsDataSourceFactory = new LogsDataSourceFactory(application.getContentResolver());
+
+        loggingObserver = new ContentObserver(null) {
+            @Override
+            public void onChange(boolean selfChange) {
+                logsDataSourceFactory.invalidateDataSource();
+                logsLastEntryHelper.refresh();
+            }
+        };
+
+        getApplication().getContentResolver()
+                .registerContentObserver(LoggingContentProvider.CONTENT_URI, true, loggingObserver);
 
         PagedList.Config pagedListConfig = new PagedList.Config.Builder()
                 .setPageSize(60)
@@ -88,12 +104,12 @@ public class MainActivityViewModel extends AndroidViewModel implements Lifecycle
 
         logsPagedListFlowable =
                 new RxPagedListBuilder<>(
-                        db.getPagedStatusLogs(), pagedListConfig)
+                        logsDataSourceFactory, pagedListConfig)
                         .buildFlowable(BackpressureStrategy.LATEST)
                         .replay(1)
                         .autoConnect(0);
 
-        lastLogEntryFlowable = db.getLastStatusLogEntry()
+        lastLogEntryFlowable = logsLastEntryHelper.getFlowable()
                 .replay(1)
                 .autoConnect(0);
     }
@@ -111,6 +127,7 @@ public class MainActivityViewModel extends AndroidViewModel implements Lifecycle
     @Override
     protected void onCleared() {
         super.onCleared();
+        getApplication().getContentResolver().unregisterContentObserver(loggingObserver);
         LocalBroadcastManager.getInstance(getApplication().getApplicationContext()).unregisterReceiver(broadcastReceiver);
         tunnelServiceInteractor.onDestroy(getApplication());
     }
