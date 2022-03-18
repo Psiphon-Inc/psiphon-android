@@ -204,10 +204,10 @@ com.mopub.mobileads.utils" />
                 android:value="true" />
         </service>
         <provider
-        android:name=".log.LoggingContentProvider"
+        android:name="com.psiphon3.log.LoggingContentProvider"
         android:exported="false"
         android:process=":LoggingContentProvider"
-        android:authorities="com.psiphon3.LoggingContentProvider" />
+        android:authorities="com.psiphon3.subscription.LoggingContentProvider" />
         <activity
             android:name="com.psiphon3.PaymentChooserActivity"
             android:parentActivityName="com.psiphon3.MainActivity"
