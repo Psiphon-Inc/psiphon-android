@@ -34,7 +34,7 @@ import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
-import com.psiphon3.BuildConfig;
+import com.psiphon3.subscription.BuildConfig;
 
 import java.util.concurrent.Executors;
 
