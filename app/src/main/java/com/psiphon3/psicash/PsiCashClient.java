@@ -704,6 +704,9 @@ public class PsiCashClient {
                                 throw new PsiCashException.Transaction(result.status, isAccount());
                             }
 
+                            // Restore request metadata after a successful login
+                            setPsiCashRequestMetaData(connectionData);
+
                             MyLog.i("PsiCash: got new login with lastTrackerMerge: " + result.lastTrackerMerge);
                             return result.lastTrackerMerge != null && result.lastTrackerMerge;
                         })
