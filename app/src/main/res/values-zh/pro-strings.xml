@@ -128,9 +128,21 @@
     likely succeed next time.  Note: 'PsiCash' should not be translated or transliterated. -->
     <string name="psicash_cant_get_balance_recoverable_message">此时不能从服务器找回PsiCash余额。请稍后再试。</string>
 
+    <!-- Alert error message informing user that a critical error has occurred while trying to log in into PsiCash account and encouraging the user to
+    send feedback diagnostics.  Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_cannot_login_critical_message">PsiCash 服务器在尝试让您登录时响应错误，请发送反馈。</string>
+
     <!-- Alert error message informing user that a recoverable error has occurred while trying to log in into PsiCash account.
     Note: 'PsiCash' should not be translated or transliterated. -->
     <string name="psicash_cannot_login_recoverable_message">当尝试登录时，PsiCash服务器返回一个错误。请稍后再尝试。</string>
+
+    <!-- Alert error message informing user that a critical error has occurred while trying to make a Speed Boost purchase with PsiCash and encouraging the user to
+    send feedback diagnostics.  Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_cannot_make_purchase_critical_message">PsiCash 服务器在您尝试进行购买时响应错误，请发送反馈。</string>
+
+    <!-- Alert error message informing user that a recoverable error has occurred while trying to make a Speed Boost purchase with PsiCash.
+    Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_cannot_make_purchase_recoverable_message">PsiCash 服务器在您尝试进行购买时响应错误，请稍后再试。</string>
 
     <!-- Text which appears in the Speed Boost meter when the user has activated Speed Boost accompanied with a countdown timer showing how much time
     of the Speed Boost mode has left, like following 'Speed Boost Active - 16:49'. Please keep this text concise as the width of the text box
@@ -424,6 +436,10 @@
     <!-- PsiCash account 'manage account' preference title as it appears in the app's preference screen. -->
     <string name="psicash_account_manage_pref_title">管理账号</string>
 
+    <!-- Input field caption for username on the PsiCash account sign screen
+            Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_account_login_username_hint">PsiCash 用户名</string>
+
     <!-- Input field caption for password on the PsiCash account sign screen -->
     <string name="psicash_account_login_password_hint">密码</string>
 
@@ -474,4 +490,14 @@
     <!--Generic 'close' button label -->
     <string name="label_close">关闭</string>
 
-    </resources>
+    <!-- Text that appears above the "Create account" button on the PsiCash sign in screen. -->
+    <string name="psicash_protect_psicash_text">保护您的 PsiCash!</string>
+
+    <!-- Explanation text that appears below "Create account" button on the PsiCash sign in screen.
+    Do not translate or transliterate terms PsiCash or Psiphon, do not change or add HTML tags to the https://psiphon.ca/faq.html#psicash-account URL,
+    it will be 'linkified' programmatically in the app. -->
+    <string name="psicash_create_account_explanation_text">如果您重装应用或在其他设备上使用赛风，创建 PsiCash 帐户将有助于保管您的 PsiCash。更多详情请访问 https://psiphon.ca/faq.html#psicash-account</string>
+
+    <!-- Text that appears above the "Log in" button on the PsiCash sign in screen. -->
+    <string name="psicash_already_have_account_text">已注册过帐户？</string>
+</resources>
