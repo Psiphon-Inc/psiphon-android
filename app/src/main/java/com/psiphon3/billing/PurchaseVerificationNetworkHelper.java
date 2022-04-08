@@ -125,7 +125,7 @@ public class PurchaseVerificationNetworkHelper {
 
             json.put("is_subscription", isSubscription);
             json.put("package_name", ctx.getPackageName());
-            json.put("product_id", purchase.getSku());
+            json.put("product_id", purchase.getSkus().get(0));
             json.put("token", purchase.getPurchaseToken());
             json.put("custom_data", customData);
 

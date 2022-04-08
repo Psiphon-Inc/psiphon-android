@@ -34,6 +34,7 @@ import com.android.billingclient.api.BillingFlowParams;
 import com.android.billingclient.api.BillingResult;
 import com.android.billingclient.api.ConsumeParams;
 import com.android.billingclient.api.Purchase;
+import com.android.billingclient.api.PurchasesResponseListener;
 import com.android.billingclient.api.PurchasesUpdatedListener;
 import com.android.billingclient.api.SkuDetails;
 import com.android.billingclient.api.SkuDetailsParams;
@@ -291,7 +292,7 @@ public class GooglePlayBillingHelper {
             completables.add(acknowledgePurchase(purchase));
 
             // Check if this purchase is an expired timepass which needs to be consumed
-            if (IAB_TIMEPASS_SKUS_TO_DAYS.containsKey(purchase.getSku())) {
+            if (IAB_TIMEPASS_SKUS_TO_DAYS.containsKey(purchase.getSkus().get(0))) {
                 if (!isValidTimePass(purchase)) {
                     compositeDisposable.add(consumePurchase(purchase).subscribe());
                 }
@@ -332,6 +333,7 @@ public class GooglePlayBillingHelper {
     private Single<List<Purchase>> getOwnedItems(String type) {
         return connectionFlowable
                 .observeOn(AndroidSchedulers.mainThread())
+                .firstOrError()
                 .flatMap(client -> {
                     // If subscriptions are not supported return an empty purchase list, do not send error.
                     if (type.equals(BillingClient.SkuType.SUBS)) {
@@ -339,22 +341,20 @@ public class GooglePlayBillingHelper {
                         if (billingResult.getResponseCode() != BillingResponseCode.OK) {
                             MyLog.w("Subscriptions are not supported, billing response code: " + billingResult.getResponseCode());
                             List<Purchase> purchaseList = Collections.emptyList();
-                            return Flowable.just(purchaseList);
+                            return Single.just(purchaseList);
                         }
                     }
 
-                    Purchase.PurchasesResult purchasesResult = client.queryPurchases(type);
-                    if (purchasesResult.getResponseCode() == BillingResponseCode.OK) {
-                        List<Purchase> purchaseList = purchasesResult.getPurchasesList();
-                        if (purchaseList == null) {
-                            purchaseList = Collections.emptyList();
+                    return Single.create(emitter -> client.queryPurchasesAsync(type, (billingResult, list) -> {
+                        if (!emitter.isDisposed()) {
+                            if (billingResult.getResponseCode() == BillingResponseCode.OK) {
+                                emitter.onSuccess(list);
+                            } else {
+                                emitter.onError(new BillingException((billingResult.getResponseCode())));
+                            }
                         }
-                        return Flowable.just(purchaseList);
-                    } else {
-                        return Flowable.error(new BillingException(purchasesResult.getResponseCode()));
-                    }
+                    }));
                 })
-                .firstOrError()
                 .doOnError(err -> MyLog.e("GooglePlayBillingHelper::getOwnedItems type: " + type + " error: " + err));
     }
 
@@ -391,7 +391,10 @@ public class GooglePlayBillingHelper {
 
         billingParamsBuilder.setSkuDetails(skuDetails);
         if (!TextUtils.isEmpty(oldSku) && !TextUtils.isEmpty(oldPurchaseToken)) {
-            billingParamsBuilder.setOldSku(oldSku, oldPurchaseToken);
+            billingParamsBuilder.setSubscriptionUpdateParams(
+                    BillingFlowParams.SubscriptionUpdateParams.newBuilder()
+                            .setOldSkuPurchaseToken(oldPurchaseToken)
+                            .build());
         }
 
         return connectionFlowable
@@ -441,15 +444,15 @@ public class GooglePlayBillingHelper {
     }
 
     static boolean isUnlimitedSubscription(@NonNull Purchase purchase) {
-        return Arrays.asList(IAB_ALL_UNLIMITED_MONTHLY_SUBSCRIPTION_SKUS).contains(purchase.getSku());
+        return Arrays.asList(IAB_ALL_UNLIMITED_MONTHLY_SUBSCRIPTION_SKUS).contains(purchase.getSkus().get(0));
     }
 
     static boolean isLimitedSubscription(@NonNull Purchase purchase) {
-        return purchase.getSku().equals(IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU);
+        return purchase.getSkus().get(0).equals(IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU);
     }
 
     static boolean isValidTimePass(@NonNull Purchase purchase) {
-        Long lifetimeInDays = IAB_TIMEPASS_SKUS_TO_DAYS.get(purchase.getSku());
+        Long lifetimeInDays = IAB_TIMEPASS_SKUS_TO_DAYS.get(purchase.getSkus().get(0));
         if (lifetimeInDays == null) {
             // not a time pass SKU
             return false;
@@ -462,7 +465,7 @@ public class GooglePlayBillingHelper {
     }
 
     static public boolean isPsiCashPurchase(@NonNull Purchase purchase) {
-        return IAB_PSICASH_SKUS_TO_VALUE.containsKey(purchase.getSku());
+        return IAB_PSICASH_SKUS_TO_VALUE.containsKey(purchase.getSkus().get(0));
     }
 
     Single<String> consumePurchase(Purchase purchase) {
