@@ -1037,7 +1037,11 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             alertDialog.getWindow().setAttributes(lp);
 
             sponsorHomePage.setOnTitleChangedListener(alertDialog::setTitle);
-            sponsorHomePage.load(url);
+
+            // Add PsiCash parameters to the original URL.
+            final String psiCashModifyUrl = PsiCashModifyUrl(url);
+
+            sponsorHomePage.load(psiCashModifyUrl);
         } catch (RuntimeException ignored) {
         }
     }
