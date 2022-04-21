@@ -47,8 +47,6 @@
     <string name="customProxyHeaderValue5">customProxyHeaderValue5</string>
     <string name="customProxyHeaderName6" >customProxyHeaderName6</string>
     <string name="customProxyHeaderValue6">customProxyHeaderValue6</string>
-    <string name="adConsentPreferenceCategory" translatable="false">adConsentPreferenceCategory</string>
-    <string name="adConsentPreference" translatable="false">adConsentPreference</string>
 
 
     <string name="upgrade_checker_service_name">Psiphon:UpgradeChecker</string>

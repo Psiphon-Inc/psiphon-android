@@ -52,6 +52,7 @@ import java.util.Currency;
 import java.util.Locale;
 
 import io.reactivex.Observable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 
 public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivity {
@@ -68,6 +69,7 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
 
         googlePlayBillingHelper.subscriptionStateFlowable()
                 .firstOrError()
+                .observeOn(AndroidSchedulers.mainThread())
                 .doOnSuccess(subscriptionState -> {
                     findViewById(R.id.progress_overlay).setVisibility(View.GONE);
                     switch (subscriptionState.status()) {
@@ -255,7 +257,7 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                                     Intent data = new Intent();
                                     data.putExtra(USER_PICKED_SKU_DETAILS_EXTRA, skuDetails.getOriginalJson());
                                     if (limitedSubscriptionPurchase != null) {
-                                        data.putExtra(USER_OLD_SKU_EXTRA, limitedSubscriptionPurchase.getSku());
+                                        data.putExtra(USER_OLD_SKU_EXTRA, limitedSubscriptionPurchase.getSkus().get(0));
                                         data.putExtra(USER_OLD_PURCHASE_TOKEN_EXTRA, limitedSubscriptionPurchase.getPurchaseToken());
                                     }
                                     activity.setResult(RESULT_OK, data);

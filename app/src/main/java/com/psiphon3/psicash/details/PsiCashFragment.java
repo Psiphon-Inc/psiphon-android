@@ -136,6 +136,7 @@ public class PsiCashFragment extends Fragment
 
         compositeDisposable.add(GooglePlayBillingHelper.getInstance(requireContext())
                 .subscriptionStateFlowable()
+                .observeOn(AndroidSchedulers.mainThread())
                 .distinctUntilChanged()
                 .doOnSubscribe(__ -> progressOverlay.setVisibility(View.VISIBLE))
                 .doOnTerminate(() -> progressOverlay.setVisibility(View.GONE))
