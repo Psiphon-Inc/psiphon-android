@@ -43,8 +43,6 @@ import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceScreen;
 
-import com.google.ads.consent.ConsentInformation;
-import com.google.ads.consent.ConsentStatus;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.MainActivity;
 import com.psiphon3.TunnelState;
@@ -184,7 +182,6 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
 
             setupLanguageSelector(preferences);
             setupAbouts(preferences);
-            setupAdsConsentPreference(preferences);
             setupPsiCashAccount(preferences);
         }
 
@@ -316,29 +313,6 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
                 }
                 return true;
             });
-        }
-
-        private void setupAdsConsentPreference(PreferenceScreen preferences) {
-            Preference category = preferences.findPreference(getString(R.string.adConsentPreferenceCategory));
-            final ConsentInformation consentInformation = ConsentInformation.getInstance(getContext());
-            if (consentInformation.getConsentStatus() != ConsentStatus.UNKNOWN) {
-                category.setVisible(true);
-                Preference pref = preferences.findPreference(getString(R.string.adConsentPreference));
-                pref.setOnPreferenceClickListener(preference -> {
-                    new AlertDialog.Builder(getContext())
-                            .setTitle(R.string.ads_consent_preference_dialog_title)
-                            .setMessage(getContext().getString(R.string.ads_consent_preference_dialog_preference_message))
-                            .setIcon(android.R.drawable.ic_dialog_alert)
-                            .setPositiveButton(android.R.string.yes, (dialog, whichButton) -> {
-                                final ConsentInformation consentInformation1 = ConsentInformation.getInstance(getContext());
-                                consentInformation1.setConsentStatus(ConsentStatus.UNKNOWN);
-                                category.setVisible(false);
-                            })
-                            .setNegativeButton(android.R.string.no, null)
-                            .show();
-                    return true;
-                });
-            }
         }
 
         @Override
