@@ -127,7 +127,6 @@ repositories {
     jcenter()
     maven { url 'https://jitpack.io' }
     maven { url "https://freestar.jfrog.io/artifactory/freestar-mediation-android-sdk" }
-    maven { url "https://s3.amazonaws.com/moat-sdk-builds" }
     maven { url "https://artifact.bytedance.com/repository/pangle" }
     maven {
         url = uri("https://adsbynimbus-public.s3.amazonaws.com/android/sdks")
@@ -171,7 +170,6 @@ dependencies {
     implementation 'com.freestar.android.ads.unityads:freestar-unity-adapter:3.7.1.2'
     implementation 'com.freestar.android.ads.vungle:freestar-vungle-adapter:6.10.2.1'
     implementation 'com.freestar.android.ads.facebook:freestar-facebook-adapter:6.1.0.1'
-    implementation 'com.freestar.android.ads.mopub:freestar-mopub-adapter:5.18.0.0'
     implementation 'com.freestar.android.ads.nimbus:freestar-nimbus-adapter:1.10.4.0'
     implementation 'com.freestar.android.ads.pangle:freestar-pangle-adapter:3.6.0.0'
 
@@ -182,18 +180,12 @@ dependencies {
         exclude group: 'com.android.support'
         exclude group: 'com.google.code.gson', module: 'gson'
     }
-    implementation 'com.mopub.mediation:facebookaudiencenetwork:6.5.1.0'
     implementation('com.facebook.android:audience-network-sdk:6.5.1') {
         exclude group: 'com.google.android.exoplayer'
         exclude group: 'com.google.android.gms'
         exclude group: 'com.android.support'
     }
     implementation 'com.vungle:publisher-sdk-android:6.10.2'
-    implementation('com.mopub:mopub-sdk:5.18.0@aar') {
-        transitive = true
-        exclude group: 'com.android.support'
-    }
-
     //nimbus
     implementation "com.adsbynimbus.android:nimbus:1.10.4" // Full Nimbus SDK with NimbusAdManager
     implementation "com.adsbynimbus.android:extension-okhttp:1.10.4" // Use OkHttp with NimbusAdManager

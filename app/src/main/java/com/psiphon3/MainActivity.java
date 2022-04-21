@@ -118,7 +118,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     private GooglePlayBillingHelper googlePlayBillingHelper;
     // Ads
     private PsiphonAdManager psiphonAdManager;
-    private boolean disableInterstitialOnNextTabChange;
     private InterstitialAdViewModel interstitialAdViewModel;
     private Observable<Boolean> hasBoostOrSubscriptionObservable;
     private boolean checkPreloadInterstitial;
@@ -205,7 +204,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 .distinctUntilChanged();
 
         psiphonAdManager = new PsiphonAdManager(getApplicationContext(),
-                this,
                 findViewById(R.id.largeAdSlot),
                 hasBoostOrSubscriptionObservable,
                 viewModel.tunnelStateFlowable());
@@ -247,12 +245,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 int tabPosition = tab.getPosition();
                 viewPager.setCurrentItem(tab.getPosition());
                 multiProcessPreferences.put(CURRENT_TAB, tabPosition);
-
-                // ads - trigger interstitial after a few tab changes
-                if (!disableInterstitialOnNextTabChange) {
-                    psiphonAdManager.onTabChanged();
-                }
-                disableInterstitialOnNextTabChange = false;
             }
 
             @Override
@@ -667,7 +659,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             // region selection UI.
 
             // Switch to settings tab
-            disableInterstitialOnNextTabChange = true;
             selectTabByTag("settings");
             // Signal Rx subscription in the options tab to update available regions list
             viewModel.signalAvailableRegionsUpdate();

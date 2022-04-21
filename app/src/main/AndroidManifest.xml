@@ -28,7 +28,6 @@ com.freestar.android.ads.applovin,
 com.freestar.android.ads.criteo,
 com.freestar.android.ads.facebook,
 com.freestar.android.ads.google,
-com.freestar.android.ads.mopub,
 com.freestar.android.ads.nimbus,
 com.freestar.android.ads.pangle,
 com.freestar.android.ads.tam,
@@ -47,18 +46,7 @@ com.google.android.gms.ads_base,
 com.google.android.gms.gass,
 com.google.android.gms.measurement.sdk.api,
 com.google.android.gms.measurement_base,
-com.jakewharton.threetenabp,
-com.moat.analytics.mobile.mpub,
-com.mopub.mobileads,
-com.mopub.mobileads.banner,
-com.mopub.mobileads.base,
-com.mopub.mobileads.facebookaudiencenetwork,
-com.mopub.mobileads.interstitial,
-com.mopub.mobileads.native_static,
-com.mopub.mobileads.native_video,
-com.mopub.mobileads.networking,
-com.mopub.mobileads.rewarded_video,
-com.mopub.mobileads.utils" />
+com.jakewharton.threetenabp" />
     <supports-screens
                   android:smallScreens="true"
                   android:normalScreens="true"
