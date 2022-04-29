@@ -20,7 +20,6 @@
 
 package com.psiphon3;
 
-import android.app.Activity;
 import android.content.Context;
 import android.os.Build;
 import android.view.View;
@@ -28,7 +27,6 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.FragmentActivity;
 
 import com.freestar.android.ads.AdRequest;
 import com.freestar.android.ads.AdSize;
@@ -40,20 +38,19 @@ import com.google.auto.value.AutoValue;
 import com.psiphon3.log.MyLog;
 
 import java.lang.ref.WeakReference;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
-import io.reactivex.ObservableTransformer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 
 public class PsiphonAdManager {
+
+    private static final String TUNNELED_BANNER_FREESTAR_PLACEMENT_ID = "inview_p1";
 
     @AutoValue
     static abstract class AdResult {
@@ -103,7 +100,8 @@ public class PsiphonAdManager {
         }
     }
 
-    private BannerAd unTunneledFreestarBannerAdView;
+    private BannerAd unTunneledFreestarBannerAd;
+    private BannerAd tunneledFreestarBannerAd;
 
     private final WeakReference<ViewGroup> bannerViewGroupWeakReference;
     private final Context appContext;
@@ -114,7 +112,7 @@ public class PsiphonAdManager {
 
     PsiphonAdManager(Context appContext,
                      ViewGroup bannerViewGroup,
-                     Observable<Boolean>hasBoostOrSubscriptionObservable,
+                     Observable<Boolean> hasBoostOrSubscriptionObservable,
                      Flowable<TunnelState> tunnelConnectionStateFlowable) {
         this.appContext = appContext;
         this.bannerViewGroupWeakReference = new WeakReference<>(bannerViewGroup);
@@ -141,44 +139,18 @@ public class PsiphonAdManager {
                 .distinctUntilChanged()
                 .replay(1)
                 .refCount();
-
-        // This disposable destroys ads according to subscription and/or
-        // connection status without further delay.
-        compositeDisposable.add(
-                currentAdTypeObservable
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .doOnNext(adResult -> {
-                            switch (adResult.type()) {
-                                case NONE:
-                                    // No ads mode, destroy all ads
-                                    destroyAllAds();
-                                    break;
-                                case TUNNELED:
-                                    // App is tunneled, destroy untunneled banners
-                                    destroyUnTunneledBanners();
-                                    break;
-                                case UNTUNNELED:
-                                    break;
-                            }
-                        })
-                        .subscribe()
-        );
     }
 
     static boolean canShowAds() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
     }
 
-    Observable<AdResult> getCurrentAdTypeObservable() {
-        return currentAdTypeObservable;
-    }
-
     void startLoadingAds() {
         // Load and show banners
         if (loadBannersDisposable == null || loadBannersDisposable.isDisposed()) {
-            loadBannersDisposable = getCurrentAdTypeObservable()
+            loadBannersDisposable = currentAdTypeObservable
                     .switchMapCompletable(adResult ->
-                            loadAndShowBanner(adResult)
+                            getBannerCompletable(adResult)
                                     .onErrorComplete()
                     )
                     .subscribe();
@@ -186,28 +158,25 @@ public class PsiphonAdManager {
         }
     }
 
-    private Completable loadAndShowBanner(AdResult adResult) {
-        Completable completable;
+    private Completable getBannerCompletable(AdResult adResult) {
+       Completable bannerCompletable;
         switch (adResult.type()) {
             case NONE:
-                completable = Completable.complete();
+                bannerCompletable = Completable.complete();
                 break;
             case TUNNELED:
-                completable = Completable.complete();
-                break;
-            case UNTUNNELED:
-                completable = SdkInitializer.getFreeStar(appContext).andThen(Completable.fromAction(() -> {
-                    unTunneledFreestarBannerAdView = new BannerAd(appContext);
-                    unTunneledFreestarBannerAdView.setAdSize(AdSize.MEDIUM_RECTANGLE_300_250);
-                    unTunneledFreestarBannerAdView.setBannerAdListener(new BannerAdListener() {
+                bannerCompletable = SdkInitializer.getFreeStar(appContext).andThen(Completable.fromAction(() -> {
+                    tunneledFreestarBannerAd = new BannerAd(appContext);
+                    tunneledFreestarBannerAd.setAdSize(AdSize.MEDIUM_RECTANGLE_300_250);
+                    tunneledFreestarBannerAd.setBannerAdListener(new BannerAdListener() {
                         @Override
                         public void onBannerAdLoaded(View bannerAd, String placement) {
-                            if (unTunneledFreestarBannerAdView != null &&
-                                    unTunneledFreestarBannerAdView.getParent() == null) {
+                            if (tunneledFreestarBannerAd != null &&
+                                    tunneledFreestarBannerAd.getParent() == null) {
                                 ViewGroup viewGroup = bannerViewGroupWeakReference.get();
                                 if (viewGroup != null) {
                                     viewGroup.removeAllViewsInLayout();
-                                    viewGroup.addView(unTunneledFreestarBannerAdView);
+                                    viewGroup.addView(tunneledFreestarBannerAd);
                                 }
                             }
                         }
@@ -224,35 +193,88 @@ public class PsiphonAdManager {
                         public void onBannerAdClosed(View bannerAd, String placement) {
                         }
                     });
-                    unTunneledFreestarBannerAdView.loadAd(new AdRequest(appContext));
+                    AdRequest adRequest = new AdRequest(appContext);
+                    // Set current client region keyword on the ad
+                    TunnelState.ConnectionData connectionData = adResult.connectionData();
+                    if (connectionData != null) {
+                        adRequest.addCustomTargeting("client_region", connectionData.clientRegion());
+                    }
+
+                    tunneledFreestarBannerAd.loadAd(adRequest, TUNNELED_BANNER_FREESTAR_PLACEMENT_ID);
+                }));
+                break;
+            case UNTUNNELED:
+                bannerCompletable = SdkInitializer.getFreeStar(appContext).andThen(Completable.fromAction(() -> {
+                    unTunneledFreestarBannerAd = new BannerAd(appContext);
+                    unTunneledFreestarBannerAd.setAdSize(AdSize.MEDIUM_RECTANGLE_300_250);
+                    unTunneledFreestarBannerAd.setBannerAdListener(new BannerAdListener() {
+                        @Override
+                        public void onBannerAdLoaded(View bannerAd, String placement) {
+                            if (unTunneledFreestarBannerAd != null &&
+                                    unTunneledFreestarBannerAd.getParent() == null) {
+                                ViewGroup viewGroup = bannerViewGroupWeakReference.get();
+                                if (viewGroup != null) {
+                                    viewGroup.removeAllViewsInLayout();
+                                    viewGroup.addView(unTunneledFreestarBannerAd);
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void onBannerAdFailed(View bannerAd, String placement, int errorCode) {
+                        }
+
+                        @Override
+                        public void onBannerAdClicked(View bannerAd, String placement) {
+                        }
+
+                        @Override
+                        public void onBannerAdClosed(View bannerAd, String placement) {
+                        }
+                    });
+                    unTunneledFreestarBannerAd.loadAd(new AdRequest(appContext));
                 }));
                 break;
             default:
                 throw new IllegalArgumentException("loadAndShowBanner: unhandled AdResult.Type: " + adResult.type());
         }
-        return completable
+        // Perform complete banner cleanup before returning new banner completable
+        return Completable.fromAction(this::destroyAllBanners)
+                .andThen(bannerCompletable)
                 .subscribeOn(AndroidSchedulers.mainThread());
     }
 
-    private void destroyUnTunneledBanners() {
-        if (unTunneledFreestarBannerAdView != null) {
-            // Freestar's AdView may still call its listener even after a call to destroy();
-            unTunneledFreestarBannerAdView.setBannerAdListener(null);
-            ViewGroup parent = (ViewGroup) unTunneledFreestarBannerAdView.getParent();
+    private void destroyTunneledBanners() {
+        if (tunneledFreestarBannerAd != null) {
+            tunneledFreestarBannerAd.setBannerAdListener(null);
+            ViewGroup parent = (ViewGroup) tunneledFreestarBannerAd.getParent();
             if (parent != null) {
-                parent.removeView(unTunneledFreestarBannerAdView);
+                parent.removeView(tunneledFreestarBannerAd);
             }
-            unTunneledFreestarBannerAdView.destroyView();
-            unTunneledFreestarBannerAdView = null;
+            tunneledFreestarBannerAd.destroyView();
+            tunneledFreestarBannerAd = null;
         }
     }
 
-    private void destroyAllAds() {
+    private void destroyUnTunneledBanners() {
+        if (unTunneledFreestarBannerAd != null) {
+            unTunneledFreestarBannerAd.setBannerAdListener(null);
+            ViewGroup parent = (ViewGroup) unTunneledFreestarBannerAd.getParent();
+            if (parent != null) {
+                parent.removeView(unTunneledFreestarBannerAd);
+            }
+            unTunneledFreestarBannerAd.destroyView();
+            unTunneledFreestarBannerAd = null;
+        }
+    }
+
+    private void destroyAllBanners() {
+        destroyTunneledBanners();
         destroyUnTunneledBanners();
     }
 
     public void onDestroy() {
-        destroyAllAds();
+        destroyAllBanners();
         compositeDisposable.dispose();
     }
 
@@ -273,7 +295,8 @@ public class PsiphonAdManager {
                                 } else {
                                     emitter.onError(new Throwable());
                                 }
-                            }})
+                            }
+                        })
                         // Keep polling FreeStarAds.isInitialized every 250 ms
                         .retryWhen(errors -> errors.delay(250, TimeUnit.MILLISECONDS))
                         // Short delay as we have observed failures to load ads if requested too soon after
@@ -289,4 +312,5 @@ public class PsiphonAdManager {
             }
             return freeStar;
         }
-    }}
+    }
+}
