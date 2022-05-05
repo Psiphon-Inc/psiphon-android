@@ -200,6 +200,7 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                                 sku.equals(GooglePlayBillingHelper.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU);
                     })
                     .toList()
+                    .observeOn(AndroidSchedulers.mainThread())
                     .doOnSuccess(skuDetailsList -> {
                         if (skuDetailsList == null || skuDetailsList.size() == 0) {
                             MyLog.e("PaymentChooserActivity: subscription SKU error: sku details list is empty.");
@@ -323,6 +324,7 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                         return GooglePlayBillingHelper.IAB_TIMEPASS_SKUS_TO_DAYS.containsKey(sku);
                     })
                     .toList()
+                    .observeOn(AndroidSchedulers.mainThread())
                     .doOnSuccess(skuDetailsList -> {
                         if (skuDetailsList == null || skuDetailsList.size() == 0) {
                             MyLog.e("PaymentChooserActivity: time pass SKU error: sku details list is empty.");
