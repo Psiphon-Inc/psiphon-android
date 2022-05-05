@@ -175,6 +175,10 @@ public class PsiphonAdManager {
                                     tunneledFreestarBannerAd.getParent() == null) {
                                 ViewGroup viewGroup = bannerViewGroupWeakReference.get();
                                 if (viewGroup != null) {
+                                    // Make parent view's background transparent to avoid visual
+                                    // overlap if the banner's and placeholder's sizes differ.
+                                    viewGroup.getBackground().setAlpha(0);
+
                                     viewGroup.removeAllViewsInLayout();
                                     viewGroup.addView(tunneledFreestarBannerAd);
                                 }
@@ -214,6 +218,10 @@ public class PsiphonAdManager {
                                     unTunneledFreestarBannerAd.getParent() == null) {
                                 ViewGroup viewGroup = bannerViewGroupWeakReference.get();
                                 if (viewGroup != null) {
+                                    // Make parent view's background transparent to avoid visual
+                                    // overlap if the banner's and placeholder's sizes differ.
+                                    viewGroup.getBackground().setAlpha(0);
+
                                     viewGroup.removeAllViewsInLayout();
                                     viewGroup.addView(unTunneledFreestarBannerAd);
                                 }
@@ -249,7 +257,9 @@ public class PsiphonAdManager {
             tunneledFreestarBannerAd.setBannerAdListener(null);
             ViewGroup parent = (ViewGroup) tunneledFreestarBannerAd.getParent();
             if (parent != null) {
+                // Remove from parent and restore parent's background opacity.
                 parent.removeView(tunneledFreestarBannerAd);
+                parent.getBackground().setAlpha(255);
             }
             tunneledFreestarBannerAd.destroyView();
             tunneledFreestarBannerAd = null;
@@ -261,7 +271,9 @@ public class PsiphonAdManager {
             unTunneledFreestarBannerAd.setBannerAdListener(null);
             ViewGroup parent = (ViewGroup) unTunneledFreestarBannerAd.getParent();
             if (parent != null) {
+                // Remove from parent and restore parent's background opacity.
                 parent.removeView(unTunneledFreestarBannerAd);
+                parent.getBackground().setAlpha(255);
             }
             unTunneledFreestarBannerAd.destroyView();
             unTunneledFreestarBannerAd = null;
