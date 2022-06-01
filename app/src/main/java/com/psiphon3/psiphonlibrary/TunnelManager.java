@@ -1181,6 +1181,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 json.put("ClientFeatures", new JSONArray("[\"unsafe-traffic-alerts\"]"));
             }
 
+            json.put("DNSResolverAlternateServers", new JSONArray("[\"1.1.1.1\", \"1.0.0.1\", \"8.8.8.8\", \"8.8.4.4\"]"));
+
             return json.toString();
         } catch (JSONException e) {
             return null;
