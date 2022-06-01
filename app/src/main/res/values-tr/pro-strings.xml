@@ -276,11 +276,11 @@
     <string name="PaymentChooserActivity.UsingLimitedPlan">Temel planı 5&#160;Mb/s hız sınırı ile kullanıyorsunuz. Sınırsız plana yükseltmek ister misiniz?</string>
 
     <!-- Header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
-    <string name="PaymentChooserActivity.UsingFreePlan">Ücretsiz, reklam destekli, hız sınırlı, kapı numarası kısıtlamalı planı kullanıyorsunuz. Bu planı kullanmaya devam edebilir ya da premium planlarımızdan birine yükseltebilirsiniz.</string>
+    <string name="PaymentChooserActivity.UsingFreePlan">Ücretsiz, reklam destekli, hız sınırlı, bağlantı noktası kısıtlamalı planı kullanıyorsunuz. Bu planı kullanmaya devam edebilir ya da premium planlarımızdan birine yükseltebilirsiniz.</string>
 
     <!-- Common description text for all time passes. A time pass is a single use license that is valid for a certain
     period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
-    <string name="PaymentChooserActivity.TimepassCommonDescription">Satın alacağınız her zaman planı ile reklamları, hız ve kapı numarası sınırlamasını kaldırın</string>
+    <string name="PaymentChooserActivity.TimepassCommonDescription">Satın alacağınız her zaman planı ile reklamları, hız ve bağlantı noktası sınırlamasını kaldırın</string>
 
     <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., '7-day pass - CA$3.99' -->
@@ -303,7 +303,7 @@
 
     <!-- Description text on the button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
          Appears below 'Basic - CA$5.99 monthly' label in smaller font. Note the use of a non-breaking space in '5 Mb/s' -->
-    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">Reklamsız, 5&#160;Mb/s hıza kadar kapı numarası sınırlaması olmadan</string>
+    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">Reklamsız, 5&#160;Mb/s hıza kadar bağlantı noktası sınırlaması olmadan</string>
 
     <!-- Label for button that user will click in order to buy an unlimited subscription for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., 'Unlimited - CA$11.99 monthly' -->
@@ -311,7 +311,7 @@
 
     <!-- Description text on the button that user will click in order to buy an unlimited subscription for Psiphon Pro.
          Appears below 'Unlimited - CA$11.99 monthly' label in smaller font-->
-    <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">Reklamsız, hız ve kapı numarası sınırlaması olmadan</string>
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">Reklamsız, hız ve bağlantı noktası sınırlaması olmadan</string>
 
     <!-- Text Label that appears on the subscription buying button for Psiphon Pro in case if there
          is a trial period available for that subscription. The formated string is the length of the

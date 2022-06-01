@@ -58,6 +58,7 @@
     <!-- A message with numeric formatter such as "1 hour" or "5 hours", translate for all language applicable forms. -->
     <plurals name="hours_of_speed_boost">
         <item quantity="one"> %d hora</item>
+        <item quantity="many"> %d horas</item>
         <item quantity="other"> %d horas</item>
     </plurals>
 
