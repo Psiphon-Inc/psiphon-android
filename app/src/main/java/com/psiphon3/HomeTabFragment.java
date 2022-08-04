@@ -20,6 +20,10 @@
 package com.psiphon3;
 
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.method.LinkMovementMethod;
+import android.text.style.URLSpan;
 import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -33,6 +37,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.android.billingclient.api.Purchase;
 import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.billing.SubscriptionState;
 import com.psiphon3.psicash.details.PsiCashDetailsViewModel;
@@ -45,9 +50,11 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.functions.BiFunction;
 
 public class HomeTabFragment extends Fragment {
+    private static final String PLAY_STORE_SUBSCRIPTION_DEEPLINK_URL = "https://play.google.com/store/account/subscriptions?sku=%s&package=%s";
     private View rateLimitedTextSection;
     private TextView rateLimitedText;
     private TextView rateUnlimitedText;
+    private TextView manageSubscriptionLink;
     private Button rateLimitUpgradeButton;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private PsiCashDetailsViewModel psiCashDetailsViewModel;
@@ -67,6 +74,9 @@ public class HomeTabFragment extends Fragment {
         rateLimitedTextSection = view.findViewById(R.id.rateLimitedTextSection);
         rateLimitedText = view.findViewById(R.id.rateLimitedText);
         rateUnlimitedText = view.findViewById(R.id.rateUnlimitedText);
+
+        manageSubscriptionLink = view.findViewById(R.id.manageSubscriptionLink);
+
         rateLimitUpgradeButton = view.findViewById(R.id.rateLimitUpgradeButton);
         rateLimitUpgradeButton.setOnClickListener(v ->
                 MainActivity.openPaymentChooserActivity(requireActivity(),
@@ -84,7 +94,7 @@ public class HomeTabFragment extends Fragment {
                 new ViewModelProvider.AndroidViewModelFactory(requireActivity().getApplication()))
                 .get(PsiCashDetailsViewModel.class);
 
-         googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(requireContext());
+        googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(requireContext());
     }
 
     @Override
@@ -99,29 +109,56 @@ public class HomeTabFragment extends Fragment {
 
         // Observe subscription and speed boost states and update rate limit badge and 'Subscribe' button UI
         compositeDisposable.add(Observable.combineLatest(
-                googlePlayBillingHelper.subscriptionStateFlowable()
-                        .distinctUntilChanged()
-                        .toObservable(),
-                psiCashDetailsViewModel.hasActiveSpeedBoostObservable(),
-                ((BiFunction<SubscriptionState, Boolean, Pair<SubscriptionState, Boolean>>) Pair::new))
-                .distinctUntilChanged()
-                .map(pair -> {
-                    SubscriptionState subscriptionState = pair.first;
-                    Boolean hasActiveSpeedBoost = pair.second;
-                    switch (subscriptionState.status()) {
-                        case HAS_UNLIMITED_SUBSCRIPTION:
-                        case HAS_TIME_PASS:
-                            return RateLimitMode.UNLIMITED_SUBSCRIPTION;
-                        case HAS_LIMITED_SUBSCRIPTION:
-                            return RateLimitMode.LIMITED_SUBSCRIPTION;
-                        default:
-                            return hasActiveSpeedBoost ?
-                                    RateLimitMode.SPEED_BOOST : RateLimitMode.AD_MODE_LIMITED;
-                    }
-                })
+                        googlePlayBillingHelper.subscriptionStateFlowable()
+                                .distinctUntilChanged()
+                                .toObservable(),
+                        psiCashDetailsViewModel.hasActiveSpeedBoostObservable(),
+                        ((BiFunction<SubscriptionState, Boolean, Pair<SubscriptionState, Boolean>>) Pair::new))
                 .distinctUntilChanged()
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext(this::setRateLimitUI)
+                .doOnNext(pair -> {
+                    SubscriptionState subscriptionState = pair.first;
+                    Boolean hasActiveSpeedBoost = pair.second;
+
+                    // Show "Manage subscription" link if subscription, hide otherwise
+                    if (subscriptionState.status() == SubscriptionState.Status.HAS_LIMITED_SUBSCRIPTION ||
+                            subscriptionState.status() == SubscriptionState.Status.HAS_UNLIMITED_SUBSCRIPTION) {
+                        String url = String.format(PLAY_STORE_SUBSCRIPTION_DEEPLINK_URL,
+                                subscriptionState.purchase().getSkus().get(0),
+                                requireContext().getPackageName());
+                        CharSequence charSequence = manageSubscriptionLink.getText().toString();
+                        SpannableString spannableString = new SpannableString(charSequence);
+                        spannableString.setSpan(new URLSpan(url), 0, spannableString.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        manageSubscriptionLink.setText(spannableString, TextView.BufferType.SPANNABLE);
+                        manageSubscriptionLink.setMovementMethod(LinkMovementMethod.getInstance());
+                        manageSubscriptionLink.setVisibility(View.VISIBLE);
+                    } else {
+                        manageSubscriptionLink.setVisibility(View.GONE);
+                    }
+
+                    // If time pass or unlimited subscription hide the "Upgrade" button and set speed limit label to  "UNLIMITED".
+                    // Otherwise show the "Upgrade" button and set speed limit to "2 MB/s" in case of no subscription, "5 Mb/s" for limited
+                    // subscription or "Speed Boost" in case there is an active boost.
+                    if (subscriptionState.status() == SubscriptionState.Status.HAS_TIME_PASS ||
+                            subscriptionState.status() == SubscriptionState.Status.HAS_UNLIMITED_SUBSCRIPTION) {
+                        rateLimitedText.setVisibility(View.GONE);
+                        rateUnlimitedText.setVisibility(View.VISIBLE);
+                        rateLimitUpgradeButton.setVisibility(View.GONE);
+                    } else {
+                        rateUnlimitedText.setVisibility(View.GONE);
+                        rateLimitUpgradeButton.setVisibility(View.VISIBLE);
+                        if (subscriptionState.status() == SubscriptionState.Status.HAS_LIMITED_SUBSCRIPTION) {
+                            rateLimitedText.setText(getString(R.string.rate_limit_text_limited, 5));
+                        } else {
+                            rateLimitedText.setText(getString(R.string.rate_limit_text_limited, 2));
+                        }
+                        if (hasActiveSpeedBoost) {
+                            rateLimitedText.setText(getString(R.string.rate_limit_text_speed_boost));
+                        }
+                        rateLimitedText.setVisibility(View.VISIBLE);
+                    }
+                    rateLimitedTextSection.setVisibility(View.VISIBLE);
+                })
                 .subscribe());
     }
 
@@ -129,27 +166,5 @@ public class HomeTabFragment extends Fragment {
     public void onDestroy() {
         super.onDestroy();
         compositeDisposable.dispose();
-    }
-
-    private void setRateLimitUI(RateLimitMode rateLimitMode) {
-        // Update UI elements showing the current speed.
-        if (rateLimitMode == RateLimitMode.UNLIMITED_SUBSCRIPTION) {
-            rateLimitedText.setVisibility(View.GONE);
-            rateUnlimitedText.setVisibility(View.VISIBLE);
-            rateLimitUpgradeButton.setVisibility(View.GONE);
-            rateLimitedTextSection.setVisibility(View.VISIBLE);
-        } else{
-            if(rateLimitMode == RateLimitMode.AD_MODE_LIMITED) {
-                rateLimitedText.setText(getString(R.string.rate_limit_text_limited, 2));
-            } else if (rateLimitMode == RateLimitMode.LIMITED_SUBSCRIPTION) {
-                rateLimitedText.setText(getString(R.string.rate_limit_text_limited, 5));
-            } else if (rateLimitMode == RateLimitMode.SPEED_BOOST) {
-                rateLimitedText.setText(getString(R.string.rate_limit_text_speed_boost));
-            }
-            rateLimitedText.setVisibility(View.VISIBLE);
-            rateUnlimitedText.setVisibility(View.GONE);
-            rateLimitUpgradeButton.setVisibility(View.VISIBLE);
-            rateLimitedTextSection.setVisibility(View.VISIBLE);
-        }
     }
 }
