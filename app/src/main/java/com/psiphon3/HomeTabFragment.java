@@ -136,25 +136,33 @@ public class HomeTabFragment extends Fragment {
                         manageSubscriptionLink.setVisibility(View.GONE);
                     }
 
-                    // If time pass or unlimited subscription hide the "Upgrade" button and set speed limit label to  "UNLIMITED".
-                    // Otherwise show the "Upgrade" button and set speed limit to "2 MB/s" in case of no subscription, "5 Mb/s" for limited
-                    // subscription or "Speed Boost" in case there is an active boost.
+                    // If time pass or unlimited subscription hide the "Upgrade" button and show the "UNLIMITED" label.
+                    // Otherwise show the "Upgrade" button and rate limit label with either "5Mb/s", "2 Mb/s" or "Speed Boost".
                     if (subscriptionState.status() == SubscriptionState.Status.HAS_TIME_PASS ||
                             subscriptionState.status() == SubscriptionState.Status.HAS_UNLIMITED_SUBSCRIPTION) {
+                        // Hide the rate limit label
                         rateLimitedText.setVisibility(View.GONE);
+                        // Show the "Unlimited" label
                         rateUnlimitedText.setVisibility(View.VISIBLE);
+                        // Hide the "Upgrade" button
                         rateLimitUpgradeButton.setVisibility(View.GONE);
                     } else {
+                        // Hide the "Unlimited" label
                         rateUnlimitedText.setVisibility(View.GONE);
+                        // Show the "Upgrade" button
                         rateLimitUpgradeButton.setVisibility(View.VISIBLE);
+                        // For limited subscription set rate limit label to "5 Mb/s"
                         if (subscriptionState.status() == SubscriptionState.Status.HAS_LIMITED_SUBSCRIPTION) {
                             rateLimitedText.setText(getString(R.string.rate_limit_text_limited, 5));
                         } else {
-                            rateLimitedText.setText(getString(R.string.rate_limit_text_limited, 2));
+                            // No subscription, set the rate limit label to "Speed Boost" if active boost, otherwise to "2 Mb/s"
+                            if (hasActiveSpeedBoost) {
+                                rateLimitedText.setText(getString(R.string.rate_limit_text_speed_boost));
+                            } else {
+                                rateLimitedText.setText(getString(R.string.rate_limit_text_limited, 2));
+                            }
                         }
-                        if (hasActiveSpeedBoost) {
-                            rateLimitedText.setText(getString(R.string.rate_limit_text_speed_boost));
-                        }
+                        // Show the rate limit label
                         rateLimitedText.setVisibility(View.VISIBLE);
                     }
                     rateLimitedTextSection.setVisibility(View.VISIBLE);
