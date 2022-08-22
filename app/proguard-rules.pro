@@ -118,9 +118,6 @@
 -keep class com.amazonaws.** {*;}
 -keep interface com.amazonaws.** {*;}
 
--keep class com.applovin.** {*;}
--keep interface com.applovin.** {*;}
-
 -keep class com.criteo.** {*;}
 -keep interface com.criteo.** {*;}
 

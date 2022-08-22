@@ -232,7 +232,6 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-process:2.4.0"
 
     //GAM mediation adapters
-    implementation 'com.google.ads.mediation:applovin:11.1.2.0'
     implementation 'com.google.ads.mediation:facebook:6.8.0.0'
 
     //end, Freestar
