@@ -206,13 +206,21 @@
     !static <methods>;
 }
 
+# adsbynimbus
+-keep class com.adsbynimbus.** { *; }
+-keep interface com.adsbynimbus.** { *; }
+
 # pangle
 -keep class com.bytedance.sdk.** { *; }
 -keep class com.pgl.sys.ces.* {*;}
 
-#hyprmx
+# hyprmx
 -keep class com.hyprmx.** { *; }
 -keep interface com.hyprmx.** { *; }
+
+# verizon
+-keep class com.verizon.** { *; }
+-keep interface com.verizon.** { *; }
 
 # End of ProGuard rules for FreeStar Ads Mediation SDK
 

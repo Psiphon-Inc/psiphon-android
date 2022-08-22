@@ -69,6 +69,9 @@ com.verizon.ads.webview,
 com.verizon.ads.uriexperience,
 com.verizon.ads.support,
 com.verizon.ads.omsdk,
+org.prebid.mobile.core,
+com.freestar.android.ads.prebid,
+com.freestar.android.ads.ogury,
 com.jakewharton.threetenabp" />
     <supports-screens
                   android:smallScreens="true"
