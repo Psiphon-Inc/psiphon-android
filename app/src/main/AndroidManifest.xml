@@ -19,14 +19,10 @@ com.adsbynimbus.request,
 com.adsbynimbus.request.okhttp,
 com.adsbynimbus.ui,
 com.amazon.device.ads,
-com.applovin.sdk,
-com.applovin.mediation,
 com.criteo.publisher,
 com.freestar.android.ads,
 com.freestar.android.ads.admob,
 com.freestar.android.ads.amazon,
-com.freestar.android.ads.applovin,
-com.freestar.android.ads.applovinmax,
 com.freestar.android.ads.criteo,
 com.freestar.android.ads.facebook,
 com.freestar.android.ads.google,
@@ -69,6 +65,9 @@ com.verizon.ads.webview,
 com.verizon.ads.uriexperience,
 com.verizon.ads.support,
 com.verizon.ads.omsdk,
+org.prebid.mobile.core,
+com.freestar.android.ads.prebid,
+com.freestar.android.ads.ogury,
 com.jakewharton.threetenabp" />
     <supports-screens
                   android:smallScreens="true"
@@ -109,10 +108,6 @@ com.jakewharton.threetenabp" />
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="${admobAppId}"/>
-
-        <meta-data
-            android:name="applovin.sdk.key"
-            android:value="hO52kFtMvEo_AoeRzED0_XXfS1B1VQp9GW50yudJO-eUUTOmRBLl3c-2GyTevLNspll_fN5PLTbAHOakoTuHuP" />
 
         <activity
             android:name="com.psiphon3.MainActivity"
