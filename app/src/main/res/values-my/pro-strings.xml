@@ -335,4 +335,6 @@
     <!--Generic 'close' button label -->
     <string name="label_close">ပိတ်မည်</string>
 
-    </resources>
+    <!-- Clickable text on the home tab that appears on the home tab if user has an active subscription. Clicking the link opens 'Manage Subscription' screen of the Google Play app -->
+    <string name="manage_my_subscription_link_text">သင့် အခကြေးစာရင်းသွင်းမှုအား စီမံမယ်</string>
+</resources>
