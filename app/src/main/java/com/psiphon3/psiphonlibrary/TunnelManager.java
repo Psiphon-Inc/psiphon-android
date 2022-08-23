@@ -46,6 +46,7 @@ import androidx.core.app.NotificationCompat;
 
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
+import com.psiphon3.PsiphonCrashService;
 import com.psiphon3.TunnelState;
 import com.psiphon3.billing.PurchaseVerifier;
 import com.psiphon3.log.MyLog;
@@ -79,6 +80,7 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.schedulers.Schedulers;
+import ru.ivanarh.jndcrash.NDCrash;
 
 public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifier.VerificationResultListener {
     // Android IPC messages
@@ -887,6 +889,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         Utils.initializeSecureRandom();
         // Also set locale
         setLocale(this);
+
+        final String stdErrRedirectPath = PsiphonCrashService.getStdRedirectPath(m_parentService);
+        NDCrash.nativeInitializeStdErrRedirect(stdErrRedirectPath);
 
         m_isReconnect.set(false);
         m_isStopping.set(false);
