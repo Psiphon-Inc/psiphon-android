@@ -31,6 +31,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
 import com.psiphon3.log.MyLog;
+import com.psiphon3.subscription.R;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
