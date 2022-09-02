@@ -333,12 +333,12 @@ public class TunnelServiceInteractor {
 
         Rx2ServiceBindingFactory(Context context, Intent intent) {
             this.messengerObservable = Observable.using(Connection::new,
-                    (final Connection<Messenger> con) -> {
-                        serviceConnection = con;
-                        context.bindService(intent, con, 0);
-                        return Observable.create(con);
-                    },
-                    __ -> unbind(context))
+                            (final Connection<Messenger> con) -> {
+                                serviceConnection = con;
+                                context.bindService(intent, con, 0);
+                                return Observable.create(con);
+                            },
+                            __ -> unbind(context))
                     .replay(1)
                     .refCount();
         }
