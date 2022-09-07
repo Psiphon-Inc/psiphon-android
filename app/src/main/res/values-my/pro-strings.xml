@@ -308,6 +308,10 @@
     <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Dismisses the log out dialog without any further action when clicked. -->
     <string name="psicash_cancel_lbl">ပယ်ဖျက်မည်</string>
 
+    <!-- PsiCash account generic title
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_account_generic_title">PsiCash အကောင့်</string>
+
     <!-- PsiCash account 'log out' preference title as it appears in the app's preference screen. -->
     <string name="psicash_account_logout_pref_title">ထွက်မယ်</string>
 
