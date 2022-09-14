@@ -112,6 +112,7 @@ com.jakewharton.threetenabp" />
         <activity
             android:name="com.psiphon3.MainActivity"
             android:label="@string/app_name_psiphon_pro"
+            android:exported="true"
             android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -142,6 +143,7 @@ com.jakewharton.threetenabp" />
         <activity
             android:name="com.psiphon3.FeedbackActivity"
             android:parentActivityName="com.psiphon3.MainActivity"
+            android:exported="true"
             android:label="@string/app_name_psiphon_pro">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
