@@ -31,6 +31,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
 import com.psiphon3.log.MyLog;
+import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.subscription.R;
 
 import java.io.BufferedReader;
@@ -39,6 +40,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Locale;
 
 import ru.ivanarh.jndcrash.NDCrashService;
 
@@ -127,6 +129,8 @@ public class PsiphonCrashService extends NDCrashService {
                 BufferedReader in = new BufferedReader(new FileReader(stdErrFile));
                 String str;
 
+                // Record client version at the time of the report creation
+                out.write(String.format(Locale.US, "\n\nClient version: %s\n\n", EmbeddedValues.CLIENT_VERSION));
                 out.write("=================================================================\n");
                 out.write("                              STDERR                             \n");
                 out.write("=================================================================\n");
