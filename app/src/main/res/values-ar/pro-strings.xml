@@ -338,6 +338,10 @@
     <!-- PsiCash account 'manage account' preference title as it appears in the app's preference screen. -->
     <string name="psicash_account_manage_pref_title">إدارة الحساب</string>
 
+    <!-- Input field caption for username on the PsiCash account sign screen
+            Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_account_login_username_hint">اسم مستخدم Psicash</string>
+
     <!-- Input field caption for password on the PsiCash account sign screen -->
     <string name="psicash_account_login_password_hint">كلمة السّر</string>
 

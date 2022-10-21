@@ -97,6 +97,9 @@
     <!--Generic 'close' button label -->
     <string name="label_close">關閉</string>
 
+    <!-- Text that appears above the "Log in" button on the PsiCash sign in screen. -->
+    <string name="psicash_already_have_account_text">已注册过帐户？</string>
+
     <!-- Clickable text on the home tab that appears on the home tab if user has an active subscription. Clicking the link opens 'Manage Subscription' screen of the Google Play app -->
     <string name="manage_my_subscription_link_text">管理訂閱</string>
 </resources>
