@@ -501,12 +501,35 @@
 
     <!-- Clickable text on the home tab that appears on the home tab if user has an active subscription. Clicking the link opens 'Manage Subscription' screen of the Google Play app -->
     <string name="manage_my_subscription_link_text">Manage your subscription</string>
+
     <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_hr">1 hour</string>
+
     <!-- Label on a button. Clicking this button will buy 1 day (24hr) of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_day">1 day</string>
+
     <!-- Label on a button. Clicking this button will buy 1 week (7days) of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_week">1 week</string>
+
     <!-- Label on a button. Clicking this button will buy 1 months (31days) of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_month">1 month</string>
+
+    <!-- The 'days' part in a date interval string as in "10 d 13 hr". Reorder the format specifier '%d' if in the translated language ordering of time unit and amount is different from English. -->
+    <plurals name="speed_boost_left_days">
+        <item quantity="one">%d d</item>
+        <item quantity="other">%d d</item>
+    </plurals>
+
+    <!-- The 'hours' part in a date interval string as in "9 d 11 hr". Reorder the format specifier '%d' if in the translated language ordering of time unit and amount is different from English. -->
+    <plurals name="speed_boost_left_hours">
+        <item quantity="one">%d hr</item>
+        <item quantity="other">%d hr</item>
+    </plurals>
+
+    <!-- This format string specifies the order of 'days' and 'hours' in the date interval string where the first argument is 'days' and the seconds is 'hours'. Examples: "20 d 11 hr", "1 d 2 hr", etc.
+     Reorder the format specifiers '%1$s' and '%2$s' if in the translated language ordering 'days' and 'hours' in date interval string is different from English. -->
+    <string name="speed_boost_left_day_hour_ordered">%1$s %2$s</string>
+
+    <!-- Do not translate or transliterate 'PsiCash'. PsiCash is a unit of currency here. Reorder the format specifier '%s' if in the translated language ordering of unit and amount is different from English. -->
+    <string name="psicash_price_format">%s PsiCash</string>
 </resources>

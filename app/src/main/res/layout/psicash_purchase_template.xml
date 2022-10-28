@@ -43,11 +43,12 @@
                         android:id="@+id/psicash_purchase_sku_item_title"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="00"
+                        android:text="1,000"
                         android:textStyle="bold" />
 
                     <TextView
                         android:id="@+id/psicash_purchase_sku_item_description"
+                        android:visibility="gone"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center_vertical"

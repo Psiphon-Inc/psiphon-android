@@ -447,7 +447,8 @@ public class PsiCashFragment extends Fragment
 
     @Override
     public void onCountDownTick(long currentInterval, long l) {
-        long h = TimeUnit.MILLISECONDS.toHours(l);
+        long d = TimeUnit.MILLISECONDS.toDays(l);
+        long h = TimeUnit.MILLISECONDS.toHours(l) - TimeUnit.DAYS.toHours(TimeUnit.MILLISECONDS.toDays(l));
         long m = TimeUnit.MILLISECONDS.toMinutes(l) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(l));
         long s = TimeUnit.MILLISECONDS.toSeconds(l) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(l));
 
@@ -461,12 +462,19 @@ public class PsiCashFragment extends Fragment
         }
 
         String countdownButtonText;
-        if (TimeUnit.MILLISECONDS.toMinutes(l) >= 5) {
-            // If remaining time is more than 5 minutes show HH:MM
-            countdownButtonText = String.format(Locale.getDefault(), "%02d:%02d", h, m);
+        if (d > 0) {
+            // Use '11 d 12 hr' format if more than 1 day left, otherwise use XX:YY, see below for details.
+            String daysLeft = getResources().getQuantityString(R.plurals.speed_boost_left_days, (int) d, (int) d);
+            String hoursLeft = getResources().getQuantityString(R.plurals.speed_boost_left_hours, (int) h, (int) h);
+            countdownButtonText = getString(R.string.speed_boost_left_day_hour_ordered, daysLeft, hoursLeft);
         } else {
-            // If remaining time is less than 5 minutes then show MM::SS
-            countdownButtonText = String.format(Locale.getDefault(), "%02d:%02d", m, s);
+            if (TimeUnit.MILLISECONDS.toMinutes(l) >= 5) {
+                // If remaining time is more than 5 minutes show HH:MM
+                countdownButtonText = String.format(Locale.getDefault(), "%02d:%02d", h, m);
+            } else {
+                // If remaining time is less than 5 minutes then show MM:SS
+                countdownButtonText = String.format(Locale.getDefault(), "%02d:%02d", m, s);
+            }
         }
         speedBoostBtnClickerLabel.setText(String.format(Locale.getDefault(), "%s %s",
                 getString(R.string.speed_boost_active_label), countdownButtonText));
