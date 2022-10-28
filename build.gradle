@@ -41,7 +41,7 @@ ext {
     mockitoVersion = '2.7.22'
     testRunnerVersion = '0.5'
     playStoreBillingClientVersion = '4.1.0'
-    threetenabpVersion = '1.2.1'
+    coreLibraryDesugaringVersion = '1.1.5'
     preferenceVersion = '1.1.1'
     localBroadCastManagerVersion = '1.0.0'
     junitVersion = '1.1.1'
