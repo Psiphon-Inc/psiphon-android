@@ -67,8 +67,7 @@ com.verizon.ads.support,
 com.verizon.ads.omsdk,
 org.prebid.mobile.core,
 com.freestar.android.ads.prebid,
-com.freestar.android.ads.ogury,
-com.jakewharton.threetenabp" />
+com.freestar.android.ads.ogury" />
     <supports-screens
                   android:smallScreens="true"
                   android:normalScreens="true"
