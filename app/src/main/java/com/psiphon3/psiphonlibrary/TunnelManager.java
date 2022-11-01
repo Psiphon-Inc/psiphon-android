@@ -425,7 +425,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 try {
                     paymentRequiredPendingIntent.send();
                 } catch (PendingIntent.CanceledException e) {
-                    MyLog.w("vpnRevokedPendingIntent send failed: " + e);
+                    MyLog.w("paymentRequiredPendingIntent send failed: " + e);
                 }
             } else {
                 if (mNotificationManager == null) {
