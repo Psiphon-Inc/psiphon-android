@@ -1735,7 +1735,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     showPurchaseRequiredPromptFlag =
                             ((JSONObject) o).getBoolean("ShowPurchaseRequiredPrompt");
                 } catch (JSONException e) {
-                    MyLog.e("onApplicationParameters JSON error: " + e);
+                    MyLog.e("TunnelManager: error getting 'ShowPurchaseRequiredPrompt' value: " + e);
                 }
             }
         }
