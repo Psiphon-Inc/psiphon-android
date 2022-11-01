@@ -415,31 +415,36 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     private void showPurchaseRequiredNotification() {
         if (!paymentRequiredNotificationAlreadyShown) {
             paymentRequiredNotificationAlreadyShown = true;
-            if (mNotificationManager == null) {
-                return;
-            }
 
-            PendingIntent pendingIntent = getPendingIntent(m_parentService, INTENT_ACTION_SHOW_PURCHASE_PROMPT);
+            PendingIntent paymentRequiredPendingIntent = getPendingIntent(m_parentService, INTENT_ACTION_SHOW_PURCHASE_PROMPT);
 
-            NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(getContext(), NOTIFICATION_SERVER_ALERT_CHANNEL_ID);
-            notificationBuilder
-                    .setSmallIcon(R.drawable.ic_psiphon_alert_notification)
-                    .setGroup(getContext().getString(R.string.alert_notification_group))
-                    .setContentTitle(getContext().getString(R.string.notification_title_action_required))
-                    .setContentText(getContext().getString(R.string.notification_payment_required_text))
-                    .setStyle(new NotificationCompat.BigTextStyle()
-                            .bigText(getContext().getString(R.string.notification_payment_required_text_big)))
-                    .setPriority(NotificationCompat.PRIORITY_MAX)
-                    .setAutoCancel(true)
-                    .setContentIntent(pendingIntent);
+            // Try and foreground client activity with the paymentRequiredPendingIntent to notify user.
+            // If Android < 10 or there is a live activity client then send the intent right away,
+            // otherwise show a notification.
+            if (Build.VERSION.SDK_INT < 29 || pingForActivity()) {
+                try {
+                    paymentRequiredPendingIntent.send();
+                } catch (PendingIntent.CanceledException e) {
+                    MyLog.w("vpnRevokedPendingIntent send failed: " + e);
+                }
+            } else {
+                if (mNotificationManager == null) {
+                    return;
+                }
 
-            mNotificationManager.notify(R.id.notification_id_purchase_required, notificationBuilder.build());
+                NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(getContext(), NOTIFICATION_SERVER_ALERT_CHANNEL_ID);
+                notificationBuilder
+                        .setSmallIcon(R.drawable.ic_psiphon_alert_notification)
+                        .setGroup(getContext().getString(R.string.alert_notification_group))
+                        .setContentTitle(getContext().getString(R.string.notification_title_action_required))
+                        .setContentText(getContext().getString(R.string.notification_payment_required_text))
+                        .setStyle(new NotificationCompat.BigTextStyle()
+                                .bigText(getContext().getString(R.string.notification_payment_required_text_big)))
+                        .setPriority(NotificationCompat.PRIORITY_MAX)
+                        .setAutoCancel(true)
+                        .setContentIntent(paymentRequiredPendingIntent);
 
-            // Also try and send the intent right away. If the activity is foregrounded it will
-            // present the purchase required UI and cancel the notification.
-            try {
-                pendingIntent.send();
-            } catch (PendingIntent.CanceledException ignored) {
+                mNotificationManager.notify(R.id.notification_id_purchase_required, notificationBuilder.build());
             }
         }
     }

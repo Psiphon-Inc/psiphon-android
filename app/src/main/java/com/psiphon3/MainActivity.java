@@ -20,7 +20,6 @@
 package com.psiphon3;
 
 import android.annotation.SuppressLint;
-import android.app.NotificationManager;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
@@ -674,14 +673,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_VPN_REVOKED)) {
             showVpnAlertDialog(R.string.StatusActivity_VpnRevokedTitle, R.string.StatusActivity_VpnRevokedMessage);
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_SHOW_PURCHASE_PROMPT)) {
-            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            if (notificationManager != null) {
-                notificationManager.cancel(R.id.notification_id_purchase_required);
-            }
-            // Check if already showing
-            if(purchaseRequiredDialog != null && purchaseRequiredDialog.isShowing()) {
-                return;
-            }
             if (!isFinishing()) {
                 // Cancel disallowed traffic alert if it is showing
                 if (disallowedTrafficAlertDialog != null && disallowedTrafficAlertDialog.isShowing()) {
