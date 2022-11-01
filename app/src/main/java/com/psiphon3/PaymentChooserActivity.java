@@ -44,10 +44,9 @@ import com.psiphon3.log.MyLog;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.subscription.R;
 
-import org.threeten.bp.Period;
-import org.threeten.bp.format.DateTimeParseException;
-
 import java.text.NumberFormat;
+import java.time.Period;
+import java.time.format.DateTimeParseException;
 import java.util.Currency;
 import java.util.Locale;
 
@@ -267,9 +266,7 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                             });
 
                             String freeTrialPeriodISO8061 = skuDetails.getFreeTrialPeriod();
-                            if (!TextUtils.isEmpty(freeTrialPeriodISO8061) &&
-                                    // Make sure we are compatible with the minSdk 15 of com.jakewharton.threetenabp
-                                    Build.VERSION.SDK_INT > Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+                            if (!TextUtils.isEmpty(freeTrialPeriodISO8061)) {
                                 try {
                                     Period period = Period.parse(freeTrialPeriodISO8061);
                                     long freeTrialPeriodInDays = period.getDays();

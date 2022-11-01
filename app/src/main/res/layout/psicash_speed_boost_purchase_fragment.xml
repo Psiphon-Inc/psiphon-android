@@ -7,11 +7,12 @@
 
     <LinearLayout
         android:orientation="vertical"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <androidx.gridlayout.widget.GridLayout
-            android:id="@+id/purchase_speedboost_grid"
+        <TableLayout
+            android:padding="16dp"
+            android:id="@+id/speedboost_purchases_table"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
     </LinearLayout>

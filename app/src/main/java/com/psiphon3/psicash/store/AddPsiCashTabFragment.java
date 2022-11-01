@@ -178,8 +178,6 @@ public class AddPsiCashTabFragment extends Fragment {
             super.onViewCreated(view, savedInstanceState);
             noAccountDisclaimerView = view.findViewById(R.id.psicash_store_no_account_disclaimer);
 
-            Flowable<TunnelState> tunnelStateFlowable = ((PsiCashStoreActivity) requireActivity()).tunnelStateFlowable();
-
             final PsiCashStoreViewModel psiCashViewModel = new ViewModelProvider(requireActivity(),
                     new ViewModelProvider.AndroidViewModelFactory(requireActivity().getApplication()))
                     .get(PsiCashStoreViewModel.class);
@@ -238,10 +236,11 @@ public class AddPsiCashTabFragment extends Fragment {
                                 MyLog.e("PsiCashStoreActivity: error getting price for sku: " + skuDetails.getSku());
                                 continue;
                             }
-                            String itemTitle = nf.format(itemValue);
+                            String itemTitle = getString(R.string.psicash_price_format, nf.format(itemValue));
                             final View psicashPurchaseItemView = inflater.inflate(R.layout.psicash_purchase_template, null);
 
                             ((TextView) psicashPurchaseItemView.findViewById(R.id.psicash_purchase_sku_item_title)).setText(itemTitle);
+                            // NOTE: currently the description view's visibility is set to "gone" in the xml layout.
                             ((TextView) psicashPurchaseItemView.findViewById(R.id.psicash_purchase_sku_item_description)).setText(skuDetails.getDescription());
 
                             final Button btn = psicashPurchaseItemView.findViewById(R.id.psicash_purchase_sku_item_price);

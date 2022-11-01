@@ -2,17 +2,17 @@
     android:background="?attr/selectableItemBackground"
     android:clickable="true"
     android:focusable="true"
-    android:layout_width="185px"
-    android:layout_height="248px"
-    android:padding="5dp">
+    android:layout_width="match_parent"
+    android:gravity="center"
+    android:layout_height="match_parent">
 
     <RelativeLayout
         android:id="@+id/speedboost_relative_layout"
         android:clickable="false"
         android:focusable="false"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@drawable/speedboost_background_yellow">
+        android:layout_width="185dp"
+        android:layout_height="248dp"
+        android:background="@drawable/speedboost_background_orange">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -32,6 +32,7 @@
                 android:shadowRadius="2.0"
                 android:textAllCaps="true"
                 android:textColor="#ffffff"
+                android:text="1 month"
                 android:textStyle="bold" />
 
             <Button
@@ -42,6 +43,8 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal|center"
                 android:alpha="1.0"
+                android:drawableStart="@drawable/psicash_coin_scaled"
+                android:text="5000"
                 android:layout_marginBottom="10dp" />
         </LinearLayout>
 
