@@ -1729,8 +1729,15 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     @Override
     public void onApplicationParameters(Object o) {
         if (o instanceof JSONObject) {
-            showPurchaseRequiredPromptFlag =
-                    ((JSONObject) o).optBoolean("ShowPurchaseRequiredPrompt");
+            JSONObject jsonObject = (JSONObject) o;
+            if (jsonObject.has("ShowPurchaseRequiredPrompt")) {
+                try {
+                    showPurchaseRequiredPromptFlag =
+                            ((JSONObject) o).getBoolean("ShowPurchaseRequiredPrompt");
+                } catch (JSONException e) {
+                    MyLog.e("onApplicationParameters JSON error: " + e);
+                }
+            }
         }
     }
 
