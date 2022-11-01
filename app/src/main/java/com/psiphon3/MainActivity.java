@@ -125,6 +125,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
     private boolean isFirstRun = true;
     private AlertDialog upstreamProxyErrorAlertDialog;
+    private AlertDialog disallowedTrafficAlertDialog;
+    private PurchaseRequiredDialog purchaseRequiredDialog;
 
 
     @Override
@@ -670,11 +672,46 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             toast.show();
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_VPN_REVOKED)) {
             showVpnAlertDialog(R.string.StatusActivity_VpnRevokedTitle, R.string.StatusActivity_VpnRevokedMessage);
+        } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_SHOW_PURCHASE_PROMPT)) {
+            if (!isFinishing()) {
+                // Cancel disallowed traffic alert if it is showing
+                if (disallowedTrafficAlertDialog != null && disallowedTrafficAlertDialog.isShowing()) {
+                    disallowedTrafficAlertDialog.dismiss();
+                }
+                purchaseRequiredDialog = new PurchaseRequiredDialog(this);
+                purchaseRequiredDialog.getSubscribeBtn().setOnClickListener(v -> {
+                    MainActivity.openPaymentChooserActivity(MainActivity.this,
+                            getResources().getInteger(R.integer.subscriptionTabIndex));
+                    purchaseRequiredDialog.dismiss();
+                });
+                purchaseRequiredDialog.getSpeedBoostBtn().setOnClickListener(v -> {
+                    UiHelpers.openPsiCashStoreActivity(this,
+                            getResources().getInteger(R.integer.speedBoostTabIndex));
+                    purchaseRequiredDialog.dismiss();
+                });
+                purchaseRequiredDialog.getDisconnectBtn().setOnClickListener(v -> {
+                    compositeDisposable.add(viewModel.tunnelStateFlowable()
+                            .filter(state -> !state.isUnknown())
+                            .firstOrError()
+                            .doOnSuccess(state -> {
+                                if (state.isRunning()) {
+                                    viewModel.stopTunnelService();
+                                }
+                            })
+                            .subscribe());
+                    purchaseRequiredDialog.dismiss();
+                });
+                purchaseRequiredDialog.show();
+            }
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_DISALLOWED_TRAFFIC)) {
+            // Do not show disallowed traffic alert if purchase required prompt is showing
+            if (purchaseRequiredDialog != null && purchaseRequiredDialog.isShowing()) {
+                return;
+            }
             if (!isFinishing()) {
                 LayoutInflater inflater = this.getLayoutInflater();
                 View dialogView = inflater.inflate(R.layout.disallowed_traffic_alert_layout, null);
-                AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                disallowedTrafficAlertDialog = new AlertDialog.Builder(this)
                         .setCancelable(true)
                         .setIcon(R.drawable.ic_psiphon_alert_notification)
                         .setTitle(R.string.disallowed_traffic_alert_notification_title)
@@ -684,13 +721,14 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                             MainActivity.openPaymentChooserActivity(MainActivity.this,
                                     getResources().getInteger(R.integer.subscriptionTabIndex));
                             dialog.dismiss();
-                        });
-                builder.setNegativeButton(R.string.btn_get_speed_boost, (dialog, which) -> {
-                    UiHelpers.openPsiCashStoreActivity(this,
-                            getResources().getInteger(R.integer.speedBoostTabIndex));
-                    dialog.dismiss();
-                });
-                builder.show();
+                        })
+                .setNegativeButton(R.string.btn_get_speed_boost, (dialog, which) -> {
+                            UiHelpers.openPsiCashStoreActivity(this,
+                                    getResources().getInteger(R.integer.speedBoostTabIndex));
+                            dialog.dismiss();
+                        })
+                        .create();
+                disallowedTrafficAlertDialog.show();
             }
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_UNSAFE_TRAFFIC)) {
             // Unsafe traffic intent from service notification

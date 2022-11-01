@@ -111,6 +111,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     public static final String INTENT_ACTION_DISALLOWED_TRAFFIC = "com.psiphon3.psiphonlibrary.TunnelManager.INTENT_ACTION_DISALLOWED_TRAFFIC";
     public static final String INTENT_ACTION_UNSAFE_TRAFFIC = "com.psiphon3.psiphonlibrary.TunnelManager.INTENT_ACTION_UNSAFE_TRAFFIC";
     public static final String INTENT_ACTION_UPSTREAM_PROXY_ERROR = "com.psiphon3.psiphonlibrary.TunnelManager.UPSTREAM_PROXY_ERROR";
+    public static final String INTENT_ACTION_SHOW_PURCHASE_PROMPT = "com.psiphon3.psiphonlibrary.TunnelManager.INTENT_ACTION_SHOW_PURCHASE_PROMPT";
 
     // Client -> Service bundle parameter names
     static final String RESET_RECONNECT_FLAG = "resetReconnectFlag";
@@ -123,6 +124,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     static final String DATA_TUNNEL_STATE_CLIENT_REGION = "clientRegion";
     static final String DATA_TUNNEL_STATE_SPONSOR_ID = "sponsorId";
     public static final String DATA_TUNNEL_STATE_HOME_PAGES = "homePages";
+    public static final String DATA_TUNNEL_STATE_PURCHASE_REQUIRED_PROMPT = "showPurchaseRequiredPrompt";
     static final String DATA_TRANSFER_STATS_CONNECTED_TIME = "dataTransferStatsConnectedTime";
     static final String DATA_TRANSFER_STATS_TOTAL_BYTES_SENT = "dataTransferStatsTotalBytesSent";
     static final String DATA_TRANSFER_STATS_TOTAL_BYTES_RECEIVED = "dataTransferStatsTotalBytesReceived";
@@ -203,6 +205,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
     private boolean disallowedTrafficNotificationAlreadyShown = false;
     private boolean hasBoostOrSubscription = false;
+
+    private boolean maybeSubscriber = false;
+    private boolean paymentRequiredNotificationAlreadyShown = false;
+    private boolean showPurchaseRequiredPromptFlag = false;
 
     TunnelManager(Service parentService) {
         m_parentService = parentService;
@@ -287,8 +293,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     // Also updates service notification and forwards tunnel state data to purchaseVerifier.
     private Disposable connectionStatusUpdaterDisposable() {
         return connectionObservable()
-                .switchMapSingle(networkConnectionState
-                        -> {
+                .switchMapSingle(networkConnectionState -> {
+                    // bypass the landing page opening logic if payment required prompt must be shown.
+                    if (shouldShowPurchaseRequiredNotification()) {
+                        return Single.just(networkConnectionState);
+                    }
                     // If tunnel is not connected return immediately
                     if (networkConnectionState != TunnelState.ConnectionData.NetworkConnectionState.CONNECTED) {
                         return Single.just(networkConnectionState);
@@ -331,7 +340,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                         // run making all the consecutive calls essentially no-op.
                         m_tunnel.routeThroughTunnel();
                         if (m_isReconnect.compareAndSet(false, true)) {
-                            if (m_tunnelState.homePages != null && m_tunnelState.homePages.size() > 0) {
+                            // If payment required notification should be shown skip opening the landing
+                            // page and show the notification instead.
+                            if (shouldShowPurchaseRequiredNotification()) {
+                                // Cancel disallowed traffic alert too if it is showing
+                                cancelDisallowedTrafficAlertNotification();
+                                showPurchaseRequiredNotification();
+                            } else if (m_tunnelState.homePages != null && m_tunnelState.homePages.size() > 0) {
                                 sendHandshakeIntent();
                             }
                         }
@@ -389,6 +404,57 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         mNotificationManager.notify(R.id.notification_id_open_app_to_keep_connecting, notificationBuilder.build());
     }
 
+
+    private boolean shouldShowPurchaseRequiredNotification() {
+        return !paymentRequiredNotificationAlreadyShown &&
+                !maybeSubscriber &&
+                !hasBoostOrSubscription &&
+                showPurchaseRequiredPromptFlag;
+    }
+
+    private void showPurchaseRequiredNotification() {
+        if (!paymentRequiredNotificationAlreadyShown) {
+            paymentRequiredNotificationAlreadyShown = true;
+
+            PendingIntent paymentRequiredPendingIntent = getPendingIntent(m_parentService, INTENT_ACTION_SHOW_PURCHASE_PROMPT);
+
+            // Try and foreground client activity with the paymentRequiredPendingIntent to notify user.
+            // If Android < 10 or there is a live activity client then send the intent right away,
+            // otherwise show a notification.
+            if (Build.VERSION.SDK_INT < 29 || pingForActivity()) {
+                try {
+                    paymentRequiredPendingIntent.send();
+                } catch (PendingIntent.CanceledException e) {
+                    MyLog.w("paymentRequiredPendingIntent send failed: " + e);
+                }
+            } else {
+                if (mNotificationManager == null) {
+                    return;
+                }
+
+                NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(getContext(), NOTIFICATION_SERVER_ALERT_CHANNEL_ID);
+                notificationBuilder
+                        .setSmallIcon(R.drawable.ic_psiphon_alert_notification)
+                        .setGroup(getContext().getString(R.string.alert_notification_group))
+                        .setContentTitle(getContext().getString(R.string.notification_title_action_required))
+                        .setContentText(getContext().getString(R.string.notification_payment_required_text))
+                        .setStyle(new NotificationCompat.BigTextStyle()
+                                .bigText(getContext().getString(R.string.notification_payment_required_text_big)))
+                        .setPriority(NotificationCompat.PRIORITY_MAX)
+                        .setAutoCancel(true)
+                        .setContentIntent(paymentRequiredPendingIntent);
+
+                mNotificationManager.notify(R.id.notification_id_purchase_required, notificationBuilder.build());
+            }
+        }
+    }
+
+    private void cancelPurchaseRequiredNotification() {
+        if (mNotificationManager != null) {
+            mNotificationManager.cancel(R.id.notification_id_purchase_required);
+        }
+    }
+
     // Implementation of android.app.Service.onDestroy
     void onDestroy() {
         if (mNotificationManager != null) {
@@ -397,9 +463,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             // Cancel upstream proxy error notification
             mNotificationManager.cancel(R.id.notification_id_upstream_proxy_error);
         }
-        // Cancel "open app to finish connecting" and "disallowed traffic alert" notifications.
+        // Cancel potentially dangling notifications.
         cancelOpenAppToFinishConnectingNotification();
         cancelDisallowedTrafficAlertNotification();
+        cancelPurchaseRequiredNotification();
 
         stopAndWaitForTunnel();
         m_compositeDisposable.dispose();
@@ -1239,6 +1306,14 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     public String getPsiphonConfig() {
         this.setPlatformAffixes(m_tunnel, null);
         String config = buildTunnelCoreConfig(getContext(), m_tunnelConfig, true, null);
+
+        // If the tunnel starts with the subscription sponsor ID then suppress the
+        // "Psiphon not free in you region" notification.
+        if (BuildConfig.SUBSCRIPTION_SPONSOR_ID.equals(m_tunnelConfig.sponsorId)) {
+            maybeSubscriber = true;
+        } else {
+            maybeSubscriber = false;
+        }
         return config == null ? "" : config;
     }
 
@@ -1546,8 +1621,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                         Authorization.ACCESS_TYPE_GOOGLE_SUBSCRIPTION_LIMITED.equals(a.accessType()) ||
                         Authorization.ACCESS_TYPE_SPEED_BOOST.equals(a.accessType())) {
                     hasBoostOrSubscription = true;
-                    // Also cancel disallowed traffic alert notification
+                    // Also cancel disallowed traffic alert and purchase required notifications
                     cancelDisallowedTrafficAlertNotification();
+                    cancelPurchaseRequiredNotification();
                     break;
                 }
             }
@@ -1646,6 +1722,21 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                         mNotificationManager.notify(R.id.notification_id_unsafe_traffic_alert, notification);
                     }
                 });
+            }
+        }
+    }
+
+    @Override
+    public void onApplicationParameters(Object o) {
+        if (o instanceof JSONObject) {
+            JSONObject jsonObject = (JSONObject) o;
+            if (jsonObject.has("ShowPurchaseRequiredPrompt")) {
+                try {
+                    showPurchaseRequiredPromptFlag =
+                            ((JSONObject) o).getBoolean("ShowPurchaseRequiredPrompt");
+                } catch (JSONException e) {
+                    MyLog.e("TunnelManager: error getting 'ShowPurchaseRequiredPrompt' value: " + e);
+                }
             }
         }
     }
