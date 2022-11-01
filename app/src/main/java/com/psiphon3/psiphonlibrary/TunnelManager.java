@@ -136,7 +136,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     public static final String DATA_UNSAFE_TRAFFIC_ACTION_URLS_LIST = "dataUnsafeTrafficActionUrls";
 
     // a snapshot of all authorizations pulled by getPsiphonConfig
-    private static List<Authorization> m_tunnelConfigAuthorizations;
+    private List<Authorization> m_tunnelConfigAuthorizations;
 
     void updateNotifications() {
         postServiceNotification(false, m_tunnelState.networkConnectionState);
@@ -1163,6 +1163,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             Context context,
             Config tunnelConfig,
             boolean useUpstreamProxy,
+            List<Authorization> authorizations,
             String tempTunnelName) {
         boolean temporaryTunnel = tempTunnelName != null && !tempTunnelName.isEmpty();
 
@@ -1172,12 +1173,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
             json.put("ClientVersion", EmbeddedValues.CLIENT_VERSION);
 
-            m_tunnelConfigAuthorizations =
-                    Collections.unmodifiableList(Authorization.geAllPersistedAuthorizations(context));
-
-            if (m_tunnelConfigAuthorizations != null && m_tunnelConfigAuthorizations.size() > 0) {
+            if (authorizations != null && authorizations.size() > 0) {
                 JSONArray jsonArray = new JSONArray();
-                for (Authorization a : m_tunnelConfigAuthorizations) {
+                for (Authorization a : authorizations) {
                     jsonArray.put(a.base64EncodedAuthorization());
                 }
                 json.put("Authorizations", jsonArray);
@@ -1304,8 +1302,27 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
     @Override
     public String getPsiphonConfig() {
-        this.setPlatformAffixes(m_tunnel, null);
-        String config = buildTunnelCoreConfig(getContext(), m_tunnelConfig, true, null);
+        setPlatformAffixes(m_tunnel, null);
+        m_tunnelConfigAuthorizations =
+                Collections.unmodifiableList(Authorization.geAllPersistedAuthorizations(getContext()));
+
+
+        // Check if we need to use Speed Boost sponsor ID based on the contents of the authorizations.
+        // Note that if we are already set to use subscription sponsor ID then we will skip this step.
+        if (!BuildConfig.SUBSCRIPTION_SPONSOR_ID.equals(m_tunnelConfig.sponsorId)) {
+            for (Authorization a : m_tunnelConfigAuthorizations) {
+                if (Authorization.ACCESS_TYPE_SPEED_BOOST.equals(a.accessType())) {
+                    m_tunnelConfig.sponsorId = BuildConfig.SPEED_BOOST_SPONSOR_ID;
+                    break;
+                }
+            }
+        }
+
+        String config = buildTunnelCoreConfig(getContext(),
+                m_tunnelConfig,
+                true,
+                m_tunnelConfigAuthorizations,
+                null);
 
         // If the tunnel starts with the subscription sponsor ID then suppress the
         // "Psiphon not free in you region" notification.
@@ -1626,6 +1643,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     cancelPurchaseRequiredNotification();
                     break;
                 }
+            }
+
+            // If we started the tunnel with Speed Boost sponsor ID but the SB authorization was
+            // not accepted then reset the sponsor ID and restart the tunnel.
+            if (BuildConfig.SPEED_BOOST_SPONSOR_ID.equals(m_tunnelConfig.sponsorId) && !hasBoostOrSubscription) {
+                m_tunnelConfig.sponsorId = EmbeddedValues.SPONSOR_ID;
+                restartTunnel();
             }
         });
     }
