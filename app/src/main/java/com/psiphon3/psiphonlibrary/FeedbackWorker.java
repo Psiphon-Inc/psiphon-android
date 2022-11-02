@@ -44,7 +44,6 @@ import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.security.SecureRandom;
@@ -310,6 +309,7 @@ public class FeedbackWorker extends RxWorker {
                                 context,
                                 tunnelManagerConfig,
                                 tunnelState.isStopped(),
+                                Authorization.geAllPersistedAuthorizations(context),
                                 null);
                         if (tunnelCoreConfig == null) {
                             return Flowable.error(new Exception("tunnel-core config null"));
