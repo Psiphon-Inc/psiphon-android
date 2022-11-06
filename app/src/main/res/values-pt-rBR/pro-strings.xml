@@ -231,13 +231,6 @@
     indicates a fast or unrestricted speed.-->
     <string name="btn_get_speed_boost">Velocidade Turbinada</string>
 
-    <!-- A message with numeric formatter such as "1 hour" or "5 hours", translate for all language applicable forms. -->
-    <plurals name="hours_of_speed_boost">
-        <item quantity="one"> %d horas</item>
-        <item quantity="many"> %d horas</item>
-        <item quantity="other"> %d horas</item>
-    </plurals>
-
     <!-- Header text appearing on the subscriptions screen when the user has a limited subscription plan. Note the use of a non-breaking space in '5 Mb/s' -->
     <string name="PaymentChooserActivity.UsingLimitedPlan">Você está usando o plano básico com velocidade limitada a 5&#160;Mb/s. Você gostaria de mudar para o plano ilimitado?</string>
 
@@ -336,5 +329,14 @@
 
     <!-- Text that appears above the "Log in" button on the PsiCash sign in screen. -->
     <string name="psicash_already_have_account_text">Já tem uma conta?</string>
+
+    <!--Title of button that disconnects the VPN. -->
+    <string name="btn_disconnect">Desconectar</string>
+
+    <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
+    <string name="speed_boost_product_1_hr">1 hora</string>
+
+    <!-- Label on a button. Clicking this button will buy 1 day (24hr) of Speed Boost. Translate number as well. -->
+    <string name="speed_boost_product_1_day">1 dia</string>
 
     </resources>

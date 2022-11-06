@@ -243,11 +243,6 @@
     indicates a fast or unrestricted speed.-->
     <string name="btn_get_speed_boost">Penambahan Kecepatan</string>
 
-    <!-- A message with numeric formatter such as "1 hour" or "5 hours", translate for all language applicable forms. -->
-    <plurals name="hours_of_speed_boost">
-        <item quantity="other"> %d jam</item>
-    </plurals>
-
     <!-- Header text appearing on the subscriptions screen when the user has a limited subscription plan. Note the use of a non-breaking space in '5 Mb/s' -->
     <string name="PaymentChooserActivity.UsingLimitedPlan">Anda menggunakan rancangan dasar dengan kecepatan terbatas sampai dengan 5&#160;Mb/s. Apakah Anda mau tingkatkan ke rancangan tak terbatas?</string>
 
@@ -369,4 +364,11 @@
 
     <!-- Clickable text on the home tab that appears on the home tab if user has an active subscription. Clicking the link opens 'Manage Subscription' screen of the Google Play app -->
     <string name="manage_my_subscription_link_text">Kelola langganan Anda</string>
-</resources>
+
+    <!--Title of button that disconnects the VPN. -->
+    <string name="btn_disconnect">Putus sambungan</string>
+
+    <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
+    <string name="speed_boost_product_1_hr">1 jam</string>
+
+    </resources>

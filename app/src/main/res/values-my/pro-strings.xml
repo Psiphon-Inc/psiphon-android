@@ -231,11 +231,6 @@
     indicates a fast or unrestricted speed.-->
     <string name="btn_get_speed_boost">နှုန်းမြင့်</string>
 
-    <!-- A message with numeric formatter such as "1 hour" or "5 hours", translate for all language applicable forms. -->
-    <plurals name="hours_of_speed_boost">
-        <item quantity="other">%d နာရီ</item>
-    </plurals>
-
     <!-- Header text appearing on the subscriptions screen when the user has a limited subscription plan. Note the use of a non-breaking space in '5 Mb/s' -->
     <string name="PaymentChooserActivity.UsingLimitedPlan">သင်သည် နှုန်း 5&#160;Mb/s အကန့်အသတ်ရှိသော အခြေခံအစီအစဥ်အား သုံးစွဲနေပါသည်။ အကန့်သတ်မရှိ အစီအစဥ်ဆီသို့ သင် အဆင့်မြှင့်ချင်ပါသလား?</string>
 
@@ -341,4 +336,14 @@
 
     <!-- Clickable text on the home tab that appears on the home tab if user has an active subscription. Clicking the link opens 'Manage Subscription' screen of the Google Play app -->
     <string name="manage_my_subscription_link_text">သင့် အခကြေးစာရင်းသွင်းမှုအား စီမံမယ်</string>
-</resources>
+
+    <!--Title of button that disconnects the VPN. -->
+    <string name="btn_disconnect">ချိတ်ဆက်မှုဖြတ်တောက်မယ်</string>
+
+    <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
+    <string name="speed_boost_product_1_hr">၁ နာရီ</string>
+
+    <!-- Label on a button. Clicking this button will buy 1 day (24hr) of Speed Boost. Translate number as well. -->
+    <string name="speed_boost_product_1_day">၁ ရက်</string>
+
+    </resources>

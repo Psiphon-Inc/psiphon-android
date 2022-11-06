@@ -55,13 +55,6 @@
     <!-- Text on the button which takes user to subscription screen -->
     <string name="btn_get_subscription">Subscrever</string>
 
-    <!-- A message with numeric formatter such as "1 hour" or "5 hours", translate for all language applicable forms. -->
-    <plurals name="hours_of_speed_boost">
-        <item quantity="one"> %d hora</item>
-        <item quantity="many"> %d horas</item>
-        <item quantity="other"> %d horas</item>
-    </plurals>
-
     <!-- Title of the button that dismisses PsiCash account login error alert dialog-->
     <string name="psicash_login_error_alert_dismiss">Ignorar</string>
 
@@ -97,5 +90,15 @@
 
     <!-- Text that appears above the "Log in" button on the PsiCash sign in screen. -->
     <string name="psicash_already_have_account_text">Já tem uma conta?</string>
+
+    <!--Title of button that disconnects the VPN. -->
+    <string name="btn_disconnect">Desligar</string>
+
+    <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
+    <string name="speed_boost_product_1_hr">1 hora</string>
+
+    <!-- This format string specifies the order of 'days' and 'hours' in the date interval string where the first argument is 'days' and the seconds is 'hours'. Examples: "20 d 11 hr", "1 d 2 hr", etc.
+     Reorder the format specifiers '%1$s' and '%2$s' if in the translated language ordering 'days' and 'hours' in date interval string is different from English. -->
+    <string name="speed_boost_left_day_hour_ordered">%1$s %2$s</string>
 
     </resources>

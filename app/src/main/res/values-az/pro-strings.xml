@@ -32,4 +32,7 @@
     <!--Generic 'close' button label -->
     <string name="label_close">Bağla</string>
 
+    <!--Title of button that disconnects the VPN. -->
+    <string name="btn_disconnect">Ayrıl</string>
+
     </resources>

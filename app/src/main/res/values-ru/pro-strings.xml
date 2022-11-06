@@ -266,14 +266,6 @@
     indicates a fast or unrestricted speed.-->
     <string name="btn_get_speed_boost">Турбоскорость</string>
 
-    <!-- A message with numeric formatter such as "1 hour" or "5 hours", translate for all language applicable forms. -->
-    <plurals name="hours_of_speed_boost">
-        <item quantity="one"> %d ч</item>
-        <item quantity="few"> %d ч</item>
-        <item quantity="many"> %d ч</item>
-        <item quantity="other"> %d ч</item>
-    </plurals>
-
     <!-- Header text appearing on the subscriptions screen when the user has a limited subscription plan. Note the use of a non-breaking space in '5 Mb/s' -->
     <string name="PaymentChooserActivity.UsingLimitedPlan">У вас базовый тарифный план. Скорость ограничена 5&#160;Mбит/с. Хотите сделать апгрейд и снять ограничение?</string>
 
@@ -506,4 +498,20 @@
 
     <!-- Clickable text on the home tab that appears on the home tab if user has an active subscription. Clicking the link opens 'Manage Subscription' screen of the Google Play app -->
     <string name="manage_my_subscription_link_text">Управление подпиской</string>
-</resources>
+
+    <!--Title of button that disconnects the VPN. -->
+    <string name="btn_disconnect">Отключить</string>
+
+    <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
+    <string name="speed_boost_product_1_hr">1 час</string>
+
+    <!-- Label on a button. Clicking this button will buy 1 day (24hr) of Speed Boost. Translate number as well. -->
+    <string name="speed_boost_product_1_day">1 день</string>
+
+    <!-- Label on a button. Clicking this button will buy 1 week (7days) of Speed Boost. Translate number as well. -->
+    <string name="speed_boost_product_1_week">1 неделя</string>
+
+    <!-- Label on a button. Clicking this button will buy 1 months (31days) of Speed Boost. Translate number as well. -->
+    <string name="speed_boost_product_1_month">1 месяц</string>
+
+    </resources>

@@ -120,4 +120,10 @@
     <!--Generic 'close' button label -->
     <string name="label_close">Đóng</string>
 
+    <!--Title of button that disconnects the VPN. -->
+    <string name="btn_disconnect">Ngắt kết nối</string>
+
+    <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
+    <string name="speed_boost_product_1_hr">1 tiếng</string>
+
     </resources>
