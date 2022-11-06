@@ -73,6 +73,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import ca.psiphon.PsiphonTunnel;
+import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -293,31 +294,42 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     // Also updates service notification and forwards tunnel state data to purchaseVerifier.
     private Disposable connectionStatusUpdaterDisposable() {
         return connectionObservable()
-                .switchMapSingle(networkConnectionState -> {
+                .switchMapMaybe(networkConnectionState -> {
+                    // If we started the tunnel with Speed Boost sponsor ID but the SB authorization
+                    // was not accepted then reset the sponsor ID and restart the tunnel.
+                    if (networkConnectionState.equals(TunnelState.ConnectionData.NetworkConnectionState.CONNECTED) &&
+                            BuildConfig.SPEED_BOOST_SPONSOR_ID.equals(m_tunnelConfig.sponsorId) &&
+                            !hasBoostOrSubscription) {
+                        m_tunnelConfig.sponsorId = EmbeddedValues.SPONSOR_ID;
+                        restartTunnel();
+                        // Do not emit downstream if we are restarting.
+                        return Maybe.empty();
+                    }
+
                     // bypass the landing page opening logic if payment required prompt must be shown.
                     if (shouldShowPurchaseRequiredNotification()) {
-                        return Single.just(networkConnectionState);
+                        return Maybe.just(networkConnectionState);
                     }
                     // If tunnel is not connected return immediately
                     if (networkConnectionState != TunnelState.ConnectionData.NetworkConnectionState.CONNECTED) {
-                        return Single.just(networkConnectionState);
+                        return Maybe.just(networkConnectionState);
                     }
                     // If this is a reconnect return immediately
                     if (m_isReconnect.get()) {
-                        return Single.just(networkConnectionState);
+                        return Maybe.just(networkConnectionState);
                     }
                     // If there are no home pages to show return immediately
                     if (m_tunnelState.homePages == null || m_tunnelState.homePages.size() == 0) {
-                        return Single.just(networkConnectionState);
+                        return Maybe.just(networkConnectionState);
                     }
                     // If OS is less than Android 10 return immediately
                     if (Build.VERSION.SDK_INT < 29) {
-                        return Single.just(networkConnectionState);
+                        return Maybe.just(networkConnectionState);
                     }
                     // If there is at least one live activity client, which means there is at least
                     // one activity in foreground bound to the service - return immediately
                     if (pingForActivity()) {
-                        return Single.just(networkConnectionState);
+                        return Maybe.just(networkConnectionState);
                     }
                     // If there are no live client wait for new ones to bind
                     return m_newClientPublishRelay
@@ -326,6 +338,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                             // We have a live client, complete this inner subscription and send down original networkConnectionState value
                             .map(__ -> networkConnectionState)
                             .firstOrError()
+                            .toMaybe()
                             // Show "Open Psiphon" notification when subscribed to
                             .doOnSubscribe(__ -> showOpenAppToFinishConnectingNotification())
                             // Cancel "Open Psiphon to keep connecting" when completed or disposed
@@ -1643,13 +1656,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     cancelPurchaseRequiredNotification();
                     break;
                 }
-            }
-
-            // If we started the tunnel with Speed Boost sponsor ID but the SB authorization was
-            // not accepted then reset the sponsor ID and restart the tunnel.
-            if (BuildConfig.SPEED_BOOST_SPONSOR_ID.equals(m_tunnelConfig.sponsorId) && !hasBoostOrSubscription) {
-                m_tunnelConfig.sponsorId = EmbeddedValues.SPONSOR_ID;
-                restartTunnel();
             }
         });
     }
