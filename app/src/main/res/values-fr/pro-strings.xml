@@ -499,11 +499,17 @@
     <!-- Clickable text on the home tab that appears on the home tab if user has an active subscription. Clicking the link opens 'Manage Subscription' screen of the Google Play app -->
     <string name="manage_my_subscription_link_text">Gérer vos abonnements</string>
 
+    <!-- Do not translate or transliterate 'Psiphon'. A longer message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text_big">Psiphon n\'est plus gratuit dans votre région, ouvrez l\'appli pour en savoir plus.</string>
+
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">Se déconnecter</string>
 
     <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe.-->
     <string name="purchase_required_prompt_title">Psiphon n’est plus gratuit dans votre région</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe.-->
+    <string name="purchase_required_prompt_body">Aider à garder Psiphon gratuit pour ceux qui en ont le plus besoin ! Abonnez vous maintenant ou achetez un Survitesse.</string>
 
     <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_hr">1 heure</string>
