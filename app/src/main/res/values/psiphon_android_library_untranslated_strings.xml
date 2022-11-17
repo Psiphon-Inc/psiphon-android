@@ -60,6 +60,7 @@
     <string name="alert_notification_group" translatable="false">alert_notification_group</string>
     <string name="upgrade_notification_group" translatable="false">upgrade_notification_group</string>
     <string name="status_notification_group" translatable="false">status_notification_group</string>
+    <string name="vpnServiceDataCollectionDisclosureAccepted" translatable="false">vpnServiceDataCollectionDisclosureAccepted</string>
     <string name="persistent_show_ads_setting" translatable="false">persistentShowAdsSetting</string>
     <string name="has_valid_subscription">hasValidSubscription</string>
     <string name="free_trial_active">freeTrialActive</string>
