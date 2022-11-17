@@ -499,6 +499,9 @@
     <!-- Clickable text on the home tab that appears on the home tab if user has an active subscription. Clicking the link opens 'Manage Subscription' screen of the Google Play app -->
     <string name="manage_my_subscription_link_text">Gérer vos abonnements</string>
 
+    <!-- Do not translate or transliterate 'Psiphon'. A short message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text">Psiphon n\'est plus gratuit dans votre région.</string>
+
     <!-- Do not translate or transliterate 'Psiphon'. A longer message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
     <string name="notification_payment_required_text_big">Psiphon n\'est plus gratuit dans votre région, ouvrez l\'appli pour en savoir plus.</string>
 
