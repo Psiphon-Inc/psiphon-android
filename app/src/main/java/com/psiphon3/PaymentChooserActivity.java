@@ -76,13 +76,15 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                             // Finishing the activity with RESULT_OK and empty SKU will result
                             // in "Subscriptions options are not available" toast.
                             // The error will be logged elsewhere
-                            finishActivity(RESULT_OK);
+                            setResult(RESULT_OK);
+                            finish();
                             return;
 
                         case HAS_UNLIMITED_SUBSCRIPTION:
                         case HAS_TIME_PASS:
                             // User has an unlimited subscription, finish the activity silently.
-                            finishActivity(RESULT_CANCELED);
+                            setResult(RESULT_CANCELED);
+                            finish();
                             return;
 
                         case HAS_LIMITED_SUBSCRIPTION:
@@ -205,7 +207,8 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                             MyLog.e("PaymentChooserActivity: subscription SKU error: sku details list is empty.");
                             // finish the activity and show "Subscription options not available" toast.
                             if (!activity.isFinishing()) {
-                                activity.finishActivity(RESULT_OK);
+                                activity.setResult(RESULT_OK);
+                                activity.finish();
                             }
                             return;
                         } // else
@@ -327,7 +330,8 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                             MyLog.e("PaymentChooserActivity: time pass SKU error: sku details list is empty.");
                             // finish the activity and show "Subscription options not available" toast.
                             if (!activity.isFinishing()) {
-                                activity.finishActivity(RESULT_OK);
+                                activity.setResult(RESULT_OK);
+                                activity.finish();
                             }
                             return;
                         } // else

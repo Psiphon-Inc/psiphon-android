@@ -473,6 +473,12 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             }
         } else if (requestCode == PAYMENT_CHOOSER_ACTIVITY) {
             if (resultCode == RESULT_OK) {
+                // if data intent is not present it means the payment chooser activity closed due to
+                // IAB failure, show "Subscription options not available" toast and return.
+                if(data == null) {
+                    showToast(R.string.subscription_options_currently_not_available);
+                    return;
+                }
                 String skuString = data.getStringExtra(PaymentChooserActivity.USER_PICKED_SKU_DETAILS_EXTRA);
                 String oldSkuString = data.getStringExtra(PaymentChooserActivity.USER_OLD_SKU_EXTRA);
                 String oldPurchaseToken = data.getStringExtra(PaymentChooserActivity.USER_OLD_PURCHASE_TOKEN_EXTRA);
