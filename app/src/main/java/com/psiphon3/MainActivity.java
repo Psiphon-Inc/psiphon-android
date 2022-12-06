@@ -473,6 +473,12 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             }
         } else if (requestCode == PAYMENT_CHOOSER_ACTIVITY) {
             if (resultCode == RESULT_OK) {
+                // if data intent is not present it means the payment chooser activity closed due to
+                // IAB failure, show "Subscription options not available" toast and return.
+                if(data == null) {
+                    showToast(R.string.subscription_options_currently_not_available);
+                    return;
+                }
                 String skuString = data.getStringExtra(PaymentChooserActivity.USER_PICKED_SKU_DETAILS_EXTRA);
                 String oldSkuString = data.getStringExtra(PaymentChooserActivity.USER_OLD_SKU_EXTRA);
                 String oldPurchaseToken = data.getStringExtra(PaymentChooserActivity.USER_OLD_PURCHASE_TOKEN_EXTRA);
@@ -733,6 +739,10 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             showVpnAlertDialog(R.string.StatusActivity_VpnRevokedTitle, R.string.StatusActivity_VpnRevokedMessage);
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_SHOW_PURCHASE_PROMPT)) {
             if (!isFinishing()) {
+                if(purchaseRequiredDialog != null && purchaseRequiredDialog.isShowing()) {
+                    // Already showing, do nothing
+                    return;
+                }
                 // Cancel disallowed traffic alert if it is showing
                 if (disallowedTrafficAlertDialog != null && disallowedTrafficAlertDialog.isShowing()) {
                     disallowedTrafficAlertDialog.dismiss();
