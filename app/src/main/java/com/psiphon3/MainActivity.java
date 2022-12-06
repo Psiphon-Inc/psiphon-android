@@ -739,6 +739,10 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             showVpnAlertDialog(R.string.StatusActivity_VpnRevokedTitle, R.string.StatusActivity_VpnRevokedMessage);
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_SHOW_PURCHASE_PROMPT)) {
             if (!isFinishing()) {
+                if(purchaseRequiredDialog != null && purchaseRequiredDialog.isShowing()) {
+                    // Already showing, do nothing
+                    return;
+                }
                 // Cancel disallowed traffic alert if it is showing
                 if (disallowedTrafficAlertDialog != null && disallowedTrafficAlertDialog.isShowing()) {
                     disallowedTrafficAlertDialog.dismiss();

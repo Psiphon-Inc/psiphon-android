@@ -437,6 +437,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(getContext(), NOTIFICATION_SERVER_ALERT_CHANNEL_ID);
             notificationBuilder
                     .setSmallIcon(R.drawable.ic_psiphon_alert_notification)
+                    .setAutoCancel(true)
                     .setGroup(getContext().getString(R.string.alert_notification_group))
                     .setContentTitle(getContext().getString(R.string.notification_title_action_required))
                     .setContentText(getContext().getString(R.string.notification_payment_required_text))
