@@ -506,7 +506,7 @@
     <string name="notification_payment_required_text">Psiphon is no longer free in your region.</string>
 
     <!-- Do not translate or transliterate 'Psiphon'. A longer message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
-    <string name="notification_payment_required_text_big">Psiphon is no longer free in your region, open the app to learn more.</string>
+    <string name="notification_payment_required_text_big">Psiphon is no longer free in your region, tap here to learn more.</string>
 
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">Disconnect</string>
