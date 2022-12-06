@@ -208,6 +208,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
     private boolean maybeSubscriber = false;
     private boolean showPurchaseRequiredPromptFlag = false;
+    private AtomicBoolean isSpeedBoostEndRestart = new AtomicBoolean(false) ;
 
     TunnelManager(Service parentService) {
         m_parentService = parentService;
@@ -299,7 +300,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                             BuildConfig.SPEED_BOOST_SPONSOR_ID.equals(m_tunnelConfig.sponsorId) &&
                             !hasBoostOrSubscription) {
                         m_tunnelConfig.sponsorId = EmbeddedValues.SPONSOR_ID;
-                        restartTunnel();
+                        isSpeedBoostEndRestart.set(true);
+                        onRestartTunnel();
                         // Do not emit downstream if we are restarting.
                         return Maybe.empty();
                     }
@@ -356,6 +358,14 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                                 sendHandshakeIntent();
                             }
                         }
+
+                        // If we restarted the tunnel because of speed boost sponsor ID reset then
+                        // check if Purchase Required UI should be shown.
+                        if (isSpeedBoostEndRestart.compareAndSet(true, false)) {
+                            if (shouldShowPurchaseRequiredPrompt()) {
+                                showPurchasedRequiredUi();
+                            }
+                        }
                     }
                     sendClientMessage(ServiceToClientMessage.TUNNEL_CONNECTION_STATE.ordinal(), getTunnelStateBundle());
                     // Don't update notification to CONNECTING, etc., when a stop was commanded.
@@ -396,31 +406,48 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             return;
         }
 
-        final String notificationTitle, notificationText, notificationBigText;
-
-        if (shouldShowPurchaseRequiredPrompt()) {
-            notificationTitle = getContext().getString(R.string.notification_title_action_required);
-            notificationText = getContext().getString(R.string.notification_payment_required_text);
-            notificationBigText = getContext().getString(R.string.notification_payment_required_text_big);
-        } else {
-            notificationTitle = getContext().getString(R.string.notification_title_action_required);
-            notificationText = getContext().getString(R.string.notification_text_open_psiphon_to_finish_connecting);
-            notificationBigText = getContext().getString(R.string.notification_text_open_psiphon_to_finish_connecting);
-        }
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(getContext(), NOTIFICATION_SERVER_ALERT_CHANNEL_ID);
         notificationBuilder
                 .setSmallIcon(R.drawable.ic_psiphon_alert_notification)
                 .setGroup(getContext().getString(R.string.alert_notification_group))
-                .setContentTitle(notificationTitle)
-                .setContentText(notificationText)
+                .setContentTitle(getContext().getString(R.string.notification_title_action_required))
+                .setContentText(getContext().getString(R.string.notification_text_open_psiphon_to_finish_connecting))
                 .setStyle(new NotificationCompat.BigTextStyle()
-                        .bigText(notificationBigText))
+                        .bigText(getContext().getString(R.string.notification_text_open_psiphon_to_finish_connecting)))
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setContentIntent(m_notificationPendingIntent);
 
         mNotificationManager.notify(R.id.notification_id_open_app_to_keep_connecting, notificationBuilder.build());
     }
 
+    private void showPurchasedRequiredUi() {
+        PendingIntent purchaseRequiredPendingIntent = getPendingIntent(m_parentService, INTENT_ACTION_SHOW_PURCHASE_PROMPT);
+        // If Android < 10 or there is a live activity client then send the intent right away,
+        // otherwise show a notification.
+        if (Build.VERSION.SDK_INT < 29 || pingForActivity()) {
+            try {
+                purchaseRequiredPendingIntent.send();
+            } catch (PendingIntent.CanceledException e) {
+                MyLog.w("purchaseRequiredPendingIntent send failed: " + e);
+            }
+        } else {
+            if (mNotificationManager == null) {
+                return;
+            }
+            NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(getContext(), NOTIFICATION_SERVER_ALERT_CHANNEL_ID);
+            notificationBuilder
+                    .setSmallIcon(R.drawable.ic_psiphon_alert_notification)
+                    .setGroup(getContext().getString(R.string.alert_notification_group))
+                    .setContentTitle(getContext().getString(R.string.notification_title_action_required))
+                    .setContentText(getContext().getString(R.string.notification_payment_required_text))
+                    .setStyle(new NotificationCompat.BigTextStyle()
+                            .bigText(getContext().getString(R.string.notification_payment_required_text_big)))
+                    .setPriority(NotificationCompat.PRIORITY_MAX)
+                    .setContentIntent(purchaseRequiredPendingIntent);
+
+            mNotificationManager.notify(R.id.notification_id_purchase_required, notificationBuilder.build());
+        }
+    }
 
     private boolean shouldShowPurchaseRequiredPrompt() {
         return !maybeSubscriber &&
@@ -1726,7 +1753,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     @Override
     public void onApplicationParameters(@NonNull Object o) {
         showPurchaseRequiredPromptFlag = ((JSONObject) o).optBoolean("ShowPurchaseRequiredPrompt");
-    }
+       }
 
     // PurchaseVerifier.VerificationResultListener implementation
     @Override
@@ -1735,12 +1762,14 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             case RESTART_AS_NON_SUBSCRIBER:
                 MyLog.i("TunnelManager: purchase verification: will restart as a non subscriber");
                 m_tunnelConfig.sponsorId = EmbeddedValues.SPONSOR_ID;
-                restartTunnel();
+                m_isReconnect.set(false);
+                onRestartTunnel();
                 break;
             case RESTART_AS_SUBSCRIBER:
                 MyLog.i("TunnelManager: purchase verification: will restart as a subscriber");
                 m_tunnelConfig.sponsorId = BuildConfig.SUBSCRIPTION_SPONSOR_ID;
-                restartTunnel();
+                m_isReconnect.set(false);
+                onRestartTunnel();
                 break;
             case PSICASH_PURCHASE_REDEEMED:
                 MyLog.i("TunnelManager: purchase verification: PsiCash purchase redeemed");
@@ -1749,16 +1778,5 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 sendClientMessage(ServiceToClientMessage.PSICASH_PURCHASE_REDEEMED.ordinal(), null);
                 break;
         }
-    }
-
-    private void restartTunnel() {
-        m_Handler.post(() -> {
-            m_isReconnect.set(false);
-            try {
-                m_tunnel.restartPsiphon();
-            } catch (PsiphonTunnel.Exception e) {
-                MyLog.e(R.string.start_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE, e.getMessage());
-            }
-        });
     }
 }
