@@ -22,15 +22,14 @@ package com.psiphon3;
 import android.app.Application;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.database.ContentObserver;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.ContentObserver;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
-import androidx.lifecycle.Lifecycle;
-import androidx.lifecycle.LifecycleObserver;
-import androidx.lifecycle.OnLifecycleEvent;
+import androidx.lifecycle.DefaultLifecycleObserver;
+import androidx.lifecycle.LifecycleOwner;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.paging.PagedList;
 import androidx.paging.RxPagedListBuilder;
@@ -48,7 +47,7 @@ import com.psiphon3.psiphonlibrary.UpstreamProxySettings;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 
-public class MainActivityViewModel extends AndroidViewModel implements LifecycleObserver {
+public class MainActivityViewModel extends AndroidViewModel implements DefaultLifecycleObserver {
     private final TunnelServiceInteractor tunnelServiceInteractor;
     private final BroadcastReceiver broadcastReceiver;
     private final PublishRelay<Boolean> customProxyValidationResultRelay = PublishRelay.create();
@@ -117,13 +116,13 @@ public class MainActivityViewModel extends AndroidViewModel implements Lifecycle
         logsLastEntryHelper.fetchLatest();
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
-    protected void onLifeCycleStop() {
+    @Override
+    public void onPause(@NonNull LifecycleOwner owner) {
         tunnelServiceInteractor.onStop(getApplication());
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
-    protected void onLifeCycleStart() {
+    @Override
+    public void onResume(@NonNull LifecycleOwner owner) {
         tunnelServiceInteractor.onStart(getApplication());
     }
 

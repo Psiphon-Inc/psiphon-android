@@ -37,6 +37,7 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 
+import androidx.annotation.CheckResult;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.jakewharton.rxrelay2.BehaviorRelay;
@@ -49,6 +50,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
 import io.reactivex.BackpressureStrategy;
+import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
@@ -111,10 +113,12 @@ public class TunnelServiceInteractor {
     }
 
     public void onStop(Context context) {
+        isStopped = true;
         tunnelStateRelay.accept(TunnelState.unknown());
         if (serviceBindingFactory != null) {
-            sendServiceMessage(TunnelManager.ClientToServiceMessage.UNREGISTER.ordinal(), null);
-            serviceBindingFactory.unbind(context);
+            sendServiceMessageCompletable(TunnelManager.ClientToServiceMessage.UNREGISTER.ordinal(), null)
+                    .andThen(Completable.fromAction(() -> serviceBindingFactory.unbind(context)))
+                    .subscribe();
         }
     }
 
@@ -152,7 +156,8 @@ public class TunnelServiceInteractor {
 
     public void stopTunnelService() {
         tunnelStateRelay.accept(TunnelState.unknown());
-        sendServiceMessage(TunnelManager.ClientToServiceMessage.STOP_SERVICE.ordinal(), null);
+        sendServiceMessageCompletable(TunnelManager.ClientToServiceMessage.STOP_SERVICE.ordinal(), null)
+                .subscribe();
     }
 
     public void scheduleVpnServiceRestart(Context context) {
@@ -173,7 +178,8 @@ public class TunnelServiceInteractor {
     }
 
     public void sendLocaleChangedMessage() {
-        sendServiceMessage(TunnelManager.ClientToServiceMessage.CHANGED_LOCALE.ordinal(), null);
+        sendServiceMessageCompletable(TunnelManager.ClientToServiceMessage.CHANGED_LOCALE.ordinal(), null)
+                .subscribe();
     }
 
     public Flowable<TunnelState> tunnelStateFlowable() {
@@ -212,7 +218,13 @@ public class TunnelServiceInteractor {
     public void commandTunnelRestart(boolean resetReconnectFlag) {
         Bundle data = new Bundle();
         data.putBoolean(TunnelManager.RESET_RECONNECT_FLAG, resetReconnectFlag);
-        sendServiceMessage(TunnelManager.ClientToServiceMessage.RESTART_TUNNEL.ordinal(), data);
+        sendServiceMessageCompletable(TunnelManager.ClientToServiceMessage.RESTART_TUNNEL.ordinal(), data)
+                .subscribe();
+    }
+
+    public void messageTrimMemoryUiHidden() {
+        sendServiceMessageCompletable(TunnelManager.ClientToServiceMessage.TRIM_MEMORY_UI_HIDDEN.ordinal(), null)
+                .subscribe();
     }
 
     private void bindTunnelService(Context context, Intent intent) {
@@ -223,16 +235,17 @@ public class TunnelServiceInteractor {
                 .subscribe();
         Bundle data = new Bundle();
         data.putBoolean(TunnelManager.IS_CLIENT_AN_ACTIVITY, shouldRegisterAsActivity);
-        sendServiceMessage(TunnelManager.ClientToServiceMessage.REGISTER.ordinal(), data);
+        sendServiceMessageCompletable(TunnelManager.ClientToServiceMessage.REGISTER.ordinal(), data)
+                .subscribe();
     }
 
-    private void sendServiceMessage(int what, Bundle data) {
+    private @CheckResult Completable sendServiceMessageCompletable(int what, Bundle data) {
         if (serviceMessengerDisposable == null || serviceMessengerDisposable.isDisposed()) {
-            return;
+            return Completable.complete();
         }
-        serviceBindingFactory.getMessengerObservable()
+        return serviceBindingFactory.getMessengerObservable()
                 .firstOrError()
-                .doOnSuccess(messenger -> {
+                .flatMapCompletable(messenger -> {
                     try {
                         Message msg = Message.obtain(null, what);
                         msg.replyTo = incomingMessenger;
@@ -243,8 +256,8 @@ public class TunnelServiceInteractor {
                     } catch (RemoteException e) {
                         MyLog.e("sendServiceMessage failed: " + e);
                     }
-                })
-                .subscribe();
+                    return Completable.complete();
+                });
     }
 
     private static TunnelManager.State getTunnelStateFromBundle(Bundle data) {
