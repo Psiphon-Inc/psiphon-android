@@ -323,31 +323,12 @@ public class SpeedBoostTabFragment extends Fragment {
 
                     if (balance >= priceInteger) {
                         button.setEnabled(true);
-                        speedboostItemLayout.setOnClickListener(v -> {
-                            String confirmationMessage = String.format(
-                                    requireActivity().getString(R.string.confirm_speedboost_purchase_alert),
-                                    requireActivity().getString(durationStringResId),
-                                    priceInteger
-                            );
-                            Flowable<TunnelState> tunnelStateFlowable = ((PsiCashStoreActivity) requireActivity()).tunnelStateFlowable();
-                            new AlertDialog.Builder(requireActivity())
-                                    .setIcon(R.drawable.psicash_coin)
-                                    .setTitle(requireActivity().getString(R.string.speed_boost_button_caption))
-                                    .setMessage(confirmationMessage)
-                                    .setNegativeButton(R.string.lbl_no, (dialog, which) -> {
-                                    })
-                                    .setPositiveButton(R.string.lbl_yes, (dialog, which) -> {
-                                        intentsPublishRelay.accept(PsiCashStoreIntent.PurchaseSpeedBoost.create(
-                                                tunnelStateFlowable,
-                                                price.distinguisher,
-                                                price.transactionClass,
-                                                price.price));
-                                        dialog.dismiss();
-                                    })
-                                    .setCancelable(true)
-                                    .create()
-                                    .show();
-                        });
+                        speedboostItemLayout.setOnClickListener(v -> intentsPublishRelay.accept(
+                                PsiCashStoreIntent.PurchaseSpeedBoost.create(
+                                        ((PsiCashStoreActivity) requireActivity()).tunnelStateFlowable(),
+                                        price.distinguisher,
+                                        price.transactionClass,
+                                        price.price)));
                     } else {
                         button.setEnabled(false);
                         speedboostItemLayout.setOnClickListener(v -> new AlertDialog.Builder(requireActivity())

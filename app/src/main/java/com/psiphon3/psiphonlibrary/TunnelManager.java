@@ -291,9 +291,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     // Also updates service notification and forwards tunnel state data to purchaseVerifier.
     private Disposable connectionStatusUpdaterDisposable() {
         return connectionObservable()
+                // Combine with latest state of hasPendingPsiCashPurchaseObservable
+                .withLatestFrom(purchaseVerifier.hasPendingPsiCashPurchaseObservable(), Pair::new)
                 .switchMap(pair -> {
-                    TunnelState.ConnectionData.NetworkConnectionState networkConnectionState = pair.first;
-                    boolean isRoutingThroughTunnel = pair.second;
+                    TunnelState.ConnectionData.NetworkConnectionState networkConnectionState = pair.first.first;
+                    boolean isRoutingThroughTunnel = pair.first.second;
+                    boolean hasPendingPsiCashPurchase = pair.second;
 
                     // If we started the tunnel with Speed Boost sponsor ID but the SB authorization
                     // was not accepted then reset the sponsor ID and restart the tunnel.
@@ -308,9 +311,18 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     }
 
                     // The tunnel is connected but we are not routing traffic through the tunnel yet,
-                    // check if we need to send either "Purchase Required" or landing page intents.
+                    // check in the following order if:
+                    // a) we have a pending PsiCash purchase,
+                    // b) or we need to send a "Purchase Required" intent,
+                    // c) or we need to send a landing page intent.
                     if (networkConnectionState == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED && !isRoutingThroughTunnel) {
-                        if (shouldShowPurchaseRequiredPrompt()) {
+                        if (hasPendingPsiCashPurchase) {
+                            // If there is a PsiCash purchase to redeem, start routing immediately
+                            m_tunnel.routeThroughTunnel();
+                            m_isRoutingThroughTunnelPublishRelay.accept(Boolean.TRUE);
+                            // Do not emit downstream if we are just started routing.
+                            return Observable.empty();
+                        } else if (shouldShowPurchaseRequiredPrompt()) {
                             if (canSendIntentToActivity()) {
                                 m_tunnel.routeThroughTunnel();
                                 sendShowPurchaseRequiredIntent();

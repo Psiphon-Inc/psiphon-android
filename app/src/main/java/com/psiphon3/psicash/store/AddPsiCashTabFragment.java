@@ -391,12 +391,8 @@ public class AddPsiCashTabFragment extends Fragment {
 
             Button connectBtn = view.findViewById(R.id.continue_button);
             connectBtn.setOnClickListener(v -> {
-                try {
-                    Intent data = new Intent(MainActivity.PSICASH_CONNECT_PSIPHON_INTENT_ACTION);
-                    requireActivity().setResult(Activity.RESULT_OK, data);
-                    requireActivity().finish();
-                } catch (RuntimeException ignored) {
-                }
+                PsiCashStoreActivity psiCashStoreActivity = (PsiCashStoreActivity) requireActivity();
+                psiCashStoreActivity.getTunnelServiceInteractor().startTunnelService(psiCashStoreActivity);
             });
         }
     }
