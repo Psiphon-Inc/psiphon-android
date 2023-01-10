@@ -23,6 +23,7 @@ import java.util.Set;
 
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
+import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.CompositeDisposable;
@@ -312,6 +313,21 @@ public class PurchaseVerifier {
     public void queryAllPurchases() {
         repository.startIab();
         repository.queryAllPurchases();
+    }
+
+    public Observable<Boolean> hasPendingPsiCashPurchaseObservable() {
+        return repository.purchaseStateFlowable()
+                .map(PurchaseState::purchaseList)
+                .distinctUntilChanged()
+                .toObservable()
+                .switchMap(purchaseList -> {
+                    for (Purchase purchase : purchaseList) {
+                        if (GooglePlayBillingHelper.isPsiCashPurchase(purchase)) {
+                            return Observable.just(Boolean.TRUE);
+                        }
+                    }
+                    return Observable.just(Boolean.FALSE);
+                });
     }
 
     public enum VerificationResult {

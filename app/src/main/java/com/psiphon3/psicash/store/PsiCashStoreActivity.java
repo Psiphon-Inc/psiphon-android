@@ -70,6 +70,10 @@ public class PsiCashStoreActivity extends LocalizedActivities.AppCompatActivity 
         return tunnelServiceInteractor.tunnelStateFlowable();
     }
 
+    public TunnelServiceInteractor getTunnelServiceInteractor() {
+        return tunnelServiceInteractor;
+    }
+
     @SuppressLint("SourceLockedOrientationActivity")
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
