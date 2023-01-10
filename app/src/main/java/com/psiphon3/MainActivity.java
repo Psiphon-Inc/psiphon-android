@@ -120,11 +120,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     private ViewPager viewPager;
     private PsiphonTabLayout tabLayout;
     private GooglePlayBillingHelper googlePlayBillingHelper;
-    // Ads
-    private PsiphonAdManager psiphonAdManager;
-    private InterstitialAdViewModel interstitialAdViewModel;
     private Observable<Boolean> hasBoostOrSubscriptionObservable;
-    private boolean checkPreloadInterstitial;
 
 
     private boolean isFirstRun = true;
@@ -186,12 +182,11 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                             if (state.isRunning()) {
                                 viewModel.stopTunnelService();
                             } else {
-                                startUp();
+                                startTunnel();
                             }
                         })
                         .subscribe()));
 
-        // ads
         PsiCashDetailsViewModel psiCashDetailsViewModel = new ViewModelProvider(this,
                 new ViewModelProvider.AndroidViewModelFactory(getApplication()))
                 .get(PsiCashDetailsViewModel.class);
@@ -209,29 +204,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                             subscriptionState.hasValidPurchase());
                 })
                 .distinctUntilChanged();
-
-        psiphonAdManager = new PsiphonAdManager(getApplicationContext(),
-                findViewById(R.id.largeAdSlot),
-                hasBoostOrSubscriptionObservable,
-                viewModel.tunnelStateFlowable());
-
-        psiphonAdManager.startLoadingAds();
-
-        interstitialAdViewModel = new ViewModelProvider(this,
-                new ViewModelProvider.AndroidViewModelFactory(getApplication()))
-                .get(InterstitialAdViewModel.class);
-        getLifecycle().addObserver(interstitialAdViewModel);
-
-        interstitialAdViewModel.setActivityWeakReference(this);
-        interstitialAdViewModel.setCountDownTextView(toggleButton);
-
-        // If the activity is not being recreated due to configuration change then
-        // check if we need to preload an interstitial in onResume
-        if (savedInstanceState == null) {
-            checkPreloadInterstitial = true;
-        } else {
-            checkPreloadInterstitial = false;
-        }
 
         tabLayout = findViewById(R.id.main_activity_tablayout);
         tabLayout.addTab(tabLayout.newTab().setTag("home").setText(R.string.home_tab_name));
@@ -274,7 +246,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     @Override
     public void onDestroy() {
         compositeDisposable.dispose();
-        psiphonAdManager.onDestroy();
         super.onDestroy();
     }
 
@@ -308,39 +279,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                         invalidProxySettingsToast.show();
                     }
                 })
-                .subscribe());
-
-        if (checkPreloadInterstitial) {
-            checkPreloadInterstitial = false;
-            // If the activity has not been recreated due to configuration change then try and
-            // preload an interstitial if we are not in "no-ads" mode and if the tunnel is not
-            // running
-            compositeDisposable.add(hasBoostOrSubscriptionObservable
-                    .firstOrError()
-                    .flatMapCompletable(noAds -> noAds ?
-                            Completable.complete() :
-                            viewModel.tunnelStateFlowable()
-                                    .filter(tunnelState -> !tunnelState.isUnknown())
-                                    .firstOrError()
-                                    .doOnSuccess(state -> {
-                                        if (state.isStopped()) {
-                                            interstitialAdViewModel.preloadInterstitial();
-                                        }
-                                    })
-                                    .ignoreElement())
-                    .subscribe());
-        }
-
-        // Observe start tunnel signals from the InterstitialAdViewModel
-        compositeDisposable.add(interstitialAdViewModel.startSignalFlowable()
-                .doOnNext(consumableEvent -> consumableEvent.consume(__ -> doStartUp()))
-                .subscribe());
-
-        // Observe subscription state and set ad container layout visibility
-        compositeDisposable.add(googlePlayBillingHelper.subscriptionStateFlowable()
-                .distinctUntilChanged()
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext(this::setAdBannerPlaceholderVisibility)
                 .subscribe());
 
         // Observe link clicks in the modal web view to open in the external browser
@@ -519,7 +457,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 .firstOrError()
                 .doOnSuccess(tunnelState -> {
                     if (tunnelState.isStopped()) {
-                        startUp();
+                        startTunnel();
                     }
                 })
                 .subscribe());
@@ -577,11 +515,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             }
         } else {
             // Service not running
-            if (!interstitialAdViewModel.inProgress()) {
-                // Update only if the interstitial startup is not in progress
-                toggleButton.setText(getText(R.string.start));
-                toggleButton.setEnabled(true);
-            }
+            toggleButton.setText(getText(R.string.start));
+            toggleButton.setEnabled(true);
             openBrowserButton.setEnabled(false);
             connectionProgressBar.setVisibility(View.INVISIBLE);
         }
@@ -952,14 +887,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     private void startTunnel() {
         // Don't start if custom proxy settings is selected and values are invalid
         if (!viewModel.validateCustomProxySettings()) {
-            // Update the main UI with the latest tunnel state once explicitly as the app will not
-            // go through the pause / resume cycle at this point and the toggle button may still be
-            // showing the last number of the startup countdown. This is only relevant to GP and Pro.
-            compositeDisposable.add(viewModel.tunnelStateFlowable()
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .firstOrError()
-                    .doOnSuccess(this::updateServiceStateUI)
-                    .subscribe());
             return;
         }
         boolean waitingForPrompt = doVpnPrepare();
@@ -1051,39 +978,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             }
         }
         return true;
-    }
-
-    private void startUp() {
-        if (interstitialAdViewModel.inProgress()) {
-            // already in progress, do nothing
-            return;
-        }
-        compositeDisposable.add(hasBoostOrSubscriptionObservable
-                .firstOrError()
-                .doOnSuccess(noAds -> {
-                    interstitialAdViewModel.setCountdownSeconds(10);
-                    interstitialAdViewModel.startUp(noAds);
-                })
-                .subscribe());
-    }
-
-    private void doStartUp() {
-        // Check if the tunnel is not running already
-        compositeDisposable.add(viewModel.tunnelStateFlowable()
-                .filter(tunnelState -> !tunnelState.isUnknown())
-                .firstOrError()
-                .doOnSuccess(state -> {
-                    if (state.isStopped()) {
-                        startTunnel();
-                    }
-                })
-                .subscribe());
-    }
-
-    private void setAdBannerPlaceholderVisibility(SubscriptionState subscriptionState) {
-        findViewById(R.id.largeAdSlotContainer)
-                .setVisibility(subscriptionState.hasValidPurchase() ?
-                        View.GONE : View.VISIBLE);
     }
 
     private void showToast(int stringResId) {
