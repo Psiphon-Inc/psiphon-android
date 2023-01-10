@@ -40,11 +40,11 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.text.TextUtils;
+import android.util.Pair;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 
-import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.PsiphonCrashService;
 import com.psiphon3.TunnelState;
@@ -73,7 +73,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import ca.psiphon.PsiphonTunnel;
-import io.reactivex.Maybe;
+import io.reactivex.Completable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -92,6 +92,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         STOP_SERVICE,
         RESTART_TUNNEL,
         CHANGED_LOCALE,
+        TRIM_MEMORY_UI_HIDDEN,
     }
 
     // Service -> Client
@@ -184,8 +185,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     private boolean m_firstStart = true;
     private CountDownLatch m_tunnelThreadStopSignal;
     private Thread m_tunnelThread;
-    private AtomicBoolean m_startedTunneling;
-    private AtomicBoolean m_isReconnect;
     private final AtomicBoolean m_isStopping;
     private PsiphonTunnel m_tunnel;
     private String m_lastUpstreamProxyErrorMessage;
@@ -193,7 +192,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
     private PendingIntent m_notificationPendingIntent;
 
-    private BehaviorRelay<TunnelState.ConnectionData.NetworkConnectionState> m_networkConnectionStateBehaviorRelay = BehaviorRelay.create();
+    private PublishRelay<TunnelState.ConnectionData.NetworkConnectionState> m_networkConnectionStatePublishRelay = PublishRelay.create();
+    private final PublishRelay<Boolean> m_isRoutingThroughTunnelPublishRelay = PublishRelay.create();
     private PublishRelay<Object> m_newClientPublishRelay = PublishRelay.create();
     private CompositeDisposable m_compositeDisposable = new CompositeDisposable();
     private VpnAppsUtils.VpnAppsExclusionSetting vpnAppsExclusionSetting = VpnAppsUtils.VpnAppsExclusionSetting.ALL_APPS;
@@ -213,8 +213,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     TunnelManager(Service parentService) {
         m_parentService = parentService;
         m_context = parentService;
-        m_startedTunneling = new AtomicBoolean(false);
-        m_isReconnect = new AtomicBoolean(false);
         m_isStopping = new AtomicBoolean(false);
         unsafeTrafficSubjects = new ArrayList<>();
         // Note that we are requesting manual control over PsiphonTunnel.routeThroughTunnel() functionality.
@@ -293,7 +291,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     // Also updates service notification and forwards tunnel state data to purchaseVerifier.
     private Disposable connectionStatusUpdaterDisposable() {
         return connectionObservable()
-                .switchMapMaybe(networkConnectionState -> {
+                .switchMap(pair -> {
+                    TunnelState.ConnectionData.NetworkConnectionState networkConnectionState = pair.first;
+                    boolean isRoutingThroughTunnel = pair.second;
+
                     // If we started the tunnel with Speed Boost sponsor ID but the SB authorization
                     // was not accepted then reset the sponsor ID and restart the tunnel.
                     if (networkConnectionState.equals(TunnelState.ConnectionData.NetworkConnectionState.CONNECTED) &&
@@ -303,62 +304,53 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                         isSpeedBoostEndRestart.set(true);
                         onRestartTunnel();
                         // Do not emit downstream if we are restarting.
-                        return Maybe.empty();
+                        return Observable.empty();
                     }
-                    // If tunnel is not connected return immediately
-                    if (networkConnectionState != TunnelState.ConnectionData.NetworkConnectionState.CONNECTED) {
-                        return Maybe.just(networkConnectionState);
+
+                    // The tunnel is connected but we are not routing traffic through the tunnel yet,
+                    // check if we need to send either "Purchase Required" or landing page intents.
+                    if (networkConnectionState == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED && !isRoutingThroughTunnel) {
+                        if (shouldShowPurchaseRequiredPrompt()) {
+                            if (canSendIntentToActivity()) {
+                                m_tunnel.routeThroughTunnel();
+                                sendShowPurchaseRequiredIntent();
+                                m_isRoutingThroughTunnelPublishRelay.accept(Boolean.TRUE);
+                                // Do not emit downstream if we are just started routing.
+                                return Observable.empty();
+                            } else {
+                                // Emit CONNECTING and start waiting for an activity to bind
+                                return waitSendIntentAndRouteThroughTunnelCompletable(this::sendShowPurchaseRequiredIntent)
+                                        .<TunnelState.ConnectionData.NetworkConnectionState>toObservable()
+                                        .startWith(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
+                            }
+                        } else if (m_tunnelState.homePages != null && m_tunnelState.homePages.size() != 0) {
+                            if (canSendIntentToActivity()) {
+                                m_tunnel.routeThroughTunnel();
+                                sendHandshakeIntent();
+                                m_isRoutingThroughTunnelPublishRelay.accept(Boolean.TRUE);
+                                // Do not emit downstream if we are just started routing.
+                                return Observable.empty();
+                            } else {
+                                // Emit CONNECTING and start waiting for an activity to bind
+                                return waitSendIntentAndRouteThroughTunnelCompletable(this::sendHandshakeIntent)
+                                        .<TunnelState.ConnectionData.NetworkConnectionState>toObservable()
+                                        .startWith(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
+                            }
+                        } else {
+                            // No intents to send, just route through tunnel.
+                            m_tunnel.routeThroughTunnel();
+                            m_isRoutingThroughTunnelPublishRelay.accept(Boolean.TRUE);
+                            // Do not emit downstream if we are just started routing.
+                            return Observable.empty();
+                        }
                     }
-                    // If this is a reconnect return immediately
-                    if (m_isReconnect.get()) {
-                        return Maybe.just(networkConnectionState);
-                    }
-                    // If there are no home pages to show return immediately
-                    if (m_tunnelState.homePages == null || m_tunnelState.homePages.size() == 0) {
-                        return Maybe.just(networkConnectionState);
-                    }
-                    // If OS is less than Android 10 return immediately
-                    if (Build.VERSION.SDK_INT < 29) {
-                        return Maybe.just(networkConnectionState);
-                    }
-                    // If there is at least one live activity client, which means there is at least
-                    // one activity in foreground bound to the service - return immediately
-                    if (pingForActivity()) {
-                        return Maybe.just(networkConnectionState);
-                    }
-                    // If there are no live client wait for new ones to bind
-                    return m_newClientPublishRelay
-                            // Test the activity client(s) again by pinging, block until there's at least one live client
-                            .filter(__ -> pingForActivity())
-                            // We have a live client, complete this inner subscription and send down original networkConnectionState value
-                            .map(__ -> networkConnectionState)
-                            .firstOrError()
-                            .toMaybe()
-                            // Show "Open Psiphon" notification when subscribed to
-                            .doOnSubscribe(__ -> showOpenAppToFinishConnectingNotification())
-                            // Cancel "Open Psiphon to keep connecting" when completed or disposed
-                            .doFinally(() -> cancelOpenAppToFinishConnectingNotification());
+                    return Observable.just(networkConnectionState);
                 })
+                .distinctUntilChanged()
                 .doOnNext(networkConnectionState -> {
                     m_tunnelState.networkConnectionState = networkConnectionState;
-                    // Any subsequent onConnected after this first one will be a reconnect.
-                    if (networkConnectionState == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED) {
-                        // It is safe to call routeThroughTunnel multiple times because the library
-                        // keeps track of these calls internally and allows only one call per tunnel
-                        // run making all the consecutive calls essentially no-op.
-                        m_tunnel.routeThroughTunnel();
-                        if (m_isReconnect.compareAndSet(false, true)) {
-                            // If payment required notification should be shown skip opening the landing
-                            // page and show the notification instead.
-                            if (shouldShowPurchaseRequiredPrompt()) {
-                                // Cancel disallowed traffic alert too if it is showing
-                                cancelDisallowedTrafficAlertNotification();
-                                sendShowPurchaseRequiredIntent();
-                            } else if (m_tunnelState.homePages != null && m_tunnelState.homePages.size() > 0) {
-                                sendHandshakeIntent();
-                            }
-                        }
 
+                    if (networkConnectionState == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED) {
                         // If we restarted the tunnel because of speed boost sponsor ID reset then
                         // check if Purchase Required UI should be shown.
                         if (isSpeedBoostEndRestart.compareAndSet(true, false)) {
@@ -370,11 +362,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     sendClientMessage(ServiceToClientMessage.TUNNEL_CONNECTION_STATE.ordinal(), getTunnelStateBundle());
                     // Don't update notification to CONNECTING, etc., when a stop was commanded.
                     if (!m_isStopping.get()) {
-                        // We expect only distinct connection status from connectionObservable
-                        // which means we always add a sound / vibration alert to the notification
                         postServiceNotification(true, networkConnectionState);
                     }
 
+                    // Send tunnel state updates to purchase verifier.
                     TunnelState tunnelState;
                     if (m_tunnelState.isRunning) {
                         TunnelState.ConnectionData connectionData = TunnelState.ConnectionData.builder()
@@ -393,6 +384,27 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     purchaseVerifier.onTunnelState(tunnelState);
                 })
                 .subscribe();
+
+    }
+
+    private Completable waitSendIntentAndRouteThroughTunnelCompletable(Runnable runnable) {
+        return m_newClientPublishRelay
+                // Test the activity client(s) again by pinging, block until there's at least one live client
+                .filter(__ -> pingForActivity())
+                .take(1)
+                .ignoreElements()
+                .doOnSubscribe(__ -> showOpenAppToFinishConnectingNotification())
+                .doOnComplete(() -> {
+                    m_tunnel.routeThroughTunnel();
+                    runnable.run();
+                    m_isRoutingThroughTunnelPublishRelay.accept(Boolean.TRUE);
+                })
+                // Cancel "Open Psiphon to keep connecting" when completed or disposed
+                .doFinally(this::cancelOpenAppToFinishConnectingNotification);
+    }
+
+    private boolean canSendIntentToActivity() {
+        return Build.VERSION.SDK_INT < 29 || pingForActivity();
     }
 
     private void cancelOpenAppToFinishConnectingNotification() {
@@ -460,6 +472,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         PendingIntent showPurchaseRequiredPendingIntent = getPendingIntent(m_parentService, INTENT_ACTION_SHOW_PURCHASE_PROMPT);
         try {
             showPurchaseRequiredPendingIntent.send();
+            // Cancel disallowed traffic alert too if it is showing
+            cancelDisallowedTrafficAlertNotification();
         } catch (PendingIntent.CanceledException e) {
             MyLog.w("showPurchaseRequiredPendingIntent send failed: " + e);
         }
@@ -474,7 +488,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             mNotificationManager.cancel(R.id.notification_id_upstream_proxy_error);
         }
         // Cancel potentially dangling notifications.
-        cancelOpenAppToFinishConnectingNotification();
         cancelDisallowedTrafficAlertNotification();
 
         stopAndWaitForTunnel();
@@ -683,6 +696,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 .setDefaults(defaults)
                 .setContentIntent(m_notificationPendingIntent)
                 .addAction(notificationAction)
+                .setOngoing(true)
                 .build();
     }
 
@@ -745,7 +759,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
     private final Messenger m_incomingMessenger = new Messenger(
             new IncomingMessageHandler(this));
-    private HashMap<Integer, MessengerWrapper> mClients = new HashMap<>();
+    private final HashMap<Integer, MessengerWrapper> mClients = new HashMap<>();
 
 
     private static class IncomingMessageHandler extends Handler {
@@ -830,12 +844,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                         }
                         // TODO: notify client that the tunnel is going to restart
                         //  rather than reporting tunnel is not connected?
-                        manager.m_networkConnectionStateBehaviorRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
+                        manager.m_networkConnectionStatePublishRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
                         manager.m_compositeDisposable.add(
                                 manager.getTunnelConfigSingle()
                                         .doOnSuccess(config -> {
                                             if (resetReconnectFlag) {
-                                                manager.m_isReconnect.set(false);
+                                                manager.m_tunnel.stopRouteThroughTunnel();
+                                                manager.m_isRoutingThroughTunnelPublishRelay.accept(Boolean.FALSE);
                                             }
                                             manager.setTunnelConfig(config);
                                             manager.onRestartTunnel();
@@ -853,6 +868,15 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                         setLocale(manager);
                     }
                     break;
+
+                case TRIM_MEMORY_UI_HIDDEN:
+                    if (manager != null) {
+                        // Ignore the message if the sender is not registered
+                        if (manager.mClients.get(msg.replyTo.hashCode()) == null) {
+                            return;
+                        }
+                        manager.onTrimMemoryUiHidden();
+                    }
                 default:
                     super.handleMessage(msg);
             }
@@ -977,10 +1001,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         final String stdErrRedirectPath = PsiphonCrashService.getStdRedirectPath(m_parentService);
         NDCrash.nativeInitializeStdErrRedirect(stdErrRedirectPath);
 
-        m_isReconnect.set(false);
         m_isStopping.set(false);
-        m_startedTunneling.set(false);
-        m_networkConnectionStateBehaviorRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
+        m_networkConnectionStatePublishRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
+        m_isRoutingThroughTunnelPublishRelay.accept(Boolean.FALSE);
 
         MyLog.i(R.string.starting_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
 
@@ -996,7 +1019,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             MyLog.i(R.string.vpn_service_running, MyLog.Sensitivity.NOT_SENSITIVE);
 
             m_tunnel.startTunneling(getServerEntries(m_parentService));
-            m_startedTunneling.set(true);
             try {
                 m_tunnelThreadStopSignal.await();
             } catch (InterruptedException e) {
@@ -1013,7 +1035,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             MyLog.i(R.string.stopping_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
 
             m_isStopping.set(true);
-            m_networkConnectionStateBehaviorRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
+            m_networkConnectionStatePublishRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
             m_tunnel.stop();
 
             sendDataTransferStatsHandler.removeCallbacks(sendDataTransferStats);
@@ -1279,12 +1301,14 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         }
     }
 
-    // Creates an observable from ReplaySubject of size(1) that holds the last connection state
-    // value. The result is additionally filtered to output only distinct consecutive values.
-    // Emits its current value to every new subscriber.
-    private Observable<TunnelState.ConnectionData.NetworkConnectionState> connectionObservable() {
-        return m_networkConnectionStateBehaviorRelay
-                .hide()
+     // This observable emits a pair consisting of the latest NetworkConnectionState state and a
+     // Boolean representing whether we are routing the traffic via tunnel.
+     // Emits a new pair every time when either of the sources emits a new value.
+    private Observable<Pair<TunnelState.ConnectionData.NetworkConnectionState, Boolean>> connectionObservable() {
+        return Observable.combineLatest(m_networkConnectionStatePublishRelay,
+                m_isRoutingThroughTunnelPublishRelay,
+                ((BiFunction<TunnelState.ConnectionData.NetworkConnectionState, Boolean,
+                        Pair<TunnelState.ConnectionData.NetworkConnectionState, Boolean>>) Pair::new))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .distinctUntilChanged();
@@ -1307,6 +1331,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         String suffix = Utils.getClientPlatformSuffix();
 
         tunnel.setClientPlatformAffixes(prefix, suffix);
+    }
+
+    private void onTrimMemoryUiHidden() {
+        if (shouldShowPurchaseRequiredPrompt()) {
+            m_tunnel.stopRouteThroughTunnel();
+            m_isRoutingThroughTunnelPublishRelay.accept(Boolean.FALSE);
+        }
     }
 
     @Override
@@ -1508,7 +1539,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         m_Handler.post(new Runnable() {
             @Override
             public void run() {
-                m_networkConnectionStateBehaviorRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
+                m_networkConnectionStatePublishRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
                 DataTransferStats.getDataTransferStatsForService().stop();
                 m_tunnelState.homePages.clear();
 
@@ -1535,7 +1566,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
                 MyLog.i(R.string.tunnel_connected, MyLog.Sensitivity.NOT_SENSITIVE);
 
-                m_networkConnectionStateBehaviorRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTED);
+                m_networkConnectionStatePublishRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTED);
             }
         });
     }
@@ -1592,7 +1623,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         m_Handler.post(new Runnable() {
             @Override
             public void run() {
-                m_networkConnectionStateBehaviorRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.WAITING_FOR_NETWORK);
+                m_networkConnectionStatePublishRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.WAITING_FOR_NETWORK);
                 MyLog.i(R.string.waiting_for_network_connectivity, MyLog.Sensitivity.NOT_SENSITIVE);
             }
         });
@@ -1660,7 +1691,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         m_Handler.post(new Runnable() {
             @Override
             public void run() {
-                m_networkConnectionStateBehaviorRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
+                m_networkConnectionStatePublishRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
                 // Do not log "Connecting" if tunnel is stopping
                 if (!m_isStopping.get()) {
                     MyLog.i(R.string.tunnel_connecting, MyLog.Sensitivity.NOT_SENSITIVE);
@@ -1685,6 +1716,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             // in a process of purchase verification.
             if (m_tunnelConfig != null &&
                     BuildConfig.SUBSCRIPTION_SPONSOR_ID.equals(m_tunnelConfig.sponsorId)) {
+                return;
+            }
+
+            // Also do not show the alert if we are showing or going to show the Purchase Required UI
+            if(shouldShowPurchaseRequiredPrompt()) {
                 return;
             }
 
@@ -1763,13 +1799,15 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             case RESTART_AS_NON_SUBSCRIBER:
                 MyLog.i("TunnelManager: purchase verification: will restart as a non subscriber");
                 m_tunnelConfig.sponsorId = EmbeddedValues.SPONSOR_ID;
-                m_isReconnect.set(false);
+                m_tunnel.stopRouteThroughTunnel();
+                m_isRoutingThroughTunnelPublishRelay.accept(Boolean.FALSE);
                 onRestartTunnel();
                 break;
             case RESTART_AS_SUBSCRIBER:
                 MyLog.i("TunnelManager: purchase verification: will restart as a subscriber");
                 m_tunnelConfig.sponsorId = BuildConfig.SUBSCRIPTION_SPONSOR_ID;
-                m_isReconnect.set(false);
+                m_tunnel.stopRouteThroughTunnel();
+                m_isRoutingThroughTunnelPublishRelay.accept(Boolean.FALSE);
                 onRestartTunnel();
                 break;
             case PSICASH_PURCHASE_REDEEMED:

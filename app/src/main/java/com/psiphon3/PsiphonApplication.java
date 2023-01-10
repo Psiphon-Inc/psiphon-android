@@ -20,17 +20,21 @@
 
 package com.psiphon3;
 
+import android.app.ActivityManager;
 import android.app.Application;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.pm.PackageManager;
+import android.os.Process;
 
+import androidx.annotation.NonNull;
 import androidx.multidex.MultiDex;
 
 import com.psiphon3.log.MyLog;
 import com.psiphon3.psiphonlibrary.LocaleManager;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
+import com.psiphon3.psiphonlibrary.TunnelServiceInteractor;
 import com.psiphon3.psiphonlibrary.TunnelVpnService;
 import com.psiphon3.psiphonlibrary.Utils;
 
@@ -44,6 +48,35 @@ import ru.ivanarh.jndcrash.NDCrashError;
 import ru.ivanarh.jndcrash.NDCrashUnwinder;
 
 public class PsiphonApplication extends Application implements MyLog.ILogger {
+    private static boolean isMainProcess(@NonNull Context context) {
+        final int pid = Process.myPid();
+        final String packageName = context.getPackageName();
+        final ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        if (manager != null) {
+            for (final ActivityManager.RunningAppProcessInfo info : manager.getRunningAppProcesses()) {
+                if (info.pid == pid) {
+                    return packageName.equals(info.processName);
+                }
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
+        if (level == TRIM_MEMORY_UI_HIDDEN && isMainProcess(this)) {
+            TunnelServiceInteractor tunnelServiceInteractor = new TunnelServiceInteractor(getApplicationContext(), false);
+            // bind to the tunnel service
+            tunnelServiceInteractor.onStart(this);
+            // send TRIM_MEMORY_UI_HIDDEN msg to the tunnel service
+            tunnelServiceInteractor.messageTrimMemoryUiHidden();
+            // send UNREGISTER msg to the tunnel service and unbind
+            tunnelServiceInteractor.onStop(this);
+            // Unregister SERVICE_STARTING_BROADCAST_INTENT receiver
+            tunnelServiceInteractor.onDestroy(this);
+        }
+    }
     @Override
     protected void attachBaseContext(Context base) {
         // We need to make all classes available prior to calling LocaleManager by installing all
