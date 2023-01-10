@@ -499,8 +499,20 @@
     <!-- Clickable text on the home tab that appears on the home tab if user has an active subscription. Clicking the link opens 'Manage Subscription' screen of the Google Play app -->
     <string name="manage_my_subscription_link_text">管理我的订阅</string>
 
+    <!-- Do not translate or transliterate 'Psiphon'. A short message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text">Psiphon在当前区域不再免费。</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. A longer message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text_big">Psiphon在当前区域不再免费，点击了解详情。</string>
+
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">中断连接</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe.-->
+    <string name="purchase_required_prompt_title">Psiphon在当前区域不再免费</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe.-->
+    <string name="purchase_required_prompt_body">帮助Psiphon在那些最需要的地方保持免费！现在就订阅，或者购买加速包。</string>
 
     <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_hr">1 小时</string>
@@ -514,4 +526,20 @@
     <!-- Label on a button. Clicking this button will buy 1 months (31days) of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_month">1个月</string>
 
-    </resources>
+    <!-- The 'days' part in a date interval string as in "10 d 13 hr". Reorder the format specifier '%d' if in the translated language ordering of time unit and amount is different from English. -->
+    <plurals name="speed_boost_left_days">
+        <item quantity="other">%d天</item>
+    </plurals>
+
+    <!-- The 'hours' part in a date interval string as in "9 d 11 hr". Reorder the format specifier '%d' if in the translated language ordering of time unit and amount is different from English. -->
+    <plurals name="speed_boost_left_hours">
+        <item quantity="other">%d小时</item>
+    </plurals>
+
+    <!-- This format string specifies the order of 'days' and 'hours' in the date interval string where the first argument is 'days' and the seconds is 'hours'. Examples: "20 d 11 hr", "1 d 2 hr", etc.
+     Reorder the format specifiers '%1$s' and '%2$s' if in the translated language ordering 'days' and 'hours' in date interval string is different from English. -->
+    <string name="speed_boost_left_day_hour_ordered">%1$s %2$s</string>
+
+    <!-- Do not translate or transliterate 'PsiCash'. PsiCash is a unit of currency here. Reorder the format specifier '%s' if in the translated language ordering of unit and amount is different from English. -->
+    <string name="psicash_price_format">%s PsiCash</string>
+</resources>

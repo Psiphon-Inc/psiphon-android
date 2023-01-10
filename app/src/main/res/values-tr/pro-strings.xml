@@ -503,7 +503,7 @@
     <string name="notification_payment_required_text">Psiphon artık bölgenizde ücretsiz olarak sunulmuyor.</string>
 
     <!-- Do not translate or transliterate 'Psiphon'. A longer message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
-    <string name="notification_payment_required_text_big">Psiphon bölgenizde artık ücretsiz değil Ayrıntılı bilgi almak için uygulamayı açın.</string>
+    <string name="notification_payment_required_text_big">Psiphon bölgenizde artık ücretsiz değil. Ayrıntılı bilgi almak için buraya dokunun.</string>
 
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">Bağlantıyı kes</string>

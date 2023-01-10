@@ -365,9 +365,6 @@
     <!-- Do not translate or transliterate 'Psiphon'. A short message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
     <string name="notification_payment_required_text">Psiphon ليس مجانيًا في منطقتك.</string>
 
-    <!-- Do not translate or transliterate 'Psiphon'. A longer message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
-    <string name="notification_payment_required_text_big"> Psiphon ليس مجانيًا في منطقتك ، افتح التطبيق لمعرفة المزيد</string>
-
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">قطع الإتصال</string>
 
