@@ -20,7 +20,6 @@ android {
         if (props != null && props.containsKey('VERSION_CODE')) {
             def verName = props['VERSION_CODE']
             def verCode = verName.toInteger()
-            def admobAppId = getBuildProperty('PRO_FREESTAR_ADMOB_APP_ID').replaceAll('^\"|\"$', "")
 
             defaultConfig {
                 project.ext.set("archivesBaseName", "PsiphonAndroid");
@@ -32,7 +31,6 @@ android {
                 versionName verName
                 testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
                 multiDexEnabled true
-                manifestPlaceholders = [ admobAppId:admobAppId ]
                 vectorDrawables.useSupportLibrary = true
                 // Build type specific defaults below
                 //
@@ -107,7 +105,6 @@ android {
         it.buildConfigField 'String', 'SUBSCRIPTION_SPONSOR_ID', getBuildProperty('SUBSCRIPTION_SPONSOR_ID')
         it.buildConfigField 'String', 'SPEED_BOOST_SPONSOR_ID', getBuildProperty('SPEED_BOOST_SPONSOR_ID')
         it.buildConfigField 'String', 'IAB_PUBLIC_KEY', getBuildProperty('IAB_PUBLIC_KEY')
-        it.buildConfigField 'String', 'ADMOB_APP_ID', getBuildProperty('PRO_FREESTAR_ADMOB_APP_ID')
     }
 
     // Fix `More than one file found with OS dependent path' compilation error, see
@@ -132,20 +129,6 @@ def getBuildProperty(String propertyName) {
     }
 }
 
-repositories {
-    jcenter()
-    google()
-    mavenCentral()
-    maven { url 'https://jitpack.io' }
-    maven { url 'https://freestar.jfrog.io/artifactory/freestar-mediation-android-sdk' }
-    maven { url 'https://s3.amazonaws.com/moat-sdk-builds' }
-    maven { url 'https://artifact.bytedance.com/repository/pangle' }
-    maven { url 'https://hyprmx.jfrog.io/artifactory/hyprmx' }
-    maven { url 'https://adsbynimbus-public.s3.amazonaws.com/android/sdks' }
-    maven { url 'https://artifactory.verizonmedia.com/artifactory/maven/' }
-    maven { url "https://maven.ogury.co" }
-}
-
 dependencies {
     implementation files('libs/jackson-core-2.2.0.jar')
     implementation files('libs/achartengine-1.0.0.jar')
@@ -167,78 +150,6 @@ dependencies {
     implementation "androidx.localbroadcastmanager:localbroadcastmanager:$rootProject.ext.localBroadCastManagerVersion"
     implementation "androidx.preference:preference:$rootProject.ext.preferenceVersion"
 
-    implementation 'com.freestar.android.ads:freestar:4.6.6'
-    implementation 'com.freestar.android.ads.admob:freestar-admob-adapter:20.6.0.0'
-    implementation 'com.freestar.android.ads.tam:freestar-tam-adapter:8.4.3.3'
-    implementation 'com.freestar.android.ads.google:freestar-google-adapter:20.6.0.0'
-    implementation 'com.freestar.android.ads.criteo:freestar-criteo-adapter:4.2.1.2'
-    implementation 'com.freestar.android.ads.unityads:freestar-unity-adapter:4.1.0.0'
-    implementation 'com.freestar.android.ads.vungle:freestar-vungle-adapter:6.10.4.0'
-    implementation 'com.freestar.android.ads.nimbus:freestar-nimbus-adapter:1.10.4.1'
-    implementation 'com.freestar.android.ads.pangle:freestar-pangle-adapter:3.6.0.0'
-    implementation 'com.freestar.android.ads.hyprmx:freestar-hyprmx-adapter:6.0.1.0'
-    implementation 'com.freestar.android.ads.yahoo:freestar-yahoo-adapter:1.14.0.1'
-    implementation 'com.freestar.android.ads.ogury:freestar-ogury-adapter:5.3.0.0'
-    implementation 'com.freestar.android.ads.prebid:freestar-prebid-adapter:2.0.2.1'
-
-    implementation 'com.criteo.publisher:criteo-publisher-sdk:4.4.0'
-    implementation 'com.google.android.gms:play-services-ads:20.6.0'
-    implementation('com.google.android.ads.consent:consent-library:1.0.8') {
-        exclude group: 'com.android.support'
-        exclude group: 'com.google.code.gson', module: 'gson'
-    }
-    implementation('com.facebook.android:audience-network-sdk:6.8.0') {
-        exclude group: 'com.google.android.exoplayer'
-        exclude group: 'com.google.android.gms'
-        exclude group: 'com.android.support'
-    }
-    implementation 'com.vungle:publisher-sdk-android:6.10.5'
-
-    //amazon tam
-    implementation 'com.amazon.android:aps-sdk:9.2.1@aar'
-
-    //Note: if you are using Preroll, un-comment the following lines:
-    //start preroll
-    //implementation 'com.google.ads.interactivemedia.v3:interactivemedia:3.23.0'
-    //implementation 'com.google.android.exoplayer:exoplayer-core:2.13.3'
-    //implementation 'com.google.android.exoplayer:exoplayer-ui:2.13.3'
-    //implementation 'com.google.android.exoplayer:extension-ima:2.13.3'
-    //end preroll
-
-    implementation "com.github.bumptech.glide:glide:4.11.0"
-    implementation "com.google.code.gson:gson:2.8.5"
-
-    //nimbus
-    implementation "com.adsbynimbus.android:nimbus:1.10.10"
-    implementation "com.adsbynimbus.android:extension-okhttp:1.10.10"
-    implementation "com.adsbynimbus.android:extension-facebook:1.10.10"
-    implementation "com.adsbynimbus.openrtb:kotlin:0.7.4"
-
-    //pangle; also requires play-services-ads-identifier but already in criteo
-    implementation 'com.pangle.global:ads-sdk:3.7.1.4'
-
-    //hyprmx
-    implementation 'com.hyprmx.android:HyprMX-SDK:6.0.1'
-
-    //yahoo
-    implementation 'com.verizon.ads:android-vas-standard-edition:1.14.0'
-    implementation 'androidx.browser:browser:1.4.0'
-
-    //ogury
-    implementation 'co.ogury:ogury-sdk:5.3.0'
-
-    //prebid
-    implementation 'com.freestar.android.ads.prebid:freestar-prebid-core:2.0.2.1'
-
-    //App Open Support
-    implementation "androidx.lifecycle:lifecycle-common-java8:2.4.0"
-    implementation "androidx.lifecycle:lifecycle-runtime:2.4.0"
-    implementation "androidx.lifecycle:lifecycle-process:2.4.0"
-
-    //GAM mediation adapters
-    implementation 'com.google.ads.mediation:facebook:6.8.0.0'
-
-    //end, Freestar
 
     implementation "io.reactivex.rxjava2:rxandroid:$rootProject.ext.rxandroidVersion"
     implementation "io.reactivex.rxjava2:rxjava:$rootProject.ext.rxjavaVersion"
@@ -247,6 +158,7 @@ dependencies {
     implementation "com.android.billingclient:billing:$rootProject.ext.playStoreBillingClientVersion"
 
     api "androidx.lifecycle:lifecycle-viewmodel:$rootProject.ext.lifecycleViewModelVersion"
+    implementation "androidx.lifecycle:lifecycle-common-java8:$rootProject.ext.lifecycleViewModelVersion"
 
     implementation "androidx.work:work-runtime:$rootProject.ext.workManagerVersion"
     implementation "androidx.work:work-rxjava2:$rootProject.ext.workManagerVersion"

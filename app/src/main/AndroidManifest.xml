@@ -3,71 +3,7 @@
     package="com.psiphon3.subscription"
     xmlns:tools="http://schemas.android.com/tools"
     android:installLocation="auto">
-    <uses-sdk tools:overrideLibrary="ca.psiphon,
-androidx.media2.common,
-androidx.media2.player,
-androidx.media2.session,
-androidx.media2.widget,
-com.adsbynimbus.android.nimbus,
-com.adsbynimbus.core,
-com.adsbynimbus.facebook,
-com.adsbynimbus.openrtb,
-com.adsbynimbus.render,
-com.adsbynimbus.render.video,
-com.adsbynimbus.render.web,
-com.adsbynimbus.request,
-com.adsbynimbus.request.okhttp,
-com.adsbynimbus.ui,
-com.amazon.device.ads,
-com.criteo.publisher,
-com.freestar.android.ads,
-com.freestar.android.ads.admob,
-com.freestar.android.ads.amazon,
-com.freestar.android.ads.criteo,
-com.freestar.android.ads.facebook,
-com.freestar.android.ads.google,
-com.freestar.android.ads.nimbus,
-com.freestar.android.ads.pangle,
-com.freestar.android.ads.tam,
-com.freestar.android.ads.unityads,
-com.freestar.android.ads.vungle,
-com.freestar.android.ads.hyprmx,
-com.freestar.android.ads.yahoo,
-com.google.android.ads.consent,
-com.google.android.exoplayer2,
-com.google.android.exoplayer2.core,
-com.google.android.exoplayer2.source.dash,
-com.google.android.exoplayer2.source.hls,
-com.google.android.exoplayer2.source.smoothstreaming,
-com.google.android.exoplayer2.ui,
-com.google.android.gms.ads,
-com.google.android.gms.ads.impl,
-com.google.android.gms.ads_base,
-com.google.android.gms.gass,
-com.google.android.gms.measurement.sdk.api,
-com.google.android.gms.measurement_base,
-com.google.ads.mediation.facebook,
-com.hyprmx.android,
-com.verizon.ads,
-com.verizon.ads.edition,
-com.verizon.ads.inlinewebadapter,
-com.verizon.ads.inlineplacement,
-com.verizon.ads.interstitialvastadapter,
-com.verizon.ads.interstitialwebadapter,
-com.verizon.ads.interstitialplacement,
-com.verizon.ads.nativeverizonnativeadapter,
-com.verizon.ads.nativeplacement,
-com.verizon.ads.verizonnativecontroller,
-com.verizon.ads.vastcontroller,
-com.verizon.ads.videoplayer,
-com.verizon.ads.webcontroller,
-com.verizon.ads.webview,
-com.verizon.ads.uriexperience,
-com.verizon.ads.support,
-com.verizon.ads.omsdk,
-org.prebid.mobile.core,
-com.freestar.android.ads.prebid,
-com.freestar.android.ads.ogury" />
+    <uses-sdk tools:overrideLibrary="ca.psiphon"/>
     <supports-screens
                   android:smallScreens="true"
                   android:normalScreens="true"
@@ -102,12 +38,6 @@ com.freestar.android.ads.ogury" />
         android:usesCleartextTraffic="true"
         tools:ignore="GoogleAppIndexingWarning"
         tools:replace="android:label,android:fullBackupContent">
-
-        <meta-data android:name="com.google.android.gms.version" android:value="@integer/google_play_services_version"/>
-
-        <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="${admobAppId}"/>
 
         <activity
             android:name="com.psiphon3.MainActivity"
