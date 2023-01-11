@@ -1811,6 +1811,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             case RESTART_AS_NON_SUBSCRIBER:
                 MyLog.i("TunnelManager: purchase verification: will restart as a non subscriber");
                 m_tunnelConfig.sponsorId = EmbeddedValues.SPONSOR_ID;
+                // We are going to restart, so don't wait for onConnecting callback to notify the UI
+                // and send CONNECTING signal right away. Otherwise we will need to sync calling
+                // stopRouteThroughTunnel with either onConnecting or onConnected callbacks.
+                m_networkConnectionStatePublishRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
                 m_tunnel.stopRouteThroughTunnel();
                 m_isRoutingThroughTunnelPublishRelay.accept(Boolean.FALSE);
                 onRestartTunnel();
@@ -1818,6 +1822,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             case RESTART_AS_SUBSCRIBER:
                 MyLog.i("TunnelManager: purchase verification: will restart as a subscriber");
                 m_tunnelConfig.sponsorId = BuildConfig.SUBSCRIPTION_SPONSOR_ID;
+                // See comment above.
+                m_networkConnectionStatePublishRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
                 m_tunnel.stopRouteThroughTunnel();
                 m_isRoutingThroughTunnelPublishRelay.accept(Boolean.FALSE);
                 onRestartTunnel();
