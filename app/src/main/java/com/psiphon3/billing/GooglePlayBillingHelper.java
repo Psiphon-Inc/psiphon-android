@@ -491,9 +491,13 @@ public class GooglePlayBillingHelper {
     }
 
     public static class BillingException extends Exception {
-        private @BillingResponseCode int billingResultResponseCode;
+        private final @BillingResponseCode int billingResultResponseCode;
         public BillingException(@BillingResponseCode int billingResultResponseCode) {
             this.billingResultResponseCode = billingResultResponseCode;
+        }
+
+        public int getBillingResultResponseCode() {
+            return billingResultResponseCode;
         }
 
         @Override

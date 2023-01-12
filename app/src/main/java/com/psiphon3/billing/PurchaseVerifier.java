@@ -4,6 +4,7 @@ import android.content.Context;
 import android.text.TextUtils;
 import android.util.Pair;
 
+import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.Purchase;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.TunnelState;
@@ -140,13 +141,22 @@ public class PurchaseVerifier {
                                                 .retryWhen(errors ->
                                                         errors.zipWith(Flowable.range(1, 5), (err, i) -> {
                                                             if (i < 5) {
-                                                                // exponential backoff with timer
-                                                                int retryInSeconds = (int) Math.pow(1.5, i);
-                                                                MyLog.w("PurchaseVerifier: will retry consuming the purchase in " +
-                                                                        retryInSeconds +
-                                                                        " seconds" +
-                                                                        " due to error: " + err);
-                                                                return Flowable.timer((long) retryInSeconds, TimeUnit.SECONDS);
+                                                                if (err instanceof GooglePlayBillingHelper.BillingException) {
+                                                                    GooglePlayBillingHelper.BillingException billingException = (GooglePlayBillingHelper.BillingException) err;
+                                                                    int errorCode = billingException.getBillingResultResponseCode();
+                                                                    // Only retry the cases the developer guide suggests should be retried, see
+                                                                    // https://developer.android.com/reference/com/android/billingclient/api/BillingClient.BillingResponseCode
+                                                                    if (errorCode == BillingClient.BillingResponseCode.SERVICE_TIMEOUT ||
+                                                                            errorCode == BillingClient.BillingResponseCode.SERVICE_UNAVAILABLE ||
+                                                                            errorCode == BillingClient.BillingResponseCode.BILLING_UNAVAILABLE ||
+                                                                            errorCode == BillingClient.BillingResponseCode.ERROR ||
+                                                                            errorCode == BillingClient.BillingResponseCode.SERVICE_DISCONNECTED) {
+                                                                        // exponential backoff with timer
+                                                                        int retryInSeconds = (int) Math.pow(1.5, i);
+                                                                        MyLog.w("PurchaseVerifier: will retry consuming the purchase in " + retryInSeconds + " seconds");
+                                                                        return Flowable.timer((long) retryInSeconds, TimeUnit.SECONDS);
+                                                                    }
+                                                                }
                                                             } // else
                                                             return Flowable.error(err);
                                                         }).flatMap(x -> x));
