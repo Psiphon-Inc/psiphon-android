@@ -20,6 +20,7 @@ import org.json.JSONObject;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
@@ -135,7 +136,20 @@ public class PurchaseVerifier {
                                         // Purchase redeemed, consume and send PSICASH_PURCHASE_REDEEMED
                                         return repository.consumePurchase(purchase)
                                                 .map(__ -> VerificationResult.PSICASH_PURCHASE_REDEEMED)
-                                                .toFlowable();
+                                                .toFlowable()
+                                                .retryWhen(errors ->
+                                                        errors.zipWith(Flowable.range(1, 5), (err, i) -> {
+                                                            if (i < 5) {
+                                                                // exponential backoff with timer
+                                                                int retryInSeconds = (int) Math.pow(1.5, i);
+                                                                MyLog.w("PurchaseVerifier: will retry consuming the purchase in " +
+                                                                        retryInSeconds +
+                                                                        " seconds" +
+                                                                        " due to error: " + err);
+                                                                return Flowable.timer((long) retryInSeconds, TimeUnit.SECONDS);
+                                                            } // else
+                                                            return Flowable.error(err);
+                                                        }).flatMap(x -> x));
                                     }
                             )
                             .doOnError(e -> {
