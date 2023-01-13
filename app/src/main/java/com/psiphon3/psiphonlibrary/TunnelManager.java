@@ -206,7 +206,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     private boolean disallowedTrafficNotificationAlreadyShown = false;
     private boolean hasBoostOrSubscription = false;
 
-    private boolean maybeSubscriber = false;
     private boolean showPurchaseRequiredPromptFlag = false;
     private AtomicBoolean isSpeedBoostEndRestart = new AtomicBoolean(false) ;
 
@@ -475,7 +474,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     }
 
     private boolean shouldShowPurchaseRequiredPrompt() {
-        return !maybeSubscriber &&
+        // Return true if all of the following is satisfied
+        // 1. The sponsor ID is neither Speed Boost nor subscription.
+        // 2. There is no active authorization.
+        // 3. Application parameter ShowPurchaseRequiredPrompt is set and true.
+
+        return !BuildConfig.SUBSCRIPTION_SPONSOR_ID.equals(m_tunnelConfig.sponsorId) &&
+                !BuildConfig.SPEED_BOOST_SPONSOR_ID.equals(m_tunnelConfig.sponsorId) &&
                 !hasBoostOrSubscription &&
                 showPurchaseRequiredPromptFlag;
     }
@@ -510,6 +515,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     private void cancelDisallowedTrafficAlertNotification() {
         if (mNotificationManager != null) {
             mNotificationManager.cancel(R.id.notification_id_disallowed_traffic_alert);
+        }
+    }
+
+    private void cancelPurchaseRequiredNotification() {
+        if (mNotificationManager != null) {
+            mNotificationManager.cancel(R.id.notification_id_purchase_required);
         }
     }
 
@@ -1358,7 +1369,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         m_tunnelConfigAuthorizations =
                 Collections.unmodifiableList(Authorization.geAllPersistedAuthorizations(getContext()));
 
-
         // Check if we need to use Speed Boost sponsor ID based on the contents of the authorizations.
         // Note that if we are already set to use subscription sponsor ID then we will skip this step.
         if (!BuildConfig.SUBSCRIPTION_SPONSOR_ID.equals(m_tunnelConfig.sponsorId)) {
@@ -1369,20 +1379,18 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 }
             }
         }
-
+        // Cancel "Purchase required" notification if we are starting with either subscription or
+        // Speed Boost sponsor ID
+        if (BuildConfig.SUBSCRIPTION_SPONSOR_ID.equals(m_tunnelConfig.sponsorId) ||
+                BuildConfig.SPEED_BOOST_SPONSOR_ID.equals(m_tunnelConfig.sponsorId)) {
+            cancelPurchaseRequiredNotification();
+        }
         String config = buildTunnelCoreConfig(getContext(),
                 m_tunnelConfig,
                 true,
                 m_tunnelConfigAuthorizations,
                 null);
 
-        // If the tunnel starts with the subscription sponsor ID then suppress the
-        // "Psiphon not free in you region" notification.
-        if (BuildConfig.SUBSCRIPTION_SPONSOR_ID.equals(m_tunnelConfig.sponsorId)) {
-            maybeSubscriber = true;
-        } else {
-            maybeSubscriber = false;
-        }
         return config == null ? "" : config;
     }
 
