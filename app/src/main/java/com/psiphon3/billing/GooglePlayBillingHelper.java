@@ -487,15 +487,17 @@ public class GooglePlayBillingHelper {
                                 }
                             });
                         }, BackpressureStrategy.LATEST))
-                .firstOrError()
-                .doOnError(err -> MyLog.e("GooglePlayBillingHelper::consumePurchase error: " + err))
-                .onErrorReturnItem("");
+                .firstOrError();
     }
 
     public static class BillingException extends Exception {
-        private @BillingResponseCode int billingResultResponseCode;
+        private final @BillingResponseCode int billingResultResponseCode;
         public BillingException(@BillingResponseCode int billingResultResponseCode) {
             this.billingResultResponseCode = billingResultResponseCode;
+        }
+
+        public int getBillingResultResponseCode() {
+            return billingResultResponseCode;
         }
 
         @Override

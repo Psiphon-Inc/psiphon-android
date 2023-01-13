@@ -11,7 +11,7 @@ android {
         }
     }
 
-    def versionPropsFile = new File('version.properties')
+    def versionPropsFile = rootProject.file('version.properties')
 
     if (versionPropsFile.canRead()) {
         def Properties props = new Properties()
@@ -76,7 +76,7 @@ android {
         abortOnError false
     }
 
-    def propFile = new File('signing.properties')
+    def propFile = rootProject.file('signing.properties')
     compileOptions {
         sourceCompatibility = '1.8'
         targetCompatibility = '1.8'
