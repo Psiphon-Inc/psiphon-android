@@ -322,6 +322,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                             // Do not emit downstream if we are just started routing.
                             return Observable.empty();
                         } else if (shouldShowPurchaseRequiredPrompt()) {
+                            // Cancel "Psiphon isn't free" notification if it still showing.
+                            cancelPurchaseRequiredNotification();
                             if (canSendIntentToActivity()) {
                                 m_tunnel.routeThroughTunnel();
                                 sendShowPurchaseRequiredIntent();
