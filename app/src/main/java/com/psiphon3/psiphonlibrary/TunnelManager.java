@@ -508,6 +508,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         }
         // Cancel potentially dangling notifications.
         cancelDisallowedTrafficAlertNotification();
+        cancelPurchaseRequiredNotification();
 
         stopAndWaitForTunnel();
         m_compositeDisposable.dispose();
