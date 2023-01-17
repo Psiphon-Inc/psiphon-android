@@ -303,7 +303,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                             BuildConfig.SPEED_BOOST_SPONSOR_ID.equals(m_tunnelConfig.sponsorId) &&
                             !hasBoostOrSubscription) {
                         m_tunnelConfig.sponsorId = EmbeddedValues.SPONSOR_ID;
-                        isSpeedBoostEndRestart.set(true);
+                        // If we were already routing through the tunnel then this is an automated
+                        // restart due to Speed Boost auth ending.
+                        if (isRoutingThroughTunnel) {
+                            isSpeedBoostEndRestart.set(true);
+                        }
                         onRestartTunnel();
                         // Do not emit downstream if we are restarting.
                         return Observable.empty();

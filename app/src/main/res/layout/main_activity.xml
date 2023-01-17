@@ -25,12 +25,17 @@
     android:orientation="vertical">
 
     <LinearLayout
-        android:layout_width="240dp"
-        android:layout_height="200dp"
-        android:layout_gravity="center"
-        android:background="@drawable/large_banner"
-        android:orientation="vertical" />
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent">
 
+        <ImageView
+            android:id="@+id/banner"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:src="@drawable/top_banner" />
+
+    </LinearLayout>
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="0dp"

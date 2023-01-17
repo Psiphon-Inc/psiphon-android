@@ -1,9 +1,7 @@
 package com.psiphon3.psicash.store;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Rect;
 import android.os.Bundle;
@@ -22,6 +20,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.view.ContextThemeWrapper;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
@@ -30,7 +29,6 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.SkuDetails;
-import com.psiphon3.MainActivity;
 import com.psiphon3.TunnelState;
 import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.billing.PurchaseState;

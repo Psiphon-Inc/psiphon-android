@@ -85,6 +85,7 @@ public class PsiCashFragment extends Fragment
 
     private View fragmentView;
     private TextView balanceLabel;
+    private View speedBoostBtnContainer;
     private View speedBoostBtnClicker;
     private TextView speedBoostBtnClickerLabel;
     private SpeedBoostCountDownTimer countDownTimer;
@@ -119,6 +120,7 @@ public class PsiCashFragment extends Fragment
                 .get(MainActivityViewModel.class).tunnelStateFlowable();
 
         progressOverlay = requireView().findViewById(R.id.progress_overlay);
+        speedBoostBtnContainer = requireView().findViewById(R.id.purchase_speedboost_clicker_container);
         speedBoostBtnClicker = requireView().findViewById(R.id.purchase_speedboost_clicker);
         speedBoostBtnClicker.setOnClickListener(v ->
                 UiHelpers.openPsiCashStoreActivity(requireActivity(),
@@ -145,7 +147,7 @@ public class PsiCashFragment extends Fragment
                         progressOverlay.setVisibility(View.GONE);
                     }
                     boolean hidePsiCashActionsUi = subscriptionState.hasValidPurchase();
-                    speedBoostBtnClicker.setVisibility(hidePsiCashActionsUi ? View.GONE : View.VISIBLE);
+                    speedBoostBtnContainer.setVisibility(hidePsiCashActionsUi ? View.GONE : View.VISIBLE);
                     psiCashPlusBtn.setVisibility(hidePsiCashActionsUi ? View.GONE : View.VISIBLE);
                 })
                 .subscribe());
