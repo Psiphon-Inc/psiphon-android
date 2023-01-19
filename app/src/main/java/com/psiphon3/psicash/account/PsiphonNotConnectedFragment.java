@@ -18,8 +18,6 @@
 
 package com.psiphon3.psicash.account;
 
-import android.app.Activity;
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -28,7 +26,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import com.psiphon3.MainActivity;
 import com.psiphon3.subscription.R;
 
 public class PsiphonNotConnectedFragment extends Fragment {
@@ -39,15 +36,11 @@ public class PsiphonNotConnectedFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        ((PsiCashAccountActivity) requireActivity()).hideProgress();
+        PsiCashAccountActivity psiCashAccountActivity = (PsiCashAccountActivity) requireActivity();
+        psiCashAccountActivity.hideProgress();
         Button connectBtn = view.findViewById(R.id.continue_button);
         connectBtn.setOnClickListener(v -> {
-            try {
-                Intent data = new Intent(MainActivity.PSICASH_CONNECT_PSIPHON_INTENT_ACTION);
-                requireActivity().setResult(Activity.RESULT_OK, data);
-                requireActivity().finish();
-            } catch (RuntimeException ignored) {
-            }
+            psiCashAccountActivity.startTunnel();
         });
     }
 }

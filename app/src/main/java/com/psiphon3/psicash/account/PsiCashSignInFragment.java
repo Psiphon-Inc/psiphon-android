@@ -48,6 +48,7 @@ import com.psiphon3.psicash.PsiCashException;
 import com.psiphon3.psicash.mvibase.MviView;
 import com.psiphon3.psicash.util.SingleViewEvent;
 import com.psiphon3.psicash.util.UiHelpers;
+import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.psiphonlibrary.TunnelServiceInteractor;
 import com.psiphon3.subscription.R;
 
@@ -89,7 +90,9 @@ public class PsiCashSignInFragment extends Fragment
                 .get(PsiCashAccountViewModel.class);
 
         Flowable<TunnelState> tunnelStateFlowable =
-                ((PsiCashAccountActivity) requireActivity()).tunnelStateFlowable();
+                ((LocalizedActivities.AppCompatActivity) requireActivity())
+                        .getTunnelServiceInteractor()
+                        .tunnelStateFlowable();
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(TunnelServiceInteractor.PSICASH_PURCHASE_REDEEMED_BROADCAST_INTENT);
@@ -152,7 +155,9 @@ public class PsiCashSignInFragment extends Fragment
         super.onResume();
         // Get PsiCash updates when foregrounded and on tunnel state changes after
         Flowable<TunnelState> tunnelStateFlowable =
-                ((PsiCashAccountActivity) requireActivity()).tunnelStateFlowable();
+                ((LocalizedActivities.AppCompatActivity) requireActivity())
+                        .getTunnelServiceInteractor()
+                        .tunnelStateFlowable();
         psiCashUpdatesDisposable = tunnelStateFlowable
                 .filter(tunnelState -> !tunnelState.isUnknown())
                 .distinctUntilChanged()

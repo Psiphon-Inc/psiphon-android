@@ -41,14 +41,6 @@ public abstract class PsiCashAccountViewState implements MviViewState {
 
     abstract PsiCashAccountViewState.Builder withState();
 
-    public long uiBalance() {
-        if (psiCashModel() == null) {
-            return 0L;
-        }
-        return (long) (Math.floor((long)
-                ((psiCashModel().reward() * 1e9 + psiCashModel().balance()) / 1e9)));
-    }
-
     static PsiCashAccountViewState initialViewState() {
         return new AutoValue_PsiCashAccountViewState.Builder()
                 .psiCashTransactionInFlight(false)

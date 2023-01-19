@@ -14,6 +14,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.psiphon3.psiphonlibrary.DataTransferStats;
+import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
 
@@ -75,7 +76,8 @@ public class StatisticsTabFragment extends Fragment {
         fastSentGraph = new DataTransferGraph(fragmentView, R.id.fastSentGraph);
         fastReceivedGraph = new DataTransferGraph(fragmentView, R.id.fastReceivedGraph);
 
-        compositeDisposable.add(viewModel.dataStatsFlowable()
+        compositeDisposable.add(((LocalizedActivities.AppCompatActivity) requireActivity())
+                .getTunnelServiceInteractor().dataStatsFlowable()
                 .startWith(Boolean.FALSE)
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(this::updateStatisticsUICallback)

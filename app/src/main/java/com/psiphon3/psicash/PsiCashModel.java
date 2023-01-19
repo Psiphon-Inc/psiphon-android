@@ -38,8 +38,6 @@ public abstract class PsiCashModel {
 
     public abstract long balance();
 
-    public abstract long reward();
-
     @Nullable
     public abstract List<PsiCashLib.PurchasePrice> purchasePrices();
 
@@ -67,8 +65,6 @@ public abstract class PsiCashModel {
         public abstract Builder isAccount(boolean b);
 
         public abstract Builder balance(long balance);
-
-        public abstract Builder reward(long reward);
 
         abstract Builder purchasePrices(@Nullable List<PsiCashLib.PurchasePrice> purchasePrices);
 

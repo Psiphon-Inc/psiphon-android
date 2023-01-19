@@ -46,18 +46,14 @@ public interface PsiCashStoreIntent extends MviIntent {
 
     @AutoValue
     abstract class PurchaseSpeedBoost implements PsiCashStoreIntent {
-        public static PurchaseSpeedBoost create(Flowable<TunnelState> tunnelStateFlowable,
-                                                @Nullable String distinguisher,
+        public static PurchaseSpeedBoost create(@Nullable String distinguisher,
                                                 @Nullable String transactionClass,
                                                 long expectedPrice) {
             return new AutoValue_PsiCashStoreIntent_PurchaseSpeedBoost(
-                    tunnelStateFlowable,
                     distinguisher,
                     transactionClass,
                     expectedPrice);
         }
-
-        abstract Flowable<TunnelState> tunnelStateFlowable();
 
         @Nullable
         public abstract String distinguisher();

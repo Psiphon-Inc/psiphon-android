@@ -98,7 +98,7 @@ public class UiHelpers {
         }
         Intent intent = new Intent(activity, PsiCashStoreActivity.class);
         intent.putExtra("tabIndex", tabIndex);
-        activity.startActivityForResult(intent, PsiCashStoreActivity.ACTIVITY_REQUEST_CODE);
+        activity.startActivity(intent);
     }
 
     public static void openPsiCashAccountActivity(final FragmentActivity activity) {
@@ -106,7 +106,7 @@ public class UiHelpers {
             return;
         }
         Intent intent = new Intent(activity, PsiCashAccountActivity.class);
-        activity.startActivityForResult(intent, PsiCashAccountActivity.ACTIVITY_REQUEST_CODE);
+        activity.startActivity(intent);
     }
 
     public static Observable<ValueAnimator> balanceLabelAnimationObservable(long fromVal, long toVal, final TextView view) {

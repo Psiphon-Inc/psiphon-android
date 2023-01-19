@@ -48,6 +48,7 @@ import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.log.MyLog;
 import com.psiphon3.psicash.mvibase.MviView;
 import com.psiphon3.psicash.util.UiHelpers;
+import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.psiphonlibrary.TunnelServiceInteractor;
 import com.psiphon3.subscription.R;
 
@@ -96,7 +97,9 @@ public class StoreTabHostFragment extends Fragment
                 if (TunnelServiceInteractor.PSICASH_PURCHASE_REDEEMED_BROADCAST_INTENT.equals(action)) {
                     GooglePlayBillingHelper.getInstance(context).queryAllPurchases();
                     psiCashStoreViewModel.processIntents(Observable.just(PsiCashStoreIntent.GetPsiCash.create(
-                            ((PsiCashStoreActivity) requireActivity()).tunnelStateFlowable())));
+                            ((LocalizedActivities.AppCompatActivity) requireActivity())
+                                    .getTunnelServiceInteractor()
+                                    .tunnelStateFlowable())));
                 }
             }
         };

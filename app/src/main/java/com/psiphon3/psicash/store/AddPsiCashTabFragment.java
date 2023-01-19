@@ -35,6 +35,7 @@ import com.psiphon3.billing.PurchaseState;
 import com.psiphon3.log.MyLog;
 import com.psiphon3.psicash.PsiCashClient;
 import com.psiphon3.psicash.util.UiHelpers;
+import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.subscription.R;
 
 import java.text.NumberFormat;
@@ -67,7 +68,9 @@ public class AddPsiCashTabFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        Flowable<TunnelState> tunnelStateFlowable = ((PsiCashStoreActivity) requireActivity()).tunnelStateFlowable();
+        Flowable<TunnelState> tunnelStateFlowable = ((LocalizedActivities.AppCompatActivity) requireActivity())
+                .getTunnelServiceInteractor()
+                .tunnelStateFlowable();
         Flowable<List<Purchase>> purchaseListFlowable = GooglePlayBillingHelper.getInstance(requireContext())
                 .purchaseStateFlowable()
                 .map(PurchaseState::purchaseList)
@@ -390,7 +393,7 @@ public class AddPsiCashTabFragment extends Fragment {
             Button connectBtn = view.findViewById(R.id.continue_button);
             connectBtn.setOnClickListener(v -> {
                 PsiCashStoreActivity psiCashStoreActivity = (PsiCashStoreActivity) requireActivity();
-                psiCashStoreActivity.getTunnelServiceInteractor().startTunnelService(psiCashStoreActivity);
+                psiCashStoreActivity.startTunnel();
             });
         }
     }

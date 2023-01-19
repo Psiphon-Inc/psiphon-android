@@ -19,11 +19,6 @@
 package com.psiphon3.psicash.store;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.view.View;
@@ -31,15 +26,11 @@ import android.view.View;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.jakewharton.rxrelay2.PublishRelay;
-import com.psiphon3.MainActivity;
 import com.psiphon3.TunnelState;
 import com.psiphon3.billing.GooglePlayBillingHelper;
-import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
-import com.psiphon3.psiphonlibrary.TunnelServiceInteractor;
 import com.psiphon3.subscription.R;
 
 import io.reactivex.BackpressureStrategy;
@@ -49,10 +40,7 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 
 public class PsiCashStoreActivity extends LocalizedActivities.AppCompatActivity {
-    public static final int ACTIVITY_REQUEST_CODE = 201;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
-    private BroadcastReceiver broadcastReceiver;
-    private TunnelServiceInteractor tunnelServiceInteractor;
     private View progressOverlay;
     private final PublishRelay<PsiCashStoreIntent> intentsPublishRelay = PublishRelay.create();
     private Disposable psiCashUpdatesDisposable;
@@ -67,11 +55,7 @@ public class PsiCashStoreActivity extends LocalizedActivities.AppCompatActivity 
     }
 
     public Flowable<TunnelState> tunnelStateFlowable() {
-        return tunnelServiceInteractor.tunnelStateFlowable();
-    }
-
-    public TunnelServiceInteractor getTunnelServiceInteractor() {
-        return tunnelServiceInteractor;
+        return getTunnelServiceInteractor().tunnelStateFlowable();
     }
 
     @SuppressLint("SourceLockedOrientationActivity")
@@ -81,24 +65,6 @@ public class PsiCashStoreActivity extends LocalizedActivities.AppCompatActivity 
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.psicash_store_activity);
         progressOverlay = findViewById(R.id.progress_overlay);
-
-        tunnelServiceInteractor = new TunnelServiceInteractor(this, true);
-
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(BroadcastIntent.TUNNEL_RESTART);
-        broadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                if (action != null) {
-                    if (BroadcastIntent.TUNNEL_RESTART.equals(action)) {
-                        tunnelServiceInteractor.commandTunnelRestart(false);
-                        finish();
-                    }
-                }
-            }
-        };
-        LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, intentFilter);
 
         PsiCashStoreViewModel psiCashStoreViewModel = new ViewModelProvider(this,
                 new ViewModelProvider.AndroidViewModelFactory(getApplication()))
@@ -132,7 +98,7 @@ public class PsiCashStoreActivity extends LocalizedActivities.AppCompatActivity 
                     if (subscriptionState.hasValidPurchase()) {
                         return Flowable.just(SceneState.NOT_AVAILABLE_WHILE_SUBSCRIBED);
                     }
-                    return tunnelServiceInteractor.tunnelStateFlowable()
+                    return tunnelStateFlowable()
                             .filter(state -> !state.isUnknown())
                             .distinctUntilChanged()
                             .switchMap(state -> {
@@ -181,7 +147,6 @@ public class PsiCashStoreActivity extends LocalizedActivities.AppCompatActivity 
     @Override
     public void onPause() {
         super.onPause();
-        tunnelServiceInteractor.onStop(getApplicationContext());
         if (psiCashUpdatesDisposable != null) {
             psiCashUpdatesDisposable.dispose();
         }
@@ -190,7 +155,6 @@ public class PsiCashStoreActivity extends LocalizedActivities.AppCompatActivity 
     @Override
     protected void onResume() {
         super.onResume();
-        tunnelServiceInteractor.onStart(getApplicationContext());
 
         // Get PsiCash updates when foregrounded and on tunnel state changes after
         psiCashUpdatesDisposable = tunnelStateFlowable()
@@ -205,23 +169,7 @@ public class PsiCashStoreActivity extends LocalizedActivities.AppCompatActivity 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
-        tunnelServiceInteractor.onDestroy(getApplicationContext());
         compositeDisposable.dispose();
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        // Call through to main activity if tunnel connect is requested
-        if (data != null && MainActivity.PSICASH_CONNECT_PSIPHON_INTENT_ACTION.equals(data.getAction())) {
-            try {
-                setResult(Activity.RESULT_OK, data);
-                finish();
-            } catch (RuntimeException ignored) {
-            }
-        } else {
-            super.onActivityResult(requestCode, resultCode, data);
-        }
     }
 
     void hideProgress() {

@@ -28,7 +28,6 @@ import android.content.pm.ActivityInfo;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.net.VpnService;
 import android.os.Bundle;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
@@ -36,7 +35,6 @@ import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.style.BulletSpan;
 import android.text.util.Linkify;
-import android.util.Pair;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -67,9 +65,6 @@ import com.psiphon3.log.LogsMaintenanceWorker;
 import com.psiphon3.log.MyLog;
 import com.psiphon3.psicash.PsiCashClient;
 import com.psiphon3.psicash.PsiCashException;
-import com.psiphon3.psicash.account.PsiCashAccountActivity;
-import com.psiphon3.psicash.details.PsiCashDetailsViewModel;
-import com.psiphon3.psicash.store.PsiCashStoreActivity;
 import com.psiphon3.psicash.util.UiHelpers;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
@@ -91,7 +86,6 @@ import java.util.Set;
 
 import io.reactivex.Completable;
 import io.reactivex.Maybe;
-import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 
@@ -102,12 +96,9 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     }
 
     public static final String INTENT_EXTRA_PREVENT_AUTO_START = "com.psiphon3.MainActivity.PREVENT_AUTO_START";
-    public static final String PSICASH_CONNECT_PSIPHON_INTENT_ACTION = "com.psiphon3.MainActivity.PSICASH_CONNECT_PSIPHON_INTENT_ACTION";
 
     private static final String CURRENT_TAB = "currentTab";
     private static final int PAYMENT_CHOOSER_ACTIVITY = 20001;
-
-    private static final int REQUEST_CODE_PREPARE_VPN = 100;
 
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private Button toggleButton;
@@ -120,7 +111,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     private ViewPager viewPager;
     private PsiphonTabLayout tabLayout;
     private GooglePlayBillingHelper googlePlayBillingHelper;
-    private Observable<Boolean> hasBoostOrSubscriptionObservable;
 
 
     private boolean isFirstRun = true;
@@ -175,35 +165,17 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         defaultProgressBarDrawable = connectionProgressBar.getIndeterminateDrawable();
         openBrowserButton = findViewById(R.id.openBrowserButton);
         toggleButton.setOnClickListener(v ->
-                compositeDisposable.add(viewModel.tunnelStateFlowable()
+                compositeDisposable.add(getTunnelServiceInteractor().tunnelStateFlowable()
                         .filter(state -> !state.isUnknown())
                         .take(1)
                         .doOnNext(state -> {
                             if (state.isRunning()) {
-                                viewModel.stopTunnelService();
+                                getTunnelServiceInteractor().stopTunnelService();
                             } else {
                                 startTunnel();
                             }
                         })
                         .subscribe()));
-
-        PsiCashDetailsViewModel psiCashDetailsViewModel = new ViewModelProvider(this,
-                new ViewModelProvider.AndroidViewModelFactory(getApplication()))
-                .get(PsiCashDetailsViewModel.class);
-
-        // This helper observable emits true if the user has a subscription or an active speed boost
-        // and false if none of the above.
-        hasBoostOrSubscriptionObservable = Observable.combineLatest(psiCashDetailsViewModel.hasActiveSpeedBoostObservable(),
-                googlePlayBillingHelper.subscriptionStateFlowable().toObservable(),
-                Pair::new)
-                .switchMap(pair -> {
-                    boolean hasActiveSpeedBoost = pair.first;
-                    SubscriptionState subscriptionState = pair.second;
-
-                    return Observable.just(hasActiveSpeedBoost ||
-                            subscriptionState.hasValidPurchase());
-                })
-                .distinctUntilChanged();
 
         tabLayout = findViewById(R.id.main_activity_tablayout);
         tabLayout.addTab(tabLayout.newTab().setTag("home").setText(R.string.home_tab_name));
@@ -266,7 +238,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         googlePlayBillingHelper.queryAllSkuDetails();
 
         // Observe tunnel state changes to update UI
-        compositeDisposable.add(viewModel.tunnelStateFlowable()
+        compositeDisposable.add(getTunnelServiceInteractor().tunnelStateFlowable()
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(this::updateServiceStateUI)
                 .subscribe());
@@ -403,14 +375,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_CODE_PREPARE_VPN) {
-            if (resultCode == RESULT_OK) {
-                viewModel.startTunnelService();
-            } else if (resultCode == RESULT_CANCELED) {
-                showVpnAlertDialog(R.string.StatusActivity_VpnPromptCancelledTitle,
-                        R.string.StatusActivity_VpnPromptCancelledMessage);
-            }
-        } else if (requestCode == PAYMENT_CHOOSER_ACTIVITY) {
+        if (requestCode == PAYMENT_CHOOSER_ACTIVITY) {
             if (resultCode == RESULT_OK) {
                 // if data intent is not present it means the payment chooser activity closed due to
                 // IAB failure, show "Subscription options not available" toast and return.
@@ -441,27 +406,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             } else {
                 MyLog.i("MainActivity::onActivityResult: PaymentChooserActivity: canceled");
             }
-        } else if (requestCode == PsiCashStoreActivity.ACTIVITY_REQUEST_CODE ||
-                requestCode == PsiCashAccountActivity.ACTIVITY_REQUEST_CODE) {
-            if (resultCode == RESULT_OK) {
-                if (data != null && PSICASH_CONNECT_PSIPHON_INTENT_ACTION.equals(data.getAction())) {
-                    startUpIfNotRunning();
-                }
-            }
         }
         super.onActivityResult(requestCode, resultCode, data);
-    }
-
-    public void startUpIfNotRunning() {
-        compositeDisposable.add(viewModel.tunnelStateFlowable()
-                .filter(tunnelState -> !tunnelState.isUnknown())
-                .firstOrError()
-                .doOnSuccess(tunnelState -> {
-                    if (tunnelState.isStopped()) {
-                        startTunnel();
-                    }
-                })
-                .subscribe());
     }
 
     @Override
@@ -695,12 +641,12 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                     purchaseRequiredDialog.dismiss();
                 });
                 purchaseRequiredDialog.getDisconnectBtn().setOnClickListener(v -> {
-                    compositeDisposable.add(viewModel.tunnelStateFlowable()
+                    compositeDisposable.add(getTunnelServiceInteractor().tunnelStateFlowable()
                             .filter(state -> !state.isUnknown())
                             .firstOrError()
                             .doOnSuccess(state -> {
                                 if (state.isRunning()) {
-                                    viewModel.stopTunnelService();
+                                    getTunnelServiceInteractor().stopTunnelService();
                                 }
                             })
                             .subscribe());
@@ -875,52 +821,13 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         return false;
     }
 
-    private void showVpnAlertDialog(int titleId, int messageId) {
-        new AlertDialog.Builder(this)
-                .setCancelable(true)
-                .setIcon(android.R.drawable.ic_dialog_alert)
-                .setTitle(titleId)
-                .setMessage(messageId)
-                .setPositiveButton(android.R.string.ok, null)
-                .show();
-    }
-
-    private void startTunnel() {
+    @Override
+    public void startTunnel() {
         // Don't start if custom proxy settings is selected and values are invalid
         if (!viewModel.validateCustomProxySettings()) {
             return;
         }
-        boolean waitingForPrompt = doVpnPrepare();
-        if (!waitingForPrompt) {
-            viewModel.startTunnelService();
-        }
-    }
-
-    private boolean doVpnPrepare() {
-        // Devices without VpnService support throw various undocumented
-        // exceptions, including ActivityNotFoundException and ActivityNotFoundException.
-        // For example: http://code.google.com/p/ics-openvpn/source/browse/src/de/blinkt/openvpn/LaunchVPN.java?spec=svn2a81c206204193b14ac0766386980acdc65bee60&name=v0.5.23&r=2a81c206204193b14ac0766386980acdc65bee60#376
-        try {
-            Intent intent = VpnService.prepare(this);
-            if (intent != null) {
-                // TODO: can we disable the mode before we reach this this
-                // failure point with
-                // resolveActivity()? We'll need the intent from prepare() or
-                // we'll have to mimic it.
-                // http://developer.android.com/reference/android/content/pm/PackageManager.html#resolveActivity%28android.content.Intent,%20int%29
-
-                startActivityForResult(intent, REQUEST_CODE_PREPARE_VPN);
-
-                // start service will be called in onActivityResult
-                return true;
-            }
-            return false;
-        } catch (Exception e) {
-            MyLog.e(R.string.tunnel_whole_device_exception, MyLog.Sensitivity.NOT_SENSITIVE);
-            // true = waiting for prompt, although we can't start the
-            // activity so onActivityResult won't be called
-            return true;
-        }
+        super.startTunnel();
     }
 
     private void cancelInvalidProxySettingsToast() {

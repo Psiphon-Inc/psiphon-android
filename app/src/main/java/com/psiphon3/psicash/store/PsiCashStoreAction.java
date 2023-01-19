@@ -44,15 +44,12 @@ public interface PsiCashStoreAction extends MviAction {
     }
     @AutoValue
     abstract class MakeExpiringPurchase implements PsiCashStoreAction {
-        public static MakeExpiringPurchase create(Flowable<TunnelState> tunnelStateFlowable,
-                                                  @Nullable String distinguisher,
+        public static MakeExpiringPurchase create(@Nullable String distinguisher,
                                                   @Nullable String transactionClass,
                                                   long expectedPrice) {
-            return new AutoValue_PsiCashStoreAction_MakeExpiringPurchase(tunnelStateFlowable, distinguisher,
+            return new AutoValue_PsiCashStoreAction_MakeExpiringPurchase(distinguisher,
                     transactionClass, expectedPrice);
         }
-
-        abstract Flowable<TunnelState> tunnelStateFlowable();
 
         @Nullable
         public abstract String distinguisher();

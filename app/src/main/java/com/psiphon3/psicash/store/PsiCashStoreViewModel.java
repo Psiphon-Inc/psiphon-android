@@ -153,7 +153,6 @@ public class PsiCashStoreViewModel extends AndroidViewModel
         if (intent instanceof PsiCashStoreIntent.PurchaseSpeedBoost) {
             PsiCashStoreIntent.PurchaseSpeedBoost purchaseSpeedBoostIntent = (PsiCashStoreIntent.PurchaseSpeedBoost) intent;
             return Observable.just(PsiCashStoreAction.MakeExpiringPurchase.create(
-                    purchaseSpeedBoostIntent.tunnelStateFlowable(),
                     purchaseSpeedBoostIntent.distinguisher(),
                     purchaseSpeedBoostIntent.transactionClass(),
                     purchaseSpeedBoostIntent.expectedPrice()));
