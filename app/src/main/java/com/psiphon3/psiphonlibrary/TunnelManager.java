@@ -70,6 +70,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import ca.psiphon.PsiphonTunnel;
@@ -207,7 +208,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     private boolean hasBoostOrSubscription = false;
 
     private boolean showPurchaseRequiredPromptFlag = false;
-    private AtomicBoolean isSpeedBoostEndRestart = new AtomicBoolean(false) ;
+    private final AtomicBoolean isSpeedBoostEndRestart = new AtomicBoolean(false) ;
+    private final CountDownLatch tunnelThreadStartedLock = new CountDownLatch(1);
+    private Disposable trimMemoryUiHiddenDisposable;
 
     TunnelManager(Service parentService) {
         m_parentService = parentService;
@@ -276,6 +279,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                                 setTunnelConfig(config);
                                 m_tunnelThread = new Thread(this::runTunnel);
                                 m_tunnelThread.start();
+                                tunnelThreadStartedLock.countDown();
                             })
                             .subscribe());
         }
@@ -480,12 +484,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     }
 
     private boolean shouldShowPurchaseRequiredPrompt() {
-        // Return true if all of the following is satisfied
-        // 1. The sponsor ID is neither Speed Boost nor subscription.
-        // 2. There is no active authorization.
-        // 3. Application parameter ShowPurchaseRequiredPrompt is set and true.
-
-        return !BuildConfig.SUBSCRIPTION_SPONSOR_ID.equals(m_tunnelConfig.sponsorId) &&
+        // Return true if all of the following is satisfied:
+        // 1. Tunnel config is set
+        // 2. The sponsor ID is neither Speed Boost nor subscription.
+        // 3. There is no active authorization.
+        // 4. Application parameter ShowPurchaseRequiredPrompt is set and true.
+        return m_tunnelConfig != null &&
+                !BuildConfig.SUBSCRIPTION_SPONSOR_ID.equals(m_tunnelConfig.sponsorId) &&
                 !BuildConfig.SPEED_BOOST_SPONSOR_ID.equals(m_tunnelConfig.sponsorId) &&
                 !hasBoostOrSubscription &&
                 showPurchaseRequiredPromptFlag;
@@ -1364,10 +1369,26 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     }
 
     private void onTrimMemoryUiHidden() {
-        if (shouldShowPurchaseRequiredPrompt()) {
-            m_tunnel.stopRouteThroughTunnel();
-            m_isRoutingThroughTunnelPublishRelay.accept(Boolean.FALSE);
+        if (trimMemoryUiHiddenDisposable != null && !trimMemoryUiHiddenDisposable.isDisposed()) {
+            // Already in progress, do nothing.
+            return;
         }
+        // Wait up to 5 seconds for the tunnel thread to start before checking if we should enforce
+        // showing purchase required UI.
+        // We are using a completable on Schedulers.computation() thread here in order not to block
+        // the communication thread.
+        trimMemoryUiHiddenDisposable = Completable.fromAction(() -> {
+                    boolean tunnelHasStarted = tunnelThreadStartedLock.await(5, TimeUnit.SECONDS);
+                    if (tunnelHasStarted && shouldShowPurchaseRequiredPrompt()) {
+                        m_tunnel.stopRouteThroughTunnel();
+                        m_isRoutingThroughTunnelPublishRelay.accept(Boolean.FALSE);
+                    }
+                })
+                .subscribeOn(Schedulers.computation())
+                // Ignore if CountDownLatch.await() throws.
+                .onErrorComplete()
+                .subscribe();
+        m_compositeDisposable.add(trimMemoryUiHiddenDisposable);
     }
 
     @Override
