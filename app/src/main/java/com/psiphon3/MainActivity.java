@@ -375,8 +375,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             bp = new SpannableString(getString(R.string.vpn_data_collection_disclosure_bp3));
             bp.setSpan(new BulletSpan(15), 0, bp.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             spannableStringBuilder.append(bp);
-            spannableStringBuilder.append("\n\n");
-            spannableStringBuilder.append(getString(R.string.vpn_data_collection_disclosure_bottom));
             ((TextView)dialogView.findViewById(R.id.textView)).setText(spannableStringBuilder);
 
             final AlertDialog alertDialog = new AlertDialog.Builder(this)
