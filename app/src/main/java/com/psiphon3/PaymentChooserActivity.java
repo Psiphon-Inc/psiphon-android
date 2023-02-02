@@ -30,6 +30,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
@@ -43,6 +44,8 @@ import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.log.MyLog;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.subscription.R;
+
+import net.grandcentrix.tray.AppPreferences;
 
 import java.text.NumberFormat;
 import java.time.Period;
@@ -105,7 +108,11 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
 
                         default:
                             // Update the "You are using...plan" text
-                            ((TextView) findViewById(R.id.payment_chooser_current_plan)).setText(R.string.PaymentChooserActivity_UsingFreePlan);
+                            final AppPreferences mp = new AppPreferences(getApplicationContext());
+                            boolean purchaseRequired = mp.getBoolean(getString(R.string.showPurchaseRequiredPromptFlag), false);
+                            @StringRes int stringResId = purchaseRequired ?
+                                    R.string.PaymentChooserActivity_PsiphonNotFreeRegion : R.string.PaymentChooserActivity_UsingFreePlan;
+                            ((TextView) findViewById(R.id.payment_chooser_current_plan)).setText(stringResId);
                             // Setup the two tab pager with all purchase options
                             TabLayout tabLayout = findViewById(R.id.payment_chooser_tablayout);
                             PageAdapter pageAdapter = new PageAdapter(getSupportFragmentManager(), tabLayout.getTabCount());
