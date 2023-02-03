@@ -267,9 +267,12 @@
     <!-- Header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
     <string name="PaymentChooserActivity.UsingFreePlan">You are using the free, ad supported, speed limited, port restricted plan. You can keep using this plan or upgrade to one of our premium plans</string>
 
+    <!-- Alternative header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon is no longer free in your region. Please upgrade to one of our premium plans to keep using the service</string>
+
     <!-- Common description text for all time passes. A time pass is a single use license that is valid for a certain
     period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
-    <string name="PaymentChooserActivity.TimepassCommonDescription">Remove ads, unlimited speed with unrestricted ports with each time pass purchase</string>
+    <string name="PaymentChooserActivity.TimepassCommonDescription">Interruption-free, unlimited speed with unrestricted ports with each time pass purchase</string>
 
     <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., '7-day pass - CA$3.99' -->
@@ -292,7 +295,7 @@
 
     <!-- Description text on the button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
          Appears below 'Basic - CA$5.99 monthly' label in smaller font. Note the use of a non-breaking space in '5 Mb/s' -->
-    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">Remove ads, high speed up to 5&#160;Mb/s with unrestricted ports</string>
+    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">Interruption-free, high speed up to 5&#160;Mb/s with unrestricted ports</string>
 
     <!-- Label for button that user will click in order to buy an unlimited subscription for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., 'Unlimited - CA$11.99 monthly' -->
@@ -300,7 +303,7 @@
 
     <!-- Description text on the button that user will click in order to buy an unlimited subscription for Psiphon Pro.
          Appears below 'Unlimited - CA$11.99 monthly' label in smaller font-->
-    <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">Remove ads, unlimited speed with unrestricted ports</string>
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">Interruption-free, unlimited speed with unrestricted ports</string>
 
     <!-- Text Label that appears on the subscription buying button for Psiphon Pro in case if there
          is a trial period available for that subscription. The formated string is the length of the

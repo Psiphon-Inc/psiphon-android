@@ -9,4 +9,5 @@
     <string name="psicashAccountManagePreferenceKey" translatable="false">psicashAccountManagePreferenceKey</string>
     <string name="psicashAccountPreferenceCategory" translatable="false">psicashAccountPreferenceCategory</string>
     <string name="psicashWebStorage" translatable="false">psicashWebStorage</string>
+    <string name="showPurchaseRequiredPromptFlag" translatable="false">showPurchaseRequiredPromptFlag</string>
 </resources>

@@ -1838,6 +1838,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     @Override
     public void onApplicationParameters(@NonNull Object o) {
         showPurchaseRequiredPromptFlag = ((JSONObject) o).optBoolean("ShowPurchaseRequiredPrompt");
+        final AppPreferences mp = new AppPreferences(getContext());
+        mp.put(m_parentService.getString(R.string.showPurchaseRequiredPromptFlag), showPurchaseRequiredPromptFlag);
     }
 
     // PurchaseVerifier.VerificationResultListener implementation
