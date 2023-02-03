@@ -20,17 +20,11 @@
 package com.psiphon3;
 
 import android.app.Application;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.database.ContentObserver;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.DefaultLifecycleObserver;
-import androidx.lifecycle.LifecycleOwner;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.paging.PagedList;
 import androidx.paging.RxPagedListBuilder;
 
@@ -40,16 +34,12 @@ import com.psiphon3.log.LoggingContentProvider;
 import com.psiphon3.log.LogsDataSourceFactory;
 import com.psiphon3.log.LogsLastEntryHelper;
 import com.psiphon3.log.MyLog;
-import com.psiphon3.psicash.util.BroadcastIntent;
-import com.psiphon3.psiphonlibrary.TunnelServiceInteractor;
 import com.psiphon3.psiphonlibrary.UpstreamProxySettings;
 
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 
 public class MainActivityViewModel extends AndroidViewModel implements DefaultLifecycleObserver {
-    private final TunnelServiceInteractor tunnelServiceInteractor;
-    private final BroadcastReceiver broadcastReceiver;
     private final PublishRelay<Boolean> customProxyValidationResultRelay = PublishRelay.create();
     private final PublishRelay<Object> availableRegionsSelectionRelay = PublishRelay.create();
     private final PublishRelay<Object> openVpnSettingsRelay = PublishRelay.create();
@@ -62,23 +52,6 @@ public class MainActivityViewModel extends AndroidViewModel implements DefaultLi
 
     public MainActivityViewModel(@NonNull Application application) {
         super(application);
-        tunnelServiceInteractor = new TunnelServiceInteractor(getApplication(), true);
-
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(BroadcastIntent.TUNNEL_RESTART);
-        broadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                if (action != null) {
-                    if (BroadcastIntent.TUNNEL_RESTART.equals(action)) {
-                        restartPsiphon(TunnelServiceInteractor.RestartMode.TUNNEL_NO_HOME_PAGE);
-                    }
-                }
-            }
-        };
-        LocalBroadcastManager.getInstance(getApplication()).registerReceiver(broadcastReceiver, intentFilter);
-
         LogsLastEntryHelper logsLastEntryHelper = new LogsLastEntryHelper(application.getContentResolver());
         LogsDataSourceFactory logsDataSourceFactory = new LogsDataSourceFactory(application.getContentResolver());
 
@@ -117,58 +90,9 @@ public class MainActivityViewModel extends AndroidViewModel implements DefaultLi
     }
 
     @Override
-    public void onPause(@NonNull LifecycleOwner owner) {
-        tunnelServiceInteractor.onStop(getApplication());
-    }
-
-    @Override
-    public void onResume(@NonNull LifecycleOwner owner) {
-        tunnelServiceInteractor.onStart(getApplication());
-    }
-
-    @Override
     protected void onCleared() {
         super.onCleared();
         getApplication().getContentResolver().unregisterContentObserver(loggingObserver);
-        LocalBroadcastManager.getInstance(getApplication().getApplicationContext()).unregisterReceiver(broadcastReceiver);
-        tunnelServiceInteractor.onDestroy(getApplication());
-    }
-
-    public Flowable<TunnelState> tunnelStateFlowable() {
-        return tunnelServiceInteractor.tunnelStateFlowable();
-    }
-
-    public Flowable<Boolean> dataStatsFlowable() {
-        return tunnelServiceInteractor.dataStatsFlowable();
-    }
-
-    public void stopTunnelService() {
-        tunnelServiceInteractor.stopTunnelService();
-    }
-
-    public void startTunnelService() {
-        tunnelServiceInteractor.startTunnelService(getApplication());
-    }
-
-    public void restartPsiphon(TunnelServiceInteractor.RestartMode restartMode) {
-        switch (restartMode) {
-            case VPN:
-                tunnelServiceInteractor.scheduleVpnServiceRestart(getApplication());
-                break;
-
-            case TUNNEL:
-                // Note resetReconnectFlag == true to open a sponsor page after reconnect
-                tunnelServiceInteractor.commandTunnelRestart(true);
-                break;
-
-            case TUNNEL_NO_HOME_PAGE:
-                // Note resetReconnectFlag == false to  NOT open a sponsor page after reconnect
-                tunnelServiceInteractor.commandTunnelRestart(false);
-        }
-    }
-
-    public void sendLocaleChangedMessage() {
-        tunnelServiceInteractor.sendLocaleChangedMessage();
     }
 
     // Basic check of proxy settings values

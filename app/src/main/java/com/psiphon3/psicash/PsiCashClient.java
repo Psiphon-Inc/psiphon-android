@@ -25,12 +25,11 @@ import android.os.Build;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.psiphon3.TunnelState;
 import com.psiphon3.log.MyLog;
-import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psiphonlibrary.Authorization;
+import com.psiphon3.psiphonlibrary.TunnelServiceInteractor;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
@@ -71,7 +70,6 @@ public class PsiCashClient {
     private static final int HTTP_CLIENT_READ_TIMEOUT_SECONDS = 30;
     private static final int HTTP_CLIENT_WRITE_TIMEOUT_SECONDS = 30;
 
-    private static final String PSICASH_PERSISTED_VIDEO_REWARD_KEY = "psiCashPersistedVideoRewardKey";
     public static final String PSICASH_PREFERENCES_KEY = "app_prefs";
 
     private static PsiCashClient INSTANCE = null;
@@ -304,8 +302,6 @@ public class PsiCashClient {
                     (p1, p2) -> p1.expiry.compareTo(p2.expiry)));
         }
 
-        builder.reward(getVideoReward());
-
         builder.accountUsername(accountUsername());
 
         boolean hasTokens = hasTokens();
@@ -372,9 +368,17 @@ public class PsiCashClient {
             }
 
             if (authStorageChanged) {
-                MyLog.i("PsiCash: authorization storage contents changed, send tunnel restart broadcast");
-                android.content.Intent intent = new android.content.Intent(BroadcastIntent.TUNNEL_RESTART);
-                LocalBroadcastManager.getInstance(appContext).sendBroadcast(intent);
+                MyLog.i("PsiCash: authorization storage contents changed, command tunnel restart.");
+
+                Completable.complete()
+                        .observeOn(Schedulers.io())
+                        .andThen(Completable.fromAction(() -> {
+                            TunnelServiceInteractor tunnelServiceInteractor = new TunnelServiceInteractor(appContext, false);
+                            tunnelServiceInteractor.onStart(appContext);
+                            tunnelServiceInteractor.commandTunnelRestart();
+                            tunnelServiceInteractor.onStop(appContext);
+                            tunnelServiceInteractor.onDestroy(appContext);
+                        })).subscribe();
             }
         }
         return psiCashModel;
@@ -455,27 +459,34 @@ public class PsiCashClient {
         return diagnosticInfoResult.jsonString;
     }
 
-    public Completable makeExpiringPurchase(Flowable<TunnelState> tunnelStateFlowable,
-                                            String distinguisher,
+    public Completable makeExpiringPurchase(String distinguisher,
                                             String transactionClass,
                                             long price) {
-        return tunnelStateFlowable
+        TunnelServiceInteractor tunnelServiceInteractor = new TunnelServiceInteractor(appContext, false);
+        tunnelServiceInteractor.onStart(appContext);
+
+        return tunnelServiceInteractor.tunnelStateFlowable()
+                .switchMap(tunnelState -> {
+                    if (tunnelState.isUnknown()) {
+                        // wait up to 5 seconds to learn tunnel state
+                        return Flowable.timer(5, TimeUnit.SECONDS)
+                                .flatMap(o -> Flowable.error(new PsiCashException.Recoverable(
+                                        "makeExpiringPurchase: tunnel state is still unknown after 5 seconds.",
+                                        appContext.getString(R.string.speed_boost_connect_to_purchase_message))));
+                    }
+                    if (tunnelState.isRunning() &&
+                            tunnelState.connectionData() != null &&
+                            tunnelState.connectionData().isConnected()) {
+                        return Flowable.just(tunnelState);
+                    }
+                    return Flowable.empty();
+                })
                 .observeOn(Schedulers.io())
-                .filter(tunnelState -> !tunnelState.isUnknown())
                 .firstOrError()
                 .flatMapCompletable(state ->
                         Completable.fromAction(() -> {
                             TunnelState.ConnectionData connectionData = state.connectionData();
 
-                            if (!state.isRunning()) {
-                                throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not running.",
-                                        appContext.getString(R.string.speed_boost_connect_to_purchase_message));
-                            } else {
-                                if (!connectionData.isConnected()) {
-                                    throw new PsiCashException.Recoverable("makeExpiringPurchase: tunnel not connected.",
-                                            appContext.getString(R.string.speed_boost_wait_tunnel_to_connect_to_purchase_message));
-                                }
-                            }
                             if (distinguisher == null) {
                                 throw new PsiCashException.Critical("makeExpiringPurchase: purchase distinguisher is null.");
                             }
@@ -483,6 +494,7 @@ public class PsiCashClient {
                             if (transactionClass == null) {
                                 throw new PsiCashException.Critical("makeExpiringPurchase: purchase transaction class is null.");
                             }
+
                             setPsiCashRequestMetaData(connectionData);
                             setOkHttpClientHttpProxyPort(connectionData.httpPort());
 
@@ -505,9 +517,6 @@ public class PsiCashClient {
                                 MyLog.e("PsiCash: transaction error making expiring purchase: " + result.status);
                                 throw new PsiCashException.Transaction(result.status, isAccount());
                             }
-
-                            // Reset optimistic reward if there's a response from the server
-                            resetVideoReward();
 
                             MyLog.i("PsiCash: got new purchase of transactionClass " + result.purchase.transactionClass);
                         })
@@ -542,6 +551,14 @@ public class PsiCashClient {
                                         }
                                     }))
                             );
+                })
+                .doOnSubscribe(__ -> {
+                    multiProcessPreferences.put(appContext.getString(R.string.preferencePendingSpeedBoostPurchase), true);
+                })
+                .doFinally(() -> {
+                    multiProcessPreferences.put(appContext.getString(R.string.preferencePendingSpeedBoostPurchase), false);
+                    tunnelServiceInteractor.onStop(appContext);
+                    tunnelServiceInteractor.onDestroy(appContext);
                 });
     }
 
@@ -598,32 +615,13 @@ public class PsiCashClient {
                                 throw new PsiCashException.Transaction(result.status, isAccount());
                             }
                             if (isConnected) {
-                                // reset optimistic reward if remote refresh succeeded
-                                resetVideoReward();
-                                // Also reset purchase redeemed flag
+                                // Reset purchase redeemed flag
                                 multiProcessPreferences
                                         .put(appContext.getString(R.string.persistentPsiCashPurchaseRedeemedFlag),
                                                 false);
                             }
                             return result.reconnectRequired;
                         }));
-    }
-
-    public synchronized void putVideoReward(long reward) {
-        long storedReward = getVideoReward();
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putLong(PSICASH_PERSISTED_VIDEO_REWARD_KEY, storedReward + reward);
-        editor.apply();
-    }
-
-    private synchronized void resetVideoReward() {
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putLong(PSICASH_PERSISTED_VIDEO_REWARD_KEY, 0);
-        editor.apply();
-    }
-
-    private long getVideoReward() {
-        return sharedPreferences.getLong(PSICASH_PERSISTED_VIDEO_REWARD_KEY, 0);
     }
 
     public Completable removePurchases(List<String> purchasesToRemove) {
@@ -734,7 +732,7 @@ public class PsiCashClient {
 
                             // Also clear our own WebView DOM storage on success.
                             appContext.getSharedPreferences(appContext.getString(R.string.psicashWebStorage),
-                                    Context.MODE_PRIVATE)
+                                            Context.MODE_PRIVATE)
                                     .edit()
                                     .clear()
                                     .apply();

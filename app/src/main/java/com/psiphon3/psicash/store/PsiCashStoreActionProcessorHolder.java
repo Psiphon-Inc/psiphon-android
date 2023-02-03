@@ -65,8 +65,7 @@ class PsiCashStoreActionProcessorHolder {
                 actions.flatMap(action ->
                         psiCashClientSingle.flatMap(psiCashClient ->
                                 psiCashClient
-                                        .makeExpiringPurchase(action.tunnelStateFlowable(),
-                                        action.distinguisher(),
+                                        .makeExpiringPurchase(action.distinguisher(),
                                         action.transactionClass(),
                                         action.expectedPrice())
                                         .andThen(psiCashClient.getPsiCashModel(true)))

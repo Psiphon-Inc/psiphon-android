@@ -18,13 +18,10 @@
 
 package com.psiphon3.psicash.store;
 
-import android.app.Activity;
-import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.DisplayMetrics;
-import android.util.Pair;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -46,13 +43,13 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager.widget.ViewPager;
 
 import com.jakewharton.rxrelay2.PublishRelay;
-import com.psiphon3.MainActivity;
 import com.psiphon3.TunnelState;
 import com.psiphon3.log.MyLog;
 import com.psiphon3.psicash.PsiCashException;
 import com.psiphon3.psicash.mvibase.MviView;
 import com.psiphon3.psicash.util.SingleViewEvent;
 import com.psiphon3.psicash.util.UiHelpers;
+import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.subscription.R;
 
 import java.util.ArrayList;
@@ -65,7 +62,6 @@ import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.functions.BiFunction;
 
 
 public class SpeedBoostTabFragment extends Fragment {
@@ -90,62 +86,53 @@ public class SpeedBoostTabFragment extends Fragment {
                 new ViewModelProvider.AndroidViewModelFactory(requireActivity().getApplication()))
                 .get(PsiCashStoreViewModel.class);
 
-        Flowable<TunnelState> tunnelStateFlowable = ((PsiCashStoreActivity) requireActivity()).tunnelStateFlowable();
+        Flowable<TunnelState> tunnelStateFlowable = ((LocalizedActivities.AppCompatActivity) requireActivity())
+                .getTunnelServiceInteractor()
+                .tunnelStateFlowable();
 
-        compositeDisposable.add(Observable.combineLatest(
-                        tunnelStateFlowable
-                                .toObservable()
-                                .filter(state -> !state.isUnknown())
-                                .distinctUntilChanged(),
-                        psiCashStoreViewModel.states()
-                                .map(psiCashViewState -> {
-                                    if (psiCashViewState.purchase() == null) {
-                                        return false;
-                                    }
-                                    Date expiryDate = psiCashViewState.purchase().expiry;
-                                    if (expiryDate != null) {
-                                        long millisDiff = expiryDate.getTime() - new Date().getTime();
-                                        if (millisDiff > 0) {
-                                            // (Re)schedule state refresh after expiry
-                                            handler.removeCallbacksAndMessages(null);
-                                            handler.postDelayed(() -> psiCashStoreViewModel
-                                                            .processIntents(
-                                                                    Observable.just(PsiCashStoreIntent.GetPsiCash.create(
-                                                                            tunnelStateFlowable))),
-                                                    millisDiff);
-                                            return true;
-                                        }
-                                    }
-                                    return false;
-                                })
-                                .distinctUntilChanged(),
-                        ((BiFunction<TunnelState, Boolean, Pair<TunnelState, Boolean>>) Pair::new))
-                .distinctUntilChanged()
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext(pair -> {
-                    FragmentActivity activity = getActivity();
-                    if (activity == null || activity.isFinishing() || !isAdded()) {
-                        return;
-                    }
+        compositeDisposable.add(
+                psiCashStoreViewModel.states()
+                        .map(psiCashViewState -> {
+                            if (psiCashViewState.purchase() == null) {
+                                return false;
+                            }
+                            Date expiryDate = psiCashViewState.purchase().expiry;
+                            if (expiryDate != null) {
+                                long millisDiff = expiryDate.getTime() - new Date().getTime();
+                                if (millisDiff > 0) {
+                                    // (Re)schedule state refresh after expiry
+                                    handler.removeCallbacksAndMessages(null);
+                                    handler.postDelayed(() -> psiCashStoreViewModel
+                                                    .processIntents(
+                                                            Observable.just(PsiCashStoreIntent.GetPsiCash.create(
+                                                                    tunnelStateFlowable))),
+                                            millisDiff);
+                                    return true;
+                                }
+                            }
+                            return false;
+                        })
+                        .distinctUntilChanged()
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnNext(hasActiveSpeedBoost -> {
+                            FragmentActivity activity = getActivity();
+                            if (activity == null || activity.isFinishing() || !isAdded()) {
+                                return;
+                            }
 
-                    TunnelState state = pair.first;
-                    boolean hasActiveSpeedBoost = pair.second;
+                            FragmentTransaction transaction = getChildFragmentManager()
+                                    .beginTransaction()
+                                    .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
 
-                    FragmentTransaction transaction = getChildFragmentManager()
-                            .beginTransaction()
-                            .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+                            if (hasActiveSpeedBoost) {
+                                transaction.replace(R.id.root_fragment_container, new SpeedBoostActiveFragment());
+                            } else {
+                                transaction.replace(R.id.root_fragment_container, new SpeedBoostPurchaseFragment());
+                            }
 
-                    if (hasActiveSpeedBoost) {
-                        transaction.replace(R.id.root_fragment_container, new SpeedBoostActiveFragment());
-                    } else if (state.isStopped()) {
-                        transaction.replace(R.id.root_fragment_container, new ConnectToBuySpeedBoostFragment());
-                    } else {
-                        transaction.replace(R.id.root_fragment_container, new SpeedBoostPurchaseFragment());
-                    }
-
-                    transaction.commitAllowingStateLoss();
-                })
-                .subscribe());
+                            transaction.commitAllowingStateLoss();
+                        })
+                        .subscribe());
     }
 
     @Override
@@ -286,6 +273,10 @@ public class SpeedBoostTabFragment extends Fragment {
             int itemsCount = 0;
             TableRow tableRow = null;
 
+            Flowable<TunnelState> tunnelStateFlowable = ((LocalizedActivities.AppCompatActivity) requireActivity())
+                    .getTunnelServiceInteractor()
+                    .tunnelStateFlowable();
+
             for (SpeedBoostDistinguisher distinguisher : SpeedBoostDistinguisher.values()) {
                 for (PsiCashLib.PurchasePrice price : purchasePriceList) {
                     if (price == null || !price.distinguisher.equals(getSpeedBoostDistinguisherValue(distinguisher))) {
@@ -323,12 +314,38 @@ public class SpeedBoostTabFragment extends Fragment {
 
                     if (balance >= priceInteger) {
                         button.setEnabled(true);
-                        speedboostItemLayout.setOnClickListener(v -> intentsPublishRelay.accept(
-                                PsiCashStoreIntent.PurchaseSpeedBoost.create(
-                                        ((PsiCashStoreActivity) requireActivity()).tunnelStateFlowable(),
-                                        price.distinguisher,
-                                        price.transactionClass,
-                                        price.price)));
+                        speedboostItemLayout.setOnClickListener(v -> {
+                            // Start the service if it is not running.
+                            compositeDisposable.add(
+                                    tunnelStateFlowable
+                                            .filter(tunnelState -> !tunnelState.isUnknown())
+                                            .firstOrError()
+                                            .doOnSuccess(tunnelState -> {
+                                                LocalizedActivities.StartServiceListener listener = new LocalizedActivities.StartServiceListener() {
+                                                    @Override
+                                                    public void onServiceStartOk() {
+                                                        intentsPublishRelay.accept(
+                                                                PsiCashStoreIntent.PurchaseSpeedBoost.create(
+                                                                        price.distinguisher,
+                                                                        price.transactionClass,
+                                                                        price.price));
+                                                    }
+
+                                                    @Override
+                                                    public void onServiceStartCancelled() {
+                                                        // do nothing if the service start was cancelled.
+                                                    }
+                                                };
+
+                                                if (tunnelState.isStopped()) {
+                                                    ((LocalizedActivities.AppCompatActivity) requireActivity()).startTunnel(listener);
+                                                } else {
+                                                    listener.onServiceStartOk();
+                                                }
+                                            })
+                                            .subscribe()
+                            );
+                        });
                     } else {
                         button.setEnabled(false);
                         speedboostItemLayout.setOnClickListener(v -> new AlertDialog.Builder(requireActivity())
@@ -389,7 +406,12 @@ public class SpeedBoostTabFragment extends Fragment {
         }
 
         private void updateUiSpeedBoostPurchaseView(PsiCashStoreViewState state) {
-            if (state.psiCashModel() == null || state.purchasePrices() == null) {
+            // Dismiss the activity if Speed Boost purchase succeeded.
+            SingleViewEvent<Object> speedBoostPurchaseSuccessEvent = state.purchaseSuccessViewEvent();
+            if(speedBoostPurchaseSuccessEvent != null) {
+                speedBoostPurchaseSuccessEvent.consume((__) -> requireActivity().finish());
+            }
+            if (state.psiCashModel() == null || state.purchasePrices() == null || requireActivity().isFinishing()) {
                 return;
             }
 
@@ -416,32 +438,6 @@ public class SpeedBoostTabFragment extends Fragment {
                 currentPurchasePrices = state.purchasePrices();
                 populateSpeedBoostPurchases(getView(), state.uiBalance(), state.purchasePrices());
             }
-        }
-    }
-
-    public static class ConnectToBuySpeedBoostFragment extends Fragment {
-        public ConnectToBuySpeedBoostFragment() {
-            super(R.layout.psicash_speed_boost_connect_to_buy_fragment);
-        }
-
-        @Override
-        public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-            super.onViewCreated(view, savedInstanceState);
-            SpeedBoostTabFragment speedBoostTabFragment =
-                    (SpeedBoostTabFragment) getParentFragment();
-            if (speedBoostTabFragment != null) {
-                speedBoostTabFragment.hideProgress();
-            }
-
-            Button connectBtn = view.findViewById(R.id.continue_button);
-            connectBtn.setOnClickListener(v -> {
-                try {
-                    Intent data = new Intent(MainActivity.PSICASH_CONNECT_PSIPHON_INTENT_ACTION);
-                    requireActivity().setResult(Activity.RESULT_OK, data);
-                    requireActivity().finish();
-                } catch (RuntimeException ignored) {
-                }
-            });
         }
     }
 

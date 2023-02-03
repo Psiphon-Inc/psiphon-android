@@ -19,12 +19,8 @@
 
 package com.psiphon3.psiphonlibrary;
 
-import android.app.Activity;
 import android.content.ActivityNotFoundException;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
@@ -37,20 +33,17 @@ import android.widget.FrameLayout;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.preference.CheckBoxPreference;
 import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceScreen;
 
 import com.jakewharton.rxrelay2.PublishRelay;
-import com.psiphon3.MainActivity;
 import com.psiphon3.TunnelState;
 import com.psiphon3.psicash.account.PsiCashAccountWebViewDialog;
 import com.psiphon3.psicash.settings.PsiCashSettingsIntent;
 import com.psiphon3.psicash.settings.PsiCashSettingsViewModel;
 import com.psiphon3.psicash.settings.PsiCashSettingsViewState;
-import com.psiphon3.psicash.util.BroadcastIntent;
 import com.psiphon3.psicash.util.UiHelpers;
 import com.psiphon3.subscription.R;
 
@@ -64,58 +57,24 @@ import io.reactivex.functions.BiFunction;
 public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompatActivity {
     public static final String INTENT_EXTRA_LANGUAGE_CHANGED = "com.psiphon3.psiphonlibrary.MoreOptionsPreferenceActivity.LANGUAGE_CHANGED";
 
-    private TunnelServiceInteractor tunnelServiceInteractor;
-    private BroadcastReceiver broadcastReceiver;
-
     public Flowable<TunnelState> tunnelStateFlowable() {
-        return tunnelServiceInteractor.tunnelStateFlowable();
+        return getTunnelServiceInteractor().tunnelStateFlowable();
     }
 
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
-        tunnelServiceInteractor = new TunnelServiceInteractor(this, true);
-
         super.onCreate(savedInstanceState);
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
                     .add(android.R.id.content, new MoreOptionsPreferenceFragment())
                     .commit();
         }
-
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(BroadcastIntent.TUNNEL_RESTART);
-        broadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                if (action != null) {
-                    if (BroadcastIntent.TUNNEL_RESTART.equals(action)) {
-                        tunnelServiceInteractor.commandTunnelRestart(false);
-                    }
-                }
-            }
-        };
-        LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, intentFilter);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
-        tunnelServiceInteractor.onDestroy(getApplicationContext());
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        tunnelServiceInteractor.onStop(getApplicationContext());
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        tunnelServiceInteractor.onStart(getApplicationContext());
     }
 
     public static class MoreOptionsPreferenceFragment extends PsiphonPreferenceFragmentCompat
@@ -193,7 +152,9 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
 
             // Get PsiCash updates when foregrounded and on tunnel state changes after
             Flowable<TunnelState> tunnelStateFlowable =
-                    ((MoreOptionsPreferenceActivity) requireActivity()).tunnelStateFlowable();
+                    ((LocalizedActivities.AppCompatActivity) requireActivity())
+                            .getTunnelServiceInteractor()
+                            .tunnelStateFlowable();
             psiCashUpdatesDisposable = tunnelStateFlowable
                     .filter(tunnelState -> !tunnelState.isUnknown())
                     .distinctUntilChanged()
@@ -245,11 +206,15 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
                 localeManager.setNewLocale(getActivity(), languageCode);
             }
 
+            // Signal tunnel service
+            ((LocalizedActivities.AppCompatActivity) requireActivity())
+                    .getTunnelServiceInteractor()
+                    .sendLocaleChangedMessage();
             // Finish back to the MainActivity and inform the language has changed
             Intent data = new Intent();
             data.putExtra(INTENT_EXTRA_LANGUAGE_CHANGED, true);
-            getActivity().setResult(RESULT_OK, data);
-            getActivity().finish();
+            requireActivity().setResult(RESULT_OK, data);
+            requireActivity().finish();
         }
 
         private void setupLanguageSelector(PreferenceScreen preferences) {
@@ -332,7 +297,9 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
 
 
             Flowable<TunnelState> tunnelStateFlowable =
-                    ((MoreOptionsPreferenceActivity) requireActivity()).tunnelStateFlowable();
+                    ((LocalizedActivities.AppCompatActivity) requireActivity())
+                            .getTunnelServiceInteractor()
+                            .tunnelStateFlowable();
 
             compositeDisposable.add(Observable.combineLatest(
                     tunnelStateFlowable.toObservable(),
@@ -344,20 +311,6 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
 
 
             psiCashSettingsViewModel.processIntents(intentsPublishRelay);
-        }
-
-        @Override
-        public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-            // Call through to main activity if tunnel connect is requested
-            if (data != null && MainActivity.PSICASH_CONNECT_PSIPHON_INTENT_ACTION.equals(data.getAction())) {
-                try {
-                    requireActivity().setResult(Activity.RESULT_OK, data);
-                    requireActivity().finish();
-                } catch (RuntimeException ignored) {
-                }
-            } else {
-                super.onActivityResult(requestCode, resultCode, data);
-            }
         }
 
         private void showPsiCashProgress(boolean enable) {
@@ -373,7 +326,9 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
             psiCashAccountPrefCategory = findPreference(getString(R.string.psicashAccountPreferenceCategory));
 
             Flowable<TunnelState> tunnelStateFlowable =
-                    ((MoreOptionsPreferenceActivity) requireActivity()).tunnelStateFlowable();
+                    ((LocalizedActivities.AppCompatActivity) requireActivity())
+                            .getTunnelServiceInteractor()
+                            .tunnelStateFlowable();
 
             psiCashAccountLoginPref.setOnPreferenceClickListener(preference -> {
                 if (preference.isVisible() && preference.isEnabled()) {
@@ -404,12 +359,16 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
                                             .setNegativeButton(R.string.psicash_cancel_lbl, (dialog, which) -> {
                                             })
                                             .setNeutralButton(R.string.connect_to_psiphon_button_text, (dialog, which) -> {
-                                                try {
-                                                    Intent data = new Intent(MainActivity.PSICASH_CONNECT_PSIPHON_INTENT_ACTION);
-                                                    requireActivity().setResult(Activity.RESULT_OK, data);
-                                                    requireActivity().finish();
-                                                } catch (RuntimeException ignored) {
-                                                }
+                                                ((LocalizedActivities.AppCompatActivity) requireActivity()).startTunnel();
+                                                compositeDisposable.add(
+                                                        ((LocalizedActivities.AppCompatActivity) requireActivity())
+                                                                .getTunnelServiceInteractor()
+                                                                .tunnelStateFlowable()
+                                                                .filter(TunnelState::isRunning)
+                                                                .firstOrError()
+                                                                .ignoreElement()
+                                                                .doOnComplete(() -> requireActivity().finish())
+                                                                .subscribe());
                                             });
                                 } else if (s.isRunning()) {
                                     if (s.connectionData().isConnected()) {

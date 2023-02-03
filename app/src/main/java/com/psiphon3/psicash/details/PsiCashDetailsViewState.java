@@ -43,8 +43,7 @@ public abstract class PsiCashDetailsViewState implements MviViewState {
         if (psiCashModel() == null) {
             return 0L;
         }
-        return (long) (Math.floor((long)
-                ((psiCashModel().reward() * 1e9 + psiCashModel().balance()) / 1e9)));
+        return (long) Math.floor((long) (psiCashModel().balance() / 1e9));
     }
 
     @Nullable

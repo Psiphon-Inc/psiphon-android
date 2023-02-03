@@ -52,6 +52,7 @@ import com.psiphon3.psicash.util.CountDownListener;
 import com.psiphon3.psicash.util.SingleViewEvent;
 import com.psiphon3.psicash.util.UiHelpers;
 import com.psiphon3.psiphonlibrary.Authorization;
+import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.psiphonlibrary.TunnelServiceInteractor;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.subscription.R;
@@ -115,9 +116,8 @@ public class PsiCashFragment extends Fragment
                 new ViewModelProvider.AndroidViewModelFactory(requireActivity().getApplication()))
                 .get(PsiCashDetailsViewModel.class);
 
-        tunnelStateFlowable = new ViewModelProvider(requireActivity(),
-                new ViewModelProvider.AndroidViewModelFactory(requireActivity().getApplication()))
-                .get(MainActivityViewModel.class).tunnelStateFlowable();
+        tunnelStateFlowable = ((LocalizedActivities.AppCompatActivity)requireActivity())
+                .getTunnelServiceInteractor().tunnelStateFlowable();
 
         progressOverlay = requireView().findViewById(R.id.progress_overlay);
         speedBoostBtnContainer = requireView().findViewById(R.id.purchase_speedboost_clicker_container);
