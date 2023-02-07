@@ -10,11 +10,6 @@
     <string name="StatusActivity.VpnPromptCancelledTitle">Psiphon VPN cannot start</string>
     <string name="StatusActivity.VpnPromptCancelledMessage">Psiphon cannot start the VPN. Multiple VPN apps cannot be running at the same time. Check if another VPN app is installed and is set to Always-on.</string>
     <string name="selected_region_currently_not_available">Selected region is currently not available, please select another region.</string>
-    <string name="ads_consent_preference_category_title">Advertising personalization</string>
-    <string name="ads_consent_preference_dialog_preference_message">Do you really want to reset your ads personalization preference?</string>
-    <string name="ads_consent_preference_title">Reset ads personalization preference</string>
-    <string name="ads_consent_preference_dialog_title">Reset</string>
-    <string name="ads_consent_preference_summary">Reset your preference to allow ad networks to use cookies and your personal data</string>
     <string name="preference_language_selection_summary">Select the language</string>
     <string name="preference_language_selection_title">Language</string>
     <string name="preference_language_title">Language Selection</string>
@@ -98,8 +93,5 @@
 
     <!-- Data collection disclosure list item -->
     <string name="vpn_data_collection_disclosure_bp3">Your PsiCash account username, password, and optionally, email.</string>
-
-    <!-- Data collection disclosure list item -->
-    <string name="vpn_data_collection_disclosure_bottom">In addition to the data we collect, your device advertising ID may be shared with third party ad service providers unless you opt out of ad personalization in Android Settings.</string>
 
 </resources>
