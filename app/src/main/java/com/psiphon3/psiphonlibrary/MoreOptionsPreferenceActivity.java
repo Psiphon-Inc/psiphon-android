@@ -325,11 +325,6 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
             psiCashAccountLogoutPref = findPreference(getString(R.string.psicashAccountLogoutPreferenceKey));
             psiCashAccountPrefCategory = findPreference(getString(R.string.psicashAccountPreferenceCategory));
 
-            Flowable<TunnelState> tunnelStateFlowable =
-                    ((LocalizedActivities.AppCompatActivity) requireActivity())
-                            .getTunnelServiceInteractor()
-                            .tunnelStateFlowable();
-
             psiCashAccountLoginPref.setOnPreferenceClickListener(preference -> {
                 if (preference.isVisible() && preference.isEnabled()) {
                     try {
@@ -341,6 +336,10 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
             });
 
             psiCashAccountLogoutPref.setOnPreferenceClickListener(preference -> {
+                Flowable<TunnelState> tunnelStateFlowable =
+                        ((LocalizedActivities.AppCompatActivity) requireActivity())
+                                .getTunnelServiceInteractor()
+                                .tunnelStateFlowable();
                 if (preference.isVisible() && preference.isEnabled()) {
                     compositeDisposable.add(tunnelStateFlowable
                             .filter(s -> !s.isUnknown())
@@ -394,6 +393,10 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
             psiCashAccountManagePref.setOnPreferenceClickListener(preference -> {
                 String manageAccountUrl = preference.getExtras().getString(PSICASH_MANAGEMENT_URL);
                 if (preference.isVisible() && preference.isEnabled() && manageAccountUrl != null) {
+                    Flowable<TunnelState> tunnelStateFlowable =
+                            ((LocalizedActivities.AppCompatActivity) requireActivity())
+                                    .getTunnelServiceInteractor()
+                                    .tunnelStateFlowable();
                     new PsiCashAccountWebViewDialog(requireActivity(), tunnelStateFlowable)
                             .load(manageAccountUrl);
                 }
