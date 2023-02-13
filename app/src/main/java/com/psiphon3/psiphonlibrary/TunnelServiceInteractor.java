@@ -98,12 +98,13 @@ public class TunnelServiceInteractor {
 
     public void onStart(Context context) {
         isStopped = false;
-        tunnelStateRelay.accept(TunnelState.unknown());
-        final Intent bindingIntent = new Intent(context, TunnelVpnService.class);
-        bindTunnelService(context, bindingIntent);
-        if (!isServiceRunning(context)) {
+        if (isServiceRunning(context)) {
+            tunnelStateRelay.accept(TunnelState.unknown());
+        } else {
             tunnelStateRelay.accept(TunnelState.stopped());
         }
+        final Intent bindingIntent = new Intent(context, TunnelVpnService.class);
+        bindTunnelService(context, bindingIntent);
     }
 
     public void onStop(Context context) {
@@ -192,6 +193,7 @@ public class TunnelServiceInteractor {
         if (manager != null) {
             for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
                 if (service.uid == android.os.Process.myUid() &&
+                        service.started &&
                         TunnelVpnService.class.getName().equals(service.service.getClassName())) {
                     result = service.service.getClassName();
                     break;
