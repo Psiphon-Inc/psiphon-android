@@ -231,14 +231,6 @@
     <!-- A message to the user seen when the user just purchased PsiCash from PlayStore while connected to Psiphon and the purchase is in process of being redeemed -->
     <string name="please_wait_while_we_are_finalizing_your_purchase">当我们最终确认您的购买的时候，请您耐心等待</string>
 
-    <!-- A prompt seen by the user when they try to use one of Speed Boost options, such as in
-    "Would you like to get 5 hours of Speed Boost for 500 PsiCash". The first format argument is the string representing a number
-    of hours as in '5 hours', the second format argument is for an integer representing the PsiCash value as in '500'
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
-    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
-    indicates a fast or unrestricted speed.-->
-    <string name="confirm_speedboost_purchase_alert">您愿意支付%2$d PsiCash 从而获取 %1$s 的加速？</string>
-
     <!-- Generic billing error message seen by user if there is a billing problem with the PsiCash purchase. Do not translate or transliterate word PsiCash -->
     <string name="psicash_purchase_not_available_error_message">现在无法购买PsiCash，请稍后再试。</string>
 
@@ -272,10 +264,6 @@
     <!-- Header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
     <string name="PaymentChooserActivity.UsingFreePlan">您正在使用免费的，被支持但是有速度和端口限制的计划。您可以继续使用这个计划或者升级到任意一个高级计划。</string>
 
-    <!-- Common description text for all time passes. A time pass is a single use license that is valid for a certain
-    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
-    <string name="PaymentChooserActivity.TimepassCommonDescription">每一个时间通行证的购买都可以去除广告，并且不限制速度和端口。</string>
-
     <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., '7-day pass - CA$3.99' -->
     <string name="PaymentChooserActivity.TimepassTitlePrice7Text">7-日券 - %s</string>
@@ -295,17 +283,9 @@
     The string format argument is the formatted price and currency as specified by current locale, e.g., 'Basic - CA$5.99 monthly' -->
     <string name="PaymentChooserActivity.LimitedSubscriptionTitlePriceText">基础 - %s 每月</string>
 
-    <!-- Description text on the button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
-         Appears below 'Basic - CA$5.99 monthly' label in smaller font. Note the use of a non-breaking space in '5 Mb/s' -->
-    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">免广告，无端口限制，最高速度为5&#160;Mb/s</string>
-
     <!-- Label for button that user will click in order to buy an unlimited subscription for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., 'Unlimited - CA$11.99 monthly' -->
     <string name="PaymentChooserActivity.UnlimitedSubscriptionTitlePriceText">无限 - %s 每月</string>
-
-    <!-- Description text on the button that user will click in order to buy an unlimited subscription for Psiphon Pro.
-         Appears below 'Unlimited - CA$11.99 monthly' label in smaller font-->
-    <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">免广告，无速度和端口限制</string>
 
     <!-- Text Label that appears on the subscription buying button for Psiphon Pro in case if there
          is a trial period available for that subscription. The formated string is the length of the

@@ -231,14 +231,6 @@
     <!-- A message to the user seen when the user just purchased PsiCash from PlayStore while connected to Psiphon and the purchase is in process of being redeemed -->
     <string name="please_wait_while_we_are_finalizing_your_purchase">لطفا صبر کنید تا خرید شما نهایی شود</string>
 
-    <!-- A prompt seen by the user when they try to use one of Speed Boost options, such as in
-    "Would you like to get 5 hours of Speed Boost for 500 PsiCash". The first format argument is the string representing a number
-    of hours as in '5 hours', the second format argument is for an integer representing the PsiCash value as in '500'
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
-    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
-    indicates a fast or unrestricted speed.-->
-    <string name="confirm_speedboost_purchase_alert">آیا مایل هستید به ازای %2$d PsiCash %1$s توربو دریافت کنید؟</string>
-
     <!-- Generic billing error message seen by user if there is a billing problem with the PsiCash purchase. Do not translate or transliterate word PsiCash -->
     <string name="psicash_purchase_not_available_error_message">خرید PsiCash در حال حاضر امکان پذیر نیست، لطفا بعدا دوباره امتحان کنید</string>
 
@@ -272,10 +264,6 @@
     <!-- Header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
     <string name="PaymentChooserActivity.UsingFreePlan">شما از طرح رایگان، با آگهی، با سرعت محدود و محدودیت پورت استفاده می‌کنید. می‌توانید به استفاده از این طرح ادامه داده و یا به یکی از طرح‌های ویژه ما ارتقا دهید</string>
 
-    <!-- Common description text for all time passes. A time pass is a single use license that is valid for a certain
-    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
-    <string name="PaymentChooserActivity.TimepassCommonDescription">حذف تبلیغات، سرعت نامحدود با پورت‌های نامحدود با هر بار خرید جواز</string>
-
     <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., '7-day pass - CA$3.99' -->
     <string name="PaymentChooserActivity.TimepassTitlePrice7Text">جواز ۷ روزه - %s</string>
@@ -295,17 +283,9 @@
     The string format argument is the formatted price and currency as specified by current locale, e.g., 'Basic - CA$5.99 monthly' -->
     <string name="PaymentChooserActivity.LimitedSubscriptionTitlePriceText">ساده - %s در ماه</string>
 
-    <!-- Description text on the button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
-         Appears below 'Basic - CA$5.99 monthly' label in smaller font. Note the use of a non-breaking space in '5 Mb/s' -->
-    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">تبلیغات را حذف کنید، سرعت را تا 5&#160;Mb/s با پورت‌های نامحدود افزایش دهید</string>
-
     <!-- Label for button that user will click in order to buy an unlimited subscription for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., 'Unlimited - CA$11.99 monthly' -->
     <string name="PaymentChooserActivity.UnlimitedSubscriptionTitlePriceText">نامحدود - %s در ماه</string>
-
-    <!-- Description text on the button that user will click in order to buy an unlimited subscription for Psiphon Pro.
-         Appears below 'Unlimited - CA$11.99 monthly' label in smaller font-->
-    <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">حذف تبلیغات، سرعت و پورت‌های نامحدود</string>
 
     <!-- Text Label that appears on the subscription buying button for Psiphon Pro in case if there
          is a trial period available for that subscription. The formated string is the length of the

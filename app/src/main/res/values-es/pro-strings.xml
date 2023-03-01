@@ -231,14 +231,6 @@
     <!-- A message to the user seen when the user just purchased PsiCash from PlayStore while connected to Psiphon and the purchase is in process of being redeemed -->
     <string name="please_wait_while_we_are_finalizing_your_purchase">Por favor espera mientras estamos finalizando tu compra</string>
 
-    <!-- A prompt seen by the user when they try to use one of Speed Boost options, such as in
-    "Would you like to get 5 hours of Speed Boost for 500 PsiCash". The first format argument is the string representing a number
-    of hours as in '5 hours', the second format argument is for an integer representing the PsiCash value as in '500'
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
-    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
-    indicates a fast or unrestricted speed.-->
-    <string name="confirm_speedboost_purchase_alert">¿Te gustaría obtener %1$s de Aumento de Velocidad por %2$d PsiCash?</string>
-
     <!-- Generic billing error message seen by user if there is a billing problem with the PsiCash purchase. Do not translate or transliterate word PsiCash -->
     <string name="psicash_purchase_not_available_error_message">La compra de PsiCash no está disponible por el momento, por favor intenta de nuevo más tarde</string>
 
@@ -272,10 +264,6 @@
     <!-- Header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
     <string name="PaymentChooserActivity.UsingFreePlan">Estás usando el plan gratis, soportado por avisos, limitado en velocidad y con puertos restringidos. Puedes seguir usando este plan o actualizarlo a uno de nuestros planes premium</string>
 
-    <!-- Common description text for all time passes. A time pass is a single use license that is valid for a certain
-    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
-    <string name="PaymentChooserActivity.TimepassCommonDescription">Avisos removidos y velocidad ilimitada con puertos no restringidos con cada compra de pase por tiempo</string>
-
     <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., '7-day pass - CA$3.99' -->
     <string name="PaymentChooserActivity.TimepassTitlePrice7Text">Pase por 7-días - %s</string>
@@ -295,17 +283,9 @@
     The string format argument is the formatted price and currency as specified by current locale, e.g., 'Basic - CA$5.99 monthly' -->
     <string name="PaymentChooserActivity.LimitedSubscriptionTitlePriceText">Básico - %s mensual</string>
 
-    <!-- Description text on the button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
-         Appears below 'Basic - CA$5.99 monthly' label in smaller font. Note the use of a non-breaking space in '5 Mb/s' -->
-    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">Remover avisos, alta velocidad hasta 5&#160;Mb/s, con puertos no restringidos</string>
-
     <!-- Label for button that user will click in order to buy an unlimited subscription for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., 'Unlimited - CA$11.99 monthly' -->
     <string name="PaymentChooserActivity.UnlimitedSubscriptionTitlePriceText">Ilimitado - %s mensual</string>
-
-    <!-- Description text on the button that user will click in order to buy an unlimited subscription for Psiphon Pro.
-         Appears below 'Unlimited - CA$11.99 monthly' label in smaller font-->
-    <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">Remover avisos, velocidad ilimitada con puertos no restringidos</string>
 
     <!-- Text Label that appears on the subscription buying button for Psiphon Pro in case if there
          is a trial period available for that subscription. The formated string is the length of the
