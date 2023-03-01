@@ -1115,7 +1115,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         if (Build.VERSION.SDK_INT < LOLLIPOP) {
             return vpnBuilder;
         }
-        
+
 //        Added on API 29:
 //        Marks the VPN network as metered. A VPN network is classified as metered when the user is
 //        sensitive to heavy data usage due to monetary costs and/or data limitations. In such cases,

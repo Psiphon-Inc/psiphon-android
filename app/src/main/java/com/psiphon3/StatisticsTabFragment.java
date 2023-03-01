@@ -11,7 +11,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
 
 import com.psiphon3.psiphonlibrary.DataTransferStats;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
@@ -62,10 +61,6 @@ public class StatisticsTabFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View fragmentView, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(fragmentView, savedInstanceState);
-
-        MainActivityViewModel viewModel = new ViewModelProvider(requireActivity(),
-                new ViewModelProvider.AndroidViewModelFactory(requireActivity().getApplication()))
-                .get(MainActivityViewModel.class);
 
         elapsedConnectionTimeView = fragmentView.findViewById(R.id.elapsedConnectionTime);
         totalSentView = fragmentView.findViewById(R.id.totalSent);
