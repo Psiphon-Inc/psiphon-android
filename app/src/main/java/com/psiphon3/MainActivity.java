@@ -176,7 +176,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                             }
                         })
                         .subscribe()));
-
         tabLayout = findViewById(R.id.main_activity_tablayout);
         tabLayout.addTab(tabLayout.newTab().setTag("home").setText(R.string.home_tab_name));
         tabLayout.addTab(tabLayout.newTab().setTag("statistics").setText(R.string.statistics_tab_name));
