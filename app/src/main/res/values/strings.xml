@@ -102,4 +102,20 @@
     <!-- Data collection disclosure list item -->
     <string name="vpn_data_collection_disclosure_bottom">In addition to the data we collect, your device advertising ID may be shared with third party ad service providers unless you opt out of ad personalization in Android Settings.</string>
 
+    <!-- A message shown on the blocking overlay of the PXE experiment screen while Psiphon is connecting to the server.
+    Note: 'Psiphon' should not be translated or transliterated. -->
+    <string name="pxe_web_wait_tunnel_connecting">Please wait while Psiphon is connecting</string>
+
+    <!--Generic 'close' button label -->
+    <string name="close_btn_label">Close</string>
+
+    <!--Generic 'close' alert title -->
+    <string name="close_alert_title">Close</string>
+
+    <!--Generic 'close' alert prompt message-->
+    <string name="close_alert_message">Would you like to close this window now?</string>
+
+    <!-- Toast message shown briefly after user completes PXE experiment tests -->
+    <string name="pxe_submit_thank_you">Thank you for participating!</string>
+
 </resources>
