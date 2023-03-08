@@ -1521,6 +1521,6 @@ public class TunnelManager implements PsiphonTunnel.HostService {
 
     @Override
     public void onApplicationParameters(@NonNull Object o) {
-        pxeUrl = ((JSONObject) o).optString("PxeUrl");
+        pxeUrl = ((JSONObject) o).optString("PsiphonExperimentEngineURL");
     }
 }
