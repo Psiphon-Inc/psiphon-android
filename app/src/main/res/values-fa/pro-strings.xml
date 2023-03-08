@@ -264,6 +264,13 @@
     <!-- Header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
     <string name="PaymentChooserActivity.UsingFreePlan">شما از طرح رایگان، با آگهی، با سرعت محدود و محدودیت پورت استفاده می‌کنید. می‌توانید به استفاده از این طرح ادامه داده و یا به یکی از طرح‌های ویژه ما ارتقا دهید</string>
 
+    <!-- Alternative header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon دیگر در منطقه شما رایگان نیست. لطفا برای ادامه استفاده از این سرویس، به یکی از طرح‌های ویژه ما ارتقا دهید</string>
+
+    <!-- Common description text for all time passes. A time pass is a single use license that is valid for a certain
+    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="PaymentChooserActivity.TimepassCommonDescription">بدون وقفه، سرعت نامحدود با پورت‌های نامحدود با هر بار خرید جواز</string>
+
     <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., '7-day pass - CA$3.99' -->
     <string name="PaymentChooserActivity.TimepassTitlePrice7Text">جواز ۷ روزه - %s</string>
@@ -283,9 +290,17 @@
     The string format argument is the formatted price and currency as specified by current locale, e.g., 'Basic - CA$5.99 monthly' -->
     <string name="PaymentChooserActivity.LimitedSubscriptionTitlePriceText">ساده - %s در ماه</string>
 
+    <!-- Description text on the button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+         Appears below 'Basic - CA$5.99 monthly' label in smaller font. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">بدون وقفه، سرعت بالا تا 5&#160; مگابیت بر ثانیه با درگاه‌های نامحدود</string>
+
     <!-- Label for button that user will click in order to buy an unlimited subscription for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., 'Unlimited - CA$11.99 monthly' -->
     <string name="PaymentChooserActivity.UnlimitedSubscriptionTitlePriceText">نامحدود - %s در ماه</string>
+
+    <!-- Description text on the button that user will click in order to buy an unlimited subscription for Psiphon Pro.
+         Appears below 'Unlimited - CA$11.99 monthly' label in smaller font-->
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">بدون وقفه، سرعت نامحدود با پورت‌های نامحدود</string>
 
     <!-- Text Label that appears on the subscription buying button for Psiphon Pro in case if there
          is a trial period available for that subscription. The formated string is the length of the
