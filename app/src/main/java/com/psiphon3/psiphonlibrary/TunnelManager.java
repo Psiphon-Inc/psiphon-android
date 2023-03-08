@@ -50,6 +50,7 @@ import com.psiphon3.PsiphonCrashService;
 import com.psiphon3.R;
 import com.psiphon3.TunnelState;
 import com.psiphon3.log.MyLog;
+import com.psiphon3.pxe.PxeWebDialog;
 
 import net.grandcentrix.tray.AppPreferences;
 
@@ -374,7 +375,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
 
     private boolean shouldShowPxeUi() {
         if (!TextUtils.isEmpty(pxeUrl)) {
-            // Check if enough time passed since the last time we showed PXE UI
+            // Check if we are allowed to show the PXE UI yet.
             final AppPreferences mp = new AppPreferences(getContext());
             long nextAllowPxeShowTime = mp.getLong(NEXT_ALLOW_PXE_SHOW_TIME_MILLIS, 0);
             return nextAllowPxeShowTime < System.currentTimeMillis();
@@ -1522,5 +1523,11 @@ public class TunnelManager implements PsiphonTunnel.HostService {
     @Override
     public void onApplicationParameters(@NonNull Object o) {
         pxeUrl = ((JSONObject) o).optString("PsiphonExperimentEngineURL");
+        long completedPxeNextPeriodMillis = ((JSONObject) o).optLong("CompletedPxeNextPeriodMillis", PxeWebDialog.COMPLETED_PXE_NEXT_PERIOD_MILLIS);
+        long incompletePxeNextPeriodMillis = ((JSONObject) o).optLong("IncompletePxeNextPeriodMillis", PxeWebDialog.INCOMPLETE_PXE_NEXT_PERIOD_MILLIS);
+
+        final AppPreferences mp = new AppPreferences(getContext());
+        mp.put(m_parentService.getString(R.string.completedPxeNextPeriodMillis), completedPxeNextPeriodMillis);
+        mp.put(m_parentService.getString(R.string.incompletePxeNextPeriodMillis), incompletePxeNextPeriodMillis);
     }
 }
