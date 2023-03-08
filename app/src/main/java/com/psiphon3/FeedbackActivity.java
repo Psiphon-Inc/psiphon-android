@@ -157,7 +157,7 @@ public class FeedbackActivity extends LocalizedActivities.AppCompatActivity {
 
                 // Schedule user feedback for upload
 
-                Data inputData = FeedbackWorker.generateInputData(
+                Data inputData = FeedbackWorker.generateFeedbackInputData(
                         sendDiagnosticInfo, email, feedbackText, surveyResponsesJson);
 
                 // Rename the temp crash report file to stop the 'Psiphon crashed' notifications

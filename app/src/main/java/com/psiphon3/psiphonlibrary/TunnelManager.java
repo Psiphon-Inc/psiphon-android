@@ -106,13 +106,14 @@ public class TunnelManager implements PsiphonTunnel.HostService {
     public static final String IS_CLIENT_AN_ACTIVITY = "com.psiphon3.psiphonlibrary.TunnelManager.IS_CLIENT_AN_ACTIVITY";
     public static final String INTENT_ACTION_UNSAFE_TRAFFIC = "com.psiphon3.psiphonlibrary.TunnelManager.INTENT_ACTION_UNSAFE_TRAFFIC";
     public static final String INTENT_ACTION_UPSTREAM_PROXY_ERROR = "com.psiphon3.psiphonlibrary.TunnelManager.UPSTREAM_PROXY_ERROR";
+    public static final String INTENT_ACTION_SHOW_PXE_UI = "com.psiphon3.psiphonlibrary.TunnelManager.INTENT_ACTION_SHOW_PXE_UI";
 
     // Service -> Client bundle parameter names
     static final String DATA_TUNNEL_STATE_IS_RUNNING = "isRunning";
     static final String DATA_TUNNEL_STATE_NETWORK_CONNECTION_STATE = "networkConnectionState";
     static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT = "listeningLocalSocksProxyPort";
     public static final String DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT = "listeningLocalHttpProxyPort";
-    static final String DATA_TUNNEL_STATE_CLIENT_REGION = "clientRegion";
+    public static final String DATA_TUNNEL_STATE_CLIENT_REGION = "clientRegion";
     static final String DATA_TUNNEL_STATE_SPONSOR_ID = "sponsorId";
     public static final String DATA_TUNNEL_STATE_HOME_PAGES = "homePages";
     static final String DATA_TRANSFER_STATS_CONNECTED_TIME = "dataTransferStatsConnectedTime";
@@ -124,6 +125,9 @@ public class TunnelManager implements PsiphonTunnel.HostService {
     static final String DATA_TRANSFER_STATS_FAST_BUCKETS_LAST_START_TIME = "dataTransferStatsFastBucketsLastStartTime";
     public static final String DATA_UNSAFE_TRAFFIC_SUBJECTS_LIST = "dataUnsafeTrafficSubjects";
     public static final String DATA_UNSAFE_TRAFFIC_ACTION_URLS_LIST = "dataUnsafeTrafficActionUrls";
+    public static final String DATA_PXE_URL = "datePxeUrl";
+
+    public static final String NEXT_ALLOW_PXE_SHOW_TIME_MILLIS = "NEXT_PXE_SHOW_TIME_MILLIS";
 
     void updateNotifications() {
         postServiceNotification(false, m_tunnelState.networkConnectionState);
@@ -185,6 +189,8 @@ public class TunnelManager implements PsiphonTunnel.HostService {
     private VpnAppsUtils.VpnAppsExclusionSetting vpnAppsExclusionSetting = VpnAppsUtils.VpnAppsExclusionSetting.ALL_APPS;
     private int vpnAppsExclusionCount = 0;
     private ArrayList<String> unsafeTrafficSubjects;
+
+    private String pxeUrl = null;
 
 
     TunnelManager(Service parentService) {
@@ -271,8 +277,23 @@ public class TunnelManager implements PsiphonTunnel.HostService {
                     boolean isRoutingThroughTunnel = pair.second;
 
                     // The tunnel is connected but we are not routing traffic through the tunnel yet,
-                    // check we need to send a landing page intent.
+                    // check in the following order if:
+                    // a) we need to send a PXE intent,
+                    // b) or we need to send a landing page intent.
                     if (networkConnectionState == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED && !isRoutingThroughTunnel) {
+                        if (shouldShowPxeUi()) {
+                            if (canSendIntentToActivity()) {
+                                m_tunnel.routeThroughTunnel();
+                                sendPxeIntent();
+                                m_isRoutingThroughTunnelPublishRelay.accept(Boolean.TRUE);
+                                // Do not emit downstream if we are just started routing.
+                                return Observable.empty();
+                            }
+                            // Emit CONNECTING and start waiting for an activity to bind
+                            return waitSendIntentAndRouteThroughTunnelCompletable(this::sendPxeIntent)
+                                    .<TunnelState.ConnectionData.NetworkConnectionState>toObservable()
+                                    .startWith(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
+                        }
                         if (m_tunnelState.homePages != null && m_tunnelState.homePages.size() != 0) {
                             if (canSendIntentToActivity()) {
                                 m_tunnel.routeThroughTunnel();
@@ -349,6 +370,30 @@ public class TunnelManager implements PsiphonTunnel.HostService {
                 .setContentIntent(m_notificationPendingIntent);
 
         mNotificationManager.notify(R.id.notification_id_open_app_to_keep_connecting, notificationBuilder.build());
+    }
+
+    private boolean shouldShowPxeUi() {
+        if (!TextUtils.isEmpty(pxeUrl)) {
+            // Check if enough time passed since the last time we showed PXE UI
+            final AppPreferences mp = new AppPreferences(getContext());
+            long nextAllowPxeShowTime = mp.getLong(NEXT_ALLOW_PXE_SHOW_TIME_MILLIS, 0);
+            return nextAllowPxeShowTime < System.currentTimeMillis();
+        }
+        return false;
+    }
+
+    private void sendPxeIntent() {
+        Bundle data = new Bundle();
+        data.putString(DATA_PXE_URL, pxeUrl);
+        data.putStringArrayList(DATA_TUNNEL_STATE_HOME_PAGES, m_tunnelState.homePages);
+        data.putString(DATA_TUNNEL_STATE_CLIENT_REGION, m_tunnelState.clientRegion);
+
+        PendingIntent pendingIntent = getPendingIntent(m_parentService, INTENT_ACTION_SHOW_PXE_UI, data);
+        try {
+            pendingIntent.send();
+        } catch (PendingIntent.CanceledException e) {
+            MyLog.w("sendPxeIntent send failed: " + e);
+        }
     }
 
     // Implementation of android.app.Service.onDestroy
@@ -1472,5 +1517,10 @@ public class TunnelManager implements PsiphonTunnel.HostService {
                 });
             }
         }
+    }
+
+    @Override
+    public void onApplicationParameters(@NonNull Object o) {
+        pxeUrl = ((JSONObject) o).optString("PsiphonExperimentEngineURL");
     }
 }

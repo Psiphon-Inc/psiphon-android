@@ -64,6 +64,7 @@ import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.VpnAppsUtils;
+import com.psiphon3.pxe.PxeWebDialog;
 
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.ItemNotFoundException;
@@ -569,6 +570,15 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                         .setPositiveButton(android.R.string.ok, null)
                         .create();
                 upstreamProxyErrorAlertDialog.show();
+            }
+        } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_SHOW_PXE_UI)) {
+            Bundle data = intent.getExtras();
+            if (data != null) {
+                ArrayList<String> homePages = data.getStringArrayList(TunnelManager.DATA_TUNNEL_STATE_HOME_PAGES);
+                String pxeUrl = data.getString(TunnelManager.DATA_PXE_URL, null);
+                String clientRegion = data.getString(TunnelManager.DATA_TUNNEL_STATE_CLIENT_REGION, null);
+                PxeWebDialog pxeWebDialog = new PxeWebDialog(this, homePages);
+                pxeWebDialog.load(pxeUrl, clientRegion);
             }
         }
     }

@@ -24,6 +24,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
+import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
 import androidx.work.Data;
@@ -44,7 +45,6 @@ import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.security.SecureRandom;
@@ -61,7 +61,9 @@ import io.reactivex.schedulers.Schedulers;
 /**
  * Feedback worker which securely uploads user submitted feedback to Psiphon Inc.
  *
- * FeedbackWorker.generateInputData(..) should be used to generate the input data for any work requests.
+ * FeedbackWorker.generateFeedbackInputData(..) should be used to generate the input data for regular feedback work requests.
+ *
+ * FeedbackWorker.generatePxeInputData(..) should be used to generate the input data for PXE experiment results work requests.
  *
  * Note: if an exception is thrown, then the work request will be marked as failed and will not be
  * rescheduled.
@@ -70,43 +72,70 @@ public class FeedbackWorker extends RxWorker {
     // log JSON max size to read from logs DB
     private final static int MAX_LOG_SOURCE_JSON_SIZE_BYTES = 1 << 20; // 1MB
 
+    // common field keys in both regular and PXE experiment feedbacks
+    private static final String FEEDBACK_ID = "feedbackId";
+    private static final String SUBMIT_TIME_MILLIS = "submitTimeMillis";
+
     private final TunnelServiceInteractor tunnelServiceInteractor;
     private final PsiphonTunnelFeedback psiphonTunnelFeedback;
-    private final boolean sendDiagnosticInfo;
-    private final String email;
-    private final String feedbackText;
-    private final String surveyResponsesJson;
-    private final String feedbackId;
-    private final long feedbackSubmitTimeMillis;
+
+    private final Data inputData;
 
     private Thread shutdownHook;
 
     /**
-     * Create the input data for a feedback upload work request.
+     * Create the input data for a regular feedback upload work request.
      *
-     * @param sendDiagnosticInfo If true, the user has opted in to including diagnostics with their
-     *                           feedback and diagnostics will be included in uploaded feedback.
-     *                           Otherwise, diagnostics will be omitted.
-     * @param email User email address.
-     * @param feedbackText User feedback comment.
+     * @param sendDiagnosticInfo  If true, the user has opted in to including diagnostics with their
+     *                            feedback and diagnostics will be included in uploaded feedback.
+     *                            Otherwise, diagnostics will be omitted.
+     * @param email               User email address.
+     * @param feedbackText        User feedback comment.
      * @param surveyResponsesJson User feedback responses.
      * @return Input data for a work request to FeedbackWorker.
      */
-    public static @NonNull Data generateInputData(boolean sendDiagnosticInfo,
-                                                  @NonNull String email,
-                                                  @NonNull String feedbackText,
-                                                  @NonNull String surveyResponsesJson) {
-        Data.Builder dataBuilder = new Data.Builder();
+    public static @NonNull Data generateFeedbackInputData(boolean sendDiagnosticInfo,
+                                                          @NonNull String email,
+                                                          @NonNull String feedbackText,
+                                                          @NonNull String surveyResponsesJson) {
+        Data.Builder dataBuilder = getFeedbackDataBuilder();
         dataBuilder.putBoolean("sendDiagnosticInfo", sendDiagnosticInfo);
         dataBuilder.putString("email", email);
         dataBuilder.putString("feedbackText", feedbackText);
         dataBuilder.putString("surveyResponsesJson", surveyResponsesJson);
-        dataBuilder.putLong("submitTimeMillis", new Date().getTime());
-        dataBuilder.putString("feedbackId", generateFeedbackId());
         return dataBuilder.build();
     }
 
-    private static String generateFeedbackId() {
+    /**
+     * Create the input data for a PXE experiment results upload work request.
+     *
+     * @param experimentUrl PXE experiment webpage origin URL.
+     * @param experimentResultsJson PXE experiment results json.
+     * @return Input data for a work request to FeedbackWorker
+     */
+    public static @NonNull Data generatePxeInputData(@NonNull String experimentUrl, @NonNull String experimentResultsJson) {
+        Data.Builder dataBuilder = getFeedbackDataBuilder();
+        dataBuilder.putBoolean("isPxeInput", true);
+        dataBuilder.putString("experimentUrl", experimentUrl);
+        dataBuilder.putString("experimentResultsJson", experimentResultsJson);
+        dataBuilder.putString("experimentId", generateId());
+        return dataBuilder.build();
+    }
+
+    private static @NonNull Data.Builder getFeedbackDataBuilder() {
+        Data.Builder dataBuilder = new Data.Builder();
+        // Using the same feedback ID for each upload attempt makes it easier to identify when a
+        // feedback has been uploaded more than once. E.g. the upload succeeds but is retried
+        // because: the connection with the server is disrupted before the response is received by
+        // the client; or WorkManager reschedules the work and disposes of the signal returned by
+        // createWork() before it can emit its result.
+        dataBuilder.putString(FEEDBACK_ID, generateId());
+        // Add timestamp
+        dataBuilder.putLong(SUBMIT_TIME_MILLIS, new Date().getTime());
+        return dataBuilder;
+    }
+
+    private static String generateId() {
         SecureRandom rnd = new SecureRandom();
         byte[] id = new byte[8];
         rnd.nextBytes(id);
@@ -119,60 +148,35 @@ public class FeedbackWorker extends RxWorker {
      */
     public FeedbackWorker(@NonNull Context appContext, @NonNull WorkerParameters workerParams) {
         super(appContext, workerParams);
-
         tunnelServiceInteractor = new TunnelServiceInteractor(getApplicationContext(), false);
-
         psiphonTunnelFeedback = new PsiphonTunnelFeedback();
-
-        sendDiagnosticInfo = workerParams.getInputData().getBoolean("sendDiagnosticInfo", false);
-        email = workerParams.getInputData().getString("email");
-        if (email == null) {
-            throw new AssertionError("feedback email null");
-        }
-        feedbackText = workerParams.getInputData().getString("feedbackText");
-        if (feedbackText == null) {
-            throw new AssertionError("feedback text null");
-        }
-        surveyResponsesJson = workerParams.getInputData().getString("surveyResponsesJson");
-        if (surveyResponsesJson == null) {
-            throw new AssertionError("survey response null");
-        }
-        feedbackSubmitTimeMillis = workerParams.getInputData().getLong("submitTimeMillis", new Date().getTime());
-
-        // Using the same feedback ID for each upload attempt makes it easier to identify when a
-        // feedback has been uploaded more than once. E.g. the upload succeeds but is retried
-        // because: the connection with the server is disrupted before the response is received by
-        // the client; or WorkManager reschedules the work and disposes of the signal returned by
-        // createWork() before it can emit its result.
-        feedbackId = workerParams.getInputData().getString("feedbackId");
-        if (feedbackId == null) {
-            throw new AssertionError("feedback ID null");
-        }
+        inputData = workerParams.getInputData();
     }
 
     @Override
     public void onStopped() {
-        MyLog.i("FeedbackUpload: " + feedbackId + " worker stopped by system");
+        MyLog.i("FeedbackUpload: " + inputData.getString(FEEDBACK_ID) + " worker stopped by system");
         super.onStopped();
     }
 
     /**
      * Upload the feedback. Only one upload is supported at a time and the returned signal must
      * complete or be disposed of before calling this function again.
+     *
      * @return A cold signal which will attempt to upload the provided diagnostics JSON once observed.
      * The signal will complete if the upload is successful or emit an error in the event of a failure.
      * Disposing of the signal will interrupt the upload if it is ongoing.
      */
     @NonNull
     public Completable
-        startSendFeedback(@NonNull Context context, @NonNull String feedbackConfigJson,
-                          @NonNull String diagnosticsJson, @NonNull String uploadPath,
-                          @NonNull String clientPlatformPrefix, @NonNull String clientPlatformSuffix) {
+    startSendFeedback(@NonNull Context context, @NonNull String feedbackConfigJson,
+                      @NonNull String diagnosticsJson, @NonNull String uploadPath,
+                      @NonNull String clientPlatformPrefix, @NonNull String clientPlatformSuffix) {
 
         return Completable.create(emitter -> {
 
             emitter.setCancellable(() -> {
-                MyLog.i("FeedbackUpload: " + feedbackId + " disposed");
+                MyLog.i("FeedbackUpload: " + inputData.getString(FEEDBACK_ID) + " disposed");
                 psiphonTunnelFeedback.stopSendFeedback();
                 // Remove the shutdown hook since the underlying resources have been cleaned up by
                 // stopSendFeedback.
@@ -204,7 +208,7 @@ public class FeedbackWorker extends RxWorker {
                     new PsiphonTunnel.HostFeedbackHandler() {
                         public void sendFeedbackCompleted(java.lang.Exception e) {
                             if (!emitter.isDisposed()) {
-                                MyLog.i("FeedbackUpload: " + feedbackId + " completed");
+                                MyLog.i("FeedbackUpload: " + inputData.getString(FEEDBACK_ID) + " completed");
                                 if (e != null) {
                                     emitter.onError(e);
                                     return;
@@ -213,10 +217,10 @@ public class FeedbackWorker extends RxWorker {
                                 emitter.onComplete();
                             } else {
                                 if (e != null) {
-                                    MyLog.w("FeedbackUpload: " + feedbackId + " completed with error but emitter disposed: " + e);
+                                    MyLog.w("FeedbackUpload: " + inputData.getString(FEEDBACK_ID) + " completed with error but emitter disposed: " + e);
                                     return;
                                 }
-                                MyLog.i("FeedbackUpload: " + feedbackId + " completed but emitter disposed");
+                                MyLog.i("FeedbackUpload: " + inputData.getString(FEEDBACK_ID) + " completed but emitter disposed");
                             }
                         }
                     },
@@ -235,15 +239,14 @@ public class FeedbackWorker extends RxWorker {
     @NonNull
     @Override
     public Single<Result> createWork() {
-
         // Guard against the upload being retried indefinitely if it continues to exceed the max
         // execution time limit of 10 minutes.
         if (this.getRunAttemptCount() > 10) {
-            MyLog.e("FeedbackUpload: " + feedbackId + " failed, exceeded 10 attempts");
+            MyLog.e("FeedbackUpload: " + inputData.getString(FEEDBACK_ID) + " failed, exceeded 10 attempts");
             return Single.just(Result.failure());
         }
 
-        MyLog.i(String.format(Locale.US, "FeedbackUpload: starting feedback upload work " + feedbackId + ", attempt %d", this.getRunAttemptCount()));
+        MyLog.i(String.format(Locale.US, "FeedbackUpload: starting feedback upload work " + inputData.getString(FEEDBACK_ID) + ", attempt %d", this.getRunAttemptCount()));
 
         // Note: this method is called on the main thread despite documentation stating that work
         // will be scheduled on a background thread. All work should be done off the main thread in
@@ -287,18 +290,10 @@ public class FeedbackWorker extends RxWorker {
                     if (tunnelState.isStopped() || (tunnelState.isRunning() && tunnelState.connectionData().isConnected())) {
                         // Send feedback.
 
-                        MyLog.i("FeedbackUpload: uploading feedback " + feedbackId);
+                        MyLog.i("FeedbackUpload: uploading feedback " + inputData.getString(FEEDBACK_ID));
 
                         Context context = getApplicationContext();
-                        String feedbackJsonString = createFeedbackData(
-                                context,
-                                sendDiagnosticInfo,
-                                email,
-                                feedbackText,
-                                surveyResponsesJson,
-                                feedbackId,
-                                // Only include diagnostics logged before the feedback was submitted
-                                feedbackSubmitTimeMillis);
+                        String feedbackJsonString = createFeedbackData(context, inputData);
 
                         // Build a temporary tunnel config to use
                         TunnelManager.Config tunnelManagerConfig = new TunnelManager.Config();
@@ -328,24 +323,18 @@ public class FeedbackWorker extends RxWorker {
                                 .andThen(Flowable.just(Result.success()));
                     }
 
-                    MyLog.i("FeedbackUpload: " + feedbackId + " waiting for tunnel to be disconnected or connected");
+                    MyLog.i("FeedbackUpload: " + inputData.getString(FEEDBACK_ID) + " waiting for tunnel to be disconnected or connected");
                     return Flowable.empty();
                 })
                 .firstOrError()
-                .doOnSuccess(__ -> MyLog.i("FeedbackUpload: " + feedbackId + " upload succeeded"))
+                .doOnSuccess(__ -> MyLog.i("FeedbackUpload: " + inputData.getString(FEEDBACK_ID) + " upload succeeded"))
                 .onErrorReturn(error -> {
-                    MyLog.w("FeedbackUpload: " + feedbackId + " upload failed: " + error.getMessage());
+                    MyLog.w("FeedbackUpload: " + inputData.getString(FEEDBACK_ID) + " upload failed: " + error.getMessage());
                     return Result.failure();
                 });
     }
 
-    private static @NonNull String createFeedbackData(Context context,
-                              boolean shouldIncludeDiagnostics,
-                              String email,
-                              String feedbackText,
-                              String surveyResponsesJson,
-                              String feedbackId,
-                              long beforeTimeMillis) throws JSONException {
+    private static @NonNull String createFeedbackData(Context context, Data inputData) throws JSONException {
         // Top level json object
         JSONObject feedbackJsonObject = new JSONObject();
 
@@ -354,28 +343,48 @@ public class FeedbackWorker extends RxWorker {
 
         metadata.put("platform", "android");
         metadata.put("version", 4);
-        metadata.put("id", feedbackId);
+        metadata.put("id", inputData.getString(FEEDBACK_ID));
 
         feedbackJsonObject.put("Metadata", metadata);
 
+        boolean isPxeInput = inputData.getBoolean("isPxeInput", false);
+        boolean shouldIncludeDiagnostics = inputData.getBoolean("sendDiagnosticInfo", false);
 
-        // Add feedback text and / or surveyResponses
-        if (feedbackText.length() > 0 || surveyResponsesJson.length() > 0) {
-            JSONObject feedbackInfo = new JSONObject();
-            feedbackInfo.put("email", email);
+        if (isPxeInput) {
+            // This is a PXE experiment results feedback
+            String results = inputData.getString("experimentResultsJson");
+            if (!TextUtils.isEmpty(results)) {
+                JSONObject experimentInfo = new JSONObject();
+                experimentInfo.put("id", inputData.getString("experimentId"));
+                experimentInfo.put("url", inputData.getString("experimentUrl"));
 
-            JSONObject feedbackMessageInfo = new JSONObject();
-            feedbackMessageInfo.put("text", feedbackText);
-            feedbackInfo.put("Message", feedbackMessageInfo);
+                JSONArray resultsJsonArray = new JSONArray(results);
+                experimentInfo.put("results", resultsJsonArray);
 
-            JSONObject feedbackSurveyInfo = new JSONObject();
-            feedbackSurveyInfo.put("json", surveyResponsesJson);
-            feedbackInfo.put("Survey", feedbackSurveyInfo);
+                feedbackJsonObject.put("Experiment", experimentInfo);
+            }
+        } else {
+            // This is a regular feedback
+            String email = inputData.getString("email");
+            String feedbackText = inputData.getString("feedbackText");
+            String surveyResponsesJson = inputData.getString("surveyResponsesJson");
+            if (!TextUtils.isEmpty(feedbackText) || !TextUtils.isEmpty(surveyResponsesJson)) {
+                JSONObject feedbackInfo = new JSONObject();
+                feedbackInfo.put("email", email);
 
-            feedbackJsonObject.put("Feedback", feedbackInfo);
+                JSONObject feedbackMessageInfo = new JSONObject();
+                feedbackMessageInfo.put("text", feedbackText);
+                feedbackInfo.put("Message", feedbackMessageInfo);
+
+                JSONObject feedbackSurveyInfo = new JSONObject();
+                feedbackSurveyInfo.put("json", surveyResponsesJson);
+                feedbackInfo.put("Survey", feedbackSurveyInfo);
+
+                feedbackJsonObject.put("Feedback", feedbackInfo);
+            }
         }
 
-        if (shouldIncludeDiagnostics) {
+        if (isPxeInput || shouldIncludeDiagnostics) {
             JSONObject diagnosticInfo = new JSONObject();
 
             JSONObject sysInfo = new JSONObject();
@@ -416,7 +425,8 @@ public class FeedbackWorker extends RxWorker {
             // and add to diagnostic / status info
             Uri uri = LoggingContentProvider.CONTENT_URI.buildUpon()
                     .appendPath("all")
-                    .appendPath(String.valueOf(beforeTimeMillis))
+                    // Only include diagnostics logged before the feedback was submitted
+                    .appendPath(String.valueOf(inputData.getLong(SUBMIT_TIME_MILLIS, new Date().getTime())))
                     .build();
             ContentResolver contentResolver = context.getContentResolver();
             try (Cursor cursor = contentResolver.query(uri, null, null, null, null)) {
