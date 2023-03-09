@@ -264,10 +264,14 @@ public class PxeWebDialog {
         ctx.startActivity(intent);
     }
 
-    private void close() {
-        if (dialog.isShowing()) {
+    public void close() {
+        if (isShowing()) {
             dialog.dismiss();
         }
+    }
+
+    private boolean isShowing() {
+        return dialog != null && dialog.isShowing();
     }
 
     private static String toBcp47Language(@NonNull Locale loc) {

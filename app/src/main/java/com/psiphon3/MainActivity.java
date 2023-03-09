@@ -109,6 +109,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     private ImageView banner;
     private boolean isFirstRun = true;
     private AlertDialog upstreamProxyErrorAlertDialog;
+    private PxeWebDialog pxeWebDialog;
 
 
     @Override
@@ -201,6 +202,9 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     @Override
     public void onDestroy() {
         compositeDisposable.dispose();
+        if (pxeWebDialog != null) {
+            pxeWebDialog.close();
+        }
         super.onDestroy();
     }
 
@@ -577,7 +581,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 ArrayList<String> homePages = data.getStringArrayList(TunnelManager.DATA_TUNNEL_STATE_HOME_PAGES);
                 String pxeUrl = data.getString(TunnelManager.DATA_PXE_URL, null);
                 String clientRegion = data.getString(TunnelManager.DATA_TUNNEL_STATE_CLIENT_REGION, null);
-                PxeWebDialog pxeWebDialog = new PxeWebDialog(this, homePages);
+                pxeWebDialog = new PxeWebDialog(this, homePages);
                 pxeWebDialog.load(pxeUrl, clientRegion);
             }
         }
