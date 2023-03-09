@@ -44,9 +44,6 @@ import com.psiphon3.psiphonlibrary.TunnelManager;
 
 import net.grandcentrix.tray.AppPreferences;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-
 import java.util.ArrayList;
 import java.util.Locale;
 
@@ -57,7 +54,8 @@ public class PxeWebDialog {
     private final Dialog dialog;
     private Disposable tunnelStateDisposable;
 
-    private static final long NEXT_PXE_PERIOD_MILLIS = 7 * 24 * 60 * 60 * 1000L; // 1 week
+    public static final long COMPLETED_PXE_NEXT_PERIOD_MILLIS = 7 * 24 * 60 * 60 * 1000L; // 1 week
+    public static final long INCOMPLETE_PXE_NEXT_PERIOD_MILLIS = 24 * 60 * 60 * 1000L; // 24 hr
 
     @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
     public PxeWebDialog(LocalizedActivities.AppCompatActivity activity, ArrayList<String> homePages) {
@@ -84,7 +82,7 @@ public class PxeWebDialog {
         webView.getSettings().setDomStorageEnabled(true);
         webView.getSettings().setLoadWithOverviewMode(true);
         webView.getSettings().setUseWideViewPort(true);
-        webView.getSettings().setSupportMultipleWindows(false);
+        webView.getSettings().setSupportMultipleWindows(true);
         webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
         final PxeJavascriptInterface pxeJavascriptInterface =
                 new PxeJavascriptInterface(activity);
@@ -215,6 +213,12 @@ public class PxeWebDialog {
                                                 tunnelState.connectionData().isConnected()) {
                                             sendHomePagesIntent(activity, homePages);
                                         }
+
+                                        // Calculate next allowed experiment timestamp.
+                                        final AppPreferences mp = new AppPreferences(activity.getApplicationContext());
+                                        long incompletePxeNextPeriodMillis = mp.getLong(activity.getString(R.string.incompletePxeNextPeriodMillis), INCOMPLETE_PXE_NEXT_PERIOD_MILLIS);
+                                        mp.put(TunnelManager.NEXT_ALLOW_PXE_SHOW_TIME_MILLIS, System.currentTimeMillis() + incompletePxeNextPeriodMillis);
+
                                         close();
                                     })
                                     .subscribe();
@@ -325,8 +329,11 @@ public class PxeWebDialog {
 
         @JavascriptInterface
         public void submitResult(String url, String resultsJson) {
+            // Calculate next allowed experiment timestamp.
             final AppPreferences mp = new AppPreferences(ctx.getApplicationContext());
-            mp.put(TunnelManager.NEXT_ALLOW_PXE_SHOW_TIME_MILLIS, System.currentTimeMillis() + NEXT_PXE_PERIOD_MILLIS);
+            long completedPxeNextPeriodMillis = mp.getLong(ctx.getString(R.string.completedPxeNextPeriodMillis), COMPLETED_PXE_NEXT_PERIOD_MILLIS);
+            mp.put(TunnelManager.NEXT_ALLOW_PXE_SHOW_TIME_MILLIS, System.currentTimeMillis() + completedPxeNextPeriodMillis);
+
             Data inputData = FeedbackWorker.generatePxeInputData(url, resultsJson);
             Constraints.Builder constraintsBuilder = new Constraints.Builder();
             constraintsBuilder.setRequiredNetworkType(NetworkType.CONNECTED);
