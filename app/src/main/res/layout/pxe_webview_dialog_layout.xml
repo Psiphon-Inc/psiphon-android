@@ -33,7 +33,8 @@
         android:id="@+id/bottom_panel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center"
+        android:gravity="end"
+        android:paddingHorizontal="8dp"
         android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent">
 
