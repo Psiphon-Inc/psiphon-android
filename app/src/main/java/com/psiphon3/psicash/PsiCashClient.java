@@ -374,9 +374,11 @@ public class PsiCashClient {
                         .observeOn(Schedulers.io())
                         .andThen(Completable.fromAction(() -> {
                             TunnelServiceInteractor tunnelServiceInteractor = new TunnelServiceInteractor(appContext, false);
-                            tunnelServiceInteractor.onStart(appContext);
-                            tunnelServiceInteractor.commandTunnelRestart();
-                            tunnelServiceInteractor.onStop(appContext);
+                            if (tunnelServiceInteractor.isServiceRunning(appContext)) {
+                                tunnelServiceInteractor.onStart(appContext);
+                                tunnelServiceInteractor.commandTunnelRestart();
+                                tunnelServiceInteractor.onStop(appContext);
+                            }
                             tunnelServiceInteractor.onDestroy(appContext);
                         })).subscribe();
             }
@@ -463,7 +465,8 @@ public class PsiCashClient {
                                             String transactionClass,
                                             long price) {
         TunnelServiceInteractor tunnelServiceInteractor = new TunnelServiceInteractor(appContext, false);
-        tunnelServiceInteractor.onStart(appContext);
+        // At this point the service should be either starting or already running, so bind unconditionally.
+        tunnelServiceInteractor.bindTunnelService(appContext);
 
         return tunnelServiceInteractor.tunnelStateFlowable()
                 .switchMap(tunnelState -> {
