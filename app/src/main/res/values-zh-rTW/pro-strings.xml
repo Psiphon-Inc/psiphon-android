@@ -24,6 +24,17 @@
     anything that indicates a fast or unrestricted speed. -->
     <string name="rate_limit_text_speed_boost">加速版 Speed Boost</string>
 
+    <!-- Alert error message informing user that their Speed Boost purchase request failed because they attempted to buy a product that is no longer available
+    and that they should try updating or reinstalling the app. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network
+    connection speed through Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
+    anything that indicates a fast or unrestricted speed. -->
+    <string name="psicash_transaction_type_not_found_message">找不到加速產品，您的應用程式可能太老舊，請檢查更新。
+</string>
+
+    <!-- Alert error message informing user that a recoverable error has occurred while trying to log in into PsiCash account.
+    Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_cannot_login_recoverable_message">您欲登入時  PsiCash 伺服器傳回錯誤訊息，請稍候再試。</string>
+
     <!-- Text which appears in the Speed Boost meter when the user has activated Speed Boost accompanied with a countdown timer showing how much time
     of the Speed Boost mode has left, like following 'Speed Boost Active - 16:49'. Please keep this text concise as the width of the text box
     is restricted in size. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
@@ -43,6 +54,18 @@
     <!-- Title of the button that loads and plays a video ad that rewards users with PsiCash -->
     <string name="psicash_purchase_free_button_price">免費</string>
 
+    <!-- Title of the button that is presented next to 'Speed Boost is unavailable when you are not connected to Psiphon' message,
+        Also appears on the PsiCash account 'log out' confirmation dialog when the user tries to log out of their PsiCash account while the Psiphon tunnel is not running.
+        Do not translate or transliterate word Psiphon -->
+    <string name="connect_to_psiphon_button_text">連線 Psiphon</string>
+
+    <!-- A title message to the premium user (a user with a subscription when they are trying to navigate to PsiCash and Speed Boost screen
+        Do not translate or transliterate words PsiCash or Psiphon -->
+    <string name="psicash_store_subscription_title">Psiphon 訂閱可享有昇級的訪問權限！</string>
+
+    <!-- PsiCash tab title where users may purchase some PsiCash from PlayStore or get it for free by watching a video ad. Do not translate or transliterate word PsiCash -->
+    <string name="add_psicash_tab_title">儲值 PsiCash </string>
+
     <!-- SpeedBoost tab title where users may redeem their PsiCash for Speed Boost
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
@@ -61,8 +84,16 @@
     <!-- Label text for tab that once selected takes the user to the screen displaying all available subscriptions -->
     <string name="PaymentChooserActivity.SubscriptionTab">訂閱</string>
 
+    <!-- PsiCash account login error dialog title
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_account_login_failed_title">PsiCash 登入失敗</string>
+
     <!-- Title of the button that dismisses PsiCash account login error alert dialog-->
     <string name="psicash_login_error_alert_dismiss">退訂</string>
+
+    <!-- An alert message to the user shown when a PsiCash login succeeds. There is a fixed number of times that a user can merge a pre-account balance into a PsiCash account. This message indicates that the user has hit that limit and the merge that occurred is the last one allowed.
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_last_tracker_merge_notification">當登人您的 PsiCash 帳號，這台登入設備之前的餘額會轉入您的帳號，其為最後一次餘額合併。</string>
 
     <!-- Title of the PsiCash account log out alert confirmation dialog -->
     <string name="psicash_logout_alert_title">登出</string>
@@ -70,11 +101,22 @@
     <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Dismisses the log out dialog without any further action when clicked. -->
     <string name="psicash_cancel_lbl">取消</string>
 
+    <!-- PsiCash account generic title
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_account_generic_title">PsiCash 帳號</string>
+
     <!-- PsiCash account 'log out' preference title as it appears in the app's preference screen. -->
     <string name="psicash_account_logout_pref_title">登出</string>
 
     <!-- PsiCash account 'log in' preference title as it appears in the app's preference screen. -->
     <string name="psicash_account_login_pref_title">登入</string>
+
+    <!-- PsiCash account 'manage account' preference title as it appears in the app's preference screen. -->
+    <string name="psicash_account_manage_pref_title">管理帳號</string>
+
+    <!-- Input field caption for username on the PsiCash account sign screen
+            Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_account_login_username_hint">PsiCash 用戶名稱</string>
 
     <!-- Input field caption for password on the PsiCash account sign screen -->
     <string name="psicash_account_login_password_hint">密碼</string>
@@ -88,11 +130,23 @@
     <!-- Label text for 'Create Account' button on the PsiCash account sign in screen. The button opens 'Create account' dialog when clicked -->
     <string name="psicash_account_create_account_btn_lbl">建立帳戶</string>
 
+    <!-- Button in the account creation encouragement dialog, proceeds with PsiCash purchase without account when clicked -->
+    <string name="psicash_continue_without_account_lbl">繼續而不登入帳號</string>
+
     <!--Generic 'close' alert prompt title-->
     <string name="psicash_webview_close_alert_title">關閉</string>
 
+    <!--Generic 'close' alert prompt message-->
+    <string name="psicash_webview_close_alert_message">確定現在要關閉此視窗嗎? </string>
+
     <!--Generic 'error' alert prompt title-->
     <string name="psicash_webview_error_alert_title">錯誤</string>
+
+    <!-- A message shown on the blocking overlay when the users are trying to interact with
+    PsiCash account Create,Forgot Password, or Manage Account web page loaded internally while
+    Psiphon is connecting to the server.
+    Note: 'Psiphon' should not be translated or transliterated. -->
+    <string name="psicash_web_wait_tunnel_connecting">請等候 Psiphon 連接</string>
 
     <!--Generic 'close' button label -->
     <string name="label_close">關閉</string>
@@ -105,6 +159,12 @@
 
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">中斷連缐</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe.-->
+    <string name="purchase_required_prompt_title">在您的地區 Psiphon 不再免費</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe.-->
+    <string name="purchase_required_prompt_body">幫助 Psiphon 維持免費提供給最需要的人，立即訂閱或購買 Speed Boost 。</string>
 
     <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_hr">1 小時</string>
