@@ -77,7 +77,6 @@ public class FeedbackWorker extends RxWorker {
     private static final String SUBMIT_TIME_MILLIS = "submitTimeMillis";
 
     private final TunnelServiceInteractor tunnelServiceInteractor;
-    private final PsiphonTunnelFeedback psiphonTunnelFeedback;
 
     private final Data inputData;
 
@@ -149,7 +148,6 @@ public class FeedbackWorker extends RxWorker {
     public FeedbackWorker(@NonNull Context appContext, @NonNull WorkerParameters workerParams) {
         super(appContext, workerParams);
         tunnelServiceInteractor = new TunnelServiceInteractor(getApplicationContext(), false);
-        psiphonTunnelFeedback = new PsiphonTunnelFeedback();
         inputData = workerParams.getInputData();
     }
 
@@ -174,12 +172,14 @@ public class FeedbackWorker extends RxWorker {
                       @NonNull String clientPlatformPrefix, @NonNull String clientPlatformSuffix) {
 
         return Completable.create(emitter -> {
-
+            // Note that PsiphonTunnelFeedback instance cannot be reused PsiphonTunnelFeedback.shutdown()
+            // is called.
+            final PsiphonTunnelFeedback psiphonTunnelFeedback = new PsiphonTunnelFeedback();
             emitter.setCancellable(() -> {
                 MyLog.i("FeedbackUpload: " + inputData.getString(FEEDBACK_ID) + " disposed");
-                psiphonTunnelFeedback.stopSendFeedback();
+                psiphonTunnelFeedback.shutdown();
                 // Remove the shutdown hook since the underlying resources have been cleaned up by
-                // stopSendFeedback.
+                // psiphonTunnelFeedback.shutdown().
                 if (this.shutdownHook != null) {
                     boolean removed = Runtime.getRuntime().removeShutdownHook(this.shutdownHook);
                     if (!removed) {
@@ -197,7 +197,7 @@ public class FeedbackWorker extends RxWorker {
                 @Override
                 public void run() {
                     super.run();
-                    psiphonTunnelFeedback.stopSendFeedback();
+                    psiphonTunnelFeedback.shutdown();
                     MyLog.i("FeedbackUpload: shutdown hook done");
                 }
             };
