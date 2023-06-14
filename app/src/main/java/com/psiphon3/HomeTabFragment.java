@@ -24,7 +24,11 @@ import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.method.LinkMovementMethod;
 import android.text.style.URLSpan;
+import android.transition.Slide;
+import android.transition.Transition;
+import android.transition.TransitionManager;
 import android.util.Pair;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -37,11 +41,11 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.android.billingclient.api.Purchase;
 import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.billing.SubscriptionState;
 import com.psiphon3.psicash.details.PsiCashDetailsViewModel;
 import com.psiphon3.psicash.details.PsiCashFragment;
+import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.subscription.R;
 
 import io.reactivex.Observable;
@@ -51,6 +55,7 @@ import io.reactivex.functions.BiFunction;
 
 public class HomeTabFragment extends Fragment {
     private static final String PLAY_STORE_SUBSCRIPTION_DEEPLINK_URL = "https://play.google.com/store/account/subscriptions?sku=%s&package=%s";
+    private View rateLimitConstraintLayout;
     private View rateLimitedTextSection;
     private TextView rateLimitedText;
     private TextView rateUnlimitedText;
@@ -81,6 +86,8 @@ public class HomeTabFragment extends Fragment {
         rateLimitUpgradeButton.setOnClickListener(v ->
                 MainActivity.openPaymentChooserActivity(requireActivity(),
                         getResources().getInteger(R.integer.subscriptionTabIndex)));
+
+        rateLimitConstraintLayout = view.findViewById(R.id.rateLimitConstraintLayout);
 
         if (savedInstanceState == null) {
             getChildFragmentManager()
@@ -168,6 +175,36 @@ public class HomeTabFragment extends Fragment {
                     rateLimitedTextSection.setVisibility(View.VISIBLE);
                 })
                 .subscribe());
+
+        compositeDisposable.add(((LocalizedActivities.AppCompatActivity) requireActivity())
+                .getTunnelServiceInteractor().tunnelStateFlowable()
+                .observeOn(AndroidSchedulers.mainThread())
+                        .doOnNext(tunnelState -> {
+                            // Hide the whole rate limit / subscription badge container layout if
+                            // tunnel is running and connected
+                            if (tunnelState.isRunning() && !tunnelState.connectionData().isConnected()) {
+                                if (rateLimitConstraintLayout.getVisibility() == View.VISIBLE) {
+                                    changeVisibility(rateLimitConstraintLayout, View.GONE);
+                                }
+                            } else {
+                                if (rateLimitConstraintLayout.getVisibility() == View.GONE) {
+                                    changeVisibility(rateLimitConstraintLayout, View.VISIBLE);
+                                }
+                            }
+                        })
+                .subscribe());
+
+    }
+
+    // Animate the visibility change of a view if the device is running Lollipop or higher
+    private void changeVisibility(View view, int visible) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            Transition transition = new Slide(Gravity.BOTTOM);
+            transition.setDuration(300);
+            transition.addTarget(view);
+            TransitionManager.beginDelayedTransition((ViewGroup) view.getParent(), transition);
+        }
+        view.setVisibility(visible);
     }
 
     @Override

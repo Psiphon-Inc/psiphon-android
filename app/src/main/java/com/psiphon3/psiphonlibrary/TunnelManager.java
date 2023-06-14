@@ -93,6 +93,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         STOP_SERVICE,
         RESTART_TUNNEL,
         CHANGED_LOCALE,
+        NFC_CONNECTION_INFO_EXCHANGE_IMPORT,
+        NFC_CONNECTION_INFO_EXCHANGE_EXPORT,
         TRIM_MEMORY_UI_HIDDEN,
     }
 
@@ -103,6 +105,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         AUTHORIZATIONS_REMOVED,
         PSICASH_PURCHASE_REDEEMED,
         PING,
+        NFC_CONNECTION_INFO_EXCHANGE_EXPORT,
     }
 
     public static final String INTENT_ACTION_VIEW = "ACTION_VIEW";
@@ -133,6 +136,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     static final String DATA_TRANSFER_STATS_FAST_BUCKETS_LAST_START_TIME = "dataTransferStatsFastBucketsLastStartTime";
     public static final String DATA_UNSAFE_TRAFFIC_SUBJECTS_LIST = "dataUnsafeTrafficSubjects";
     public static final String DATA_UNSAFE_TRAFFIC_ACTION_URLS_LIST = "dataUnsafeTrafficActionUrls";
+    public static final String DATA_NFC_CONNECTION_INFO_EXCHANGE = "dataNfcConnectionInfoExchange";
 
     // a snapshot of all authorizations pulled by getPsiphonConfig
     private List<Authorization> m_tunnelConfigAuthorizations;
@@ -897,6 +901,32 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                             return;
                         }
                         setLocale(manager);
+                    }
+                    break;
+
+                case NFC_CONNECTION_INFO_EXCHANGE_EXPORT:
+                    if (manager != null) {
+                        MessengerWrapper client = manager.mClients.get(msg.replyTo.hashCode());
+                        if (client != null) {
+                            String exportExchangePayload = manager.m_tunnel.exportExchangePayload();
+                            Bundle bundle = new Bundle();
+                            bundle.putString(DATA_NFC_CONNECTION_INFO_EXCHANGE, exportExchangePayload);
+                            Message message = manager.composeClientMessage(
+                                    ServiceToClientMessage.NFC_CONNECTION_INFO_EXCHANGE_EXPORT.ordinal(),
+                                    bundle);
+                            try {
+                                client.send(message);
+                            } catch (RemoteException ignored) {
+                            }
+                        }
+                    }
+                    break;
+
+                case NFC_CONNECTION_INFO_EXCHANGE_IMPORT:
+                    if (manager != null) {
+                        Bundle bundle = msg.getData();
+                        String importExchangePayload = bundle.getString(DATA_NFC_CONNECTION_INFO_EXCHANGE);
+                        manager.m_tunnel.importExchangePayload(importExchangePayload);
                     }
                     break;
 

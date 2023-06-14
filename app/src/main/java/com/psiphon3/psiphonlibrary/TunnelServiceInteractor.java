@@ -36,6 +36,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.text.TextUtils;
 
 import androidx.annotation.CheckResult;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -48,6 +49,7 @@ import com.psiphon3.log.MyLog;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Completable;
@@ -55,6 +57,7 @@ import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.Single;
 import io.reactivex.disposables.Disposable;
 
 public class TunnelServiceInteractor {
@@ -73,6 +76,7 @@ public class TunnelServiceInteractor {
     private boolean shouldRegisterAsActivity = false;
     private Disposable serviceMessengerDisposable;
     private Disposable restartServiceDisposable;
+    private NfcExportListener nfcExportListener;
     private Context context;
 
     public TunnelServiceInteractor(Context context, boolean registerAsActivity) {
@@ -94,6 +98,11 @@ public class TunnelServiceInteractor {
         };
         LocalBroadcastManager.getInstance(context).registerReceiver(broadcastReceiver, intentFilter);
         tunnelStateRelay.accept(TunnelState.unknown());
+    }
+
+    // setter for nfcExportListener
+    public void setNfcExportListener(NfcExportListener nfcExportListener) {
+        this.nfcExportListener = nfcExportListener;
     }
 
     public void onStart(Context context) {
@@ -203,6 +212,36 @@ public class TunnelServiceInteractor {
     public void commandTunnelRestart() {
         sendServiceMessageCompletable(TunnelManager.ClientToServiceMessage.RESTART_TUNNEL.ordinal(), null)
                 .subscribe();
+    }
+
+    // Send a message to the service to import NFC connection exchange data
+    public void importNfcData(String nfcData) {
+        Bundle data = new Bundle();
+        data.putString(TunnelManager.DATA_NFC_CONNECTION_INFO_EXCHANGE, nfcData);
+        sendServiceMessageCompletable(TunnelManager.ClientToServiceMessage.NFC_CONNECTION_INFO_EXCHANGE_IMPORT.ordinal(), data)
+                .subscribe();
+    }
+
+    public Single<String> exportNfcDataSingle() {
+        return sendServiceMessageCompletable(TunnelManager.ClientToServiceMessage.NFC_CONNECTION_INFO_EXCHANGE_EXPORT.ordinal(), null)
+                .andThen(Single.<String>create(emitter -> {
+                                    setNfcExportListener(new NfcExportListener() {
+                                        @Override
+                                        void onNfcExportResponse(String response) {
+                                            setNfcExportListener(null);
+                                            if (!emitter.isDisposed()) {
+                                                if (TextUtils.isEmpty(response)) {
+                                                    response = "";
+                                                }
+                                                emitter.onSuccess(response);
+                                            }
+                                        }
+                                    });
+                                })
+                                // wait up to 2 seconds for response and return empty sting if no response
+                                .timeout(2, TimeUnit.SECONDS)
+                                .onErrorReturnItem("")
+                );
     }
 
     public void messageTrimMemoryUiHidden() {
@@ -324,6 +363,15 @@ public class TunnelServiceInteractor {
                     getDataTransferStatsFromBundle(data);
                     tunnelServiceInteractor.dataStatsRelay.accept(state.isConnected());
                     break;
+                case NFC_CONNECTION_INFO_EXCHANGE_EXPORT:
+                    if (tunnelServiceInteractor.nfcExportListener != null) {
+                        if (data != null) {
+                            tunnelServiceInteractor.nfcExportListener.onNfcExportResponse(data.getString(TunnelManager.DATA_NFC_CONNECTION_INFO_EXCHANGE));
+                        } else {
+                            tunnelServiceInteractor.nfcExportListener.onNfcExportResponse(null);
+                        }
+                    }
+                    break;
                 case AUTHORIZATIONS_REMOVED:
                     LocalBroadcastManager.getInstance(tunnelServiceInteractor.context)
                             .sendBroadcast(new Intent().setAction(AUTHORIZATIONS_REMOVED_BROADCAST_INTENT));
@@ -393,5 +441,18 @@ public class TunnelServiceInteractor {
                 this.subscriber = observableEmitter;
             }
         }
+    }
+
+    abstract static class NfcExportListener {
+        public void setPayload(String payload) {
+            this.payload = payload;
+        }
+
+        private String payload;
+        public String getPayload() {
+            return payload;
+        }
+        // method to be called when the NFC export is complete
+        abstract void  onNfcExportResponse(String response);
     }
 }
