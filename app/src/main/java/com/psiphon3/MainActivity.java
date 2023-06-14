@@ -19,15 +19,18 @@
 
 package com.psiphon3;
 
-import android.annotation.SuppressLint;
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.graphics.drawable.AnimationDrawable;
 import android.net.Uri;
+import android.nfc.NfcAdapter;
+import android.nfc.cardemulation.CardEmulation;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.SpannableString;
@@ -38,18 +41,19 @@ import android.text.style.BulletSpan;
 import android.text.util.Linkify;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.webkit.WebView;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.PermissionChecker;
@@ -61,6 +65,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager.widget.ViewPager;
 
 import com.android.billingclient.api.SkuDetails;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
 import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.billing.SubscriptionState;
@@ -83,6 +88,7 @@ import net.grandcentrix.tray.core.ItemNotFoundException;
 import org.json.JSONException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Set;
@@ -121,6 +127,10 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     private AlertDialog upstreamProxyErrorAlertDialog;
     private AlertDialog disallowedTrafficAlertDialog;
     private PurchaseRequiredDialog purchaseRequiredDialog;
+    private ImageView canHelpImageView;
+    private FloatingActionButton helpConnectFab;
+    // Keeps track of the HCE state of Psiphon Bump
+    private boolean hceAidEnabled = false;
 
 
     @Override
@@ -130,6 +140,20 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     }
 
     @SuppressLint("SourceLockedOrientationActivity")
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        super.onCreateOptionsMenu(menu);
+        getMenuInflater().inflate(R.menu.activity_main, menu);
+        // Set up version label in the action bar
+        TextView versionLabel = menu.getItem(1).getActionView().findViewById(R.id.toolbar_version_label);
+        versionLabel.setText(String.format(Locale.US, "v. %s", EmbeddedValues.CLIENT_VERSION));
+        // Psiphon Bump
+        // Set up "Can Help" icon in the action bar
+        canHelpImageView = menu.getItem(0).getActionView().findViewById(R.id.toolbar_can_help_image);
+        canHelpImageView.setVisibility(hceAidEnabled ? View.VISIBLE : View.GONE);
+        return true;
+    }
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -141,14 +165,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
-        // Add version label to the right side of action bar
-        ActionBar actionBar = getSupportActionBar();
-        ActionBar.LayoutParams lp = new ActionBar.LayoutParams(ActionBar.LayoutParams.WRAP_CONTENT, ActionBar.LayoutParams.WRAP_CONTENT, Gravity.RIGHT | Gravity.CENTER_VERTICAL);
-        View customView = LayoutInflater.from(this).inflate(R.layout.toolbar_version_layout, null);
-        TextView versionLabel = customView.findViewById(R.id.toolbar_version_label);
-        versionLabel.setText(String.format(Locale.US, "v. %s", EmbeddedValues.CLIENT_VERSION));
-        actionBar.setCustomView(customView, lp);
-        actionBar.setDisplayShowCustomEnabled(true);
+        helpConnectFab = findViewById(R.id.help_connect_fab);
 
         EmbeddedValues.initialize(getApplicationContext());
         multiProcessPreferences = new AppPreferences(this);
@@ -261,6 +278,20 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(this::updateServiceStateUI)
                 .subscribe());
+
+        // If device supports Psiphon Bump observe tunnel state and update NFC UI and HCE state accordingly
+        if (Utils.supportsPsiphonBump(this)) {
+            compositeDisposable.add(getTunnelServiceInteractor().tunnelStateFlowable()
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doOnNext(this::updatePsiphonBumpState)
+                    // disable Psiphon Bump HCE and hide help connect FAB when this subscription is
+                    // disposed.
+                    .doOnCancel(() -> {
+                        setHceAidEnabled(false);
+                        helpConnectFab.setVisibility(View.GONE);
+                    })
+                    .subscribe());
+        }
 
         // Observe custom proxy validation results to show a toast for invalid ones
         compositeDisposable.add(viewModel.customProxyValidationResultFlowable()
@@ -484,6 +515,64 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             connectionProgressBar.setVisibility(View.INVISIBLE);
             connectionWaitingNetworkIndicator.setVisibility(View.INVISIBLE);
         }
+    }
+
+    // update NFC UI
+    private void updatePsiphonBumpState(final TunnelState tunnelState) {
+            switch (tunnelState.status()) {
+                case RUNNING:
+                    TunnelState.ConnectionData connectionData = tunnelState.connectionData();
+                    setHceAidEnabled(connectionData.isConnected());
+                    if (connectionData.isConnected()) {
+                        helpConnectFab.setVisibility(View.GONE);
+                        helpConnectFab.setOnClickListener(null);
+                    } else {
+                        boolean waitingForNetwork =
+                                tunnelState.connectionData().networkConnectionState() ==
+                                        TunnelState.ConnectionData.NetworkConnectionState.WAITING_FOR_NETWORK;
+                        helpConnectFab.setVisibility(waitingForNetwork ? View.INVISIBLE : View.VISIBLE);
+                        helpConnectFab.setOnClickListener(waitingForNetwork ? null : view -> {
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                                Intent intent = new Intent(this, PsiphonBumpNfcReaderActivity.class);
+                                startActivity(intent);
+                            }
+                        });
+                    }
+                    break;
+                case STOPPED:
+                case UNKNOWN:
+                    setHceAidEnabled(false);
+                    helpConnectFab.setVisibility(View.GONE);
+                    helpConnectFab.setOnClickListener(null);
+                    break;
+            }
+    }
+
+    // Dynamically register and unregister "Psiphon Nfc" AID for NFC emulation
+    @SuppressLint("NewApi")
+    private void setHceAidEnabled(boolean enabled) {
+        NfcAdapter nfcAdapter = NfcAdapter.getDefaultAdapter(this);
+        PackageManager pm = getPackageManager();
+
+        if (nfcAdapter != null && nfcAdapter.isEnabled() && pm.hasSystemFeature(PackageManager.FEATURE_NFC_HOST_CARD_EMULATION)) {
+            CardEmulation cardEmulation = CardEmulation.getInstance(nfcAdapter);
+            if (enabled) {
+                cardEmulation.registerAidsForService(new ComponentName(this, PsiphonHostApduService.class),
+                        CardEmulation.CATEGORY_OTHER,
+                        Collections.singletonList("50736970686f6e4e6663")); // "PsiphonNfc" hex-encoded
+            } else {
+                cardEmulation.removeAidsForService(new ComponentName(this, PsiphonHostApduService.class),
+                        CardEmulation.CATEGORY_OTHER);
+            }
+        } else {
+            enabled = false;
+        }
+
+        // Also update the UI
+        if (canHelpImageView != null) {
+            canHelpImageView.setVisibility(enabled ? View.VISIBLE : View.GONE);
+        }
+        hceAidEnabled = enabled;
     }
 
     private void displayBrowser(Context context, String urlString) {
