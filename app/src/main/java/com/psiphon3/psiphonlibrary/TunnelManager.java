@@ -1115,7 +1115,7 @@ public class TunnelManager implements PsiphonTunnel.HostService {
 
             json.put("SponsorId", tunnelConfig.sponsorId);
 
-//            json.put("RemoteServerListURLs", new JSONArray(EmbeddedValues.REMOTE_SERVER_LIST_URLS_JSON));
+            json.put("RemoteServerListURLs", new JSONArray(EmbeddedValues.REMOTE_SERVER_LIST_URLS_JSON));
 
             json.put("ObfuscatedServerListRootURLs", new JSONArray(EmbeddedValues.OBFUSCATED_SERVER_LIST_ROOT_URLS_JSON));
 
