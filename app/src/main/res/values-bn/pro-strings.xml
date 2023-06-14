@@ -1,3 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- New option title in the 'More options' dialog. It appears in the Proxy Setting category.
+        When clicked a new screen opens where users can specify additional HTTP headers to be added to
+        to HTTP proxy requests. Users may specify up to 3 custom headers -->
+    <string name="custom_proxy_headers_title">HTTP হেডারগুলি কাস্টম করুন</string>
+
+    <string name="custom_proxy_header_group_1">হেডার 1</string>
+    <string name="custom_proxy_header_group_2">হেডার 2</string>
+    <string name="custom_proxy_header_group_3">হেডার 3</string>
+    <string name="custom_proxy_header_group_4">হেডার 4</string>
+    <string name="custom_proxy_header_group_5">হেডার 5</string>
+    <string name="custom_proxy_header_group_6">হেডার 6</string>
+    <string name="custom_proxy_header_name">হেডারের নাম লিখুন</string>
+    <string name="custom_proxy_header_value">হেডার মান লিখুন</string>
+    <!-- Alert dialog action button caption. Clicking this button dismisses the alert dialog, keep concise -->
+    <string name="psicash_snackbar_action_ok">ঠিক আছে</string>
+
+    <!-- Title of the button that loads and plays a video ad that rewards users with PsiCash -->
+    <string name="psicash_purchase_free_button_price">বিনামূল্যে</string>
+
+    <!-- Text on the button which takes user to subscription screen -->
+    <string name="btn_get_subscription">সাবস্ক্রাইব</string>
+
+    <!-- Title of the button that dismisses PsiCash account login error alert dialog-->
+    <string name="psicash_login_error_alert_dismiss">বাতিল</string>
+
+    <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Dismisses the log out dialog without any further action when clicked. -->
+    <string name="psicash_cancel_lbl">বাতিল</string>
+
+    <!-- PsiCash account 'log in' preference title as it appears in the app's preference screen. -->
+    <string name="psicash_account_login_pref_title">লগইন </string>
+
+    <!-- Input field caption for password on the PsiCash account sign screen -->
+    <string name="psicash_account_login_password_hint">পাসওয়ার্ড</string>
+
+    <!-- Label text for 'Log In' button on the PsiCash account sign in screen -->
+    <string name="psicash_account_log_in_btn_lbl">লগইন </string>
+
+    <!-- Separator text between the 'Log In' and 'Create Account' buttons on the PsiCash account sign in screen. -->
+    <string name="psicash_account_separator_text">অথবা</string>
+
+    <!--Generic 'close' alert prompt title-->
+    <string name="psicash_webview_close_alert_title">বন্ধ</string>
+
+    <!--Generic 'error' alert prompt title-->
+    <string name="psicash_webview_error_alert_title">ভুল</string>
+
+    <!--Generic 'close' button label -->
+    <string name="label_close">বন্ধ</string>
+
+    <!--Title of button that disconnects the VPN. -->
+    <string name="btn_disconnect">সংযোগ বিচ্ছিন্ন করা</string>
+
+    <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
+    <string name="speed_boost_product_1_hr">1 ঘন্টা</string>
+
     </resources>

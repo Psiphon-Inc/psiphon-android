@@ -1,3 +1,84 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- New option title in the 'More options' dialog. It appears in the Proxy Setting category.
+        When clicked a new screen opens where users can specify additional HTTP headers to be added to
+        to HTTP proxy requests. Users may specify up to 3 custom headers -->
+    <string name="custom_proxy_headers_title">Карыстальніцкія загалоўкі HTTP</string>
+
+    <string name="custom_proxy_header_group_1">Загаловак 1</string>
+    <string name="custom_proxy_header_group_2">Загаловак 2</string>
+    <string name="custom_proxy_header_group_3">Загаловак 3</string>
+    <string name="custom_proxy_header_group_4">Загаловак 4</string>
+    <string name="custom_proxy_header_group_5">Загаловак 5</string>
+    <string name="custom_proxy_header_group_6">Загаловак 6</string>
+    <string name="custom_proxy_header_name">Увядзіце загаловак</string>
+    <string name="custom_proxy_header_value">Увядзіце значэнне загалоўка</string>
+    <!-- Indicates that the user has no speed limit. They have paid for premium service and therefore
+         have access to a full-speed connection. Users have limited speed if they have not paid for
+         premium service. -->
+    <string name="rate_limit_text_unlimited">Неабмежавана</string>
+
+    <!-- Alert dialog action button caption. Clicking this button dismisses the alert dialog, keep concise -->
+    <string name="psicash_snackbar_action_ok">Ok</string>
+
+    <!-- Text on the button which takes user to subscription screen -->
+    <string name="btn_get_subscription">Падпісацца</string>
+
+    <!-- Title of the button that dismisses PsiCash account login error alert dialog-->
+    <string name="psicash_login_error_alert_dismiss">Адхіліць</string>
+
+    <!-- Title of the PsiCash account log out alert confirmation dialog -->
+    <string name="psicash_logout_alert_title">Выхад</string>
+
+    <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Dismisses the log out dialog without any further action when clicked. -->
+    <string name="psicash_cancel_lbl">Скасаваць</string>
+
+    <!-- PsiCash account 'log out' preference title as it appears in the app's preference screen. -->
+    <string name="psicash_account_logout_pref_title">Выхад</string>
+
+    <!-- PsiCash account 'log in' preference title as it appears in the app's preference screen. -->
+    <string name="psicash_account_login_pref_title">Увайсці</string>
+
+    <!-- Input field caption for password on the PsiCash account sign screen -->
+    <string name="psicash_account_login_password_hint">Пароль</string>
+
+    <!-- Label text for 'Log In' button on the PsiCash account sign in screen -->
+    <string name="psicash_account_log_in_btn_lbl">Увайсці</string>
+
+    <!-- Separator text between the 'Log In' and 'Create Account' buttons on the PsiCash account sign in screen. -->
+    <string name="psicash_account_separator_text">або</string>
+
+    <!-- Label text for 'Create Account' button on the PsiCash account sign in screen. The button opens 'Create account' dialog when clicked -->
+    <string name="psicash_account_create_account_btn_lbl">Стварыць уліковы запіс</string>
+
+    <!-- Button in the account creation encouragement dialog, proceeds with PsiCash purchase without account when clicked -->
+    <string name="psicash_continue_without_account_lbl">Працягнуць без уліковага запісу</string>
+
+    <!--Generic 'close' alert prompt title-->
+    <string name="psicash_webview_close_alert_title">Зачыніць</string>
+
+    <!--Generic 'close' alert prompt message-->
+    <string name="psicash_webview_close_alert_message">Вы хочаце закрыць гэта акно цяпер?</string>
+
+    <!--Generic 'error' alert prompt title-->
+    <string name="psicash_webview_error_alert_title">Памылка</string>
+
+    <!--Generic 'close' button label -->
+    <string name="label_close">Зачыніць</string>
+
+    <!--Title of button that disconnects the VPN. -->
+    <string name="btn_disconnect">Адлучыць</string>
+
+    <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
+    <string name="speed_boost_product_1_hr">1 гадзіна</string>
+
+    <!-- Label on a button. Clicking this button will buy 1 day (24hr) of Speed Boost. Translate number as well. -->
+    <string name="speed_boost_product_1_day">1 дзень</string>
+
+    <!-- Label on a button. Clicking this button will buy 1 week (7days) of Speed Boost. Translate number as well. -->
+    <string name="speed_boost_product_1_week">1 тыдзень</string>
+
+    <!-- Label on a button. Clicking this button will buy 1 months (31days) of Speed Boost. Translate number as well. -->
+    <string name="speed_boost_product_1_month">1 месяц</string>
+
     </resources>
