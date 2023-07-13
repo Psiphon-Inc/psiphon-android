@@ -146,8 +146,7 @@ public class PurchaseVerifier {
                                                                     int errorCode = billingException.getBillingResultResponseCode();
                                                                     // Only retry the cases the developer guide suggests should be retried, see
                                                                     // https://developer.android.com/reference/com/android/billingclient/api/BillingClient.BillingResponseCode
-                                                                    if (errorCode == BillingClient.BillingResponseCode.SERVICE_TIMEOUT ||
-                                                                            errorCode == BillingClient.BillingResponseCode.SERVICE_UNAVAILABLE ||
+                                                                    if (errorCode == BillingClient.BillingResponseCode.SERVICE_UNAVAILABLE ||
                                                                             errorCode == BillingClient.BillingResponseCode.BILLING_UNAVAILABLE ||
                                                                             errorCode == BillingClient.BillingResponseCode.ERROR ||
                                                                             errorCode == BillingClient.BillingResponseCode.SERVICE_DISCONNECTED) {
