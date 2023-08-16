@@ -43,6 +43,10 @@
         Do not translate or transliterate word Psiphon -->
     <string name="connect_to_psiphon_button_text">Unganisha kwenye Psiphon</string>
 
+    <!-- A title message to the premium user (a user with a subscription when they are trying to navigate to PsiCash and Speed Boost screen
+        Do not translate or transliterate words PsiCash or Psiphon -->
+    <string name="psicash_store_subscription_title">Usajiri wako wa Psiphon imekupa ufikiaji wa juu!</string>
+
     <!-- PsiCash tab title where users may purchase some PsiCash from PlayStore or get it for free by watching a video ad. Do not translate or transliterate word PsiCash -->
     <string name="add_psicash_tab_title">Ongeza PsiCash</string>
 
@@ -70,17 +74,34 @@
     <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Dismisses the log out dialog without any further action when clicked. -->
     <string name="psicash_cancel_lbl">ghairi.</string>
 
+    <!-- PsiCash account generic title
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_account_generic_title">Akaunti ya PsiCash</string>
+
     <!-- PsiCash account 'log out' preference title as it appears in the app's preference screen. -->
     <string name="psicash_account_logout_pref_title">Ingia nje </string>
 
     <!-- PsiCash account 'log in' preference title as it appears in the app's preference screen. -->
     <string name="psicash_account_login_pref_title">Ingia</string>
 
+    <!-- PsiCash account 'manage account' preference title as it appears in the app's preference screen. -->
+    <string name="psicash_account_manage_pref_title">Simamia akaunti</string>
+
+    <!-- Input field caption for username on the PsiCash account sign screen
+            Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_account_login_username_hint">Jina la mtumiaji PsiCash</string>
+
     <!-- Input field caption for password on the PsiCash account sign screen -->
     <string name="psicash_account_login_password_hint">Nywila</string>
 
     <!-- Label text for 'Log In' button on the PsiCash account sign in screen -->
     <string name="psicash_account_log_in_btn_lbl">Ingia</string>
+
+    <!-- Label text for 'Create Account' button on the PsiCash account sign in screen. The button opens 'Create account' dialog when clicked -->
+    <string name="psicash_account_create_account_btn_lbl">unda akaunti</string>
+
+    <!-- Button in the account creation encouragement dialog, proceeds with PsiCash purchase without account when clicked -->
+    <string name="psicash_continue_without_account_lbl">Endelea bila akaunti</string>
 
     <!--Generic 'close' alert prompt title-->
     <string name="psicash_webview_close_alert_title">Funga</string>
@@ -91,16 +112,31 @@
     <!--Generic 'close' button label -->
     <string name="label_close">Funga</string>
 
+    <!-- Text that appears above the "Log in" button on the PsiCash sign in screen. -->
+    <string name="psicash_already_have_account_text">Tayari unayo akaunti?</string>
+
     <!-- Clickable text on the home tab that appears on the home tab if user has an active subscription. Clicking the link opens 'Manage Subscription' screen of the Google Play app -->
     <string name="manage_my_subscription_link_text">Simamia michango yako</string>
 
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">Haijaunganishwa</string>
 
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe.-->
+    <string name="purchase_required_prompt_title">Psiphon haitumiki tena katika mkoa wako</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe.-->
+    <string name="purchase_required_prompt_body">Saidia kuhifadhi Psiphon kwa wale wanaohitaji zaidi! jiandikishe sasa au ununue kiongeza kasi.</string>
+
     <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_hr">Lisaa1</string>
 
     <!-- Label on a button. Clicking this button will buy 1 day (24hr) of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_day">Siku1</string>
+
+    <!-- Label on a button. Clicking this button will buy 1 week (7days) of Speed Boost. Translate number as well. -->
+    <string name="speed_boost_product_1_week">Wiki 1</string>
+
+    <!-- Label on a button. Clicking this button will buy 1 months (31days) of Speed Boost. Translate number as well. -->
+    <string name="speed_boost_product_1_month">Mwezi 1</string>
 
     </resources>

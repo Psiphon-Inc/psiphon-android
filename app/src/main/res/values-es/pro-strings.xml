@@ -241,7 +241,7 @@
     <string name="speed_boost_insufficient_balance_alert">No tienes PsiCash suficiente para activar esta opción de Aumento de Velocidad, ¿te gustaría agregar un poco?</string>
 
     <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
-    <string name="disallowed_traffic_alert_notification_title">Actualizar Psiphon Pro</string>
+    <string name="disallowed_traffic_alert_notification_title">Mejorar a Psiphon Pro</string>
 
     <!-- Content of the toolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_notification_message">¿La aplicaciones no están funcionando? ¡Haz clic aquí para mejorar tu experiencia con Psiphon!</string>
@@ -263,6 +263,9 @@
 
     <!-- Header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
     <string name="PaymentChooserActivity.UsingFreePlan">Estás usando el plan gratis, soportado por avisos, limitado en velocidad y con puertos restringidos. Puedes seguir usando este plan o actualizarlo a uno de nuestros planes premium</string>
+
+    <!-- Alternative header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon ya no es gratuito en su región. Mejore el plan a uno de los niveles prémium para seguir aprovechando el servicio</string>
 
     <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., '7-day pass - CA$3.99' -->
@@ -465,11 +468,20 @@
     <!--Generic 'close' button label -->
     <string name="label_close">Cerrar</string>
 
+    <!-- Text that appears above the "Create account" button on the PsiCash sign in screen. -->
+    <string name="psicash_protect_psicash_text">¡Proteja su PsiCash!</string>
+
     <!-- Text that appears above the "Log in" button on the PsiCash sign in screen. -->
     <string name="psicash_already_have_account_text">¿Ya tiene una cuenta?</string>
 
     <!-- Clickable text on the home tab that appears on the home tab if user has an active subscription. Clicking the link opens 'Manage Subscription' screen of the Google Play app -->
     <string name="manage_my_subscription_link_text">Gestione su suscripción</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. A short message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text">Psiphon ya no es gratuito en su región.</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. A longer message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text_big">Psiphon ha dejado de ser gratuito en su región. Toque aquí para conocer más.</string>
 
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">Desconectar</string>
@@ -485,5 +497,19 @@
 
     <!-- Label on a button. Clicking this button will buy 1 months (31days) of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_month">1 mes</string>
+
+    <!-- The 'days' part in a date interval string as in "10 d 13 hr". Reorder the format specifier '%d' if in the translated language ordering of time unit and amount is different from English. -->
+    <plurals name="speed_boost_left_days">
+        <item quantity="one">%d d</item>
+        <item quantity="many">%d d</item>
+        <item quantity="other">%d d</item>
+    </plurals>
+
+    <!-- The 'hours' part in a date interval string as in "9 d 11 hr". Reorder the format specifier '%d' if in the translated language ordering of time unit and amount is different from English. -->
+    <plurals name="speed_boost_left_hours">
+        <item quantity="one">%d h</item>
+        <item quantity="many">%d h</item>
+        <item quantity="other">%d h</item>
+    </plurals>
 
     </resources>

@@ -9,7 +9,7 @@
     <string name="psicash_snackbar_action_ok">Ok</string>
 
     <!-- Text on the button which takes user to subscription screen -->
-    <string name="btn_get_subscription">Obuna bo‘lish</string>
+    <string name="btn_get_subscription">Obuna boâ€˜lish</string>
 
     <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Dismisses the log out dialog without any further action when clicked. -->
     <string name="psicash_cancel_lbl">Bekor qilish</string>
