@@ -196,7 +196,7 @@
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed.
     Do not translate or transliterate words PsiCash or Psiphon -->
-    <string name="psicash_store_subscription_description">يمنحك اشتراكك في Psiphon بالفعل Speed Boost دائمًا، لذلك لا يوجد سبب لشراء المزيد. سيتم الاحتفاظ برصيدك في PsiCash إذا قررت إلغاء اشتراكك. ‎\n\nYou يزال بإمكانك الوصول إلى إعدادات حساب PsiCash بالانتقال إلى Options & gt؛ المزيد من الخيارات  Options &gt; PsiCash Account</string>
+    <string name="psicash_store_subscription_description">يمنحك اشتراكك في Psiphon بالفعل Speed Boost دائمًا، لذلك لا يوجد سبب لشراء المزيد. سيتم الاحتفاظ برصيدك في PsiCash إذا قررت إلغاء اشتراكك. ‎\n\nYou يزال بإمكانك الوصول إلى إعدادات حساب PsiCash بالانتقال إلى Options &gt; المزيد من الخيارات &gt; PsiCash Account</string>
 
     <!-- A message to the user seen when the users are trying to navigate to PsiCash store screen while Psiphon has not finished connecting to the server
     Do not translate or transliterate words Psiphon -->
