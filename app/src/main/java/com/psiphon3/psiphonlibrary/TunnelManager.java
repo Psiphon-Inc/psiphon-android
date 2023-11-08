@@ -46,6 +46,7 @@ import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 
 import com.jakewharton.rxrelay2.PublishRelay;
+import com.psiphon3.Location;
 import com.psiphon3.PsiphonCrashService;
 import com.psiphon3.TunnelState;
 import com.psiphon3.billing.PurchaseVerifier;
@@ -81,6 +82,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BiFunction;
+import io.reactivex.functions.Function3;
 import io.reactivex.schedulers.Schedulers;
 import ru.ivanarh.jndcrash.NDCrash;
 
@@ -150,6 +152,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         String egressRegion = PsiphonConstants.REGION_CODE_ANY;
         boolean disableTimeouts = false;
         String sponsorId = EmbeddedValues.SPONSOR_ID;
+        String deviceLocation = "";
     }
 
     private Config m_tunnelConfig;
@@ -641,8 +644,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     }
 
     private Single<Config> getTunnelConfigSingle() {
+        final AppPreferences multiProcessPreferences = new AppPreferences(getContext());
+
         Single<Config> configSingle = Single.fromCallable(() -> {
-            final AppPreferences multiProcessPreferences = new AppPreferences(getContext());
             Config tunnelConfig = new Config();
             tunnelConfig.egressRegion = multiProcessPreferences
                     .getString(getContext().getString(R.string.egressRegionPreference),
@@ -655,13 +659,22 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
         Single<String> sponsorIdSingle = purchaseVerifier.sponsorIdSingle();
 
-        BiFunction<Config, String, Config> zipper =
-                (config, sponsorId) -> {
+        int deviceLocationPrecision = multiProcessPreferences
+                .getInt(getContext().getString(R.string.deviceLocationPrecisionParameter),
+                        0);
+
+        Single<String> geoHashSingle =
+                Location.getGeoHashSingle(getContext(), deviceLocationPrecision, 1000)
+                        .onErrorReturnItem("");
+
+        Function3<Config, String, String, Config> zipper =
+                (config, sponsorId, deviceLocation) -> {
                     config.sponsorId = sponsorId;
+                    config.deviceLocation = deviceLocation;
                     return config;
                 };
 
-        return Single.zip(configSingle, sponsorIdSingle, zipper);
+        return Single.zip(configSingle, sponsorIdSingle, geoHashSingle, zipper);
     }
 
     private Notification createNotification(
@@ -1359,6 +1372,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
             json.put("DNSResolverAlternateServers", new JSONArray("[\"1.1.1.1\", \"1.0.0.1\", \"8.8.8.8\", \"8.8.4.4\"]"));
 
+            if (!TextUtils.isEmpty(tunnelConfig.deviceLocation)) {
+                json.put("DeviceLocation", tunnelConfig.deviceLocation);
+            }
+
             return json.toString();
         } catch (JSONException e) {
             return null;
@@ -1867,8 +1884,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     @Override
     public void onApplicationParameters(@NonNull Object o) {
         showPurchaseRequiredPromptFlag = ((JSONObject) o).optBoolean("ShowPurchaseRequiredPrompt");
+
+        int deviceLocationPrecision = ((JSONObject) o).optInt("DeviceLocationPrecision");
+
         final AppPreferences mp = new AppPreferences(getContext());
         mp.put(m_parentService.getString(R.string.showPurchaseRequiredPromptFlag), showPurchaseRequiredPromptFlag);
+
+        mp.put(m_parentService.getString(R.string.deviceLocationPrecisionParameter), deviceLocationPrecision);
     }
 
     // PurchaseVerifier.VerificationResultListener implementation
