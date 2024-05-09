@@ -78,6 +78,15 @@ public class PxeWebDialog {
                 return true;
             }
         };
+        // Disable all file:// URLs
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            webView.getSettings().setAllowUniversalAccessFromFileURLs(false);
+            webView.getSettings().setAllowFileAccessFromFileURLs(false);
+        }
+        webView.getSettings().setAllowFileAccess(false);
+        // Disable all content:// URLs
+        webView.getSettings().setAllowContentAccess(false);
+
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setDomStorageEnabled(true);
         webView.getSettings().setLoadWithOverviewMode(true);
