@@ -128,6 +128,15 @@ public class SponsorHomePage {
         this.webView.setWebViewClient(webViewClient);
 
         WebSettings webSettings = this.webView.getSettings();
+        // Disable all file:// URLs
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            webSettings.setAllowUniversalAccessFromFileURLs(false);
+            webSettings.setAllowFileAccessFromFileURLs(false);
+        }
+        webSettings.setAllowFileAccess(false);
+        // Disable all content:// URLs
+        webSettings.setAllowContentAccess(false);
+
         webSettings.setJavaScriptEnabled(true);
         webSettings.setDomStorageEnabled(true);
         webSettings.setLoadWithOverviewMode(true);
