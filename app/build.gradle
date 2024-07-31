@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 34
+    namespace 'com.psiphon3.subscription'
 
     android.defaultConfig.vectorDrawables.useSupportLibrary = true
 
@@ -25,6 +25,7 @@ android {
                 applicationId "com.psiphon3.subscription"
                 resValue "string", "tray__authority", "${applicationId}.tray"
                 minSdkVersion 14
+                compileSdk 34
                 targetSdkVersion 34
                 versionCode verCode
                 versionName verName
@@ -89,6 +90,10 @@ android {
         targetCompatibility = '1.8'
         // Flag to enable support for the new language APIs
         coreLibraryDesugaringEnabled true
+    }
+
+    buildFeatures {
+        buildConfig true
     }
 
     if (propFile.canRead()) {
