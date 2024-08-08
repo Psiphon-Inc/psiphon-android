@@ -48,6 +48,7 @@ import com.psiphon3.psicash.PsiCashException;
 import com.psiphon3.psicash.mvibase.MviView;
 import com.psiphon3.psicash.util.SingleViewEvent;
 import com.psiphon3.psicash.util.UiHelpers;
+import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.psiphonlibrary.TunnelServiceInteractor;
 import com.psiphon3.subscription.R;
@@ -119,8 +120,12 @@ public class PsiCashSignInFragment extends Fragment
 
         psiCashAccountViewModel.processIntents(intents());
 
-        // Linkify "create account" explanation text
+        // Set the PsiCash FAQ URL in the "PsiCash create account" explanation text and linkify it
         TextView tv = view.findViewById(R.id.psicash_create_account_explanation_text_id);
+        String psiCashCreateAccountExplanationText = String.format(
+                requireContext().getString(R.string.psicash_create_account_explanation_text_updated),
+                EmbeddedValues.FAQ_URL);
+        tv.setText(psiCashCreateAccountExplanationText);
         Linkify.addLinks(tv, Linkify.WEB_URLS);
 
         // Hook up log into existing account click action
