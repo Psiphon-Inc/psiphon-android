@@ -483,11 +483,6 @@
     <!-- Text that appears above the "Create account" button on the PsiCash sign in screen. -->
     <string name="psicash_protect_psicash_text">حماية PsiCash الخاص بك!</string>
 
-    <!-- Explanation text that appears below "Create account" button on the PsiCash sign in screen.
-    Do not translate or transliterate terms PsiCash or Psiphon, do not change or add HTML tags to the https://psiphon.ca/faq.html#psicash-account URL,
-    it will be 'linkified' programmatically in the app. -->
-    <string name="psicash_create_account_explanation_text">سيساعد إنشاء حساب PsiCash في الحفاظ على PsiCash إذا أعدت تثبيت التطبيق أو استخدمت Psiphon على جهاز آخر. يرجى زيارة https://psiphon.ca/faq.html#psicash-account لمعرفة المزيد.</string>
-
     <!-- Text that appears above the "Log in" button on the PsiCash sign in screen. -->
     <string name="psicash_already_have_account_text">ألديك حساب بالفعل؟</string>
 
