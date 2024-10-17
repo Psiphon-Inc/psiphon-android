@@ -32,6 +32,14 @@ android {
                 testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
                 multiDexEnabled true
                 vectorDrawables.useSupportLibrary = true
+
+                // tun2socks NDK build configuration
+                externalNativeBuild {
+                    ndkBuild {
+                        cFlags "-DNDEBUG"
+                    }
+                }
+
                 // Build type specific defaults below
                 //
                 // Specify non-null URL to override landing page from handshake
@@ -111,6 +119,15 @@ android {
         }
     } else {
         throw new GradleException('signing.properties not found!')
+    }
+
+    // For android 14 support we have to use ndk r17c or lower
+    ndkVersion '17.2.4988734'
+    externalNativeBuild {
+        ndkBuild {
+            // Path to the tun2socks NDK build script
+            path "src/main/jni/Android.mk"
+        }
     }
 
     buildTypes.each {
