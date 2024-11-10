@@ -49,7 +49,6 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.webkit.WebView;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -226,7 +225,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         multiProcessPreferences = new AppPreferences(this);
 
         googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(getApplicationContext());
-        googlePlayBillingHelper.startIab();
+        // Start observing live purchases updates
+        googlePlayBillingHelper.startObservePurchasesUpdates();
 
         viewModel = new ViewModelProvider(this,
                 new ViewModelProvider.AndroidViewModelFactory(getApplication()))
@@ -310,6 +310,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     @Override
     public void onDestroy() {
         compositeDisposable.dispose();
+        googlePlayBillingHelper.stopObservePurchasesUpdates();
         super.onDestroy();
     }
 

@@ -29,13 +29,10 @@ import androidx.annotation.NonNull;
 import com.android.billingclient.api.AcknowledgePurchaseParams;
 import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.BillingClient.BillingResponseCode;
-import com.android.billingclient.api.BillingClientStateListener;
 import com.android.billingclient.api.BillingFlowParams;
 import com.android.billingclient.api.BillingResult;
 import com.android.billingclient.api.ConsumeParams;
 import com.android.billingclient.api.Purchase;
-import com.android.billingclient.api.PurchasesResponseListener;
-import com.android.billingclient.api.PurchasesUpdatedListener;
 import com.android.billingclient.api.SkuDetails;
 import com.android.billingclient.api.SkuDetailsParams;
 import com.jakewharton.rxrelay2.BehaviorRelay;
@@ -54,10 +51,11 @@ import io.reactivex.BackpressureStrategy;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
-import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.SingleEmitter;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 
+// TODO: address deprecation of various SKU types and related methods
 public class GooglePlayBillingHelper {
     private static final String IAB_PUBLIC_KEY = BuildConfig.IAB_PUBLIC_KEY;
     static public final String IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU = "speed_limited_ad_free_subscription";
@@ -94,13 +92,15 @@ public class GooglePlayBillingHelper {
     }
 
     private static GooglePlayBillingHelper INSTANCE = null;
-    private final Flowable<BillingClient> connectionFlowable;
-    private PublishRelay<PurchasesUpdate> purchasesUpdatedRelay;
+    private final Completable connectionCompletable;
+    private final PublishRelay<PurchasesUpdate> purchasesUpdatedRelay;
 
-    private CompositeDisposable compositeDisposable;
-    private BehaviorRelay<List<SkuDetails>> allSkuDetailsBehaviorRelay;
-    private BehaviorRelay<PurchaseState> purchaseStateBehaviorRelay;
-    private Disposable startIabDisposable;
+    private final CompositeDisposable compositeDisposable;
+    private final BehaviorRelay<List<SkuDetails>> allSkuDetailsBehaviorRelay;
+    private final BehaviorRelay<PurchaseState> purchaseStateBehaviorRelay;
+    private Disposable observePurchasesUpdatesDisposable;
+
+    private final BillingClientManager billingClientManager;
 
 
     private GooglePlayBillingHelper(final Context ctx) {
@@ -109,53 +109,13 @@ public class GooglePlayBillingHelper {
         purchaseStateBehaviorRelay = BehaviorRelay.create();
         allSkuDetailsBehaviorRelay = BehaviorRelay.create();
 
-        PurchasesUpdatedListener listener = (billingResult, purchases) -> {
+        this.billingClientManager = new BillingClientManager(ctx.getApplicationContext(), (billingResult, purchases) -> {
             @BillingResponseCode int responseCode = billingResult.getResponseCode();
             PurchasesUpdate purchasesUpdate = PurchasesUpdate.create(responseCode, purchases);
             purchasesUpdatedRelay.accept(purchasesUpdate);
-        };
+        });
 
-        Flowable<BillingClient> billingClientFlowable = Flowable.<BillingClient>create(emitter -> {
-            BillingClient billingClient = BillingClient.newBuilder(ctx)
-                    .enablePendingPurchases()
-                    .setListener(listener)
-                    .build();
-            billingClient.startConnection(new BillingClientStateListener() {
-                @Override
-                public void onBillingSetupFinished(BillingResult billingResult) {
-                    if (!emitter.isCancelled()) {
-                        @BillingResponseCode int responseCode = billingResult.getResponseCode();
-                        if (responseCode == BillingResponseCode.OK) {
-                            emitter.onNext(billingClient);
-                        } else {
-                            emitter.onError(new BillingException(responseCode));
-                        }
-                    }
-                }
-
-                @Override
-                public void onBillingServiceDisconnected() {
-                    if (!emitter.isCancelled()) {
-                        emitter.onComplete();
-                    }
-                }
-            });
-
-            emitter.setCancellable(() -> {
-                if (billingClient.isReady()) {
-                    billingClient.endConnection();
-                }
-            });
-
-        }, BackpressureStrategy.LATEST)
-                .repeat(); // reconnect automatically if client disconnects
-
-        this.connectionFlowable =
-                Completable.complete()
-                        .observeOn(AndroidSchedulers.mainThread()) // just to be sure billing client is called from main thread
-                        .andThen(billingClientFlowable)
-                        .replay(1) // return same last instance for all observers
-                        .refCount(); // keep connection if at least one observer exists
+        this.connectionCompletable = billingClientManager.ensureConnected();
     }
 
     public static GooglePlayBillingHelper getInstance(final Context context) {
@@ -194,28 +154,34 @@ public class GooglePlayBillingHelper {
                 .firstOrError();
     }
 
-    public void startIab() {
-        if (startIabDisposable != null && !startIabDisposable.isDisposed()) {
+    public void startObservePurchasesUpdates() {
+        if (observePurchasesUpdatesDisposable != null && !observePurchasesUpdatesDisposable.isDisposed()) {
             // already subscribed to updates, do nothing
             return;
         }
-        startIabDisposable = observeUpdates()
+        observePurchasesUpdatesDisposable = purchasesUpdatedRelay.toFlowable(BackpressureStrategy.LATEST)
                 .subscribe(
                         purchasesUpdate -> {
-                            if (purchasesUpdate.responseCode() == BillingClient.BillingResponseCode.OK) {
+                            if (purchasesUpdate.responseCode() == BillingResponseCode.OK) {
                                 processPurchases(purchasesUpdate.purchases());
-                            } else if (purchasesUpdate.responseCode() == BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED) {
+                            } else if (purchasesUpdate.responseCode() == BillingResponseCode.ITEM_ALREADY_OWNED) {
                                 queryAllPurchases();
                             } else {
-                                MyLog.e("GooglePlayBillingHelper::observeUpdates purchase update error response code: " + purchasesUpdate.responseCode());
+                                String message = BillingUtils.getBillingResponseMessage(purchasesUpdate.responseCode());
+                                MyLog.e("GooglePlayBillingHelper::startObservePurchasesUpdates purchase update error response code: " +
+                                        purchasesUpdate.responseCode() + ", message: " + message);
                             }
                         },
-                        err -> {
-                            purchaseStateBehaviorRelay.accept(PurchaseState.error(err));
-                        }
+                        err -> purchaseStateBehaviorRelay.accept(PurchaseState.error(err))
                 );
 
-        compositeDisposable.add(startIabDisposable);
+        compositeDisposable.add(observePurchasesUpdatesDisposable);
+    }
+
+    public void stopObservePurchasesUpdates() {
+        if (observePurchasesUpdatesDisposable != null && !observePurchasesUpdatesDisposable.isDisposed()) {
+            observePurchasesUpdatesDisposable.dispose();
+        }
     }
 
     private Single<List<SkuDetails>> getConsumablesSkuDetails() {
@@ -261,12 +227,13 @@ public class GooglePlayBillingHelper {
     }
 
     private void processPurchases(List<Purchase> purchaseList) {
-        if (purchaseList == null || purchaseList.size() == 0) {
+        if (purchaseList == null || purchaseList.isEmpty()) {
             purchaseStateBehaviorRelay.accept(PurchaseState.empty());
             return;
         }
 
-        List<Completable> completables = new ArrayList<>();
+        List<Completable> acknowledgeCompletables = new ArrayList<>();
+
         // Iterate from back to front, making it safe to remove purchases
         for (int i = purchaseList.size() - 1; i >= 0; i--) {
             Purchase purchase = purchaseList.get(i);
@@ -289,7 +256,14 @@ public class GooglePlayBillingHelper {
             // If you do not acknowledge a purchase, the Google Play Store will provide a refund to the
             // users within a few days of the transaction. Therefore you have to implement
             // [BillingClient.acknowledgePurchaseAsync] inside your app.
-            completables.add(acknowledgePurchase(purchase));
+            acknowledgeCompletables.add(
+                    acknowledgePurchase(purchase)
+                            .onErrorResumeNext(error -> {
+                                MyLog.e("GooglePlayBillingHelper::processPurchases: failed to acknowledge purchase: " + purchase + ", error: " + error);
+                                // Complete to allow other acknowledgments to proceed
+                                return Completable.complete();
+                            })
+            );
 
             // Check if this purchase is an expired timepass which needs to be consumed
             if (IAB_TIMEPASS_SKUS_TO_DAYS.containsKey(purchase.getSkus().get(0))) {
@@ -300,7 +274,7 @@ public class GooglePlayBillingHelper {
         }
 
         // Wait for all acknowledgePurchase subscriptions to complete
-        compositeDisposable.add(Completable.merge(completables)
+        compositeDisposable.add(Completable.merge(acknowledgeCompletables)
                 // OLD COMMENT:
                 // If the initial purchase list contains not acknowledged purchases we need to
                 // update it since the purchases were just acknowledged.
@@ -317,11 +291,6 @@ public class GooglePlayBillingHelper {
                 .subscribe(() -> purchaseStateBehaviorRelay.accept(PurchaseState.create(purchaseList))));
     }
 
-    Flowable<PurchasesUpdate> observeUpdates() {
-        return connectionFlowable.flatMap(s ->
-                purchasesUpdatedRelay.toFlowable(BackpressureStrategy.LATEST));
-    }
-
     public Single<List<Purchase>> getPurchases() {
         return getOwnedItems(BillingClient.SkuType.INAPP);
     }
@@ -331,30 +300,37 @@ public class GooglePlayBillingHelper {
     }
 
     private Single<List<Purchase>> getOwnedItems(String type) {
-        return connectionFlowable
-                .observeOn(AndroidSchedulers.mainThread())
-                .firstOrError()
-                .flatMap(client -> {
-                    // If subscriptions are not supported return an empty purchase list, do not send error.
-                    if (type.equals(BillingClient.SkuType.SUBS)) {
-                        BillingResult billingResult = client.isFeatureSupported(BillingClient.FeatureType.SUBSCRIPTIONS);
-                        if (billingResult.getResponseCode() != BillingResponseCode.OK) {
-                            MyLog.w("Subscriptions are not supported, billing response code: " + billingResult.getResponseCode());
-                            List<Purchase> purchaseList = Collections.emptyList();
-                            return Single.just(purchaseList);
-                        }
-                    }
+        // Wrap the main logic with RetryUtils.withRetry
+        return BillingUtils.withRetry(
+                        connectionCompletable.andThen(Single.create((SingleEmitter<List<Purchase>> emitter) -> {
+                            // Retrieve the BillingClient instance
+                            BillingClient client = billingClientManager.getBillingClient();
 
-                    return Single.create(emitter -> client.queryPurchasesAsync(type, (billingResult, list) -> {
-                        if (!emitter.isDisposed()) {
-                            if (billingResult.getResponseCode() == BillingResponseCode.OK) {
-                                emitter.onSuccess(list);
-                            } else {
-                                emitter.onError(new BillingException((billingResult.getResponseCode())));
+                            // Handle the subscriptions feature check
+                            if (type.equals(BillingClient.SkuType.SUBS)) {
+                                BillingResult featureCheckResult = client.isFeatureSupported(BillingClient.FeatureType.SUBSCRIPTIONS);
+                                if (featureCheckResult.getResponseCode() != BillingClient.BillingResponseCode.OK) {
+                                    // Log and return an empty list for unsupported subscriptions
+                                    String message = BillingUtils.getBillingResponseMessage(featureCheckResult.getResponseCode());
+                                    MyLog.w("Subscriptions are not supported, billing response code: " +
+                                            featureCheckResult.getResponseCode() + ", message: " + message);
+                                    emitter.onSuccess(Collections.emptyList());
+                                    return;
+                                }
                             }
-                        }
-                    }));
-                })
+
+                            // Perform the asynchronous query
+                            client.queryPurchasesAsync(type, (result, purchases) -> {
+                                if (result.getResponseCode() == BillingClient.BillingResponseCode.OK) {
+                                    emitter.onSuccess(purchases); // Success
+                                } else {
+                                    emitter.onError(new BillingException(result.getResponseCode())); // Error
+                                }
+                            });
+                        })).toFlowable(), // Convert Single to Flowable for retry logic
+                        3 // Retry up to 3 times
+                )
+                .firstOrError()
                 .doOnError(err -> MyLog.e("GooglePlayBillingHelper::getOwnedItems type: " + type + " error: " + err));
     }
 
@@ -364,32 +340,36 @@ public class GooglePlayBillingHelper {
                 .setSkusList(ids)
                 .setType(type)
                 .build();
-        return connectionFlowable
-                .observeOn(AndroidSchedulers.mainThread())
-                .flatMap(client ->
-                        Flowable.<List<SkuDetails>>create(emitter -> {
+
+        // Wrap the main logic with BillingUtils.withRetry
+        return BillingUtils.withRetry(
+                        connectionCompletable.andThen(Single.create((SingleEmitter<List<SkuDetails>> emitter) -> {
+                            // Retrieve the BillingClient instance
+                            BillingClient client = billingClientManager.getBillingClient();
+
+                            // Perform the asynchronous query
                             client.querySkuDetailsAsync(params, (billingResult, skuDetailsList) -> {
-                                if (!emitter.isCancelled()) {
-                                    if (billingResult.getResponseCode() == BillingResponseCode.OK) {
-                                        if (skuDetailsList == null) {
-                                            skuDetailsList = Collections.emptyList();
-                                        }
-                                        emitter.onNext(skuDetailsList);
-                                    } else {
-                                        emitter.onError(new BillingException(billingResult.getResponseCode()));
+                                if (billingResult.getResponseCode() == BillingResponseCode.OK) {
+                                    if (skuDetailsList == null) {
+                                        skuDetailsList = Collections.emptyList();
                                     }
+                                    emitter.onSuccess(skuDetailsList); // Success
+                                } else {
+                                    emitter.onError(new BillingException(billingResult.getResponseCode())); // Error
                                 }
                             });
-                        }, BackpressureStrategy.LATEST))
-                .firstOrError()
+                        })).toFlowable(), // Convert Single to Flowable for retry logic
+                        3 // Retry up to 3 times
+                )
+                .firstOrError() // Convert back to Single
                 .doOnError(err -> MyLog.e("GooglePlayBillingHelper::getSkuDetails error: " + err));
     }
 
     public Completable launchFlow(Activity activity, String oldSku, String oldPurchaseToken, SkuDetails skuDetails) {
         BillingFlowParams.Builder billingParamsBuilder = BillingFlowParams
-                .newBuilder();
+                .newBuilder()
+                .setSkuDetails(skuDetails);
 
-        billingParamsBuilder.setSkuDetails(skuDetails);
         if (!TextUtils.isEmpty(oldSku) && !TextUtils.isEmpty(oldPurchaseToken)) {
             billingParamsBuilder.setSubscriptionUpdateParams(
                     BillingFlowParams.SubscriptionUpdateParams.newBuilder()
@@ -397,18 +377,24 @@ public class GooglePlayBillingHelper {
                             .build());
         }
 
-        return connectionFlowable
-                .observeOn(AndroidSchedulers.mainThread())
-                .flatMap(client ->
-                        Flowable.just(client.launchBillingFlow(activity, billingParamsBuilder.build())))
-                .firstOrError()
-                .flatMapCompletable(billingResult -> {
-                    if (billingResult.getResponseCode() == BillingResponseCode.OK) {
-                        return Completable.complete();
-                    } else {
-                        return Completable.error(new BillingException(billingResult.getResponseCode()));
-                    }
-                })
+        // Wrap the main logic with BillingUtils.withRetry
+        return BillingUtils.withRetry(
+                        connectionCompletable.andThen(Completable.create(emitter -> {
+                            // Retrieve the BillingClient instance
+                            BillingClient client = billingClientManager.getBillingClient();
+
+                            // Perform the launch billing flow
+                            BillingResult billingResult = client.launchBillingFlow(activity, billingParamsBuilder.build());
+
+                            if (billingResult.getResponseCode() == BillingResponseCode.OK) {
+                                emitter.onComplete(); // Success
+                            } else {
+                                emitter.onError(new BillingException(billingResult.getResponseCode())); // Error
+                            }
+                        })).toFlowable(), // Convert Completable to Flowable for retry logic
+                        3 // Retry up to 3 times
+                )
+                .ignoreElements() // Convert back to Completable
                 .doOnError(err -> MyLog.e("GooglePlayBillingHelper::launchFlow error: " + err));
     }
 
@@ -421,26 +407,57 @@ public class GooglePlayBillingHelper {
             return Completable.complete();
         }
 
-        AcknowledgePurchaseParams.Builder paramsBuilder = AcknowledgePurchaseParams
+        AcknowledgePurchaseParams params = AcknowledgePurchaseParams
                 .newBuilder()
-                .setPurchaseToken(purchase.getPurchaseToken());
-        return connectionFlowable
-                .observeOn(AndroidSchedulers.mainThread())
-                .firstOrError()
-                .flatMapCompletable(client ->
-                        Completable.create(emitter -> {
-                            client.acknowledgePurchase(paramsBuilder.build(), billingResult -> {
+                .setPurchaseToken(purchase.getPurchaseToken())
+                .build();
+
+        // Wrap the main logic with BillingUtils.withRetry
+        return BillingUtils.withRetry(
+                        connectionCompletable.andThen(Completable.create(emitter -> {
+                            BillingClient client = billingClientManager.getBillingClient();
+
+                            // Perform acknowledgment
+                            client.acknowledgePurchase(params, billingResult -> {
                                 if (!emitter.isDisposed()) {
                                     if (billingResult.getResponseCode() == BillingResponseCode.OK) {
-                                        emitter.onComplete();
+                                        emitter.onComplete(); // Success
                                     } else {
-                                        emitter.onError(new BillingException(billingResult.getResponseCode()));
+                                        emitter.onError(new BillingException(billingResult.getResponseCode())); // Error
                                     }
                                 }
                             });
-                        }))
-                .doOnError(err -> MyLog.e("GooglePlayBillingHelper::acknowledgePurchase error: " + err))
-                .onErrorComplete();
+                        })).toFlowable(), // Convert Completable to Flowable for retry logic
+                        3 // Retry up to 3 times
+                )
+                .ignoreElements() // Convert back to Completable
+                .doOnError(err -> MyLog.e("GooglePlayBillingHelper::acknowledgePurchase error: " + err));
+    }
+
+    Single<String> consumePurchase(Purchase purchase) {
+        ConsumeParams params = ConsumeParams
+                .newBuilder()
+                .setPurchaseToken(purchase.getPurchaseToken())
+                .build();
+
+        // Wrap the main logic with BillingUtils.withRetry
+        return BillingUtils.withRetry(
+                        connectionCompletable.andThen(Single.create((SingleEmitter<String> emitter) -> {
+                            BillingClient client = billingClientManager.getBillingClient();
+
+                            // Perform the consume operation
+                            client.consumeAsync(params, (billingResult, purchaseToken) -> {
+                                if (billingResult.getResponseCode() == BillingResponseCode.OK) {
+                                    emitter.onSuccess(purchaseToken); // Success
+                                } else {
+                                    emitter.onError(new BillingException(billingResult.getResponseCode())); // Error
+                                }
+                            });
+                        })).toFlowable(), // Convert Single to Flowable for retry logic
+                        3 // Retry up to 3 times
+                )
+                .firstOrError() // Convert back to Single
+                .doOnError(err -> MyLog.e("GooglePlayBillingHelper::consumePurchase error: " + err));
     }
 
     static boolean isUnlimitedSubscription(@NonNull Purchase purchase) {
@@ -468,28 +485,6 @@ public class GooglePlayBillingHelper {
         return IAB_PSICASH_SKUS_TO_VALUE.containsKey(purchase.getSkus().get(0));
     }
 
-    Single<String> consumePurchase(Purchase purchase) {
-        ConsumeParams params = ConsumeParams
-                .newBuilder()
-                .setPurchaseToken(purchase.getPurchaseToken())
-                .build();
-
-        return connectionFlowable
-                .flatMap(client ->
-                        Flowable.<String>create(emitter -> {
-                            client.consumeAsync(params, (billingResult, purchaseToken) -> {
-                                if (!emitter.isCancelled()) {
-                                    if (billingResult.getResponseCode() == BillingResponseCode.OK) {
-                                        emitter.onNext(purchaseToken);
-                                    } else {
-                                        emitter.onError(new BillingException(billingResult.getResponseCode()));
-                                    }
-                                }
-                            });
-                        }, BackpressureStrategy.LATEST))
-                .firstOrError();
-    }
-
     public static class BillingException extends Exception {
         private final @BillingResponseCode int billingResultResponseCode;
         public BillingException(@BillingResponseCode int billingResultResponseCode) {
@@ -500,10 +495,12 @@ public class GooglePlayBillingHelper {
             return billingResultResponseCode;
         }
 
+        @NonNull
         @Override
         public String toString() {
             return "GooglePlayBillingHelper.BillingException{" +
                     "billingResultResponseCode=" + billingResultResponseCode +
+                    ", billingResultMessage='" + BillingUtils.getBillingResponseMessage(billingResultResponseCode) + '\'' +
                     '}';
         }
     }

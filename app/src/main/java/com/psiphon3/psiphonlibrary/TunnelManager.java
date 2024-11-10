@@ -275,6 +275,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         EmbeddedValues.initialize(getContext());
 
         purchaseVerifier = new PurchaseVerifier(getContext(), this);
+        // Start all subscription and purchase verification observers
+        purchaseVerifier.start();
 
         m_compositeDisposable.add(connectionStatusUpdaterDisposable());
     }
@@ -553,7 +555,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         m_compositeDisposable.dispose();
         // Unregister host service for the VPN manager
         m_vpnManager.unregisterHostService();
-        purchaseVerifier.onDestroy();
+        // Stop and dispose of all observable chains in the purchaseVerifier
+        purchaseVerifier.stop();
     }
 
     private void cancelDisallowedTrafficAlertNotification() {
@@ -877,11 +880,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                         manager.mClients.put(msg.replyTo.hashCode(), client);
                         manager.m_newClientPublishRelay.accept(new Object());
 
-                        // Pro only: for each new client that is an activity trigger IAB check and
-                        // upgrade current connection if there is a new valid subscription purchase.
-                        if (client.isActivity) {
-                            manager.purchaseVerifier.queryAllPurchases();
-                        }
+                        // Note that we no longer triggering purchaseVerifier.queryAllPurchases here because the purchaseVerifier
+                        // listens on purchase updates provided by GooglePlayBillingHelper.startObservePurchasesUpdates()
+                        // which should trigger the verification process for new purchases.
                     }
                     break;
 
