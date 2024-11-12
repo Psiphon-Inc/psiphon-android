@@ -64,8 +64,14 @@
     <!-- Title of the button that dismisses PsiCash account login error alert dialog-->
     <string name="psicash_login_error_alert_dismiss">ច្រានចោល</string>
 
+    <!-- Title of the PsiCash account log out alert confirmation dialog -->
+    <string name="psicash_logout_alert_title">ចាកចេញ</string>
+
     <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Dismisses the log out dialog without any further action when clicked. -->
     <string name="psicash_cancel_lbl">លុបចេញ</string>
+
+    <!-- PsiCash account 'log out' preference title as it appears in the app's preference screen. -->
+    <string name="psicash_account_logout_pref_title">ចាកចេញ</string>
 
     <!-- PsiCash account 'log in' preference title as it appears in the app's preference screen. -->
     <string name="psicash_account_login_pref_title">ចូលប្រើប្រាស់</string>
