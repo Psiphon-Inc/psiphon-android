@@ -29,6 +29,7 @@ import androidx.annotation.NonNull;
 import com.android.billingclient.api.AcknowledgePurchaseParams;
 import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.BillingClient.BillingResponseCode;
+import com.android.billingclient.api.BillingClient.FeatureType;
 import com.android.billingclient.api.BillingFlowParams;
 import com.android.billingclient.api.BillingResult;
 import com.android.billingclient.api.ConsumeParams;
@@ -308,23 +309,34 @@ public class GooglePlayBillingHelper {
 
                             // Handle the subscriptions feature check
                             if (type.equals(BillingClient.SkuType.SUBS)) {
-                                BillingResult featureCheckResult = client.isFeatureSupported(BillingClient.FeatureType.SUBSCRIPTIONS);
-                                if (featureCheckResult.getResponseCode() != BillingClient.BillingResponseCode.OK) {
+                                BillingResult featureCheckResult = client.isFeatureSupported(FeatureType.SUBSCRIPTIONS);
+
+                                if (featureCheckResult.getResponseCode() == BillingResponseCode.FEATURE_NOT_SUPPORTED) {
                                     // Log and return an empty list for unsupported subscriptions
                                     String message = BillingUtils.getBillingResponseMessage(featureCheckResult.getResponseCode());
                                     MyLog.w("Subscriptions are not supported, billing response code: " +
                                             featureCheckResult.getResponseCode() + ", message: " + message);
-                                    emitter.onSuccess(Collections.emptyList());
+                                    if (!emitter.isDisposed()) {
+                                        emitter.onSuccess(Collections.emptyList());
+                                    }
+                                    return;
+                                } else if (featureCheckResult.getResponseCode() != BillingResponseCode.OK) {
+                                    // Return an error early for other feature check errors
+                                    if (!emitter.isDisposed()) {
+                                        emitter.onError(new BillingException(featureCheckResult.getResponseCode()));
+                                    }
                                     return;
                                 }
                             }
 
                             // Perform the asynchronous query
                             client.queryPurchasesAsync(type, (result, purchases) -> {
-                                if (result.getResponseCode() == BillingClient.BillingResponseCode.OK) {
-                                    emitter.onSuccess(purchases); // Success
-                                } else {
-                                    emitter.onError(new BillingException(result.getResponseCode())); // Error
+                                if (!emitter.isDisposed()) {
+                                    if (result.getResponseCode() == BillingResponseCode.OK) {
+                                        emitter.onSuccess(purchases); // Success
+                                    } else {
+                                        emitter.onError(new BillingException(result.getResponseCode())); // Error
+                                    }
                                 }
                             });
                         })).toFlowable(), // Convert Single to Flowable for retry logic
@@ -349,13 +361,15 @@ public class GooglePlayBillingHelper {
 
                             // Perform the asynchronous query
                             client.querySkuDetailsAsync(params, (billingResult, skuDetailsList) -> {
-                                if (billingResult.getResponseCode() == BillingResponseCode.OK) {
-                                    if (skuDetailsList == null) {
-                                        skuDetailsList = Collections.emptyList();
+                                if (!emitter.isDisposed()) {
+                                    if (billingResult.getResponseCode() == BillingResponseCode.OK) {
+                                        if (skuDetailsList == null) {
+                                            skuDetailsList = Collections.emptyList();
+                                        }
+                                        emitter.onSuccess(skuDetailsList); // Success
+                                    } else {
+                                        emitter.onError(new BillingException(billingResult.getResponseCode())); // Error
                                     }
-                                    emitter.onSuccess(skuDetailsList); // Success
-                                } else {
-                                    emitter.onError(new BillingException(billingResult.getResponseCode())); // Error
                                 }
                             });
                         })).toFlowable(), // Convert Single to Flowable for retry logic
@@ -386,10 +400,12 @@ public class GooglePlayBillingHelper {
                             // Perform the launch billing flow
                             BillingResult billingResult = client.launchBillingFlow(activity, billingParamsBuilder.build());
 
-                            if (billingResult.getResponseCode() == BillingResponseCode.OK) {
-                                emitter.onComplete(); // Success
-                            } else {
-                                emitter.onError(new BillingException(billingResult.getResponseCode())); // Error
+                            if (!emitter.isDisposed()) {
+                                if (billingResult.getResponseCode() == BillingResponseCode.OK) {
+                                    emitter.onComplete(); // Success
+                                } else {
+                                    emitter.onError(new BillingException(billingResult.getResponseCode())); // Error
+                                }
                             }
                         })).toFlowable(), // Convert Completable to Flowable for retry logic
                         3 // Retry up to 3 times
@@ -447,10 +463,12 @@ public class GooglePlayBillingHelper {
 
                             // Perform the consume operation
                             client.consumeAsync(params, (billingResult, purchaseToken) -> {
-                                if (billingResult.getResponseCode() == BillingResponseCode.OK) {
-                                    emitter.onSuccess(purchaseToken); // Success
-                                } else {
-                                    emitter.onError(new BillingException(billingResult.getResponseCode())); // Error
+                                if (!emitter.isDisposed()) {
+                                    if (billingResult.getResponseCode() == BillingResponseCode.OK) {
+                                        emitter.onSuccess(purchaseToken); // Success
+                                    } else {
+                                        emitter.onError(new BillingException(billingResult.getResponseCode())); // Error
+                                    }
                                 }
                             });
                         })).toFlowable(), // Convert Single to Flowable for retry logic
