@@ -467,7 +467,11 @@ public class GooglePlayBillingHelper {
                             // Perform the consume operation
                             client.consumeAsync(params, (billingResult, purchaseToken) -> {
                                 if (!emitter.isDisposed()) {
-                                    if (billingResult.getResponseCode() == BillingResponseCode.OK) {
+                                    // It is possible that the purchase was already consumed by another purchase update flow,
+                                    // started by purchase verifier, for example, which will result in ITEM_NOT_OWNED response code.
+                                    // Do not treat this as an error, just complete the operation.
+                                    if (billingResult.getResponseCode() == BillingResponseCode.OK
+                                            || billingResult.getResponseCode() == BillingResponseCode.ITEM_NOT_OWNED) {
                                         emitter.onSuccess(purchaseToken); // Success
                                     } else {
                                         emitter.onError(new BillingException(billingResult.getResponseCode())); // Error
