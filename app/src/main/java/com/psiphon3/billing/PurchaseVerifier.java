@@ -23,7 +23,6 @@ import android.content.Context;
 import android.text.TextUtils;
 import android.util.Pair;
 
-import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.Purchase;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.TunnelState;
@@ -40,7 +39,6 @@ import org.json.JSONObject;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;

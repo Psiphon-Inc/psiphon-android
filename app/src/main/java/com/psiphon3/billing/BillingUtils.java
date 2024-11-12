@@ -80,14 +80,24 @@ public class BillingUtils {
     }
 
     // Check if the error is a transient billing error
-    // see: https://developer.android.com/reference/com/android/billingclient/api/BillingClient.BillingResponseCode
+    // See: https://developer.android.com/reference/com/android/billingclient/api/BillingClient.BillingResponseCode
     // for details on the response codes that should be retried automatically
+    //
+    // The following response codes are treated as transient and eligible for automatic retries:
+    // - SERVICE_DISCONNECTED: Indicates the service connection was lost.
+    // - SERVICE_UNAVAILABLE: Indicates the service is unavailable (e.g., due to network issues).
+    // - ERROR: Indicates a generic error occurred.
+    //
+    // Additionally, while the documentation does not explicitly specify retrying NETWORK_ERROR,
+    // testing has shown that consuming a purchase immediately after establishing a tunnel connection
+    // frequently results in this error. So, we are treating the NETWORK_ERROR as a transient error too.
     private static boolean isTransientError(Throwable error) {
         if (error instanceof GooglePlayBillingHelper.BillingException) {
             int responseCode = ((GooglePlayBillingHelper.BillingException) error).getBillingResultResponseCode();
             return responseCode == BillingResponseCode.SERVICE_DISCONNECTED
                     || responseCode == BillingResponseCode.SERVICE_UNAVAILABLE
-                    || responseCode == BillingResponseCode.ERROR;
+                    || responseCode == BillingResponseCode.ERROR
+                    || responseCode == BillingResponseCode.NETWORK_ERROR;
         }
         return false;
     }
