@@ -32,8 +32,8 @@ import com.android.billingclient.api.BillingClient.BillingResponseCode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.reactivex.BackpressureStrategy;
 import io.reactivex.Completable;
 import io.reactivex.CompletableEmitter;
 import io.reactivex.Flowable;
@@ -41,11 +41,11 @@ import io.reactivex.Flowable;
 public class BillingClientManager {
     private final Context context;
     private BillingClient billingClient;
-    private boolean isConnecting = false;
-    private boolean isConnected = false;
+    private final AtomicBoolean isConnecting = new AtomicBoolean(false);
+    private final AtomicBoolean isConnected = new AtomicBoolean(false);
     private final PurchasesUpdatedListener purchasesUpdatedListener;
 
-    private final List<CompletableEmitter> pendingOperations = new ArrayList<>();
+    private final List<CompletableEmitter> pendingCompletions = new ArrayList<>();
 
     public BillingClientManager(Context context, PurchasesUpdatedListener listener) {
         this.context = context.getApplicationContext();
@@ -65,15 +65,21 @@ public class BillingClientManager {
 
     private synchronized Completable connectIfNeeded() {
         return Completable.create(emitter -> {
-            if (isConnected && billingClient.isReady()) {
+            // Do not attempt to connect if the upstream has unsubscribed
+            if (emitter.isDisposed()) {
+                return;
+            }
+
+            if (isConnected.get() && billingClient.isReady()) {
                 emitter.onComplete(); // Already connected, no action needed
                 return;
             }
 
-            pendingOperations.add(emitter);
+            synchronized (pendingCompletions) {
+                pendingCompletions.add(emitter);
+            }
 
-            if (!isConnecting) {
-                isConnecting = true;
+            if (isConnecting.compareAndSet(false, true)) {
                 connect();
             }
         });
@@ -83,79 +89,62 @@ public class BillingClientManager {
         if (billingClient == null) {
             billingClient = BillingClient.newBuilder(context)
                     .enablePendingPurchases()
-                    .setListener(purchasesUpdatedListener) // Attach the listener here
+                    .setListener(purchasesUpdatedListener)
                     .build();
         }
 
         billingClient.startConnection(new BillingClientStateListener() {
             @Override
             public void onBillingSetupFinished(@NonNull BillingResult billingResult) {
-                synchronized (BillingClientManager.this) {
-                    isConnecting = false;
-                    if (billingResult.getResponseCode() == BillingResponseCode.OK) {
-                        isConnected = true;
-                        for (CompletableEmitter emitter : pendingOperations) {
-                            emitter.onComplete();
-                        }
-                    } else {
-                        isConnected = false;
-                        for (CompletableEmitter emitter : pendingOperations) {
-                            emitter.onError(new GooglePlayBillingHelper.BillingException(billingResult.getResponseCode()));
-                        }
-                    }
-                    pendingOperations.clear();
+                if (billingResult.getResponseCode() == BillingResponseCode.OK) {
+                    isConnected.set(true);
+                    completeAllPendingOperations(null);
+                } else {
+                    isConnected.set(false);
+                    completeAllPendingOperations(new GooglePlayBillingHelper.BillingException(billingResult.getResponseCode()));
                 }
+                isConnecting.set(false);
             }
 
             @Override
             public void onBillingServiceDisconnected() {
-                synchronized (BillingClientManager.this) {
-                    isConnected = false;
-                    isConnecting = false;
-                }
+                isConnected.set(false);
+                isConnecting.set(false);
             }
         });
     }
 
-    public synchronized void disconnect() {
+    private void completeAllPendingOperations(Throwable e) {
+        // Copy the list of pending operations to avoid concurrent modification issues
+        List<CompletableEmitter> localPendingOperations;
+        synchronized (pendingCompletions) {
+            localPendingOperations = new ArrayList<>(pendingCompletions);
+            pendingCompletions.clear();
+        }
+        for (CompletableEmitter emitter : localPendingOperations) {
+            // Check if the upstream has unsubscribed
+            if (emitter.isDisposed()) {
+                continue;
+            }
+            if (e == null) {
+                emitter.onComplete();
+            } else {
+                emitter.onError(e);
+            }
+        }
+    }
+
+    public void disconnect() {
         if (billingClient != null && billingClient.isReady()) {
             billingClient.endConnection();
         }
-        isConnected = false;
+        isConnected.set(false);
     }
 
     public BillingClient getBillingClient() {
-        if (!isConnected) {
+        if (!isConnected.get()) {
             throw new IllegalStateException("BillingClient is not connected");
         }
         return billingClient;
-    }
-
-    public synchronized Flowable<BillingClient> freshBillingClient() {
-        return Flowable.create(emitter -> {
-            BillingClient newClient = BillingClient.newBuilder(context)
-                    .enablePendingPurchases()
-                    .setListener(purchasesUpdatedListener) // Attach the listener here
-                    .build();
-
-            newClient.startConnection(new BillingClientStateListener() {
-                @Override
-                public void onBillingSetupFinished(@NonNull BillingResult billingResult) {
-                    if (billingResult.getResponseCode() == BillingResponseCode.OK) {
-                        emitter.onNext(newClient);
-                        emitter.onComplete();
-                    } else {
-                        emitter.onError(new GooglePlayBillingHelper.BillingException(billingResult.getResponseCode()));
-                    }
-                }
-
-                @Override
-                public void onBillingServiceDisconnected() {
-                    emitter.onError(new GooglePlayBillingHelper.BillingException(BillingResponseCode.SERVICE_DISCONNECTED));
-                }
-            });
-
-            emitter.setCancellable(newClient::endConnection);
-        }, BackpressureStrategy.LATEST);
     }
 }
