@@ -25,6 +25,7 @@ import android.content.Intent;
 
 import com.psiphon3.log.MyLog;
 import com.psiphon3.psiphonlibrary.TunnelServiceInteractor;
+import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
 
