@@ -306,6 +306,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                                 tunnelThreadStartedLock.countDown();
                             })
                             .subscribe());
+
+            // Set the persistent service running flag to true.
+            // This flag is used to determine whether the service should be automatically restarted
+            // after an app update, upon receiving a package replaced broadcast in the PsiphonUpdateReceiver.
+            new AppPreferences(getContext()).put(getContext().getString(R.string.serviceRunningPreference), true);
+
+
         }
         return Service.START_REDELIVER_INTENT;
     }
@@ -610,10 +617,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             return;
         }
 
-        // signalStopService could have been called, but in case is was not, call here.
-        // If signalStopService was not already called, the join may block the calling
-        // thread for some time.
-        signalStopService();
+        // The `signalStopService`, which performs the latch countdown, may have already been called.
+        // If it has not been called, then manually attempt to count down the latch here.
+        // If the countdown hasn't been initiated, the `join` call may block the calling thread, potentially delaying execution.
+        if (m_tunnelThreadStopSignal != null) {
+            m_tunnelThreadStopSignal.countDown();
+        }
 
         try {
             m_tunnelThread.join();
@@ -633,6 +642,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         if (m_tunnelThreadStopSignal != null) {
             m_tunnelThreadStopSignal.countDown();
         }
+        // Also set the persistent service running flag to false to prevent automatic restart upon app update.
+        new AppPreferences(getContext()).put(getContext().getString(R.string.serviceRunningPreference), false);
     }
 
     private PendingIntent getPendingIntent(Context ctx, final String actionString) {

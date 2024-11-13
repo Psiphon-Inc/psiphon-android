@@ -179,6 +179,14 @@
         android:exported="false"
         android:process=":LoggingContentProvider"
         android:authorities="com.psiphon3.subscription.LoggingContentProvider" />
+        <!-- PsiphonUpdateReceiver receives intents that trigger upgrade checking. -->
+        <receiver android:name=".PsiphonUpdateReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+        
         <activity
             android:name="com.psiphon3.PaymentChooserActivity"
             android:parentActivityName="com.psiphon3.MainActivity"
