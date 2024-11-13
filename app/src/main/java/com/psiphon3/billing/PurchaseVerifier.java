@@ -1,10 +1,28 @@
+/*
+ * Copyright (c) 2024, Psiphon Inc.
+ * All rights reserved.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 package com.psiphon3.billing;
 
 import android.content.Context;
 import android.text.TextUtils;
 import android.util.Pair;
 
-import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.Purchase;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.TunnelState;
@@ -21,7 +39,6 @@ import org.json.JSONObject;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
@@ -38,21 +55,17 @@ public class PurchaseVerifier {
     private final AppPreferences appPreferences;
     private final Context context;
     private final VerificationResultListener verificationResultListener;
-    private GooglePlayBillingHelper repository;
+    private final GooglePlayBillingHelper googlePlayBillingHelper;
 
-    private PublishRelay<TunnelState> tunnelConnectionStatePublishRelay = PublishRelay.create();
-    private CompositeDisposable compositeDisposable = new CompositeDisposable();
-    private Set<String> invalidPurchaseTokensSet = new HashSet<>();
+    private final PublishRelay<TunnelState> tunnelConnectionStatePublishRelay = PublishRelay.create();
+    private final CompositeDisposable compositeDisposable = new CompositeDisposable();
+    private final Set<String> invalidPurchaseTokensSet = new HashSet<>();
 
     public PurchaseVerifier(@NonNull Context context, @NonNull VerificationResultListener verificationResultListener) {
         this.context = context;
         this.appPreferences = new AppPreferences(context);
-        this.repository = GooglePlayBillingHelper.getInstance(context);
+        this.googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(context);
         this.verificationResultListener = verificationResultListener;
-
-        compositeDisposable.add(subscriptionVerificationDisposable());
-        compositeDisposable.add(psiCashPurchaseVerificationDisposable());
-        queryAllPurchases();
     }
 
     private Flowable<TunnelState> tunnelConnectionStateFlowable() {
@@ -67,7 +80,7 @@ public class PurchaseVerifier {
                     // Once connected run IAB check and pass PsiCash purchase and
                     // current tunnel state connection data downstream.
                     if (tunnelState.isRunning() && tunnelState.connectionData().isConnected()) {
-                        return repository.purchaseStateFlowable()
+                        return googlePlayBillingHelper.purchaseStateFlowable()
                                 .flatMapIterable(PurchaseState::purchaseList)
                                 // Only pass through PsiCash purchases that we didn't previously
                                 // marked as invalid
@@ -134,36 +147,12 @@ public class PurchaseVerifier {
                     MyLog.i("PurchaseVerifier: will try and redeem PsiCash purchase.");
                     return purchaseVerificationNetworkHelper.verifyFlowable(purchase)
                             .flatMap(json -> {
-                                        // Purchase redeemed, consume and send PSICASH_PURCHASE_REDEEMED
-                                        return repository.consumePurchase(purchase)
-                                                .map(__ -> VerificationResult.PSICASH_PURCHASE_REDEEMED)
-                                                .toFlowable()
-                                                .retryWhen(errors ->
-                                                        errors.zipWith(Flowable.range(1, 5), (err, i) -> {
-                                                            if (i < 5) {
-                                                                if (err instanceof GooglePlayBillingHelper.BillingException) {
-                                                                    GooglePlayBillingHelper.BillingException billingException = (GooglePlayBillingHelper.BillingException) err;
-                                                                    int errorCode = billingException.getBillingResultResponseCode();
-                                                                    // Only retry the cases the developer guide suggests should be retried, see
-                                                                    // https://developer.android.com/reference/com/android/billingclient/api/BillingClient.BillingResponseCode
-                                                                    if (errorCode == BillingClient.BillingResponseCode.SERVICE_UNAVAILABLE ||
-                                                                            errorCode == BillingClient.BillingResponseCode.BILLING_UNAVAILABLE ||
-                                                                            errorCode == BillingClient.BillingResponseCode.ERROR ||
-                                                                            errorCode == BillingClient.BillingResponseCode.SERVICE_DISCONNECTED) {
-                                                                        // exponential backoff with timer
-                                                                        int retryInSeconds = (int) Math.pow(1.5, i);
-                                                                        MyLog.w("PurchaseVerifier: will retry consuming the purchase in " + retryInSeconds + " seconds");
-                                                                        return Flowable.timer((long) retryInSeconds, TimeUnit.SECONDS);
-                                                                    }
-                                                                }
-                                                            } // else
-                                                            return Flowable.error(err);
-                                                        }).flatMap(x -> x));
-                                    }
-                            )
-                            .doOnError(e -> {
-                                MyLog.e("PurchaseVerifier: verifying PsiCash purchase failed with error: " + e);
+                                // Purchase redeemed, consume and send PSICASH_PURCHASE_REDEEMED
+                                return googlePlayBillingHelper.consumePurchase(purchase)
+                                        .map(__ -> VerificationResult.PSICASH_PURCHASE_REDEEMED)
+                                        .toFlowable();
                             })
+                            .doOnError(e -> MyLog.e("PurchaseVerifier: verifying PsiCash purchase failed with error: " + e))
                             .onErrorResumeNext(Flowable.empty());
 
                 })
@@ -180,7 +169,7 @@ public class PurchaseVerifier {
                     }
                     // Once connected run IAB check and pass the subscription state and
                     // current tunnel state connection data downstream.
-                    return repository.subscriptionStateFlowable()
+                    return googlePlayBillingHelper.subscriptionStateFlowable()
                             .map(subscriptionState -> new Pair<>(subscriptionState, tunnelState.connectionData()));
                 })
                 .switchMap(pair -> {
@@ -285,7 +274,7 @@ public class PurchaseVerifier {
     }
 
     public Single<String> sponsorIdSingle() {
-        return repository.subscriptionStateFlowable()
+        return googlePlayBillingHelper.subscriptionStateFlowable()
                 .firstOrError()
                 .map(subscriptionState -> {
                             if (subscriptionState.hasValidPurchase()) {
@@ -323,23 +312,30 @@ public class PurchaseVerifier {
             MyLog.i("PurchaseVerifier: persisted purchase authorization ID is not active, will query subscription status.");
             appPreferences.put(PREFERENCE_PURCHASE_TOKEN, "");
             appPreferences.put(PREFERENCE_PURCHASE_AUTHORIZATION_ID, "");
-            repository.queryAllPurchases();
+            googlePlayBillingHelper.queryAllPurchases();
         } else {
             MyLog.i("PurchaseVerifier: subscription authorization accepted, continue.");
         }
     }
 
-    public void onDestroy() {
-        compositeDisposable.dispose();
+    public void start() {
+        // Start observing purchases and tunnel state and trigger verification
+        compositeDisposable.add(subscriptionVerificationDisposable());
+        compositeDisposable.add(psiCashPurchaseVerificationDisposable());
+
+        // Perform initial query to establish the baseline state of purchases
+        googlePlayBillingHelper.queryAllPurchases();
+        // Begin observing live purchase updates
+        googlePlayBillingHelper.startObservePurchasesUpdates();
     }
 
-    public void queryAllPurchases() {
-        repository.startIab();
-        repository.queryAllPurchases();
+    public void stop() {
+        compositeDisposable.clear();
+        googlePlayBillingHelper.stopObservePurchasesUpdates();
     }
 
     public Observable<Boolean> hasPendingPsiCashPurchaseObservable() {
-        return repository.purchaseStateFlowable()
+        return googlePlayBillingHelper.purchaseStateFlowable()
                 .map(PurchaseState::purchaseList)
                 .distinctUntilChanged()
                 .toObservable()
