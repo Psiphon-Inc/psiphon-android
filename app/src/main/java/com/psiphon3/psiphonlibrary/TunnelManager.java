@@ -42,6 +42,7 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.Pair;
 
 import androidx.annotation.NonNull;
@@ -51,13 +52,12 @@ import androidx.core.content.PermissionChecker;
 
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.Location;
-import com.psiphon3.PsiphonCrashService;
 import com.psiphon3.PackageHelper;
+import com.psiphon3.PsiphonCrashService;
 import com.psiphon3.TunnelState;
-import com.psiphon3.billing.PurchaseVerifier;
 import com.psiphon3.VpnManager;
+import com.psiphon3.billing.PurchaseVerifier;
 import com.psiphon3.log.MyLog;
-import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
@@ -79,6 +79,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import ca.psiphon.PsiphonTunnel;
 import io.reactivex.Completable;
@@ -88,7 +89,6 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BiFunction;
-import io.reactivex.functions.Function3;
 import io.reactivex.schedulers.Schedulers;
 import ru.ivanarh.jndcrash.NDCrash;
 
@@ -153,20 +153,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         postServiceNotification(false, m_tunnelState.networkConnectionState);
     }
 
-    // Tunnel config, received from the client.
-    static class Config {
-        String egressRegion = PsiphonConstants.REGION_CODE_ANY;
-        boolean disableTimeouts = false;
-        String sponsorId = EmbeddedValues.SPONSOR_ID;
-        String deviceLocation = "";
-    }
-
-    private Config m_tunnelConfig;
-
-    private void setTunnelConfig(Config config) {
-        m_tunnelConfig = config;
-    }
-
     // Shared tunnel state, sent to the client in the HANDSHAKE
     // intent and in the MSG_TUNNEL_CONNECTION_STATE service message.
     public static class State {
@@ -216,12 +202,18 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     private PurchaseVerifier purchaseVerifier;
 
     private boolean disallowedTrafficNotificationAlreadyShown = false;
-    private boolean hasBoostOrSubscription = false;
 
     private boolean showPurchaseRequiredPromptFlag = false;
     private final AtomicBoolean isSpeedBoostEndRestart = new AtomicBoolean(false) ;
     private final CountDownLatch tunnelThreadStartedLock = new CountDownLatch(1);
     private Disposable trimMemoryUiHiddenDisposable;
+    private TunnelConfigManager tunnelConfigManager;
+
+    // Speed Boost, Conduit, and Device Location initial state singles to be used in TunnelConfigManager
+    private Single<Boolean> speedBoostStateSingle;
+    private Single<Boolean> conduitStateSingle;
+    private Single<String> deviceLocationSingle;
+
 
     TunnelManager(Service parentService) {
         m_parentService = parentService;
@@ -275,7 +267,27 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         // This service runs as a separate process, so it needs to initialize embedded values
         EmbeddedValues.initialize(getContext());
 
-        purchaseVerifier = new PurchaseVerifier(getContext(), this);
+        purchaseVerifier = new PurchaseVerifier(m_context, this);
+        tunnelConfigManager = new TunnelConfigManager(m_context);
+
+        speedBoostStateSingle = Single.fromCallable(() -> {
+                    List<Authorization> authorizations = Authorization.geAllPersistedAuthorizations(getContext());
+                    return authorizations.stream()
+                            .anyMatch(auth -> Authorization.ACCESS_TYPE_SPEED_BOOST.equals(auth.accessType()));
+                })
+                .subscribeOn(Schedulers.io());
+
+        // TODO: Implement conduit state single
+        conduitStateSingle = Single.fromCallable(() -> Boolean.FALSE);
+
+        deviceLocationSingle = Single.fromCallable(() -> {
+                    AppPreferences preferences = new AppPreferences(getContext());
+                    return preferences.getInt(getContext().getString(R.string.deviceLocationPrecisionParameter), 0);
+                })
+                .flatMap(deviceLocationPrecision -> Location.getGeoHashSingle(getContext(), deviceLocationPrecision, 1000))
+                .doOnError(e -> MyLog.e("Error getting device location: " + e))
+                .onErrorReturnItem("");
+
         // Start all subscription and purchase verification observers
         purchaseVerifier.start();
 
@@ -299,14 +311,34 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             m_firstStart = false;
             m_tunnelThreadStopSignal = new CountDownLatch(1);
             m_compositeDisposable.add(
-                    getTunnelConfigSingle()
+                    tunnelConfigManager.initConfiguration(speedBoostStateSingle, conduitStateSingle, deviceLocationSingle, purchaseVerifier.subscriptionStateSingle())
                             .doOnSuccess(config -> {
-                                setTunnelConfig(config);
+                                MyLog.i("TunnelManager: tunnel config initialized");
                                 m_tunnelThread = new Thread(this::runTunnel);
                                 m_tunnelThread.start();
                                 tunnelThreadStartedLock.countDown();
                             })
                             .subscribe());
+
+
+            // Start a tunnel config observer to restart the tunnel when there is a new tunnel config
+            // This is the preferred method to restart the tunnel in all cases
+            m_compositeDisposable.add(
+                    tunnelConfigManager.observeTunnelConfig()
+                            .skip(1) // Skip the initial config value
+                            .doOnNext(config -> {
+                                // Perform a tunnel restart when a new tunnel config is received and we are not in the process of stopping
+                                if (!m_isStopping.get()) {
+                                    m_networkConnectionStatePublishRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
+                                    m_vpnManager.stopRouteThroughTunnel();
+                                    m_isRoutingThroughTunnelPublishRelay.accept(Boolean.FALSE);
+                                    MyLog.i("TunnelManager: tunnel config observer: restarting tunnel due to new tunnel config");
+                                    onRestartTunnel();
+                                }
+                            })
+                            .subscribe()
+            );
+
 
             // Set the persistent service running flag to true.
             // This flag is used to determine whether the service should be automatically restarted
@@ -333,22 +365,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     TunnelState.ConnectionData.NetworkConnectionState networkConnectionState = pair.first.first;
                     boolean isRoutingThroughTunnel = pair.first.second;
                     boolean hasPendingPsiCashPurchase = pair.second;
-
-                    // If we started the tunnel with Speed Boost sponsor ID but the SB authorization
-                    // was not accepted then reset the sponsor ID and restart the tunnel.
-                    if (networkConnectionState.equals(TunnelState.ConnectionData.NetworkConnectionState.CONNECTED) &&
-                            BuildConfig.SPEED_BOOST_SPONSOR_ID.equals(m_tunnelConfig.sponsorId) &&
-                            !hasBoostOrSubscription) {
-                        m_tunnelConfig.sponsorId = EmbeddedValues.SPONSOR_ID;
-                        // If we were already routing through the tunnel then this is an automated
-                        // restart due to Speed Boost auth ending.
-                        if (isRoutingThroughTunnel) {
-                            isSpeedBoostEndRestart.set(true);
-                        }
-                        onRestartTunnel();
-                        // Do not emit downstream if we are restarting.
-                        return Observable.empty();
-                    }
 
                     // The tunnel is connected but we are not routing traffic through the tunnel yet,
                     // check in the following order if:
@@ -454,6 +470,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 .filter(__ -> pingForActivity())
                 .take(1)
                 .ignoreElements()
+                .doOnDispose(() -> Log.d( "HACK", "TunnelManager: waitSendIntentAndRouteThroughTunnelCompletable: doOnDispose"))
                 .doOnSubscribe(__ -> showOpenAppToFinishConnectingNotification())
                 .doOnComplete(() -> {
                     m_vpnManager.routeThroughTunnel(m_tunnel.getLocalSocksProxyPort());
@@ -526,13 +543,14 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     private boolean shouldShowPurchaseRequiredPrompt() {
         // Return true if all of the following is satisfied:
         // 1. Tunnel config is set
-        // 2. The sponsor ID is neither Speed Boost nor subscription.
-        // 3. There is no active authorization.
+        // 2. The config is not a subscription config
+        // 3. The config is not a speed boost config
+        // 4. The config is not a conduit running config
         // 4. Application parameter ShowPurchaseRequiredPrompt is set and true.
-        return m_tunnelConfig != null &&
-                !BuildConfig.SUBSCRIPTION_SPONSOR_ID.equals(m_tunnelConfig.sponsorId) &&
-                !BuildConfig.SPEED_BOOST_SPONSOR_ID.equals(m_tunnelConfig.sponsorId) &&
-                !hasBoostOrSubscription &&
+        return tunnelConfigManager.getCurrentConfig() != null &&
+                !tunnelConfigManager.isSubscriptionActive() &&
+                !tunnelConfigManager.isSpeedBoostActive() &&
+                !tunnelConfigManager.isConduitRunningActive() &&
                 showPurchaseRequiredPromptFlag;
     }
 
@@ -678,40 +696,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                         PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
-    private Single<Config> getTunnelConfigSingle() {
-        final AppPreferences multiProcessPreferences = new AppPreferences(getContext());
-
-        Single<Config> configSingle = Single.fromCallable(() -> {
-            Config tunnelConfig = new Config();
-            tunnelConfig.egressRegion = multiProcessPreferences
-                    .getString(getContext().getString(R.string.egressRegionPreference),
-                            PsiphonConstants.REGION_CODE_ANY);
-            tunnelConfig.disableTimeouts = multiProcessPreferences
-                    .getBoolean(getContext().getString(R.string.disableTimeoutsPreference),
-                            false);
-            return tunnelConfig;
-        });
-
-        Single<String> sponsorIdSingle = purchaseVerifier.sponsorIdSingle();
-
-        int deviceLocationPrecision = multiProcessPreferences
-                .getInt(getContext().getString(R.string.deviceLocationPrecisionParameter),
-                        0);
-
-        Single<String> geoHashSingle =
-                Location.getGeoHashSingle(getContext(), deviceLocationPrecision, 1000)
-                        .onErrorReturnItem("");
-
-        Function3<Config, String, String, Config> zipper =
-                (config, sponsorId, deviceLocation) -> {
-                    config.sponsorId = sponsorId;
-                    config.deviceLocation = deviceLocation;
-                    return config;
-                };
-
-        return Single.zip(configSingle, sponsorIdSingle, geoHashSingle, zipper);
-    }
-
     private Notification createNotification(
             boolean alert,
             TunnelState.ConnectionData.NetworkConnectionState networkConnectionState) {
@@ -818,7 +802,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     }
 
     private boolean isSelectedEgressRegionAvailable(List<String> availableRegions) {
-        String selectedEgressRegion = m_tunnelConfig.egressRegion;
+        String selectedEgressRegion = tunnelConfigManager.getEgressRegion();
         if (selectedEgressRegion == null || selectedEgressRegion.equals(PsiphonConstants.REGION_CODE_ANY)) {
             // User region is either not set or set to 'Best Performance', do nothing
             return true;
@@ -925,17 +909,14 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                             return;
                         }
 
-                        // TODO: notify client that the tunnel is going to restart
-                        //  rather than reporting tunnel is not connected?
-                        manager.m_networkConnectionStatePublishRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
+                        // On a restart, a new tunnel configuration is created and emitted via tunnelConfigManager.observeTunnelConfig()
+                        // This emission automatically triggers a tunnel restart through the Rx subscription in the onStartCommand() method.
+                        MyLog.i("TunnelManager: received restart tunnel message");
                         manager.m_compositeDisposable.add(
-                                manager.getTunnelConfigSingle()
-                                        .doOnSuccess(config -> {
-                                            manager.m_vpnManager.stopRouteThroughTunnel();
-                                            manager.m_isRoutingThroughTunnelPublishRelay.accept(Boolean.FALSE);
-                                            manager.setTunnelConfig(config);
-                                            manager.onRestartTunnel();
-                                        })
+                                manager.tunnelConfigManager.initConfiguration(manager.speedBoostStateSingle,
+                                                manager.conduitStateSingle,
+                                                manager.deviceLocationSingle,
+                                                manager.purchaseVerifier.subscriptionStateSingle())
                                         .subscribe());
                     }
                     break;
@@ -1049,7 +1030,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
     private Bundle getTunnelStateBundle() {
         // Update with the latest sponsorId from the tunnel config
-        m_tunnelState.sponsorId = m_tunnelConfig != null ? m_tunnelConfig.sponsorId : "";
+        m_tunnelState.sponsorId = tunnelConfigManager.getSponsorId();
 
         Bundle data = new Bundle();
         data.putBoolean(DATA_TUNNEL_STATE_IS_RUNNING, m_tunnelState.isRunning);
@@ -1397,17 +1378,17 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
      * tunnel, the UpgradeChecker temp tunnel and the FeedbackWorker upload operation).
      *
      * @param context
-     * @param tunnelConfig     Config values to be set in the tunnel core config.
-     * @param useUpstreamProxy If an upstream proxy has been configured, include it in the returned
-     *                         config. Used to omit the proxy from the returned config when network
-     *                         operations will already be tunneled over a connection which uses the
-     *                         configured upstream proxy.
-     * @param tempTunnelName   null if not a temporary tunnel. If set, must be a valid to use in file path.
+     * @param tunnelConfigManager Config manager to get the sponsor ID and egress region and other config values.
+     * @param useUpstreamProxy    If an upstream proxy has been configured, include it in the returned
+     *                            config. Used to omit the proxy from the returned config when network
+     *                            operations will already be tunneled over a connection which uses the
+     *                            configured upstream proxy.
+     * @param tempTunnelName      null if not a temporary tunnel. If set, must be a valid to use in file path.
      * @return JSON string of config. null on error.
      */
     public static String buildTunnelCoreConfig(
             Context context,
-            Config tunnelConfig,
+            TunnelConfigManager tunnelConfigManager,
             boolean useUpstreamProxy,
             List<Authorization> authorizations,
             String tempTunnelName) {
@@ -1429,7 +1410,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
             json.put("PropagationChannelId", EmbeddedValues.PROPAGATION_CHANNEL_ID);
 
-            json.put("SponsorId", tunnelConfig.sponsorId);
+            json.put("SponsorId", tunnelConfigManager.getSponsorId());
 
             json.put("RemoteServerListURLs", new JSONArray(EmbeddedValues.REMOTE_SERVER_LIST_URLS_JSON));
 
@@ -1494,12 +1475,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 json.put("TunnelWholeDevice", 0);
                 json.put("EgressRegion", "");
             } else {
-                String egressRegion = tunnelConfig.egressRegion;
+                String egressRegion = tunnelConfigManager.getEgressRegion();
                 MyLog.i("EgressRegion", "regionCode", egressRegion);
                 json.put("EgressRegion", egressRegion);
             }
 
-            if (tunnelConfig.disableTimeouts) {
+            if (tunnelConfigManager.isDisableTimeouts()) {
                 //disable timeouts
                 MyLog.i("DisableTimeouts", "disableTimeouts", true);
                 json.put("NetworkLatencyMultiplierLambda", 0.1);
@@ -1526,8 +1507,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
             json.put("DNSResolverAlternateServers", new JSONArray("[\"1.1.1.1\", \"1.0.0.1\", \"8.8.8.8\", \"8.8.4.4\"]"));
 
-            if (!TextUtils.isEmpty(tunnelConfig.deviceLocation)) {
-                json.put("DeviceLocation", tunnelConfig.deviceLocation);
+            if (!TextUtils.isEmpty(tunnelConfigManager.getDeviceLocation())) {
+                json.put("DeviceLocation", tunnelConfigManager.getDeviceLocation());
             }
 
             json.put("EmitBytesTransferred", true);
@@ -1599,24 +1580,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         m_tunnelConfigAuthorizations =
                 Collections.unmodifiableList(Authorization.geAllPersistedAuthorizations(getContext()));
 
-        // Check if we need to use Speed Boost sponsor ID based on the contents of the authorizations.
-        // Note that if we are already set to use subscription sponsor ID then we will skip this step.
-        if (!BuildConfig.SUBSCRIPTION_SPONSOR_ID.equals(m_tunnelConfig.sponsorId)) {
-            for (Authorization a : m_tunnelConfigAuthorizations) {
-                if (Authorization.ACCESS_TYPE_SPEED_BOOST.equals(a.accessType())) {
-                    m_tunnelConfig.sponsorId = BuildConfig.SPEED_BOOST_SPONSOR_ID;
-                    break;
-                }
-            }
-        }
-        // Cancel "Purchase required" notification if we are starting with either subscription or
-        // Speed Boost sponsor ID
-        if (BuildConfig.SUBSCRIPTION_SPONSOR_ID.equals(m_tunnelConfig.sponsorId) ||
-                BuildConfig.SPEED_BOOST_SPONSOR_ID.equals(m_tunnelConfig.sponsorId)) {
-            cancelPurchaseRequiredNotification();
-        }
         String config = buildTunnelCoreConfig(getContext(),
-                m_tunnelConfig,
+                tunnelConfigManager,
                 true,
                 m_tunnelConfigAuthorizations,
                 null);
@@ -1922,16 +1887,40 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             }
 
             // Determine if user has a speed boost or subscription auth in the current tunnel run
-            hasBoostOrSubscription = false;
-            for (Authorization a : acceptedAuthorizations) {
-                if (Authorization.ACCESS_TYPE_GOOGLE_SUBSCRIPTION.equals(a.accessType()) ||
-                        Authorization.ACCESS_TYPE_GOOGLE_SUBSCRIPTION_LIMITED.equals(a.accessType()) ||
-                        Authorization.ACCESS_TYPE_SPEED_BOOST.equals(a.accessType())) {
-                    hasBoostOrSubscription = true;
-                    // Also cancel disallowed traffic alert
-                    cancelDisallowedTrafficAlertNotification();
-                    break;
-                }
+            // and update the tunnel config manager accordingly
+            boolean cancelNotifications = false;
+
+            Set<String> accessTypes = acceptedAuthorizations.stream()
+                    .map(Authorization::accessType)
+                    .collect(Collectors.toSet());
+
+            // Update the sponsorship state of tunnelConfigManager based on the accepted authorizations.
+            // If this update results in a change to the config, the tunnel config manager will emit the updated config
+            // through subscription to tunnelConfigManager.observeTunnelConfig(). This will automatically trigger a tunnel
+            // restart with the new config.
+            if (accessTypes.contains(Authorization.ACCESS_TYPE_GOOGLE_SUBSCRIPTION)) {
+                MyLog.i("TunnelManager::onActiveAuthorizationIDs: user has unlimited subscription auth, update subscription state");
+                tunnelConfigManager.updateSubscriptionState(TunnelConfigManager.SubscriptionState.UNLIMITED);
+                cancelNotifications = true;
+            } else if (accessTypes.contains(Authorization.ACCESS_TYPE_GOOGLE_SUBSCRIPTION_LIMITED)) {
+                MyLog.i("TunnelManager::onActiveAuthorizationIDs: user has limited subscription auth, update subscription state");
+                tunnelConfigManager.updateSubscriptionState(TunnelConfigManager.SubscriptionState.LIMITED);
+                cancelNotifications = true;
+            } else {
+                MyLog.i("TunnelManager::onActiveAuthorizationIDs: user has no subscription auth, update subscription state");
+                tunnelConfigManager.updateSubscriptionState(TunnelConfigManager.SubscriptionState.NONE);
+            }
+
+            if (accessTypes.contains(Authorization.ACCESS_TYPE_SPEED_BOOST)) {
+                MyLog.i("TunnelManager::onActiveAuthorizationIDs: user has speed boost auth, update speed boost state");
+                tunnelConfigManager.updateSpeedBoostState(true);
+                cancelNotifications = true;
+            }
+
+            // If the user has a speed boost or subscription auth, cancel the purchase required notification and disallowed traffic alert
+            if (cancelNotifications) {
+                cancelPurchaseRequiredNotification();
+                cancelDisallowedTrafficAlertNotification();
             }
         });
     }
@@ -1957,15 +1946,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             // Do not show alerts when user has Speed Boost or a subscription.
             // Note that this is an extra measure preventing accidental server alerts since
             // the user with this auth type should not be receiving any from the server
-            if (hasBoostOrSubscription) {
-                return;
-            }
-
-            // Also do not show the alert if the current tunnel config sponsor ID
-            // is set to SUBSCRIPTION_SPONSOR_ID. The user may be a legit subscriber
-            // in a process of purchase verification.
-            if (m_tunnelConfig != null &&
-                    BuildConfig.SUBSCRIPTION_SPONSOR_ID.equals(m_tunnelConfig.sponsorId)) {
+            if (tunnelConfigManager.isSpeedBoostActive() || tunnelConfigManager.isSubscriptionActive()) {
                 return;
             }
 
@@ -2052,29 +2033,26 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     // PurchaseVerifier.VerificationResultListener implementation
     @Override
     public void onVerificationResult(PurchaseVerifier.VerificationResult action) {
+        // Update the subscription state in the tunnel config manager based on the purchase verification result.
+        // This applies to the following verification outcomes: NO_SUBSCRIPTION, LIMITED_SUBSCRIPTION, or UNLIMITED_SUBSCRIPTION.
+        // If this update causes the tunnel configuration to change, the tunnel config manager will emit the updated config
+        // through subscription to tunnelConfigManager.observeTunnelConfig(). This will automatically trigger a tunnel restart
+        // with the new config.
         switch (action) {
-            case RESTART_AS_NON_SUBSCRIBER:
-                MyLog.i("TunnelManager: purchase verification: will restart as a non subscriber");
-                m_tunnelConfig.sponsorId = EmbeddedValues.SPONSOR_ID;
-                // We are going to restart, so don't wait for onConnecting callback to notify the UI
-                // and send CONNECTING signal right away. Otherwise we will need to sync calling
-                // stopRouteThroughTunnel with either onConnecting or onConnected callbacks.
-                m_networkConnectionStatePublishRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
-                m_vpnManager.stopRouteThroughTunnel();
-                m_isRoutingThroughTunnelPublishRelay.accept(Boolean.FALSE);
-                onRestartTunnel();
+            case NO_SUBSCRIPTION:
+                MyLog.i("TunnelManager: purchase verification result: NO_SUBSCRIPTION, updating tunnel config manager subscription state");
+                tunnelConfigManager.updateSubscriptionState(TunnelConfigManager.SubscriptionState.NONE);
                 break;
-            case RESTART_AS_SUBSCRIBER:
-                MyLog.i("TunnelManager: purchase verification: will restart as a subscriber");
-                m_tunnelConfig.sponsorId = BuildConfig.SUBSCRIPTION_SPONSOR_ID;
-                // See comment above.
-                m_networkConnectionStatePublishRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
-                m_vpnManager.stopRouteThroughTunnel();
-                m_isRoutingThroughTunnelPublishRelay.accept(Boolean.FALSE);
-                onRestartTunnel();
+            case LIMITED_SUBSCRIPTION:
+                MyLog.i("TunnelManager: purchase verification result: LIMITED_SUBSCRIPTION, updating tunnel config manager subscription state");
+                tunnelConfigManager.updateSubscriptionState(TunnelConfigManager.SubscriptionState.LIMITED);
+                break;
+            case UNLIMITED_SUBSCRIPTION:
+                MyLog.i("TunnelManager: purchase verification result: UNLIMITED_SUBSCRIPTION, updating tunnel config manager subscription state");
+                tunnelConfigManager.updateSubscriptionState(TunnelConfigManager.SubscriptionState.UNLIMITED);
                 break;
             case PSICASH_PURCHASE_REDEEMED:
-                MyLog.i("TunnelManager: purchase verification: PsiCash purchase redeemed");
+                MyLog.i("TunnelManager: purchase verification result: PSICASH_PURCHASE_REDEEMED, sending PSICASH_PURCHASE_REDEEMED message to client");
                 final AppPreferences mp = new AppPreferences(getContext());
                 mp.put(m_parentService.getString(R.string.persistentPsiCashPurchaseRedeemedFlag), true);
                 sendClientMessage(ServiceToClientMessage.PSICASH_PURCHASE_REDEEMED.ordinal(), null);

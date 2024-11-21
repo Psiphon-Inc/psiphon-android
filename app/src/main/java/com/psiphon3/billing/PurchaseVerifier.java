@@ -21,6 +21,7 @@ package com.psiphon3.billing;
 
 import android.content.Context;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.Pair;
 
 import com.android.billingclient.api.Purchase;
@@ -28,7 +29,7 @@ import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.TunnelState;
 import com.psiphon3.log.MyLog;
 import com.psiphon3.psiphonlibrary.Authorization;
-import com.psiphon3.psiphonlibrary.EmbeddedValues;
+import com.psiphon3.psiphonlibrary.TunnelConfigManager;
 import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
 
@@ -182,9 +183,11 @@ public class PurchaseVerifier {
                     }
 
                     if (!subscriptionState.hasValidPurchase()) {
+                        // If for some reason the tunnel config is set to a subscription sponsor ID
+                        // return NO_SUBSCRIPTION to update the tunnel config sponsorship state.
                         if (BuildConfig.SUBSCRIPTION_SPONSOR_ID.equals(connectionData.sponsorId())) {
-                            MyLog.i("PurchaseVerifier: user has no subscription, will restart as non subscriber.");
-                            return Flowable.just(VerificationResult.RESTART_AS_NON_SUBSCRIBER);
+                            MyLog.i("PurchaseVerifier: subscription check: user has no subscription, returning NO_SUBSCRIPTION.");
+                            return Flowable.just(VerificationResult.NO_SUBSCRIPTION);
                         } else {
                             MyLog.i("PurchaseVerifier: user has no subscription, continue.");
                             return Flowable.empty();
@@ -232,9 +235,8 @@ public class PurchaseVerifier {
                                         if (TextUtils.isEmpty(json)) {
                                             // If payload is empty then do not try to JSON decode,
                                             // remember the bad token and restart as non-subscriber.
-                                            invalidPurchaseTokensSet.add(purchase.getPurchaseToken());
-                                            MyLog.w("PurchaseVerifier: subscription verification: server returned empty payload.");
-                                            return VerificationResult.RESTART_AS_NON_SUBSCRIBER;
+                                            handleServerVerificationFailure(purchase.getPurchaseToken(), "empty payload");
+                                            return VerificationResult.NO_SUBSCRIPTION;
                                         }
 
                                         String encodedAuth = new JSONObject(json).getString("signed_authorization");
@@ -242,23 +244,31 @@ public class PurchaseVerifier {
                                         if (authorization == null) {
                                             // Expired or invalid purchase,
                                             // remember the bad token and restart as non-subscriber.
-                                            invalidPurchaseTokensSet.add(purchase.getPurchaseToken());
-                                            MyLog.w("PurchaseVerifier: subscription verification: server returned empty authorization.");
-                                            return VerificationResult.RESTART_AS_NON_SUBSCRIBER;
+                                            handleServerVerificationFailure(purchase.getPurchaseToken(), "invalid or expired authorization");
+                                            return VerificationResult.NO_SUBSCRIPTION;
                                         }
 
                                         // Persist authorization ID and authorization.
                                         appPreferences.put(PREFERENCE_PURCHASE_AUTHORIZATION_ID, authorization.Id());
                                         Authorization.storeAuthorization(context, authorization);
 
-                                        MyLog.i("PurchaseVerifier: subscription verification: server returned new authorization.");
+                                        MyLog.i("PurchaseVerifier: subscription verification: server returned new authorization: " + authorization.accessType());
 
-                                        return VerificationResult.RESTART_AS_SUBSCRIBER;
+                                        if (authorization.accessType().equals(Authorization.ACCESS_TYPE_GOOGLE_SUBSCRIPTION_LIMITED)) {
+                                            return VerificationResult.LIMITED_SUBSCRIPTION;
+                                        } else if (authorization.accessType().equals(Authorization.ACCESS_TYPE_GOOGLE_SUBSCRIPTION)) {
+                                            return VerificationResult.UNLIMITED_SUBSCRIPTION;
+                                        }
+                                        // Unknown authorization type, fall back to no-subscription but do not mark the purchase as bad
+                                        // as we may have a legit purchase and while we can't upgrade the connection with new sponsorship we
+                                        // do not want to verify the purchase again nor we want to mark it as bad.
+                                        MyLog.w("PurchaseVerifier: subscription verification: unknown authorization type, treating as no subscription.");
+                                        return VerificationResult.NO_SUBSCRIPTION;
                                     }
                             )
                             .doOnError(e -> {
                                 if (e instanceof PurchaseVerificationNetworkHelper.FatalException) {
-                                    invalidPurchaseTokensSet.add(purchase.getPurchaseToken());
+                                    handleServerVerificationFailure(purchase.getPurchaseToken(), e.getMessage());
                                 }
                                 MyLog.e("PurchaseVerifier: subscription verification: fetching authorization failed with error: " + e);
                             })
@@ -273,7 +283,12 @@ public class PurchaseVerifier {
                 .subscribe();
     }
 
-    public Single<String> sponsorIdSingle() {
+    private void handleServerVerificationFailure(String purchaseToken, String reason) {
+        MyLog.w("PurchaseVerifier: marking purchase token as bad - " + reason);
+        invalidPurchaseTokensSet.add(purchaseToken);
+    }
+
+    public Single<TunnelConfigManager.SubscriptionState> subscriptionStateSingle() {
         return googlePlayBillingHelper.subscriptionStateFlowable()
                 .firstOrError()
                 .map(subscriptionState -> {
@@ -282,14 +297,19 @@ public class PurchaseVerifier {
                                 String purchaseToken = subscriptionState.purchase().getPurchaseToken();
                                 if (invalidPurchaseTokensSet.size() > 0 &&
                                         invalidPurchaseTokensSet.contains(purchaseToken)) {
-                                    MyLog.i("PurchaseVerifier: will start with non-subscription sponsor ID due to invalid purchase");
-                                    return EmbeddedValues.SPONSOR_ID;
+                                    MyLog.i("PurchaseVerifier::subscriptionStateSingle: subscription purchase marked as bad, user has no subscription.");
+                                    return TunnelConfigManager.SubscriptionState.NONE;
                                 }
-                                MyLog.i("PurchaseVerifier: will start with subscription sponsor ID");
-                                return BuildConfig.SUBSCRIPTION_SPONSOR_ID;
+                                if (subscriptionState.status() == SubscriptionState.Status.HAS_LIMITED_SUBSCRIPTION) {
+                                    MyLog.i("PurchaseVerifier::subscriptionStateSingle: user has limited subscription.");
+                                    return TunnelConfigManager.SubscriptionState.LIMITED;
+                                }
+                                // Unlimited or time pass
+                                MyLog.i("PurchaseVerifier::subscriptionStateSingle: user has unlimited subscription or time pass.");
+                                return TunnelConfigManager.SubscriptionState.UNLIMITED;
                             }
-                            MyLog.i("PurchaseVerifier: will start with non-subscription sponsor ID");
-                            return EmbeddedValues.SPONSOR_ID;
+                            MyLog.i("PurchaseVerifier::subscriptionStateSingle: user has no subscription.");
+                            return TunnelConfigManager.SubscriptionState.NONE;
                         }
                 );
     }
@@ -303,18 +323,19 @@ public class PurchaseVerifier {
 
         if (TextUtils.isEmpty(purchaseAuthorizationID)) {
             // There is no persisted authorization, do nothing
+            MyLog.i("PurchaseVerifier::onActiveAuthorizationIDs: no persisted purchase authorization ID, continue.");
             return;
         }
 
         // If server hasn't accepted any authorizations or persisted authorization ID hasn't been
         // accepted then reset persisted purchase token and trigger new IAB check
         if (acceptedAuthorizationIds.isEmpty() || !acceptedAuthorizationIds.contains(purchaseAuthorizationID)) {
-            MyLog.i("PurchaseVerifier: persisted purchase authorization ID is not active, will query subscription status.");
+            MyLog.i("PurchaseVerifier::onActiveAuthorizationIDs: persisted purchase authorization ID is not active, will query subscription status.");
             appPreferences.put(PREFERENCE_PURCHASE_TOKEN, "");
             appPreferences.put(PREFERENCE_PURCHASE_AUTHORIZATION_ID, "");
             googlePlayBillingHelper.queryAllPurchases();
         } else {
-            MyLog.i("PurchaseVerifier: subscription authorization accepted, continue.");
+            MyLog.i("PurchaseVerifier::onActiveAuthorizationIDs: persisted purchase authorization ID is active, continue.");
         }
     }
 
@@ -350,8 +371,9 @@ public class PurchaseVerifier {
     }
 
     public enum VerificationResult {
-        RESTART_AS_NON_SUBSCRIBER,
-        RESTART_AS_SUBSCRIBER,
+        NO_SUBSCRIPTION,
+        LIMITED_SUBSCRIPTION,
+        UNLIMITED_SUBSCRIPTION,
         PSICASH_PURCHASE_REDEEMED,
     }
 
