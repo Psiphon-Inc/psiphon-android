@@ -136,6 +136,7 @@ android {
     buildTypes.each {
         it.buildConfigField 'String', 'SUBSCRIPTION_SPONSOR_ID', getBuildProperty('SUBSCRIPTION_SPONSOR_ID')
         it.buildConfigField 'String', 'SPEED_BOOST_SPONSOR_ID', getBuildProperty('SPEED_BOOST_SPONSOR_ID')
+        it.buildConfigField 'String', "CONDUIT_RUNNING_SPONSOR_ID", getBuildProperty('CONDUIT_RUNNING_SPONSOR_ID')
         it.buildConfigField 'String', 'IAB_PUBLIC_KEY', getBuildProperty('IAB_PUBLIC_KEY')
     }
 
