@@ -27,8 +27,6 @@ import android.os.RemoteException;
 
 import com.psiphon3.log.MyLog;
 
-import org.json.JSONException;
-
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,6 +37,8 @@ import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.processors.BehaviorProcessor;
+import io.reactivex.Observable;
+import io.reactivex.schedulers.Schedulers;
 
 public class ConduitStateManager {
     private static final String CONDUIT_PACKAGE = "ca.psiphon.conduit";
@@ -54,6 +54,7 @@ public class ConduitStateManager {
     private IConduitStateService stateService;
     private boolean isServiceBound = false;
     private final CompositeDisposable reconnectDisposable = new CompositeDisposable();
+    private final CompositeDisposable emitAndCompleteDisposables = new CompositeDisposable();
     private final Object lock = new Object();
 
     private final IConduitStateCallback stateCallback = new IConduitStateCallback.Stub() {
@@ -140,6 +141,18 @@ public class ConduitStateManager {
         return new ConduitStateManager(context.getApplicationContext());
     }
 
+    // Helper method to emit a state and complete with guaranteed ordering of events
+    private void emitStateAndComplete(ConduitState state) {
+        emitAndCompleteDisposables.add(Observable.just(state)
+                .concatWith(Observable.empty())
+                .observeOn(Schedulers.single())
+                .subscribe(
+                        stateProcessor::onNext,
+                        stateProcessor::onError,
+                        stateProcessor::onComplete
+                ));
+    }
+
     private void handleServiceError(ConduitServiceException error) {
         synchronized (lock) {
             MyLog.i("ConduitStateManager: handling service error: " + error.getType() + " - " + error.getMessage());
@@ -160,18 +173,16 @@ public class ConduitStateManager {
                     // For security and package errors, stop retrying and treat as not installed with details in
                     // error message
                     retryCount.set(MAX_RETRY_ATTEMPTS);
-                    stateProcessor.onNext(ConduitState.builder()
+                    emitStateAndComplete(ConduitState.builder()
                             .setStatus(ConduitState.Status.NOT_INSTALLED)
                             .setMessage(error.getMessage())
                             .build());
-                    stateProcessor.onComplete();
                     break;
 
                 case SERVICE_NOT_FOUND:
                     // For service not found errors, stop retrying and send upgrade required
                     retryCount.set(MAX_RETRY_ATTEMPTS);
-                    stateProcessor.onNext(ConduitState.upgradeRequired(error.getMessage()));
-                    stateProcessor.onComplete();
+                    emitStateAndComplete(ConduitState.upgradeRequired(error.getMessage()));
                     break;
 
                 case BINDING_ERROR:
@@ -194,8 +205,7 @@ public class ConduitStateManager {
 
             int currentRetries = retryCount.incrementAndGet();
             if (currentRetries > MAX_RETRY_ATTEMPTS) {
-                stateProcessor.onNext(ConduitState.maxRetriesExceeded());
-                stateProcessor.onComplete();
+                emitStateAndComplete(ConduitState.maxRetriesExceeded());
                 return;
             }
 
@@ -287,6 +297,9 @@ public class ConduitStateManager {
 
             // Clear any existing scheduled reconnects
             reconnectDisposable.clear();
+
+            // Clear any existing emit and complete disposables
+            emitAndCompleteDisposables.clear();
 
             if (stateService != null) {
                 try {
