@@ -14,10 +14,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
-package com.psiphon3.psiphonlibrary;
+package com.psiphon3;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -28,11 +27,9 @@ import android.os.RemoteException;
 
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.Relay;
-import com.psiphon3.PackageHelper;
 import com.psiphon3.log.MyLog;
 
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -61,8 +58,17 @@ public class ConduitStateManager {
     private final IConduitStateCallback stateCallback = new IConduitStateCallback.Stub() {
         @Override
         public void onStateUpdate(String state) {
-            ConduitState conduitState = parseStateFromJson(state);
-            stateUpdateRelay.accept(conduitState);
+
+            try {
+                ConduitState conduitState = ConduitState.fromJson(state);
+                stateUpdateRelay.accept(conduitState);
+            } catch (JSONException e) {
+                MyLog.e("ConduitStateManager: failed to parse ConduitState: " + e);
+                stateUpdateRelay.accept(ConduitState.builder()
+                        .setStatus(ConduitState.Status.UNKNOWN)
+                        .setErrorMessage("Failed to parse state: " + e.getMessage())
+                        .build());
+            }
         }
     };
 
@@ -76,7 +82,6 @@ public class ConduitStateManager {
             try {
                 stateService.registerClient(stateCallback);
             } catch (RemoteException e) {
-                MyLog.e("ConduitStateManager: failed to register client: " + e);
                 handleServiceError(new ConduitServiceException(ConduitErrorType.BINDING_ERROR, "Failed to register client: " + e.getMessage()));
             }
         }
@@ -86,21 +91,11 @@ public class ConduitStateManager {
             MyLog.w("ConduitStateManager: disconnected from ConduitStateService");
             stateService = null;
             isServiceBound = false;
-            stateUpdateRelay.accept(ConduitState.UNKNOWN);
+            stateUpdateRelay.accept(ConduitState.unknown());
             // Attempt to reconnect since this is an unexpected disconnection
             scheduleReconnect();
         }
     };
-
-    // ConduitState enum to represent the state of the Conduit app
-    public enum ConduitState {
-        UNKNOWN,
-        RUNNING,
-        STOPPED,
-        NOT_INSTALLED,
-        CONDUIT_UPGRADE_REQUIRED,
-        MAX_RETRIES_EXCEEDED
-    }
 
     // Exception types for ConduitService errors
     public enum ConduitErrorType {
@@ -141,7 +136,10 @@ public class ConduitStateManager {
             case PACKAGE_ERROR:
                 // For security and package errors, stop retrying and treat as not installed
                 retryCount.set(MAX_RETRY_ATTEMPTS);
-                stateUpdateRelay.accept(ConduitState.NOT_INSTALLED);
+                stateUpdateRelay.accept(ConduitState.builder()
+                        .setStatus(ConduitState.Status.NOT_INSTALLED)
+                        .setErrorMessage(error.getMessage())
+                        .build());
                 break;
             case BINDING_ERROR:
                 scheduleReconnect();
@@ -151,7 +149,7 @@ public class ConduitStateManager {
 
     public ConduitStateManager() {
         // Initialize the state to UNKNOWN
-        stateUpdateRelay.accept(ConduitState.UNKNOWN);
+        stateUpdateRelay.accept(ConduitState.unknown());
     }
 
     // Schedule a reconnect attempt after a delay until the maximum retry attempts are reached
@@ -163,7 +161,7 @@ public class ConduitStateManager {
         int currentRetries = retryCount.incrementAndGet();
         if (currentRetries > MAX_RETRY_ATTEMPTS) {
             MyLog.e("ConduitStateManager: max retry attempts exceeded");
-            stateUpdateRelay.accept(ConduitState.MAX_RETRIES_EXCEEDED);
+            stateUpdateRelay.accept(ConduitState.maxRetriesExceeded());
             return;
         }
 
@@ -201,7 +199,7 @@ public class ConduitStateManager {
 
             // Finally, check if the ConduitStateService is available in the Conduit app
             if (!isConduitStateServiceAvailable()) {
-                stateUpdateRelay.accept(ConduitState.CONDUIT_UPGRADE_REQUIRED);
+                stateUpdateRelay.accept(ConduitState.upgradeRequired());
                 return;
             }
 
@@ -245,7 +243,7 @@ public class ConduitStateManager {
     public void onStop(Context context) {
         isStopped = true;
         reconnectDisposable.clear();
-        stateUpdateRelay.accept(ConduitState.UNKNOWN);
+        stateUpdateRelay.accept(ConduitState.unknown());
 
         if (stateService != null) {
             try {
@@ -265,46 +263,6 @@ public class ConduitStateManager {
         }
         stateService = null;
         applicationContext = null;
-    }
-
-    private static final int EXPECTED_SCHEMA_VERSION = 1;
-
-    // Parses the Conduit state json and maps it to the ConduitState
-    private ConduitState parseStateFromJson(String stateJson) {
-        try {
-            JSONObject json = new JSONObject(stateJson);
-
-            // Validate schema version
-            int schema = json.optInt("schema", -1);
-            if (schema != EXPECTED_SCHEMA_VERSION) {
-                MyLog.e("ConduitStateManager: unexpected schema version: " + schema);
-                return ConduitState.UNKNOWN;
-            }
-
-            // Parse data object
-            JSONObject data = json.optJSONObject("data");
-            if (data == null) {
-                MyLog.e("ConduitStateManager: missing 'data' field in state JSON");
-                return ConduitState.UNKNOWN;
-            }
-
-            // Extract appVersion and log it
-            int appVersion = data.optInt("appVersion", -1);
-            MyLog.i("ConduitStateManager: parsed appVersion: " + appVersion);
-
-            // Extract and log the running state
-            if (data.has("running")) {
-                boolean running = data.optBoolean("running", false);
-                MyLog.i("ConduitStateManager: parsed running state: " + running);
-                return running ? ConduitState.RUNNING : ConduitState.STOPPED;
-            } else {
-                MyLog.i("ConduitStateManager: running state not provided; returning UNKNOWN");
-                return ConduitState.UNKNOWN;
-            }
-        } catch (JSONException e) {
-            MyLog.e("ConduitStateManager: failed to parse state JSON: " + e);
-            return ConduitState.UNKNOWN;
-        }
     }
 
     // ConduitState flowable to observe the state changes
