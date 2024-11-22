@@ -25,8 +25,6 @@ import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.os.RemoteException;
 
-import com.jakewharton.rxrelay2.BehaviorRelay;
-import com.jakewharton.rxrelay2.Relay;
 import com.psiphon3.log.MyLog;
 
 import org.json.JSONException;
@@ -36,10 +34,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import ca.psiphon.conduit.state.IConduitStateCallback;
 import ca.psiphon.conduit.state.IConduitStateService;
-import io.reactivex.BackpressureStrategy;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.processors.BehaviorProcessor;
 
 public class ConduitStateManager {
     private static final String CONDUIT_PACKAGE = "ca.psiphon.conduit";
@@ -48,27 +46,23 @@ public class ConduitStateManager {
     private static final int MAX_RETRY_ATTEMPTS = 3; // Maximum number of retry attempts before giving up
 
     private final AtomicInteger retryCount = new AtomicInteger(0);
-    private final Relay<ConduitState> stateUpdateRelay = BehaviorRelay.<ConduitState>create().toSerialized();
-    private final BehaviorRelay<Boolean> isServiceConnected = BehaviorRelay.createDefault(false);
+    private final BehaviorProcessor<ConduitState> stateProcessor = BehaviorProcessor.createDefault(ConduitState.unknown());
     private IConduitStateService stateService;
     private boolean isServiceBound = false;
     private boolean isStopped = true;
     private Context applicationContext;
     private final CompositeDisposable reconnectDisposable = new CompositeDisposable();
+    private final Object lock = new Object();
 
     private final IConduitStateCallback stateCallback = new IConduitStateCallback.Stub() {
         @Override
         public void onStateUpdate(String state) {
 
             try {
-                ConduitState conduitState = ConduitState.fromJson(state);
-                stateUpdateRelay.accept(conduitState);
+                stateProcessor.onNext(ConduitState.fromJson(state));
             } catch (JSONException e) {
                 MyLog.e("ConduitStateManager: failed to parse ConduitState: " + e);
-                stateUpdateRelay.accept(ConduitState.builder()
-                        .setStatus(ConduitState.Status.UNKNOWN)
-                        .setErrorMessage("Failed to parse state: " + e.getMessage())
-                        .build());
+                stateProcessor.onNext(ConduitState.error("Failed to parse state: " + e.getMessage()));
             }
         }
     };
@@ -76,27 +70,29 @@ public class ConduitStateManager {
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            MyLog.i("ConduitStateManager: connected to ConduitStateService");
-            stateService = IConduitStateService.Stub.asInterface(service);
-            isServiceBound = true;
-            isServiceConnected.accept(true);
-            retryCount.set(0); // Reset retry count on successful connection
-            try {
-                stateService.registerClient(stateCallback);
-            } catch (RemoteException e) {
-                handleServiceError(new ConduitServiceException(ConduitErrorType.BINDING_ERROR, "Failed to register client: " + e.getMessage()));
+            synchronized (lock) {
+                MyLog.i("ConduitStateManager: connected to ConduitStateService");
+                stateService = IConduitStateService.Stub.asInterface(service);
+                isServiceBound = true;
+                retryCount.set(0); // Reset retry count on successful connection
+                try {
+                    stateService.registerClient(stateCallback);
+                } catch (RemoteException e) {
+                    handleServiceError(new ConduitServiceException(ConduitErrorType.BINDING_ERROR, "Failed to register client: " + e.getMessage()));
+                }
             }
         }
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-            MyLog.w("ConduitStateManager: disconnected from ConduitStateService");
-            stateService = null;
-            isServiceBound = false;
-            isServiceConnected.accept(false);
-            stateUpdateRelay.accept(ConduitState.unknown());
-            // Attempt to reconnect since this is an unexpected disconnection
-            scheduleReconnect();
+            synchronized (lock) {
+                MyLog.w("ConduitStateManager: disconnected from ConduitStateService");
+                stateService = null;
+                isServiceBound = false;
+                stateProcessor.onComplete();
+                // Attempt to reconnect since this is an unexpected disconnection
+                scheduleReconnect();
+            }
         }
     };
 
@@ -122,37 +118,35 @@ public class ConduitStateManager {
     }
 
     private void handleServiceError(ConduitServiceException error) {
-        MyLog.i("ConduitStateManager: handling service error: " + error.getType() + " - " + error.getMessage());
+        synchronized (lock) {
+            MyLog.i("ConduitStateManager: handling service error: " + error.getType() + " - " + error.getMessage());
 
-        if (isServiceBound && applicationContext != null) {
-            try {
-                applicationContext.unbindService(serviceConnection);
-            } catch (IllegalArgumentException e) {
-                MyLog.e("ConduitStateManager: error unbinding service: " + e);
+            if (isServiceBound && applicationContext != null) {
+                try {
+                    applicationContext.unbindService(serviceConnection);
+                } catch (IllegalArgumentException e) {
+                    MyLog.e("ConduitStateManager: error unbinding service: " + e);
+                }
+                isServiceBound = false;
+                stateService = null;
             }
-            isServiceBound = false;
-            stateService = null;
-        }
 
-        switch (error.getType()) {
-            case SECURITY_ERROR:
-            case PACKAGE_ERROR:
-                // For security and package errors, stop retrying and treat as not installed
-                retryCount.set(MAX_RETRY_ATTEMPTS);
-                stateUpdateRelay.accept(ConduitState.builder()
-                        .setStatus(ConduitState.Status.NOT_INSTALLED)
-                        .setErrorMessage(error.getMessage())
-                        .build());
-                break;
-            case BINDING_ERROR:
-                scheduleReconnect();
-                break;
+            switch (error.getType()) {
+                case SECURITY_ERROR:
+                case PACKAGE_ERROR:
+                    // For security and package errors, stop retrying and treat as not installed
+                    retryCount.set(MAX_RETRY_ATTEMPTS);
+                    stateProcessor.onNext(ConduitState.builder()
+                            .setStatus(ConduitState.Status.NOT_INSTALLED)
+                            .setErrorMessage(error.getMessage())
+                            .build());
+                    stateProcessor.onComplete();
+                    break;
+                case BINDING_ERROR:
+                    scheduleReconnect();
+                    break;
+            }
         }
-    }
-
-    public ConduitStateManager() {
-        // Initialize the state to UNKNOWN
-        stateUpdateRelay.accept(ConduitState.unknown());
     }
 
     // Schedule a reconnect attempt after a delay until the maximum retry attempts are reached
@@ -163,21 +157,24 @@ public class ConduitStateManager {
 
         int currentRetries = retryCount.incrementAndGet();
         if (currentRetries > MAX_RETRY_ATTEMPTS) {
-            MyLog.e("ConduitStateManager: max retry attempts exceeded");
-            stateUpdateRelay.accept(ConduitState.maxRetriesExceeded());
+            stateProcessor.onNext(ConduitState.maxRetriesExceeded());
+            stateProcessor.onComplete();
             return;
         }
 
-        MyLog.i("ConduitStateManager: scheduling reconnection attempt " + currentRetries + " of " + MAX_RETRY_ATTEMPTS);
-        reconnectDisposable.clear();
-        reconnectDisposable.add(
-                Completable.timer(RECONNECT_DELAY_MS, TimeUnit.MILLISECONDS)
-                        .subscribe(() -> {
-                            if (!isStopped) {
-                                checkConduitAndBind();
-                            }
-                        })
-        );
+        synchronized (lock) {
+            MyLog.i("ConduitStateManager: scheduling reconnection attempt " + currentRetries + " of " + MAX_RETRY_ATTEMPTS);
+            // Clear any existing reconnect attempts and schedule a new one
+            reconnectDisposable.clear();
+            reconnectDisposable.add(
+                    Completable.timer(RECONNECT_DELAY_MS, TimeUnit.MILLISECONDS)
+                            .subscribe(() -> {
+                                if (!isStopped) {
+                                    checkConduitAndBind();
+                                }
+                            })
+            );
+        }
     }
 
     // Perform checks on the Conduit package and bind to the ConduitStateService
@@ -202,15 +199,16 @@ public class ConduitStateManager {
 
             // Finally, check if the ConduitStateService is available in the Conduit app
             if (!isConduitStateServiceAvailable()) {
-                stateUpdateRelay.accept(ConduitState.upgradeRequired());
+                stateProcessor.onNext(ConduitState.upgradeRequired());
+                stateProcessor.onComplete();
                 return;
             }
 
             Intent intent = new Intent(ACTION_BIND_CONDUIT_STATE);
             intent.setPackage(CONDUIT_PACKAGE);
 
-                // Attempt to bind to the ConduitStateService. The BIND_AUTO_CREATE flag ensures that
-                // the service is created if it is not already running.
+            // Attempt to bind to the ConduitStateService. The BIND_AUTO_CREATE flag ensures that
+            // the service is created if it is not already running.
             boolean bindRequested = applicationContext.bindService(intent,
                     serviceConnection,
                     Context.BIND_AUTO_CREATE);
@@ -235,56 +233,52 @@ public class ConduitStateManager {
         return applicationContext.getPackageManager().resolveService(intent, 0) != null;
     }
 
-    // Starts the ConduitStateManager by binding to the ConduitStateService of the Conduit app
-    public void onStart(Context context) {
-        isStopped = false;
-        this.applicationContext = context.getApplicationContext();
-        checkConduitAndBind();
-    }
-
     // Stops the ConduitStateManager by unbinding from the ConduitStateService
-    public void onStop(Context context) {
-        isStopped = true;
-        reconnectDisposable.clear();
-        stateUpdateRelay.accept(ConduitState.unknown());
+    public void stop() {
+        synchronized (lock) {
+            isStopped = true;
+            // Clear any existing scheduled reconnects
+            reconnectDisposable.clear();
 
-        if (stateService != null) {
-            try {
-                stateService.unregisterClient(stateCallback);
-            } catch (RemoteException e) {
-                MyLog.e("ConduitStateManager: failed to unregister client: " + e);
+            if (stateService != null) {
+                try {
+                    stateService.unregisterClient(stateCallback);
+                } catch (RemoteException e) {
+                    MyLog.e("ConduitStateManager: failed to unregister client: " + e);
+                }
             }
-        }
 
-        if (isServiceBound) {
-            try {
-                context.unbindService(serviceConnection);
-            } catch (IllegalArgumentException e) {
-                MyLog.e("ConduitStateManager: error unbinding service: " + e);
+            if (isServiceBound && applicationContext != null) {
+                try {
+                    applicationContext.unbindService(serviceConnection);
+                } catch (IllegalArgumentException e) {
+                    MyLog.e("ConduitStateManager: error unbinding service: " + e);
+                }
+                isServiceBound = false;
             }
-            isServiceBound = false;
+
+            stateService = null;
+            applicationContext = null;
+            stateProcessor.onComplete();
         }
-        stateService = null;
-        applicationContext = null;
     }
 
-    public Completable restart(Context context) {
-        Completable stop = Completable.fromAction(() -> onStop(context));
-        Completable waitForFullyStop = isServiceConnected.filter(connected -> !connected)
-                .firstElement()
-                .ignoreElement();
-        Completable delay = Completable.timer(100, TimeUnit.MILLISECONDS);
-        Completable start = Completable.fromAction(() -> onStart(context));
-
-        return stop.andThen(waitForFullyStop)
-                .andThen(delay)
-                .andThen(start);
-    }
-
-    // ConduitState flowable to observe the state changes
-    public Flowable<ConduitState> conduitStateFlowable() {
-        return stateUpdateRelay
-                .distinctUntilChanged()
-                .toFlowable(BackpressureStrategy.LATEST);
+    // ConduitState flowable for observing Conduit state changes
+    // Note that subscription to this flowable will automatically bind to the ConduitStateService if not already bound
+    public Flowable<ConduitState> stateFlowable() {
+        return stateProcessor
+                .doOnSubscribe(subscription -> {
+                    synchronized (lock) {
+                        if (!isServiceBound && !isStopped) {
+                            checkConduitAndBind();
+                        }
+                    }
+                })
+                .doOnCancel(() -> {
+                    // stop the ConduitStateManager if there are no subscribers
+                    if (!stateProcessor.hasSubscribers()) {
+                        stop();
+                    }
+                });
     }
 }
