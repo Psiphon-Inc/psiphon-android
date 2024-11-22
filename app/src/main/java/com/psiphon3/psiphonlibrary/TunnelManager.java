@@ -51,6 +51,8 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.PermissionChecker;
 
 import com.jakewharton.rxrelay2.PublishRelay;
+import com.psiphon3.ConduitState;
+import com.psiphon3.ConduitStateManager;
 import com.psiphon3.Location;
 import com.psiphon3.PackageHelper;
 import com.psiphon3.PsiphonCrashService;
@@ -270,6 +272,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         purchaseVerifier = new PurchaseVerifier(m_context, this);
         tunnelConfigManager = new TunnelConfigManager(m_context);
 
+        // Get the initial speed boost by checking if there are any persisted authorizations with
+        // the access type SPEED_BOOST
         speedBoostStateSingle = Single.fromCallable(() -> {
                     List<Authorization> authorizations = Authorization.geAllPersistedAuthorizations(getContext());
                     return authorizations.stream()
@@ -277,9 +281,24 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 })
                 .subscribeOn(Schedulers.io());
 
-        // TODO: Implement conduit state single
-        conduitStateSingle = Single.fromCallable(() -> Boolean.FALSE);
+        // Get the initial conduit state and return a boolean indicating whether the conduit is running
+        conduitStateSingle = ConduitStateManager.newManager(getContext()).stateFlowable()
+                // Filter out UNKNOWN states
+                .filter(state -> state.status() != ConduitState.Status.UNKNOWN)
+                // Wait for up to 1 second for the first state
+                .timeout(1000, java.util.concurrent.TimeUnit.MILLISECONDS)
+                .firstOrError()
+                .doOnSuccess(state -> MyLog.i("TunnelManager: initial Conduit state: " + state))
+                // Any state other than RUNNING is considered not running
+                .map(state -> state.status() == ConduitState.Status.RUNNING ? Boolean.TRUE : Boolean.FALSE)
+                // on error return false
+                .onErrorReturn(e -> {
+                    MyLog.e("TurnelManager: error getting initial Conduit state: " + e);
+                    return Boolean.FALSE;
+                });
 
+        // Get persisted device location precision and return a GeoHash string for the device location
+        // with the given precision
         deviceLocationSingle = Single.fromCallable(() -> {
                     AppPreferences preferences = new AppPreferences(getContext());
                     return preferences.getInt(getContext().getString(R.string.deviceLocationPrecisionParameter), 0);
