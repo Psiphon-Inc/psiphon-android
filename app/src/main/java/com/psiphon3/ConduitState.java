@@ -8,8 +8,12 @@ import com.google.auto.value.AutoValue;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Set;
+
 @AutoValue
 public abstract class ConduitState {
+    private static final Set<Integer> SUPPORTED_SCHEMAS = Set.of(1); // Supported schema versions
+
     public enum Status {
         UNKNOWN,
         RUNNING,
@@ -30,7 +34,7 @@ public abstract class ConduitState {
     public abstract Boolean running();
 
     @Nullable
-    public abstract String errorMessage();
+    public abstract String message();
 
     public static ConduitState unknown() {
         return builder()
@@ -38,9 +42,10 @@ public abstract class ConduitState {
                 .build();
     }
 
-    public static ConduitState upgradeRequired() {
+    public static ConduitState upgradeRequired(String message) {
         return builder()
                 .setStatus(Status.CONDUIT_UPGRADE_REQUIRED)
+                .setMessage(message)
                 .build();
     }
 
@@ -50,14 +55,7 @@ public abstract class ConduitState {
                 .build();
     }
 
-    public static ConduitState error(String errorMessage) {
-        return builder()
-                .setStatus(Status.ERROR)
-                .setErrorMessage(errorMessage)
-                .build();
-    }
-
-    public static ConduitState fromJson(String jsonString) throws JSONException {
+    public static ConduitState fromJson(String jsonString) throws IllegalArgumentException {
         return Parser.INSTANCE.parse(jsonString);
     }
 
@@ -71,18 +69,22 @@ public abstract class ConduitState {
         //  "schema": 1, // data schema version
         //  "data": { ... } // data object
         // }
-        private ConduitState parse(String jsonString) {
+        private ConduitState parse(String jsonString) throws IllegalArgumentException {
             try {
                 JSONObject wrapper = new JSONObject(jsonString);
                 int schema = wrapper.getInt("schema");
 
-                if (schema != EXPECTED_SCHEMA_VERSION) {
-                    return error("Unexpected schema version: " + schema);
-                }
+                validateSchema(schema);
 
                 return parseSchema(schema, wrapper.getJSONObject("data"));
             } catch (JSONException e) {
-                return error("Failed to parse JSON: " + e.getMessage());
+                throw new IllegalArgumentException("Failed to parse Conduit state: " + e.getMessage());
+            }
+        }
+
+        private void validateSchema(int schema) {
+            if (!SUPPORTED_SCHEMAS.contains(schema)) {
+                throw new IllegalArgumentException("Unsupported schema version: " + schema);
             }
         }
 
@@ -100,7 +102,7 @@ public abstract class ConduitState {
         //  "appVersion": 123, // App version code
         //  "running": true/false, // Proxy running status, omitted for UNKNOWN state
         // }
-        private ConduitState parseSchemaV1(JSONObject data) {
+        private ConduitState parseSchemaV1(JSONObject data) throws IllegalArgumentException {
             try {
                 Builder builder = builder()
                         .setAppVersion(data.getInt("appVersion"));
@@ -114,7 +116,7 @@ public abstract class ConduitState {
                 }
                 return builder.build();
             } catch (JSONException e) {
-                return error("Failed to parse schema v1 data: " + e.getMessage());
+                throw new IllegalArgumentException("Failed to parse schema v1: " + e.getMessage());
             }
         }
     }
@@ -122,15 +124,18 @@ public abstract class ConduitState {
     public static Builder builder() {
         return new AutoValue_ConduitState.Builder()
                 .setStatus(Status.UNKNOWN)
-                .setErrorMessage(null);
+                .setMessage(null);
     }
 
     @AutoValue.Builder
     public abstract static class Builder {
         public abstract Builder setStatus(@NonNull Status value);
+
         public abstract Builder setAppVersion(@Nullable Integer value);
+
         public abstract Builder setRunning(@Nullable Boolean value);
-        public abstract Builder setErrorMessage(@Nullable String value);
+
+        public abstract Builder setMessage(@Nullable String value);
 
         abstract ConduitState autoBuild();
 
