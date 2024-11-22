@@ -42,7 +42,7 @@ import io.reactivex.processors.BehaviorProcessor;
 public class ConduitStateManager {
     private static final String CONDUIT_PACKAGE = "ca.psiphon.conduit";
     private static final String ACTION_BIND_CONDUIT_STATE = "ca.psiphon.conduit.ACTION_BIND_CONDUIT_STATE";
-    private static final long RECONNECT_DELAY_MS = 1000; // 1 second delay between reconnection attempts
+    private static final long RECONNECT_DELAY_MS = 500; // 1/2 second delay between reconnection attempts
     private static final int MAX_RETRY_ATTEMPTS = 3; // Maximum number of retry attempts before giving up
 
     private final AtomicInteger retryCount = new AtomicInteger(0);
