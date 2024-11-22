@@ -49,6 +49,7 @@ public class ConduitStateManager {
 
     private final AtomicInteger retryCount = new AtomicInteger(0);
     private final Relay<ConduitState> stateUpdateRelay = BehaviorRelay.<ConduitState>create().toSerialized();
+    private final BehaviorRelay<Boolean> isServiceConnected = BehaviorRelay.createDefault(false);
     private IConduitStateService stateService;
     private boolean isServiceBound = false;
     private boolean isStopped = true;
@@ -78,6 +79,7 @@ public class ConduitStateManager {
             MyLog.i("ConduitStateManager: connected to ConduitStateService");
             stateService = IConduitStateService.Stub.asInterface(service);
             isServiceBound = true;
+            isServiceConnected.accept(true);
             retryCount.set(0); // Reset retry count on successful connection
             try {
                 stateService.registerClient(stateCallback);
@@ -91,6 +93,7 @@ public class ConduitStateManager {
             MyLog.w("ConduitStateManager: disconnected from ConduitStateService");
             stateService = null;
             isServiceBound = false;
+            isServiceConnected.accept(false);
             stateUpdateRelay.accept(ConduitState.unknown());
             // Attempt to reconnect since this is an unexpected disconnection
             scheduleReconnect();
@@ -263,6 +266,19 @@ public class ConduitStateManager {
         }
         stateService = null;
         applicationContext = null;
+    }
+
+    public Completable restart(Context context) {
+        Completable stop = Completable.fromAction(() -> onStop(context));
+        Completable waitForFullyStop = isServiceConnected.filter(connected -> !connected)
+                .firstElement()
+                .ignoreElement();
+        Completable delay = Completable.timer(100, TimeUnit.MILLISECONDS);
+        Completable start = Completable.fromAction(() -> onStart(context));
+
+        return stop.andThen(waitForFullyStop)
+                .andThen(delay)
+                .andThen(start);
     }
 
     // ConduitState flowable to observe the state changes
