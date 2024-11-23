@@ -85,9 +85,6 @@ public class ConduitStateManager {
                 } catch (RemoteException e) {
                     handleServiceError(new ConduitServiceException(ConduitErrorType.BINDING_ERROR,
                             "Failed to register client: " + e.getMessage()));
-                } catch (SecurityException e) {
-                    handleServiceError(new ConduitServiceException(ConduitErrorType.SECURITY_ERROR,
-                            "Security exception registering client: " + e.getMessage()));
                 }
             }
         }
@@ -95,7 +92,7 @@ public class ConduitStateManager {
         @Override
         public void onServiceDisconnected(ComponentName name) {
             synchronized (lock) {
-                if(isShutdown()) {
+                if (isShutdown()) {
                     return;
                 }
                 MyLog.w("ConduitStateManager: disconnected from ConduitStateService");
@@ -109,10 +106,11 @@ public class ConduitStateManager {
 
     // Exception types for ConduitService errors
     public enum ConduitErrorType {
-        SECURITY_ERROR,
+        PACKAGE_TRUST_ERROR,
         BINDING_ERROR,
-        PACKAGE_ERROR,
-        SERVICE_NOT_FOUND
+        PACKAGE_NOT_FOUND_ERROR,
+        SERVICE_NOT_FOUND_ERROR,
+        MAX_RETRIES_EXCEEDED
     }
 
     // Helper exception class for ConduitService errors
@@ -168,10 +166,17 @@ public class ConduitStateManager {
             }
 
             switch (error.getType()) {
-                case SECURITY_ERROR:
-                case PACKAGE_ERROR:
-                    // For security and package errors, stop retrying and treat as not installed with details in
-                    // error message
+                // For package trust and service not found errors, stop retrying and treat as incompatible package
+                // with details in error message
+                case PACKAGE_TRUST_ERROR:
+                case SERVICE_NOT_FOUND_ERROR:
+                    retryCount.set(MAX_RETRY_ATTEMPTS);
+                    emitStateAndComplete(ConduitState.incompatibleVersion(error.getMessage()));
+                    break;
+
+                // For security and package errors, stop retrying and treat as not installed
+                // with details in error message
+                case PACKAGE_NOT_FOUND_ERROR:
                     retryCount.set(MAX_RETRY_ATTEMPTS);
                     emitStateAndComplete(ConduitState.builder()
                             .setStatus(ConduitState.Status.NOT_INSTALLED)
@@ -179,12 +184,12 @@ public class ConduitStateManager {
                             .build());
                     break;
 
-                case SERVICE_NOT_FOUND:
-                    // For service not found errors, stop retrying and send upgrade required
-                    retryCount.set(MAX_RETRY_ATTEMPTS);
-                    emitStateAndComplete(ConduitState.upgradeRequired(error.getMessage()));
+                // Map max retries exceeded to a max retries exceeded state
+                case MAX_RETRIES_EXCEEDED:
+                    emitStateAndComplete(ConduitState.maxRetriesExceeded());
                     break;
 
+                // For binding errors, schedule a reconnect attempt
                 case BINDING_ERROR:
                     scheduleReconnect();
                     break;
@@ -205,7 +210,9 @@ public class ConduitStateManager {
 
             int currentRetries = retryCount.incrementAndGet();
             if (currentRetries > MAX_RETRY_ATTEMPTS) {
-                emitStateAndComplete(ConduitState.maxRetriesExceeded());
+                handleServiceError(new ConduitServiceException(
+                        ConduitErrorType.MAX_RETRIES_EXCEEDED,
+                        "Conduit package not installed"));
                 return;
             }
 
@@ -234,49 +241,43 @@ public class ConduitStateManager {
                 return;
             }
 
-            try {
-                // Check if the Conduit package is installed
-                if (!PackageHelper.isPackageInstalled(applicationContext.getPackageManager(), CONDUIT_PACKAGE)) {
-                    handleServiceError(new ConduitServiceException(
-                            ConduitErrorType.PACKAGE_ERROR,
-                            "Conduit package not installed"));
-                    return;
-                }
-                // Verify the Conduit package signature
-                if (!PackageHelper.verifyTrustedPackage(applicationContext.getPackageManager(), CONDUIT_PACKAGE)) {
-                    handleServiceError(new ConduitServiceException(
-                            ConduitErrorType.SECURITY_ERROR,
-                            "Conduit package trust verification failed"));
-                    return;
-                }
-
-                // Finally, check if the ConduitStateService is available in the Conduit app
-                if (!isConduitStateServiceAvailable()) {
-                    handleServiceError(new ConduitServiceException(
-                            ConduitErrorType.SERVICE_NOT_FOUND,
-                            "ConduitStateService not found in Conduit package"));
-                    return;
-                }
-
-                Intent intent = new Intent(ACTION_BIND_CONDUIT_STATE);
-                intent.setPackage(CONDUIT_PACKAGE);
-
-                // Attempt to bind to the ConduitStateService. The BIND_AUTO_CREATE flag ensures that
-                // the service is created if it is not already running.
-                boolean bindRequested = applicationContext.bindService(intent,
-                        serviceConnection,
-                        Context.BIND_AUTO_CREATE);
-
-                // If the bind request failed, schedule a reconnect
-                if (!bindRequested) {
-                    handleServiceError(new ConduitServiceException(
-                            ConduitErrorType.BINDING_ERROR,
-                            "Failed to request bind to ConduitStateService"));
-                }
-            } catch (SecurityException e) {
+            // Check if the Conduit package is installed
+            if (!PackageHelper.isPackageInstalled(applicationContext.getPackageManager(), CONDUIT_PACKAGE)) {
                 handleServiceError(new ConduitServiceException(
-                        ConduitErrorType.SECURITY_ERROR,
-                        "Security exception binding to ConduitStateService: " + e.getMessage()));
+                        ConduitErrorType.PACKAGE_NOT_FOUND_ERROR,
+                        "Conduit package not installed"));
+                return;
+            }
+            // Verify the Conduit package signature
+            if (!PackageHelper.verifyTrustedPackage(applicationContext.getPackageManager(), CONDUIT_PACKAGE)) {
+                handleServiceError(new ConduitServiceException(
+                        ConduitErrorType.PACKAGE_TRUST_ERROR,
+                        "Conduit package trust verification failed"));
+                return;
+            }
+
+            // Finally, check if the ConduitStateService is available in the Conduit app
+            if (!isConduitStateServiceAvailable()) {
+                handleServiceError(new ConduitServiceException(
+                        ConduitErrorType.SERVICE_NOT_FOUND_ERROR,
+                        "ConduitStateService not found in Conduit package"));
+                return;
+            }
+
+            Intent intent = new Intent(ACTION_BIND_CONDUIT_STATE);
+            intent.setPackage(CONDUIT_PACKAGE);
+
+            // Attempt to bind to the ConduitStateService. The BIND_AUTO_CREATE flag ensures that
+            // the service is created if it is not already running.
+            boolean bindRequested = applicationContext.bindService(intent,
+                    serviceConnection,
+                    Context.BIND_AUTO_CREATE);
+
+            // If the bind request failed, schedule a reconnect
+            if (!bindRequested) {
+                handleServiceError(new ConduitServiceException(
+                        ConduitErrorType.BINDING_ERROR,
+                        "Failed to request bind to ConduitStateService"));
             }
         }
     }

@@ -19,7 +19,7 @@ public abstract class ConduitState {
         RUNNING,
         STOPPED,
         NOT_INSTALLED,
-        CONDUIT_UPGRADE_REQUIRED,
+        INCOMPATIBLE_VERSION,
         MAX_RETRIES_EXCEEDED,
     }
 
@@ -41,9 +41,9 @@ public abstract class ConduitState {
                 .build();
     }
 
-    public static ConduitState upgradeRequired(String message) {
+    public static ConduitState incompatibleVersion(String message) {
         return builder()
-                .setStatus(Status.CONDUIT_UPGRADE_REQUIRED)
+                .setStatus(Status.INCOMPATIBLE_VERSION)
                 .setMessage(message)
                 .build();
     }
