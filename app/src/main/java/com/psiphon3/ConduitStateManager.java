@@ -335,6 +335,7 @@ public class ConduitStateManager {
         }
 
         return stateProcessor
+                .distinctUntilChanged()
                 .doOnSubscribe(subscription -> {
                     synchronized (lock) {
                         if (!isServiceBound) {
