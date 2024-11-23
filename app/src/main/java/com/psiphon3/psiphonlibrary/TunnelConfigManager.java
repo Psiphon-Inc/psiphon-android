@@ -69,6 +69,28 @@ public class TunnelConfigManager {
             this.isConduitRunning = builder.isConduitRunning;
         }
 
+        public String getSponsorId() {
+            // Evaluate the sponsor ID based on the current state of the sponsorship
+            // 1. If the user has an unlimited subscription, use the subscription sponsor ID
+            // 2. If the user has a limited subscription, use the subscription sponsor ID
+            // 3. If the user has speed boost authorization, use the speed boost sponsor ID
+            // 4. If the user is running conduit, use the conduit sponsor ID
+            // 5. Otherwise, use the embedded sponsor ID (fallback and default)
+            if (subscriptionState == SubscriptionState.UNLIMITED) {
+                return BuildConfig.SUBSCRIPTION_SPONSOR_ID;
+            }
+            if (subscriptionState == SubscriptionState.LIMITED) {
+                return BuildConfig.SUBSCRIPTION_SPONSOR_ID;
+            }
+            if (hasSpeedBoostAuth) {
+                return BuildConfig.SPEED_BOOST_SPONSOR_ID;
+            }
+            if (isConduitRunning) {
+                return BuildConfig.CONDUIT_RUNNING_SPONSOR_ID;
+            }
+            return EmbeddedValues.SPONSOR_ID;
+        }
+
         public static class Builder {
             private SubscriptionState subscriptionState;
             private boolean hasSpeedBoostAuth;
@@ -154,25 +176,7 @@ public class TunnelConfigManager {
         }
 
         public String getSponsorId() {
-            // Evaluate the sponsor ID based on the current state of the sponsorship
-            // 1. If the user has an unlimited subscription, use the subscription sponsor ID
-            // 2. If the user has a limited subscription, use the subscription sponsor ID
-            // 3. If the user has speed boost authorization, use the speed boost sponsor ID
-            // 4. If the user is running conduit, use the conduit sponsor ID
-            // 5. Otherwise, use the embedded sponsor ID (fallback and default)
-            if (sponsorshipState.subscriptionState == SubscriptionState.UNLIMITED) {
-                return BuildConfig.SUBSCRIPTION_SPONSOR_ID;
-            }
-            if (sponsorshipState.subscriptionState == SubscriptionState.LIMITED) {
-                return BuildConfig.SUBSCRIPTION_SPONSOR_ID;
-            }
-            if (sponsorshipState.hasSpeedBoostAuth) {
-                return BuildConfig.SPEED_BOOST_SPONSOR_ID;
-            }
-            if (sponsorshipState.isConduitRunning) {
-                return BuildConfig.CONDUIT_RUNNING_SPONSOR_ID;
-            }
-            return EmbeddedValues.SPONSOR_ID;
+            return sponsorshipState.getSponsorId();
         }
     }
 
@@ -244,9 +248,7 @@ public class TunnelConfigManager {
                 .build());
     }
 
-    /**
-     * Initializes the tunnel configuration with externally provided states.
-     */
+    // Initializes the tunnel configuration with externally provided states.
     public Single<TunnelConfig> initConfiguration(
             Single<Boolean> speedBoostStateSingle,
             Single<Boolean> conduitStateSingle,
@@ -279,6 +281,16 @@ public class TunnelConfigManager {
         return tunnelConfigBehaviorRelay.getValue();
     }
 
+    private boolean shouldPublishUpdate(SponsorshipState currentState, SponsorshipState newState) {
+        // Always publish a new config if subscription state changes even if sponsor ID is the same
+        if (currentState.subscriptionState != newState.subscriptionState) {
+            return true;
+        }
+
+        // In any other case, only publish if the sponsor ID changes
+        return !currentState.getSponsorId().equals(newState.getSponsorId());
+    }
+
     private void updateConfig(Function<SponsorshipState, SponsorshipState> updateFunction) {
         TunnelConfig currentConfig = getCurrentConfig();
         if (currentConfig == null) {
@@ -286,8 +298,7 @@ public class TunnelConfigManager {
         }
 
         SponsorshipState newState = updateFunction.apply(currentConfig.sponsorshipState);
-        // Only publish an update if the state of the sponsorship has changed
-        if (!newState.equals(currentConfig.sponsorshipState)) {
+        if (shouldPublishUpdate(currentConfig.sponsorshipState, newState)) {
             TunnelConfig newConfig = new TunnelConfig.Builder()
                     .egressRegion(currentConfig.egressRegion)
                     .disableTimeouts(currentConfig.disableTimeouts)
