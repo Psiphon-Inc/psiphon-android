@@ -21,7 +21,6 @@ public abstract class ConduitState {
         NOT_INSTALLED,
         CONDUIT_UPGRADE_REQUIRED,
         MAX_RETRIES_EXCEEDED,
-        ERROR
     }
 
     @NonNull
@@ -142,9 +141,5 @@ public abstract class ConduitState {
         public ConduitState build() {
             return autoBuild();
         }
-    }
-
-    public boolean isError() {
-        return status() == Status.ERROR;
     }
 }

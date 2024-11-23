@@ -270,8 +270,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         // This service runs as a separate process, so it needs to initialize embedded values
         EmbeddedValues.initialize(getContext());
 
-        purchaseVerifier = new PurchaseVerifier(m_context, this);
-        tunnelConfigManager = new TunnelConfigManager(m_context);
+        purchaseVerifier = new PurchaseVerifier(getContext(), this);
+        tunnelConfigManager = new TunnelConfigManager(getContext());
 
         // Get the initial speed boost by checking if there are any persisted authorizations with
         // the access type SPEED_BOOST
