@@ -85,6 +85,7 @@ import java.util.stream.Collectors;
 
 import ca.psiphon.PsiphonTunnel;
 import io.reactivex.Completable;
+import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -358,6 +359,29 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                             .subscribe()
             );
 
+            // Start a Conduit state observer to monitor the Conduit state and update the tunnelConfigManager
+            m_compositeDisposable.add(
+                    ConduitStateManager.newManager(getContext()).stateFlowable()
+                            .doOnNext(state -> MyLog.i("TunnelManager: Conduit state observer: " + state))
+                            // Filter out UNKNOWN Conduit state
+                            .filter(state -> state.status() != ConduitState.Status.UNKNOWN)
+                            .flatMap(state -> {
+                                // Update the tunnelConfigManager with the Conduit state only if showPurchaseRequiredPromptFlag is set;
+                                // otherwise, do not propagate the Conduit state downstream.
+                                // This ensures the tunnel configuration remains unchanged and prevents unnecessary tunnel restarts
+                                // when not in the "Purchase Required" state.
+                                if (!showPurchaseRequiredPromptFlag) {
+                                    return Flowable.empty();
+                                }
+                                // Otherwise, map the Conduit state to a boolean indicating whether the Conduit is running
+                                return Flowable.just(state.status() == ConduitState.Status.RUNNING);
+                            })
+                            .doOnNext(isRunning -> {
+                                MyLog.i("TunnelManager: Conduit state observer: Conduit is running: " + isRunning + ", updating tunnel config manager");
+                                tunnelConfigManager.updateConduitState(isRunning);
+                            })
+                            .subscribe()
+            );
 
             // Set the persistent service running flag to true.
             // This flag is used to determine whether the service should be automatically restarted
