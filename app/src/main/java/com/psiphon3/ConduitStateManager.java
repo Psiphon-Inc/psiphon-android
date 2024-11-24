@@ -86,6 +86,12 @@ public class ConduitStateManager {
                     handleServiceError(new ConduitServiceException(ConduitErrorType.BINDING_ERROR,
                             "Failed to register client: " + e.getMessage()));
                 }
+                catch (SecurityException e) {
+                    // Security exception can occur if the client is not allowed to register
+                    // (e.g. if the client is not signet with a certificate that the service trusts)
+                    handleServiceError(new ConduitServiceException(ConduitErrorType.SECURITY_ERROR,
+                            "Security exception registering client: " + e.getMessage()));
+                }
             }
         }
 
@@ -107,6 +113,7 @@ public class ConduitStateManager {
     // Exception types for ConduitService errors
     public enum ConduitErrorType {
         PACKAGE_TRUST_ERROR,
+        SECURITY_ERROR,
         BINDING_ERROR,
         PACKAGE_NOT_FOUND_ERROR,
         SERVICE_NOT_FOUND_ERROR,
@@ -174,14 +181,19 @@ public class ConduitStateManager {
                     emitStateAndComplete(ConduitState.incompatibleVersion(error.getMessage()));
                     break;
 
-                // For security and package errors, stop retrying and treat as not installed
-                // with details in error message
+                // Map package not found errors to a not installed state and stop retrying
                 case PACKAGE_NOT_FOUND_ERROR:
                     retryCount.set(MAX_RETRY_ATTEMPTS);
                     emitStateAndComplete(ConduitState.builder()
                             .setStatus(ConduitState.Status.NOT_INSTALLED)
                             .setMessage(error.getMessage())
                             .build());
+                    break;
+
+                // For security errors, stop retrying and emit the error
+                case SECURITY_ERROR:
+                    retryCount.set(MAX_RETRY_ATTEMPTS);
+                    stateProcessor.onError(error);
                     break;
 
                 // Map max retries exceeded to a max retries exceeded state

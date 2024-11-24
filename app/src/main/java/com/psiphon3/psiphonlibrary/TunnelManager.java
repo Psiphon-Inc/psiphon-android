@@ -292,7 +292,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 .doOnSuccess(state -> MyLog.i("TunnelManager: initial Conduit state: " + state))
                 // Any state other than RUNNING is considered not running
                 .map(state -> state.status() == ConduitState.Status.RUNNING ? Boolean.TRUE : Boolean.FALSE)
-                // on error return false
+                // If there is an error, log it and treat it as Conduit not running
                 .onErrorReturn(e -> {
                     MyLog.e("TurnelManager: error getting initial Conduit state: " + e);
                     return Boolean.FALSE;
@@ -375,6 +375,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                                 }
                                 // Otherwise, map the Conduit state to a boolean indicating whether the Conduit is running
                                 return Flowable.just(state.status() == ConduitState.Status.RUNNING);
+                            })
+                            // If there is an error, log it and treat it as Conduit not running
+                            .onErrorResumeNext(e -> {
+                                MyLog.e("TunnelManager: Conduit state observer: error getting Conduit state: " + e);
+                                return Flowable.just(Boolean.FALSE);
                             })
                             .doOnNext(isRunning -> {
                                 MyLog.i("TunnelManager: Conduit state observer: Conduit is running: " + isRunning + ", updating tunnel config manager");
