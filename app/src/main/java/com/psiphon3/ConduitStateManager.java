@@ -22,6 +22,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.DeadObjectException;
 import android.os.IBinder;
 import android.os.RemoteException;
 
@@ -318,7 +319,9 @@ public class ConduitStateManager {
                 try {
                     stateService.unregisterClient(stateCallback);
                 } catch (RemoteException e) {
-                    MyLog.e("ConduitStateManager: failed to unregister client: " + e);
+                    if (!(e instanceof DeadObjectException)) {
+                        MyLog.e("ConduitStateManager: failed to unregister client: " + e);
+                    }
                 }
             }
 
