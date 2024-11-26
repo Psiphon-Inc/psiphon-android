@@ -74,6 +74,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -197,6 +198,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     private final PublishRelay<Boolean> m_isRoutingThroughTunnelPublishRelay = PublishRelay.create();
     private PublishRelay<Object> m_newClientPublishRelay = PublishRelay.create();
     private CompositeDisposable m_compositeDisposable = new CompositeDisposable();
+    private Disposable conduitStateObserver;
     private VpnAppsUtils.VpnAppsExclusionSetting vpnAppsExclusionSetting = VpnAppsUtils.VpnAppsExclusionSetting.ALL_APPS;
     private int vpnAppsExclusionCount = 0;
     private ArrayList<String> unsafeTrafficSubjects;
@@ -311,6 +313,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         // Start all subscription and purchase verification observers
         purchaseVerifier.start();
 
+        // Load trusted signatures from file
+        PackageHelper.configureRuntimeTrustedSignatures(
+                PackageHelper.readTrustedSignaturesFromFile(getContext().getApplicationContext())
+        );
+
         m_compositeDisposable.add(connectionStatusUpdaterDisposable());
     }
 
@@ -359,43 +366,48 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                             .subscribe()
             );
 
-            // Start a Conduit state observer to monitor the Conduit state and update the tunnelConfigManager
-            m_compositeDisposable.add(
-                    ConduitStateManager.newManager(getContext()).stateFlowable()
-                            .doOnNext(state -> MyLog.i("TunnelManager: Conduit state observer: " + state))
-                            // Filter out UNKNOWN Conduit state
-                            .filter(state -> state.status() != ConduitState.Status.UNKNOWN)
-                            .flatMap(state -> {
-                                // Update the tunnelConfigManager with the Conduit state only if showPurchaseRequiredPromptFlag is set;
-                                // otherwise, do not propagate the Conduit state downstream.
-                                // This ensures the tunnel configuration remains unchanged and prevents unnecessary tunnel restarts
-                                // when not in the "Purchase Required" state.
-                                if (!showPurchaseRequiredPromptFlag) {
-                                    return Flowable.empty();
-                                }
-                                // Otherwise, map the Conduit state to a boolean indicating whether the Conduit is running
-                                return Flowable.just(state.status() == ConduitState.Status.RUNNING);
-                            })
-                            // If there is an error, log it and treat it as Conduit not running
-                            .onErrorResumeNext(e -> {
-                                MyLog.e("TunnelManager: Conduit state observer: error getting Conduit state: " + e);
-                                return Flowable.just(Boolean.FALSE);
-                            })
-                            .doOnNext(isRunning -> {
-                                MyLog.i("TunnelManager: Conduit state observer: Conduit is running: " + isRunning + ", updating tunnel config manager");
-                                tunnelConfigManager.updateConduitState(isRunning);
-                            })
-                            .subscribe()
-            );
+            // Start Conduit state observer
+            setupConduitStateObserver();
 
             // Set the persistent service running flag to true.
             // This flag is used to determine whether the service should be automatically restarted
             // after an app update, upon receiving a package replaced broadcast in the PsiphonUpdateReceiver.
             new AppPreferences(getContext()).put(getContext().getString(R.string.serviceRunningPreference), true);
-
-
         }
         return Service.START_REDELIVER_INTENT;
+    }
+
+    private void setupConduitStateObserver() {
+        if (conduitStateObserver != null && !conduitStateObserver.isDisposed()){
+            conduitStateObserver.dispose();
+        }
+        // Configure runtime trusted signatures
+        PackageHelper.configureRuntimeTrustedSignatures(
+                PackageHelper.readTrustedSignaturesFromFile(getContext().getApplicationContext())
+        );
+
+        conduitStateObserver = ConduitStateManager.newManager(getContext()).stateFlowable()
+                .doOnNext(state -> MyLog.i("TunnelManager: Conduit state observer: " + state))
+                // Filter out UNKNOWN Conduit state
+                .filter(state -> state.status() != ConduitState.Status.UNKNOWN)
+                .flatMap(state -> {
+                    if (!showPurchaseRequiredPromptFlag) {
+                        return Flowable.empty();
+                    }
+                    return Flowable.just(state.status() == ConduitState.Status.RUNNING);
+                })
+                .onErrorResumeNext(e -> {
+                    MyLog.e("TunnelManager: Conduit state observer: error getting Conduit state: " + e);
+                    return Flowable.just(Boolean.FALSE);
+                })
+                .doOnNext(isRunning -> {
+                    MyLog.i("TunnelManager: Conduit state observer: Conduit is running: " + isRunning + ", updating tunnel config manager");
+                    tunnelConfigManager.updateConduitState(isRunning);
+                })
+                .subscribe();
+
+        // Add to composite disposable for lifecycle management
+        m_compositeDisposable.add(conduitStateObserver);
     }
 
     IBinder onBind(Intent intent) {
@@ -2068,14 +2080,86 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
     @Override
     public void onApplicationParameters(@NonNull Object o) {
-        showPurchaseRequiredPromptFlag = ((JSONObject) o).optBoolean("ShowPurchaseRequiredPrompt");
+        if (!(o instanceof JSONObject)) {
+            MyLog.e("TunnelManager::onApplicationParameters: invalid parameter type. Expected JSONObject, got: " + o.getClass().getName());
+            return;
+        }
+        JSONObject params = (JSONObject) o;
 
-        int deviceLocationPrecision = ((JSONObject) o).optInt("DeviceLocationPrecision");
+        // Process the application parameters
+        processDeviceLocationPrecision(params);
+        processPurchaseRequiredPrompt(params);
+        processTrustedApps(params);
+    }
 
-        final AppPreferences mp = new AppPreferences(getContext());
-        mp.put(m_parentService.getString(R.string.showPurchaseRequiredPromptFlag), showPurchaseRequiredPromptFlag);
+    private void processDeviceLocationPrecision(JSONObject params) {
+        // Parse the device location precision from the parameters json object
+        // The expected format is:
+        // {
+        //     "DeviceLocationPrecision": 0
+        // }
+        try {
+            int deviceLocationPrecision = params.optInt("DeviceLocationPrecision");
+            final AppPreferences mp = new AppPreferences(getContext());
+            mp.put(m_parentService.getString(R.string.deviceLocationPrecisionParameter), deviceLocationPrecision);
+        } catch (Exception e) {
+            MyLog.e("TunnelManager: failed to parse device location precision: " + e);
+        }
+    }
 
-        mp.put(m_parentService.getString(R.string.deviceLocationPrecisionParameter), deviceLocationPrecision);
+    private void processPurchaseRequiredPrompt(JSONObject params) {
+        // Parse the purchase required prompt flag from the parameters json object
+        // The expected format is:
+        // {
+        //     "ShowPurchaseRequiredPrompt": true
+        // }
+        try {
+            showPurchaseRequiredPromptFlag = params.optBoolean("ShowPurchaseRequiredPrompt");
+            final AppPreferences mp = new AppPreferences(getContext());
+            mp.put(m_parentService.getString(R.string.showPurchaseRequiredPromptFlag), showPurchaseRequiredPromptFlag);
+        } catch (Exception e) {
+            MyLog.e("TunnelManager: failed to parse purchase required prompt flag: " + e);
+        }
+    }
+
+    private void processTrustedApps(JSONObject params) {
+        // Parse the trusted apps configuration from the parameters json object
+        // The expected format is:
+        // {
+        //     "AndroidTrustedApps": {
+        //         "com.example.app1": ["signature1", "signature2"],
+        //         "com.example.app2": ["signature3", "signature4", "signature5"]
+        //     }
+        try {
+            JSONObject trustedApps = params.optJSONObject("AndroidTrustedApps");
+            if (trustedApps == null) {
+                return;
+            }
+
+            Map<String, Set<String>> trustedSignatures = new HashMap<>();
+            Iterator<String> packageNames = trustedApps.keys();
+
+            while (packageNames.hasNext()) {
+                String packageName = packageNames.next();
+                JSONArray signatures = trustedApps.getJSONArray(packageName);
+                Set<String> signatureSet = new HashSet<>(signatures.length());
+
+                for (int i = 0; i < signatures.length(); i++) {
+                    signatureSet.add(signatures.getString(i));
+                }
+                trustedSignatures.put(packageName, signatureSet);
+            }
+
+            // Save the trusted signatures to file
+            PackageHelper.saveTrustedSignaturesToFile(getContext().getApplicationContext(), trustedSignatures);
+
+            // Restart the Conduit state observer to pick up new signatures
+            setupConduitStateObserver();
+
+            MyLog.i("TunnelManager: Restarted Conduit state observer after updating trusted signatures");
+        } catch (JSONException e) {
+            MyLog.e("TunnelManager: failed to parse trusted apps signatures: " + e);
+        }
     }
 
     // PurchaseVerifier.VerificationResultListener implementation
