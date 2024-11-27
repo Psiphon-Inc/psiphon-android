@@ -186,7 +186,4 @@
 
     <!--Approximate location permission rationale alert text. The format qualifier %s will be replaced by the app name, either 'Psiphon' or 'Psiphon Pro'  -->
     <string name="location_permission_rationale_text">Please allow %s to access your device\'s approximate location. Your location data estimate is used to optimize the Psiphon network, and is accurate to within about 3 square kilometers.</string>
-    <string name="conduit_icon_description">Conduit app icon</string>
-    <string name="google_play_icon_description">Google Play icon</string>
-
 </resources>
