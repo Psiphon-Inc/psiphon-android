@@ -20,7 +20,6 @@ public abstract class ConduitState {
         STOPPED,
         NOT_INSTALLED,
         INCOMPATIBLE_VERSION,
-        MAX_RETRIES_EXCEEDED,
     }
 
     @NonNull
@@ -42,12 +41,6 @@ public abstract class ConduitState {
         return builder()
                 .setStatus(Status.INCOMPATIBLE_VERSION)
                 .setMessage(message)
-                .build();
-    }
-
-    public static ConduitState maxRetriesExceeded() {
-        return builder()
-                .setStatus(Status.MAX_RETRIES_EXCEEDED)
                 .build();
     }
 

@@ -180,7 +180,7 @@ public class ConduitStateManager {
             // - PACKAGE_TRUST_ERROR, SERVICE_NOT_FOUND_ERROR: stop retrying, emit "incompatible version" state and complete
             // - PACKAGE_NOT_FOUND_ERROR: stop retrying, emit "not installed" state and complete
             // - SECURITY_ERROR: stop retrying and emit the error
-            // - MAX_RETRIES_EXCEEDED: emit "max retries exceeded" state and complete
+            // - MAX_RETRIES_EXCEEDED: stop retrying and emit the error
             // - BINDING_ERROR: schedule a reconnect attempt
             switch (error.getType()) {
                 case PACKAGE_TRUST_ERROR:
@@ -198,12 +198,9 @@ public class ConduitStateManager {
                     break;
 
                 case SECURITY_ERROR:
+                case MAX_RETRIES_EXCEEDED:
                     retryCount.set(MAX_RETRY_ATTEMPTS);
                     stateProcessor.onError(error);
-                    break;
-
-                case MAX_RETRIES_EXCEEDED:
-                    emitStateAndComplete(ConduitState.maxRetriesExceeded());
                     break;
 
                 case BINDING_ERROR:
