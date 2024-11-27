@@ -30,9 +30,6 @@ public abstract class ConduitState {
     public abstract Integer appVersion();
 
     @Nullable
-    public abstract Boolean running();
-
-    @Nullable
     public abstract String message();
 
     public static ConduitState unknown() {
@@ -108,8 +105,7 @@ public abstract class ConduitState {
 
                 if (data.has("running")) {
                     boolean running = data.getBoolean("running");
-                    builder.setRunning(running)
-                            .setStatus(running ? Status.RUNNING : Status.STOPPED);
+                    builder.setStatus(running ? Status.RUNNING : Status.STOPPED);
                 } else {
                     builder.setStatus(Status.UNKNOWN);
                 }
@@ -131,8 +127,6 @@ public abstract class ConduitState {
         public abstract Builder setStatus(@NonNull Status value);
 
         public abstract Builder setAppVersion(@Nullable Integer value);
-
-        public abstract Builder setRunning(@Nullable Boolean value);
 
         public abstract Builder setMessage(@Nullable String value);
 
