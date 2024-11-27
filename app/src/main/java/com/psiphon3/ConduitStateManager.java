@@ -149,11 +149,14 @@ public class ConduitStateManager {
 
     // Helper method to emit a state and complete with guaranteed ordering of events
     private void emitStateAndComplete(ConduitState state) {
-        emitAndCompleteDisposables.add(Observable.just(state)
-                .concatWith(Observable.empty())
+        emitAndCompleteDisposables.add(Observable.defer(() -> {
+                    stateProcessor.onNext(state);
+                    return Observable.empty();
+                })
+                .subscribeOn(Schedulers.single())
                 .observeOn(Schedulers.single())
                 .subscribe(
-                        stateProcessor::onNext,
+                        value -> {}, // no-op
                         stateProcessor::onError,
                         stateProcessor::onComplete
                 ));
