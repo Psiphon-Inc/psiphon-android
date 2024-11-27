@@ -42,7 +42,6 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.Pair;
 
 import androidx.annotation.NonNull;
@@ -530,7 +529,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 .filter(__ -> pingForActivity())
                 .take(1)
                 .ignoreElements()
-                .doOnDispose(() -> Log.d( "HACK", "TunnelManager: waitSendIntentAndRouteThroughTunnelCompletable: doOnDispose"))
                 .doOnSubscribe(__ -> showOpenAppToFinishConnectingNotification())
                 .doOnComplete(() -> {
                     m_vpnManager.routeThroughTunnel(m_tunnel.getLocalSocksProxyPort());
