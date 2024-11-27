@@ -59,7 +59,7 @@ public class PackageHelper {
         // Psiphon Conduit package and its signature as SHA-256 hash using uppercase hex encoding, continuous (no separator)
         Map<String, Set<String>> map = new HashMap<>();
         map.put("ca.psiphon.conduit", new HashSet<>(Arrays.asList(
-                "48:8C:4B:47:90:2E:CB:48:04:7E:97:FF:FE:1F:19:C4:B0:0F:31:40:D2:E2:57:06:70:95:23:CF:FE:4D:C4:B3"
+                "488C4B47902ECB48047E97FFFE1F19C4B00F3140D2E25706709523CFFE4DC4B3"
                 // Add additional valid signatures for the package as needed:
                 //"THEOTHERSIGNATUREHASHHERE"
         )));
