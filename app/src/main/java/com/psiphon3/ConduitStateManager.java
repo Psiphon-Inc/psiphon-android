@@ -173,16 +173,19 @@ public class ConduitStateManager {
                 stateService = null;
             }
 
+            // Map the error type to the appropriate action as follows:
+            // - PACKAGE_TRUST_ERROR, SERVICE_NOT_FOUND_ERROR: stop retrying, emit "incompatible version" state and complete
+            // - PACKAGE_NOT_FOUND_ERROR: stop retrying, emit "not installed" state and complete
+            // - SECURITY_ERROR: stop retrying and emit the error
+            // - MAX_RETRIES_EXCEEDED: emit "max retries exceeded" state and complete
+            // - BINDING_ERROR: schedule a reconnect attempt
             switch (error.getType()) {
-                // For package trust and service not found errors, stop retrying and treat as incompatible package
-                // with details in error message
                 case PACKAGE_TRUST_ERROR:
                 case SERVICE_NOT_FOUND_ERROR:
                     retryCount.set(MAX_RETRY_ATTEMPTS);
                     emitStateAndComplete(ConduitState.incompatibleVersion(error.getMessage()));
                     break;
 
-                // Map package not found errors to a not installed state and stop retrying
                 case PACKAGE_NOT_FOUND_ERROR:
                     retryCount.set(MAX_RETRY_ATTEMPTS);
                     emitStateAndComplete(ConduitState.builder()
@@ -191,21 +194,21 @@ public class ConduitStateManager {
                             .build());
                     break;
 
-                // For security errors, stop retrying and emit the error
                 case SECURITY_ERROR:
                     retryCount.set(MAX_RETRY_ATTEMPTS);
                     stateProcessor.onError(error);
                     break;
 
-                // Map max retries exceeded to a max retries exceeded state
                 case MAX_RETRIES_EXCEEDED:
                     emitStateAndComplete(ConduitState.maxRetriesExceeded());
                     break;
 
-                // For binding errors, schedule a reconnect attempt
                 case BINDING_ERROR:
                     scheduleReconnect();
                     break;
+
+                default:
+                    throw new IllegalArgumentException("Unhandled error type: " + error.getType());
             }
         }
     }
