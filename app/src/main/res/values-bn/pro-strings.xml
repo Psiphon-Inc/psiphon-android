@@ -55,4 +55,10 @@
     <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_hr">1 ঘন্টা</string>
 
+    <!-- Label on a button. Clicking this button will buy 1 day (24hr) of Speed Boost. Translate number as well. -->
+    <string name="speed_boost_product_1_day">১ দিন</string>
+
+    <!-- Label on a button. Clicking this button will buy 1 week (7days) of Speed Boost. Translate number as well. -->
+    <string name="speed_boost_product_1_week">১ সপ্তাহ</string>
+
     </resources>

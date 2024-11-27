@@ -38,4 +38,10 @@
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">قطع اتصال</string>
 
+    <!-- Label on a button. Clicking this button will buy 1 day (24hr) of Speed Boost. Translate number as well. -->
+    <string name="speed_boost_product_1_day">1 روز</string>
+
+    <!-- Label on a button. Clicking this button will buy 1 week (7days) of Speed Boost. Translate number as well. -->
+    <string name="speed_boost_product_1_week">1 هفته</string>
+
     </resources>

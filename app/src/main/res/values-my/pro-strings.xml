@@ -326,4 +326,7 @@
     <!-- Label on a button. Clicking this button will buy 1 day (24hr) of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_day">၁ ရက်</string>
 
+    <!-- Label on a button. Clicking this button will buy 1 week (7days) of Speed Boost. Translate number as well. -->
+    <string name="speed_boost_product_1_week">1 ပတ်</string>
+
     </resources>
