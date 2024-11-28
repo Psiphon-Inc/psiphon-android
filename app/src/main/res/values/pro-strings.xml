@@ -579,4 +579,7 @@
     <!-- Description text on the clickable Speed Boost card -->
     <string name="speed_boost_card_description">Accelerate your connection speed</string>
 
+    <!-- Clickable text label to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_action">Update your Psiphon Pro to continue</string>
+
 </resources>

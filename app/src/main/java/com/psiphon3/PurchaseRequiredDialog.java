@@ -46,6 +46,7 @@ public class PurchaseRequiredDialog implements DefaultLifecycleObserver {
     private final CardView cardConduit;
     private final CardView openConduitCard;
     private final CardView installConduitCard;
+    private final CardView updatePsiphonProCard;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private Runnable disconnectTunnelRunnable;
     private Disposable updateStateDisposable;
@@ -59,6 +60,7 @@ public class PurchaseRequiredDialog implements DefaultLifecycleObserver {
         cardConduit = contentView.findViewById(R.id.cardConduit);
         openConduitCard = contentView.findViewById(R.id.openConduitCard);
         installConduitCard = contentView.findViewById(R.id.installConduitCard);
+        updatePsiphonProCard = contentView.findViewById(R.id.updatePsiphonProCard);
 
         dialog = new Dialog(context, R.style.Theme_NoTitleDialog);
         dialog.setCancelable(false);
@@ -154,16 +156,19 @@ public class PurchaseRequiredDialog implements DefaultLifecycleObserver {
         cardConduit.setVisibility(View.VISIBLE);
         switch (state.status()) {
             case NOT_INSTALLED:
-                setupInstallCard(false);
+                setupInstallConduitCard(false);
                 break;
             case INCOMPATIBLE_VERSION:
-                setupInstallCard(true);
+                setupInstallConduitCard(true);
                 break;
             case RUNNING:
                 dialog.dismiss();
                 break;
             case STOPPED:
-                setupOpenCard();
+                setupOpenConduitCard();
+                break;
+            case UNSUPPORTED_SCHEMA:
+                setupUpdatePsiphonProCard();
                 break;
             default:
                 MyLog.w("PurchaseRequiredDialog: unhandled Conduit state: " + state.status());
@@ -172,9 +177,10 @@ public class PurchaseRequiredDialog implements DefaultLifecycleObserver {
         }
     }
 
-    private void setupInstallCard(boolean isConduitInstalled) {
-        // Hide open card and show install card
+    private void setupInstallConduitCard(boolean isConduitInstalled) {
+        // Hide open Conduit card, update Psiphon card and show install Conduit card
         openConduitCard.setVisibility(View.GONE);
+        updatePsiphonProCard.setVisibility(View.GONE);
         installConduitCard.setVisibility(View.VISIBLE);
 
         // Switch between install and update text
@@ -190,14 +196,16 @@ public class PurchaseRequiredDialog implements DefaultLifecycleObserver {
             if (disconnectTunnelRunnable != null) {
                 disconnectTunnelRunnable.run();
             }
-            openPlayStore();
+            openPlayStoreConduit();
         });
     }
 
-    private void setupOpenCard() {
-        // Hide install card and show open card
-        openConduitCard.setVisibility(View.VISIBLE);
+    private void setupOpenConduitCard() {
+        // Hide install Conduit card and update Psiphon card, show open Conduit card
         installConduitCard.setVisibility(View.GONE);
+        updatePsiphonProCard.setVisibility(View.GONE);
+        openConduitCard.setVisibility(View.VISIBLE);
+
         ImageView iconView = openConduitCard.findViewById(R.id.openConduitIconView);
         try {
             Context context = dialog.getContext();
@@ -215,9 +223,30 @@ public class PurchaseRequiredDialog implements DefaultLifecycleObserver {
         });
     }
 
-    private void openPlayStore() {
+    private void setupUpdatePsiphonProCard() {
+        // Hide install Conduit card and open Conduit card, show update Psiphon card
+        openConduitCard.setVisibility(View.GONE);
+        installConduitCard.setVisibility(View.GONE);
+        updatePsiphonProCard.setVisibility(View.VISIBLE);
+        // Set click listener to open Play Store for Psiphon app
+        updatePsiphonProCard.setOnClickListener(v -> {
+            if (disconnectTunnelRunnable != null) {
+                disconnectTunnelRunnable.run();
+            }
+            openPlayStorePsiphonPro();
+        });
+    }
+
+    private void openPlayStoreConduit() {
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setData(Uri.parse("https://play.google.com/store/apps/details?id=ca.psiphon.conduit"));
+        dialog.getContext().startActivity(intent);
+        dialog.dismiss();
+    }
+
+    private void openPlayStorePsiphonPro() {
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(Uri.parse("https://play.google.com/store/apps/details?id=com.psiphon3.subscription"));
         dialog.getContext().startActivity(intent);
         dialog.dismiss();
     }
