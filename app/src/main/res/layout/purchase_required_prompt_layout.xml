@@ -9,8 +9,10 @@
         android:id="@+id/textGroup"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
         android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/cardGroup"
         app:layout_constraintTop_toTopOf="parent">
 
         <TextView
@@ -18,6 +20,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="20dp"
+            android:layout_marginBottom="24dp"
             android:gravity="center"
             android:text="@string/purchase_required_prompt_title"
             android:textAppearance="@style/TextAppearance.AppCompat.Headline" />
@@ -27,13 +30,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="16dp"
             android:gravity="center"
             android:text="@string/purchase_required_prompt_body"
             android:textAppearance="@style/TextAppearance.AppCompat.Subhead" />
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/cardGroup"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
@@ -52,16 +55,12 @@
             android:focusable="true"
             android:foreground="?attr/selectableItemBackground"
             app:cardCornerRadius="12dp"
-            app:cardElevation="8dp"
-            app:layout_constraintBottom_toTopOf="@+id/btnDisconnect"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent">
+            app:cardElevation="8dp">
 
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:alpha="0.5"
-                android:background="@drawable/card_background_gradient" />
+                android:background="@drawable/card_background_gradient_standout" />
 
             <LinearLayout
                 android:id="@+id/conduitContainer"
@@ -97,7 +96,7 @@
                         android:layout_margin="8dp"
                         android:clickable="false"
                         android:focusable="false"
-                        android:visibility="gone"
+                        android:visibility="visible"
                         app:cardCornerRadius="8dp"
                         app:cardElevation="6dp">
 
@@ -176,20 +175,16 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"
-            android:layout_marginBottom="24dp"
+            android:layout_marginBottom="32dp"
             android:clickable="true"
             android:focusable="true"
             android:foreground="?attr/selectableItemBackground"
             app:cardCornerRadius="12dp"
-            app:cardElevation="4dp"
-            app:layout_constraintBottom_toTopOf="@+id/cardSpeedBoost"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent">
+            app:cardElevation="4dp">
 
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:alpha="0.2"
                 android:background="@drawable/card_background_gradient" />
 
             <LinearLayout
@@ -218,20 +213,16 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"
-            android:layout_marginBottom="24dp"
+            android:layout_marginBottom="0dp"
             android:clickable="true"
             android:focusable="true"
             android:foreground="?attr/selectableItemBackground"
             app:cardCornerRadius="12dp"
-            app:cardElevation="4dp"
-            app:layout_constraintBottom_toTopOf="@+id/cardConduit"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent">
+            app:cardElevation="4dp">
 
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:alpha="0.2"
                 android:background="@drawable/card_background_gradient" />
 
             <LinearLayout
