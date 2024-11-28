@@ -20,6 +20,7 @@ public abstract class ConduitState {
         STOPPED,
         NOT_INSTALLED,
         INCOMPATIBLE_VERSION,
+        UNSUPPORTED_SCHEMA,
     }
 
     @NonNull
@@ -44,6 +45,13 @@ public abstract class ConduitState {
                 .build();
     }
 
+    public static ConduitState unsupportedSchema(String message) {
+        return builder()
+                .setStatus(Status.UNSUPPORTED_SCHEMA)
+                .setMessage(message)
+                .build();
+    }
+
     public static ConduitState fromJson(String jsonString) throws IllegalArgumentException {
         return Parser.INSTANCE.parse(jsonString);
     }
@@ -63,18 +71,21 @@ public abstract class ConduitState {
                 JSONObject wrapper = new JSONObject(jsonString);
                 int schema = wrapper.getInt("schema");
 
-                validateSchema(schema);
-
+                ConduitState schemaValidationState = validateSchema(schema);
+                if (schemaValidationState != null) {
+                    return schemaValidationState;
+                }
                 return parseSchema(schema, wrapper.getJSONObject("data"));
             } catch (JSONException e) {
                 throw new IllegalArgumentException("Failed to parse Conduit state: " + e.getMessage());
             }
         }
 
-        private void validateSchema(int schema) {
+        private ConduitState validateSchema(int schema) {
             if (!SUPPORTED_SCHEMAS.contains(schema)) {
-                throw new IllegalArgumentException("Unsupported schema version: " + schema);
+                return ConduitState.unsupportedSchema("Unsupported schema: " + schema);
             }
+            return null;
         }
 
         private ConduitState parseSchema(int schema, JSONObject data) throws JSONException {
