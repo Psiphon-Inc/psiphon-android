@@ -2,17 +2,16 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:padding="16dp">
+    android:layout_height="match_parent">
 
     <LinearLayout
         android:id="@+id/textGroup"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
+        app:layout_constraintBottom_toTopOf="@+id/actionGroup"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/cardGroup"
         app:layout_constraintTop_toTopOf="parent">
 
         <TextView
@@ -20,7 +19,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="20dp"
-            android:layout_marginBottom="24dp"
+            android:layout_marginBottom="16dp"
             android:gravity="center"
             android:text="@string/purchase_required_prompt_title"
             android:textAppearance="@style/TextAppearance.AppCompat.Headline" />
@@ -36,251 +35,323 @@
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/cardGroup"
+        android:id="@+id/actionGroup"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/textGroup">
 
-        <androidx.cardview.widget.CardView
-            android:id="@+id/cardConduit"
+
+        <!-- Update Psiphon Pro linear layout -->
+        <LinearLayout
+            android:id="@+id/updatePsiphonProView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginBottom="32dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:foreground="?attr/selectableItemBackground"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="8dp">
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:visibility="gone">
 
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@drawable/card_background_gradient_standout" />
-
-            <LinearLayout
-                android:id="@+id/conduitContainer"
+            <androidx.cardview.widget.CardView
+                android:id="@+id/updatePsiphonProCardView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:layout_marginBottom="0dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp">
 
-                <TextView
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/card_background_color_red" />
+
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/conduit_card_title"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Large"
-                    android:textStyle="bold" />
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                <TextView
-                    android:id="@+id/conduitStatus"
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_horizontal"
+                        android:text="@string/update_psiphon_pro_action_title"
+                        android:textAppearance="@style/TextAppearance.AppCompat.Headline"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="8dp"
+                android:gravity="center_horizontal"
+                android:text="@string/update_psiphon_pro_action_description" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="24dp"
+                android:background="@android:color/darker_gray" />
+
+        </LinearLayout>
+
+        <!-- Install Conduit linear layout -->
+        <LinearLayout
+            android:id="@+id/installConduitView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:text="@string/conduit_install_title"
+                android:textAppearance="@style/TextAppearance.AppCompat.Headline"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp"
+                android:gravity="center_horizontal"
+                android:text="@string/conduit_card_description" />
+
+            <ImageButton
+                android:id="@+id/installConduitBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:contentDescription="@string/google_play_icon_description"
+                android:focusable="true"
+                android:padding="0dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/google_play_store_badge" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="24dp"
+                android:background="@android:color/darker_gray" />
+
+        </LinearLayout>
+
+        <!-- Update Conduit linear layout -->
+        <LinearLayout
+            android:id="@+id/updateConduitView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:text="@string/conduit_update_title"
+                android:textAppearance="@style/TextAppearance.AppCompat.Headline"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp"
+                android:gravity="center_horizontal"
+                android:text="@string/conduit_update_description" />
+
+            <ImageButton
+                android:id="@+id/updateConduitBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:contentDescription="@string/google_play_icon_description"
+                android:focusable="true"
+                android:padding="0dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/google_play_store_badge" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="24dp"
+                android:background="@android:color/darker_gray" />
+
+        </LinearLayout>
+
+        <!-- Open Conduit linear layout -->
+        <LinearLayout
+            android:id="@+id/openConduitView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:visibility="gone">
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/openConduitCardView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="0dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/card_background_color_purple" />
+
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/conduit_card_description" />
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_horizontal"
+                        android:text="Launch Conduit"
+                        android:textAppearance="@style/TextAppearance.AppCompat.Headline"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="8dp"
+                android:gravity="center_horizontal"
+                android:text="@string/conduit_card_description" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="24dp"
+                android:background="@android:color/darker_gray" />
+
+        </LinearLayout>
+
+        <!-- Content below stays the same always -->
+        <!-- Subscribe linear layout -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:visibility="visible">
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/subscribeCardView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="0dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp">
 
                 <FrameLayout
-                    android:id="@+id/conduitActionContainer"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="0dp">
+                    android:background="@drawable/card_outline"
+                    android:padding="1dp">
 
-                    <androidx.cardview.widget.CardView
-                        android:id="@+id/openConduitCard"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_margin="8dp"
-                        android:clickable="false"
-                        android:focusable="false"
-                        android:visibility="gone"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="6dp">
+                        android:orientation="vertical"
+                        android:padding="16dp">
 
-                        <LinearLayout
+                        <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal"
-                            android:padding="16dp">
+                            android:gravity="center_horizontal"
+                            android:text="@string/subscribe_card_title"
+                            android:textAppearance="@style/TextAppearance.AppCompat.Headline"
+                            android:textStyle="bold" />
 
-                            <ImageView
-                                android:id="@+id/openConduitIconView"
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:contentDescription="@string/conduit_icon_description"
-                                android:src="@drawable/ic_conduit_default" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="16dp"
-                                android:text="@string/open_conduit_action"
-                                android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
-                        </LinearLayout>
-
-                    </androidx.cardview.widget.CardView>
-
-                    <androidx.cardview.widget.CardView
-                        android:id="@+id/installConduitCard"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="8dp"
-                        android:clickable="false"
-                        android:focusable="false"
-                        android:visibility="gone"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="6dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal"
-                            android:padding="16dp">
-
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:contentDescription="@string/google_play_icon_description"
-                                android:src="@drawable/google_play_2022_icon" />
-                            <TextView
-                                android:id="@+id/installConduitTextView"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="16dp"
-                                android:text="@string/install_conduit_action"
-                                android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
-
-                            <TextView
-                                android:id="@+id/updateConduitTextView"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="16dp"
-                                android:text="@string/update_conduit_action"
-                                android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-                                android:visibility="gone" />
-                        </LinearLayout>
-
-                    </androidx.cardview.widget.CardView>
-
-                    <androidx.cardview.widget.CardView
-                        android:id="@+id/updatePsiphonProCard"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="8dp"
-                        android:clickable="false"
-                        android:focusable="false"
-                        android:visibility="gone"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="6dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal"
-                            android:padding="16dp">
-
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:contentDescription="@string/google_play_icon_description"
-                                android:src="@drawable/google_play_2022_icon" />
-                            <TextView
-                                android:id="@+id/updateTextView"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="16dp"
-                                android:text="@string/update_psiphon_pro_action"
-                                android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-                                android:visibility="visible" />
-                        </LinearLayout>
-
-                    </androidx.cardview.widget.CardView>
+                    </LinearLayout>
                 </FrameLayout>
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
+            </androidx.cardview.widget.CardView>
 
-        <androidx.cardview.widget.CardView
-            android:id="@+id/cardSubscribe"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginBottom="32dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:foreground="?attr/selectableItemBackground"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="4dp">
-
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@drawable/card_background_gradient" />
-
-            <LinearLayout
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/subscribe_card_title"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Large"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/subscribe_card_description" />
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <androidx.cardview.widget.CardView
-            android:id="@+id/cardSpeedBoost"
+                android:layout_marginVertical="8dp"
+                android:gravity="center_horizontal"
+                android:text="@string/subscribe_card_description" />
+        </LinearLayout>
+        <!-- Speed Boost linear layout -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginBottom="0dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:foreground="?attr/selectableItemBackground"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="4dp">
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp">
 
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@drawable/card_background_gradient" />
-
-            <LinearLayout
+            <androidx.cardview.widget.CardView
+                android:id="@+id/speedBoostCardView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="0dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp">
 
-                <TextView
+                <FrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/speed_boost_card_title"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Large"
-                    android:textStyle="bold" />
+                    android:background="@drawable/card_outline"
+                    android:padding="1dp">
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/speed_boost_card_description" />
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_horizontal"
+                            android:text="@string/speed_boost_card_title"
+                            android:textAppearance="@style/TextAppearance.AppCompat.Headline"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+                </FrameLayout>
+            </androidx.cardview.widget.CardView>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_horizontal"
+                android:text="@string/speed_boost_card_description" />
+        </LinearLayout>
     </LinearLayout>
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

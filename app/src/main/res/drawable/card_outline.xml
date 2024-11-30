@@ -1,0 +1,7 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@android:color/transparent" />
+    <stroke
+        android:width="1dp"
+        android:color="#AAAAAA" /> <!-- Light grey color -->
+    <corners android:radius="16dp" /> <!-- Match the cardCornerRadius -->
+</shape>

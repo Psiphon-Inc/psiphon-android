@@ -25,7 +25,7 @@ import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.ImageView;
+import android.widget.ImageButton;
 
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
@@ -35,18 +35,28 @@ import androidx.lifecycle.LifecycleOwner;
 import com.psiphon3.log.MyLog;
 import com.psiphon3.subscription.R;
 
+import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 
 public class PurchaseRequiredDialog implements DefaultLifecycleObserver {
     private final Dialog dialog;
-    private final CardView cardSubscribe;
-    private final CardView cardSpeedBoost;
-    private final CardView cardConduit;
-    private final CardView openConduitCard;
-    private final CardView installConduitCard;
-    private final CardView updatePsiphonProCard;
+    // Always shown
+    private final CardView subscribeCard;
+    private final CardView speedBoostCard;
+
+
+    private final CardView openConduitCardView;
+    private final ImageButton installConduitBtn;
+    private final ImageButton updateConduitBtn;
+    private final CardView updatePsiphonProCardView;
+
+    private final View openConduitView;
+    private final View installConduitView;
+    private final View updateConduitView;
+    private final View updatePsiphonProView;
+
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private Runnable disconnectTunnelRunnable;
     private Disposable updateStateDisposable;
@@ -55,12 +65,26 @@ public class PurchaseRequiredDialog implements DefaultLifecycleObserver {
         View contentView = LayoutInflater.from(context).inflate(R.layout.purchase_required_prompt_layout, null);
 
         // Initialize all final fields
-        cardSubscribe = contentView.findViewById(R.id.cardSubscribe);
-        cardSpeedBoost = contentView.findViewById(R.id.cardSpeedBoost);
-        cardConduit = contentView.findViewById(R.id.cardConduit);
-        openConduitCard = contentView.findViewById(R.id.openConduitCard);
-        installConduitCard = contentView.findViewById(R.id.installConduitCard);
-        updatePsiphonProCard = contentView.findViewById(R.id.updatePsiphonProCard);
+        subscribeCard = contentView.findViewById(R.id.subscribeCardView);
+        speedBoostCard = contentView.findViewById(R.id.speedBoostCardView);
+        openConduitCardView = contentView.findViewById(R.id.openConduitCardView);
+
+        // Initialize the container views
+        openConduitView = contentView.findViewById(R.id.openConduitView);
+        installConduitView = contentView.findViewById(R.id.installConduitView);
+        updateConduitView = contentView.findViewById(R.id.updateConduitView);
+        updatePsiphonProView = contentView.findViewById(R.id.updatePsiphonProView);
+
+        // Initialize the clickables
+        installConduitBtn = contentView.findViewById(R.id.installConduitBtn);
+        updateConduitBtn = contentView.findViewById(R.id.updateConduitBtn);
+        updatePsiphonProCardView = contentView.findViewById(R.id.updatePsiphonProCardView);
+
+        // Set click listeners
+        openConduitCardView.setOnClickListener(v -> launchConduit());
+        installConduitBtn.setOnClickListener(v -> openPlayStoreConduit());
+        updateConduitBtn.setOnClickListener(v -> openPlayStoreConduit());
+        updatePsiphonProCardView.setOnClickListener(v -> openPlayStorePsiphonPro());
 
         dialog = new Dialog(context, R.style.Theme_NoTitleDialog);
         dialog.setCancelable(false);
@@ -73,11 +97,11 @@ public class PurchaseRequiredDialog implements DefaultLifecycleObserver {
     }
 
     private void setSubscribeOnClickListener(View.OnClickListener listener) {
-        cardSubscribe.setOnClickListener(listener);
+        subscribeCard.setOnClickListener(listener);
     }
 
     private void setSpeedBoostOnClickListener(View.OnClickListener listener) {
-        cardSpeedBoost.setOnClickListener(listener);
+        speedBoostCard.setOnClickListener(listener);
     }
 
     private void setDisconnectTunnelRunnable(Runnable runnable) {
@@ -92,6 +116,7 @@ public class PurchaseRequiredDialog implements DefaultLifecycleObserver {
         lp.width = WindowManager.LayoutParams.MATCH_PARENT;
         lp.height = WindowManager.LayoutParams.MATCH_PARENT;
         dialog.getWindow().setAttributes(lp);
+
     }
 
     public boolean isShowing() {
@@ -149,26 +174,46 @@ public class PurchaseRequiredDialog implements DefaultLifecycleObserver {
     }
 
     private void hideConduitUI() {
-        cardConduit.setVisibility(View.GONE);
+        // Hide all Conduit related containers
+        openConduitView.setVisibility(View.GONE);
+        installConduitView.setVisibility(View.GONE);
+        updateConduitView.setVisibility(View.GONE);
+        updatePsiphonProView.setVisibility(View.GONE);
     }
 
     private void updateConduitUI(ConduitState state) {
-        cardConduit.setVisibility(View.VISIBLE);
         switch (state.status()) {
             case NOT_INSTALLED:
-                setupInstallConduitCard(false);
+                // Conduit is not installed, show install Conduit view, hide all others
+                installConduitView.setVisibility(View.VISIBLE);
+                updateConduitView.setVisibility(View.GONE);
+                openConduitView.setVisibility(View.GONE);
+                updatePsiphonProView.setVisibility(View.GONE);
                 break;
             case INCOMPATIBLE_VERSION:
-                setupInstallConduitCard(true);
+                // Incompatible version, show update Conduit view, hide all others
+                updateConduitView.setVisibility(View.VISIBLE);
+                installConduitView.setVisibility(View.GONE);
+                openConduitView.setVisibility(View.GONE);
+                updatePsiphonProView.setVisibility(View.GONE);
                 break;
             case RUNNING:
+                // Conduit is running, close the dialog
                 dialog.dismiss();
                 break;
             case STOPPED:
-                setupOpenConduitCard();
+                // Conduit is stopped, show open Conduit view, hide all others
+                openConduitView.setVisibility(View.VISIBLE);
+                updatePsiphonProView.setVisibility(View.GONE);
+                installConduitView.setVisibility(View.GONE);
+                updateConduitView.setVisibility(View.GONE);
                 break;
             case UNSUPPORTED_SCHEMA:
-                setupUpdatePsiphonProCard();
+                // Unsupported schema, show update Psiphon Pro view, hide all others
+                updatePsiphonProView.setVisibility(View.VISIBLE);
+                installConduitView.setVisibility(View.GONE);
+                updateConduitView.setVisibility(View.GONE);
+                openConduitView.setVisibility(View.GONE);
                 break;
             default:
                 MyLog.w("PurchaseRequiredDialog: unhandled Conduit state: " + state.status());
@@ -177,81 +222,35 @@ public class PurchaseRequiredDialog implements DefaultLifecycleObserver {
         }
     }
 
-    private void setupInstallConduitCard(boolean isConduitInstalled) {
-        // Hide open Conduit card, update Psiphon card and show install Conduit card
-        openConduitCard.setVisibility(View.GONE);
-        updatePsiphonProCard.setVisibility(View.GONE);
-        installConduitCard.setVisibility(View.VISIBLE);
-
-        // Switch between install and update text
-        if (isConduitInstalled) {
-            installConduitCard.findViewById(R.id.installConduitTextView).setVisibility(View.GONE);
-            installConduitCard.findViewById(R.id.updateConduitTextView).setVisibility(View.VISIBLE);
-        } else {
-            installConduitCard.findViewById(R.id.installConduitTextView).setVisibility(View.VISIBLE);
-            installConduitCard.findViewById(R.id.updateConduitTextView).setVisibility(View.GONE);
-        }
-        // Set click listener to disconnect tunnel and open Play Store for Conduit app
-        cardConduit.setOnClickListener(v -> {
-            if (disconnectTunnelRunnable != null) {
-                disconnectTunnelRunnable.run();
-            }
-            openPlayStoreConduit();
-        });
-    }
-
-    private void setupOpenConduitCard() {
-        // Hide install Conduit card and update Psiphon card, show open Conduit card
-        installConduitCard.setVisibility(View.GONE);
-        updatePsiphonProCard.setVisibility(View.GONE);
-        openConduitCard.setVisibility(View.VISIBLE);
-
-        ImageView iconView = openConduitCard.findViewById(R.id.openConduitIconView);
-        try {
-            Context context = dialog.getContext();
-            iconView.setImageDrawable(context.getPackageManager().getApplicationIcon("ca.psiphon.conduit"));
-        } catch (Exception e) {
-            MyLog.w("PurchaseRequiredDialog: failed to load Conduit app icon dynamically: " + e);
-            iconView.setImageResource(R.drawable.ic_conduit_default);
-        }
-        // Set click listener to disconnect tunnel and launch Conduit app
-        cardConduit.setOnClickListener(v -> {
-            if (disconnectTunnelRunnable != null) {
-                disconnectTunnelRunnable.run();
-            }
-            launchConduit();
-        });
-    }
-
-    private void setupUpdatePsiphonProCard() {
-        // Hide install Conduit card and open Conduit card, show update Psiphon card
-        openConduitCard.setVisibility(View.GONE);
-        installConduitCard.setVisibility(View.GONE);
-        updatePsiphonProCard.setVisibility(View.VISIBLE);
-        // Set click listener to open Play Store for Psiphon app
-        updatePsiphonProCard.setOnClickListener(v -> {
-            if (disconnectTunnelRunnable != null) {
-                disconnectTunnelRunnable.run();
-            }
-            openPlayStorePsiphonPro();
-        });
-    }
-
     private void openPlayStoreConduit() {
+        // Disconnect tunnel before opening Play Store
+        if (disconnectTunnelRunnable != null) {
+            disconnectTunnelRunnable.run();
+        }
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setData(Uri.parse("https://play.google.com/store/apps/details?id=ca.psiphon.conduit"));
+        intent.setPackage("com.android.vending");
         dialog.getContext().startActivity(intent);
         dialog.dismiss();
     }
 
     private void openPlayStorePsiphonPro() {
+        // Disconnect tunnel before opening Play Store
+        if (disconnectTunnelRunnable != null) {
+            disconnectTunnelRunnable.run();
+        }
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setData(Uri.parse("https://play.google.com/store/apps/details?id=com.psiphon3.subscription"));
+        intent.setPackage("com.android.vending");
         dialog.getContext().startActivity(intent);
         dialog.dismiss();
     }
 
     private void launchConduit() {
+        // Disconnect tunnel before launching Conduit
+        if (disconnectTunnelRunnable != null) {
+            disconnectTunnelRunnable.run();
+        }
         Intent launchIntent = dialog.getContext().getPackageManager()
                 .getLaunchIntentForPackage("ca.psiphon.conduit");
         if (launchIntent != null) {

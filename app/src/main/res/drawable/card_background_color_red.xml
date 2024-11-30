@@ -2,11 +2,10 @@
     <item>
         <shape>
             <gradient
-                android:angle="45"
-                android:endColor="#306FD8FF"
-                android:startColor="#808E44AD"
+                android:angle="270"
+                android:endColor="#A72E1F"
+                android:startColor="#D64029"
                 android:type="linear" />
-            <corners android:radius="12dp" />
         </shape>
     </item>
 </layer-list>
