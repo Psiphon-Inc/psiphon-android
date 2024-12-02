@@ -576,16 +576,16 @@
     <!-- Clickable text label to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
     <string name="update_psiphon_pro_title">Update Psiphon Pro</string>
 
-    <!-- Title for the Update action to open the Play StoreStore page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <!-- Title for the 'Update' action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
     <string name="conduit_update_title">Update Conduit</string>
 
-    <!-- Description for the Update action to open the Play StoreStore page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <!-- Description for the 'Update' Action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
     <string name="conduit_update_description">Update to the latest version of Conduit to access this feature</string>
 
-    <!-- Title for the Update action to open the Play StoreStore page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <!-- Title for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
     <string name="update_psiphon_pro_action_title">Update Psiphon Pro</string>
 
-    <!-- Description for the Update action to open the Play StoreStore page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <!-- Description for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
     <string name="update_psiphon_pro_action_description">Update to the latest version of Psiphon Pro to access this feature</string>
 
 </resources>
