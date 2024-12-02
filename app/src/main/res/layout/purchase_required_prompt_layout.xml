@@ -228,7 +228,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center_horizontal"
-                        android:text="Launch Conduit"
+                        android:text="@string/launch_conduit_action"
                         android:textAppearance="@style/TextAppearance.AppCompat.Headline"
                         android:textStyle="bold" />
 

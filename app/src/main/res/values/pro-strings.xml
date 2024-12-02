@@ -556,7 +556,7 @@
     <string name="conduit_card_description">Run the Conduit mobile app and stay connected to Psiphon for free</string>
 
     <!-- Clickable text label to open the Conduit app, do not translate or transliterate 'Conduit'. -->
-    <string name="open_conduit_action">Launch Conduit</string>
+    <string name="launch_conduit_action">Launch Conduit</string>
 
     <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
     <string name="subscribe_card_title">Subscribe</string>
