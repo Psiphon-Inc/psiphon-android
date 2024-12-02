@@ -35,9 +35,15 @@ import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -51,7 +57,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class PackageHelper {
 
-    private static final String SIGNATURES_JSON_FILE = "trusted_signatures.json";
+    private static final String LOCK_FILE = "trusted_signatures.lock";
+    private static final String TEMP_FILE = "trusted_signatures_temp.json";
+    private static final String SIGNATURES_FILE = "trusted_signatures.json";
 
     // Unmodifiable map of trusted packages with their corresponding sets of SHA-256 signature hashes
     private static final Map<String, Set<String>> TRUSTED_PACKAGES;
@@ -147,57 +155,129 @@ public class PackageHelper {
         }
     }
 
-    // Save the map of package signatures to a file
-    // Avoid calling this method from different processes simultaneously to ensure single-writer safety
-    public static synchronized void saveTrustedSignaturesToFile(Context context, Map<String, Set<String>> signatures) {
-        File tempFile = new File(context.getFilesDir(), "trusted_signatures_temp.json");
-        File finalFile = new File(context.getFilesDir(), SIGNATURES_JSON_FILE);
-        try (FileWriter writer = new FileWriter(tempFile)) {
-            // Convert the map to JSON object where values are JSON arrays
-            JSONObject jsonObject = new JSONObject();
-            for (Map.Entry<String, Set<String>> entry : signatures.entrySet()) {
-                jsonObject.put(entry.getKey(), new JSONArray(entry.getValue()));
+    // Saves the map of package signatures to a file in process-safe manner
+    // Uses file locking to ensure only one process can write at a time.
+    // Uses a temporary file and atomic rename to ensure data consistency.
+    public static void saveTrustedSignaturesToFile(Context context, Map<String, Set<String>> signatures) {
+        File tempFile = new File(context.getFilesDir(), TEMP_FILE);
+        File finalFile = new File(context.getFilesDir(), SIGNATURES_FILE);
+        File lockFile = new File(context.getFilesDir(), LOCK_FILE);
+
+        FileLock lock = null;
+
+        try (RandomAccessFile randomAccessFile = new RandomAccessFile(lockFile, "rw");
+             FileChannel channel = randomAccessFile.getChannel()) {
+
+            // Block until we can acquire the lock
+            // This ensures we don't miss writing important trusted signatures data
+            try {
+                lock = channel.lock();
+            } catch (OverlappingFileLockException e) {
+                // Lock is already held by another channel in this JVM
+                MyLog.e("PackageHelper: Lock already held by this JVM: " + e);
+                return;
             }
-            writer.write(jsonObject.toString());
-            // Rename temp file to final file atomically
-            if (!tempFile.renameTo(finalFile)) {
-                throw new IOException("Failed to rename temp file to final file.");
+
+            try {
+                // Write to temporary file first to ensure atomic update
+                try (FileOutputStream fos = new FileOutputStream(tempFile);
+                     OutputStreamWriter writer = new OutputStreamWriter(fos, "UTF-8")) {
+
+                    // Convert signatures map to JSON
+                    JSONObject jsonObject = new JSONObject();
+                    for (Map.Entry<String, Set<String>> entry : signatures.entrySet()) {
+                        jsonObject.put(entry.getKey(), new JSONArray(entry.getValue()));
+                    }
+
+                    // Write and flush to ensure all data is written
+                    writer.write(jsonObject.toString());
+                    writer.flush();
+                    // Force system to sync file to disk
+                    fos.getFD().sync();
+                }
+
+                // Atomic rename operation - either completely succeeds or fails
+                if (!tempFile.renameTo(finalFile)) {
+                    MyLog.e("PackageHelper: Failed to rename temp file to final file.");
+                }
+            } finally {
+                // Always try to clean up temp file if it exists
+                if (tempFile.exists()) {
+                    tempFile.delete();
+                }
             }
+
         } catch (IOException | JSONException e) {
             MyLog.e("PackageHelper: failed to save trusted signatures: " + e);
+        } finally {
+            // Always release the lock if we acquired it
+            if (lock != null) {
+                try {
+                    lock.release();
+                } catch (IOException e) {
+                    MyLog.e("PackageHelper: failed to release lock: " + e);
+                }
+            }
         }
     }
 
-    // Read the map of package signatures from a file, can be called from any process
+    // Reads package signatures from file in a process-safe manner.
+    // Uses shared file locking to allow multiple readers but prevent reading during writes.
+    // Returns empty map if file doesn't exist or on any error.
     public static Map<String, Set<String>> readTrustedSignaturesFromFile(Context context) {
-        File file = new File(context.getFilesDir(), SIGNATURES_JSON_FILE);
+        File file = new File(context.getFilesDir(), SIGNATURES_FILE);
+        File lockFile = new File(context.getFilesDir(), LOCK_FILE);
         Map<String, Set<String>> signatures = new HashMap<>();
 
-        if (file.exists()) {
-            try (FileReader reader = new FileReader(file);
-                 BufferedReader bufferedReader = new BufferedReader(reader)) {
-                StringBuilder builder = new StringBuilder();
-                String line;
-                while ((line = bufferedReader.readLine()) != null) {
-                    builder.append(line);
-                }
+        FileLock lock = null;
 
-                // Convert the JSON string back to a map
-                JSONObject jsonObject = new JSONObject(builder.toString());
-                Iterator<String> keys = jsonObject.keys();
-                while (keys.hasNext()) {
-                    String packageName = keys.next();
-                    JSONArray signatureArray = jsonObject.getJSONArray(packageName);
-                    Set<String> signatureSet = new HashSet<>();
-                    for (int i = 0; i < signatureArray.length(); i++) {
-                        signatureSet.add(signatureArray.getString(i));
+        try (RandomAccessFile randomAccessFile = new RandomAccessFile(lockFile, "rw");
+             FileChannel channel = randomAccessFile.getChannel()) {
+
+            // Get shared lock - allows multiple readers but not during writes
+            try {
+                lock = channel.lock(0L, Long.MAX_VALUE, true);  // true = shared lock
+            } catch (OverlappingFileLockException e) {
+                MyLog.e("PackageHelper: Read lock already held by this JVM: " + e);
+                return signatures;
+            }
+
+            if (file.exists()) {
+                try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                    // Read entire file into StringBuilder
+                    StringBuilder builder = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        builder.append(line);
                     }
-                    signatures.put(packageName, signatureSet);
+
+                    // Parse JSON and convert to signatures map
+                    JSONObject jsonObject = new JSONObject(builder.toString());
+                    Iterator<String> keys = jsonObject.keys();
+                    while (keys.hasNext()) {
+                        String packageName = keys.next();
+                        JSONArray signatureArray = jsonObject.getJSONArray(packageName);
+                        Set<String> signatureSet = new HashSet<>();
+                        for (int i = 0; i < signatureArray.length(); i++) {
+                            signatureSet.add(signatureArray.getString(i));
+                        }
+                        signatures.put(packageName, signatureSet);
+                    }
                 }
-            } catch (IOException | JSONException e) {
-                MyLog.e("PackageHelper: failed to read trusted signatures: " + e);
+            }
+
+        } catch (IOException | JSONException e) {
+            MyLog.e("PackageHelper: failed to read trusted signatures: " + e);
+        } finally {
+            if (lock != null) {
+                try {
+                    lock.release();
+                } catch (IOException e) {
+                    MyLog.e("PackageHelper: failed to release lock: " + e);
+                }
             }
         }
+
         return signatures;
     }
 
