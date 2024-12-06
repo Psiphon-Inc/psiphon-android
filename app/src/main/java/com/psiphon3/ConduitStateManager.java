@@ -228,7 +228,7 @@ public class ConduitStateManager {
             if (currentRetries > MAX_RETRY_ATTEMPTS) {
                 handleServiceError(new ConduitServiceException(
                         ConduitErrorType.MAX_RETRIES_EXCEEDED,
-                        "Conduit package not installed"));
+                        "Maximum binding retries to ConduitStateService exceeded"));
                 return;
             }
 
