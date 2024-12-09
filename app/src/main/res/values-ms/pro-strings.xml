@@ -27,4 +27,7 @@
     <!--Generic 'close' button label -->
     <string name="label_close">Balas</string>
 
+    <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
+    <string name="subscribe_card_title">Langgan</string>
+
     </resources>

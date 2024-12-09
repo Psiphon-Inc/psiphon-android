@@ -503,12 +503,6 @@
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">Відʼєднати</string>
 
-    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe.-->
-    <string name="purchase_required_prompt_title">Psiphon більше не безкоштовний у вашому регіоні</string>
-
-    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe.-->
-    <string name="purchase_required_prompt_body">Допоможіть зберегти Psiphon безкоштовним для тих, хто його найбільше потребує! Підпишіться зараз або придбайте Speed Boost.</string>
-
     <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_hr">1 година</string>
 
@@ -543,4 +537,14 @@
 
     <!-- Do not translate or transliterate 'PsiCash'. PsiCash is a unit of currency here. Reorder the format specifier '%s' if in the translated language ordering of unit and amount is different from English. -->
     <string name="psicash_price_format">%s PsiCash</string>
-</resources>
+
+    <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
+    <string name="subscribe_card_title">Підписатися</string>
+
+    <!-- Clickable text label, clicking this opens a dialog with various speed boost options available for purchase.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit.
+    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
+    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
+    <string name="speed_boost_card_title">Турбошвидкість</string>
+
+    </resources>

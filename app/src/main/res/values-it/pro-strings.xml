@@ -81,4 +81,7 @@
     <!-- Label on a button. Clicking this button will buy 1 months (31days) of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_month">1 mese</string>
 
+    <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
+    <string name="subscribe_card_title">Sottoscrivi</string>
+
     </resources>

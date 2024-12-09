@@ -77,4 +77,13 @@
     <!--Generic 'error' alert prompt title-->
     <string name="psicash_webview_error_alert_title">ದೋಷ</string>
 
+    <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
+    <string name="subscribe_card_title">ಚಂದಾದರರಾಗಿ</string>
+
+    <!-- Clickable text label, clicking this opens a dialog with various speed boost options available for purchase.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit.
+    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
+    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
+    <string name="speed_boost_card_title">ವೇಗ ವರ್ಧಕ</string>
+
     </resources>

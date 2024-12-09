@@ -44,4 +44,7 @@
     <!-- Label on a button. Clicking this button will buy 1 week (7days) of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_week">1 هفته</string>
 
+    <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
+    <string name="subscribe_card_title">اشتراک</string>
+
     </resources>

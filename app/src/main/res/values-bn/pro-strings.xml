@@ -25,11 +25,20 @@
     <!-- Title of the button that dismisses PsiCash account login error alert dialog-->
     <string name="psicash_login_error_alert_dismiss">বাতিল</string>
 
+    <!-- Title of the PsiCash account log out alert confirmation dialog -->
+    <string name="psicash_logout_alert_title">লগ আউট</string>
+
     <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Dismisses the log out dialog without any further action when clicked. -->
     <string name="psicash_cancel_lbl">বাতিল</string>
 
+    <!-- PsiCash account 'log out' preference title as it appears in the app's preference screen. -->
+    <string name="psicash_account_logout_pref_title">লগ আউট</string>
+
     <!-- PsiCash account 'log in' preference title as it appears in the app's preference screen. -->
     <string name="psicash_account_login_pref_title">লগইন </string>
+
+    <!-- PsiCash account 'manage account' preference title as it appears in the app's preference screen. -->
+    <string name="psicash_account_manage_pref_title">অ্যাকাউন্ট ব্যবস্থাপনা</string>
 
     <!-- Input field caption for password on the PsiCash account sign screen -->
     <string name="psicash_account_login_password_hint">পাসওয়ার্ড</string>
@@ -49,6 +58,9 @@
     <!--Generic 'close' button label -->
     <string name="label_close">বন্ধ</string>
 
+    <!-- Text that appears above the "Log in" button on the PsiCash sign in screen. -->
+    <string name="psicash_already_have_account_text">আগেই একটি অ্যাকাউন্ট আছে?</string>
+
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">সংযোগ বিচ্ছিন্ন করা</string>
 
@@ -60,5 +72,8 @@
 
     <!-- Label on a button. Clicking this button will buy 1 week (7days) of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_week">১ সপ্তাহ</string>
+
+    <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
+    <string name="subscribe_card_title">সাবস্ক্রাইব</string>
 
     </resources>
