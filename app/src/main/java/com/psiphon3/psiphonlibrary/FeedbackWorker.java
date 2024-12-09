@@ -34,7 +34,6 @@ import com.psiphon3.PsiphonCrashService;
 import com.psiphon3.log.LogEntry;
 import com.psiphon3.log.LoggingContentProvider;
 import com.psiphon3.log.MyLog;
-import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
 
@@ -299,14 +298,12 @@ public class FeedbackWorker extends RxWorker {
                                 feedbackSubmitTimeMillis);
 
                         // Build a temporary tunnel config to use
-                        TunnelManager.Config tunnelManagerConfig = new TunnelManager.Config();
                         final AppPreferences multiProcessPreferences = new AppPreferences(context);
-                        tunnelManagerConfig.disableTimeouts = multiProcessPreferences.getBoolean(
-                                context.getString(R.string.disableTimeoutsPreference), false);
 
                         String tunnelCoreConfig = TunnelManager.buildTunnelCoreConfig(
                                 context,
-                                tunnelManagerConfig,
+                                // Use a new TunnelConfigManager instance to use the default tunnel configuration.
+                                new TunnelConfigManager(context),
                                 tunnelState.isStopped(),
                                 Authorization.geAllPersistedAuthorizations(context),
                                 null);

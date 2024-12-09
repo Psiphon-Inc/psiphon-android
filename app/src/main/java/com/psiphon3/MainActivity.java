@@ -856,7 +856,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             showVpnAlertDialog(R.string.StatusActivity_VpnRevokedTitle, R.string.StatusActivity_VpnRevokedMessage);
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_SHOW_PURCHASE_PROMPT)) {
             if (!isFinishing()) {
-                if(purchaseRequiredDialog != null && purchaseRequiredDialog.isShowing()) {
+                if (purchaseRequiredDialog != null && purchaseRequiredDialog.isShowing()) {
                     // Already showing, do nothing
                     return;
                 }
@@ -864,30 +864,30 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 if (disallowedTrafficAlertDialog != null && disallowedTrafficAlertDialog.isShowing()) {
                     disallowedTrafficAlertDialog.dismiss();
                 }
-                purchaseRequiredDialog = new PurchaseRequiredDialog(this);
-                purchaseRequiredDialog.getSubscribeBtn().setOnClickListener(v -> {
-                    MainActivity.openPaymentChooserActivity(MainActivity.this,
-                            getResources().getInteger(R.integer.subscriptionTabIndex));
-                    purchaseRequiredDialog.dismiss();
-                });
-                purchaseRequiredDialog.getSpeedBoostBtn().setOnClickListener(v -> {
-                    UiHelpers.openPsiCashStoreActivity(this,
-                            getResources().getInteger(R.integer.speedBoostTabIndex));
-                    purchaseRequiredDialog.dismiss();
-                });
-                purchaseRequiredDialog.getDisconnectBtn().setOnClickListener(v -> {
-                    compositeDisposable.add(getTunnelServiceInteractor().tunnelStateFlowable()
-                            .filter(state -> !state.isUnknown())
-                            .firstOrError()
-                            .doOnSuccess(state -> {
-                                if (state.isRunning()) {
-                                    getTunnelServiceInteractor().stopTunnelService();
-                                }
-                            })
-                            .subscribe());
-                    purchaseRequiredDialog.dismiss();
-                });
-                purchaseRequiredDialog.show();
+
+                purchaseRequiredDialog = new PurchaseRequiredDialog.Builder(this, this)
+                        .setDisconnectTunnelRunnable(() -> compositeDisposable.add(
+                                getTunnelServiceInteractor().tunnelStateFlowable()
+                                        .filter(state -> !state.isUnknown())
+                                        .firstOrError()
+                                        .doOnSuccess(state -> {
+                                            if (state.isRunning()) {
+                                                getTunnelServiceInteractor().stopTunnelService();
+                                            }
+                                        })
+                                        .subscribe()
+                        ))
+                        .setSpeedBoostClickListener(v -> {
+                            UiHelpers.openPsiCashStoreActivity(this,
+                                    getResources().getInteger(R.integer.speedBoostTabIndex));
+                            purchaseRequiredDialog.dismiss();
+                        })
+                        .setSubscribeClickListener(v -> {
+                            MainActivity.openPaymentChooserActivity(MainActivity.this,
+                                    getResources().getInteger(R.integer.subscriptionTabIndex));
+                            purchaseRequiredDialog.dismiss();
+                        })
+                        .show();
             }
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_DISALLOWED_TRAFFIC)) {
             // Do not show disallowed traffic alert if purchase required prompt is showing
