@@ -47,7 +47,7 @@ import ru.ivanarh.jndcrash.NDCrash;
 import ru.ivanarh.jndcrash.NDCrashError;
 import ru.ivanarh.jndcrash.NDCrashUnwinder;
 
-public class PsiphonApplication extends Application implements MyLog.ILogger {
+public class PsiphonApplication extends Application {
     private static boolean isMainProcess(@NonNull Context context) {
         final int pid = Process.myPid();
         final String packageName = context.getPackageName();
@@ -77,6 +77,7 @@ public class PsiphonApplication extends Application implements MyLog.ILogger {
             tunnelServiceInteractor.onDestroy(this);
         }
     }
+
     @Override
     protected void attachBaseContext(Context base) {
         // We need to make all classes available prior to calling LocaleManager by installing all
@@ -127,6 +128,7 @@ public class PsiphonApplication extends Application implements MyLog.ILogger {
     @Override
     public void onCreate() {
         super.onCreate();
+        MyLog.init(this);
 
         final String reportPath = PsiphonCrashService.getTempCrashReportPath(this);
         final NDCrashError error = NDCrash.initializeOutOfProcess(
@@ -139,7 +141,6 @@ public class PsiphonApplication extends Application implements MyLog.ILogger {
             MyLog.e("NDCrash library initialization error: " + error.name());
         }
 
-        MyLog.setLogger(this);
         // Make sure VPN service is ALWAYS enabled because app upgrade will not automatically re-enable it
         PackageManager packageManager = getPackageManager();
         ComponentName componentName = new ComponentName(getPackageName(), TunnelVpnService.class.getName());
@@ -177,7 +178,11 @@ public class PsiphonApplication extends Application implements MyLog.ILogger {
     }
 
     @Override
-    public Context getContext() {
-        return this;
+    public void onTerminate() {
+        // Note: This method is only called in the Android emulator, never on real devices.
+        // The app process is killed directly by the system without notification.
+        // This cleanup is only useful for debugging.
+        MyLog.shutdown();
+        super.onTerminate();
     }
 }
