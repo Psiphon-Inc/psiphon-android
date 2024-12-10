@@ -19,6 +19,9 @@
 
 package com.psiphon3;
 
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -27,7 +30,6 @@ import android.text.style.URLSpan;
 import android.transition.Slide;
 import android.transition.Transition;
 import android.transition.TransitionManager;
-import android.util.Pair;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -37,21 +39,25 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.billing.SubscriptionState;
+import com.psiphon3.log.MyLog;
 import com.psiphon3.psicash.details.PsiCashDetailsViewModel;
 import com.psiphon3.psicash.details.PsiCashFragment;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.subscription.R;
 
+import net.grandcentrix.tray.AppPreferences;
+
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.functions.BiFunction;
 
 public class HomeTabFragment extends Fragment {
     private static final String PLAY_STORE_SUBSCRIPTION_DEEPLINK_URL = "https://play.google.com/store/account/subscriptions?sku=%s&package=%s";
@@ -64,6 +70,8 @@ public class HomeTabFragment extends Fragment {
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private PsiCashDetailsViewModel psiCashDetailsViewModel;
     private GooglePlayBillingHelper googlePlayBillingHelper;
+    private Observable<Boolean> showConduitRunningObservable;
+    private Drawable conduitAppIcon;
 
 
     @Nullable
@@ -102,6 +110,21 @@ public class HomeTabFragment extends Fragment {
                 .get(PsiCashDetailsViewModel.class);
 
         googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(requireContext());
+
+        showConduitRunningObservable = Observable.fromCallable(() ->
+                        new AppPreferences(requireContext()).getBoolean(getString(R.string.showPurchaseRequiredPromptFlag), false))
+                .flatMap(isPurchaseRequired -> {
+                    if (isPurchaseRequired) {
+                        return ConduitStateManager.newManager(requireContext()).stateFlowable()
+                                .filter(state -> state.status() != ConduitState.Status.UNKNOWN)
+                                .map(state -> state.status() == ConduitState.Status.RUNNING)
+                                .doOnError(throwable -> MyLog.e("HomeTabFragment: error getting conduit state", throwable))
+                                .onErrorReturnItem(false)
+                                .toObservable();
+                    } else {
+                        return Observable.just(false);
+                    }
+                });
     }
 
     @Override
@@ -120,12 +143,14 @@ public class HomeTabFragment extends Fragment {
                                 .distinctUntilChanged()
                                 .toObservable(),
                         psiCashDetailsViewModel.hasActiveSpeedBoostObservable(),
-                        ((BiFunction<SubscriptionState, Boolean, Pair<SubscriptionState, Boolean>>) Pair::new))
+                        showConduitRunningObservable,
+                        RateLimitDisplayState::new)
                 .distinctUntilChanged()
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext(pair -> {
-                    SubscriptionState subscriptionState = pair.first;
-                    Boolean hasActiveSpeedBoost = pair.second;
+                .doOnNext(rateLimitDisplayState -> {
+                    SubscriptionState subscriptionState = rateLimitDisplayState.subscriptionState;
+                    boolean hasActiveSpeedBoost = rateLimitDisplayState.hasActiveSpeedBoost;
+                    boolean showConduitRunning = rateLimitDisplayState.showConduitRunning;
 
                     // Show "Manage subscription" link if subscription, hide otherwise
                     if (subscriptionState.status() == SubscriptionState.Status.HAS_LIMITED_SUBSCRIPTION ||
@@ -143,8 +168,7 @@ public class HomeTabFragment extends Fragment {
                         manageSubscriptionLink.setVisibility(View.GONE);
                     }
 
-                    // If time pass or unlimited subscription hide the "Upgrade" button and show the "UNLIMITED" label.
-                    // Otherwise show the "Upgrade" button and rate limit label with either "5Mb/s", "2 Mb/s" or "Speed Boost".
+                    // If time pass or unlimited subscription hide the "Upgrade" button and show the "UNLIMITED" label
                     if (subscriptionState.status() == SubscriptionState.Status.HAS_TIME_PASS ||
                             subscriptionState.status() == SubscriptionState.Status.HAS_UNLIMITED_SUBSCRIPTION) {
                         // Hide the rate limit label
@@ -158,14 +182,49 @@ public class HomeTabFragment extends Fragment {
                         rateUnlimitedText.setVisibility(View.GONE);
                         // Show the "Upgrade" button
                         rateLimitUpgradeButton.setVisibility(View.VISIBLE);
+                        // Clear all drawables from the rate limit label
+                        rateLimitedText.setCompoundDrawables(null, null, null, null);
+
                         // For limited subscription set rate limit label to "5 Mb/s"
                         if (subscriptionState.status() == SubscriptionState.Status.HAS_LIMITED_SUBSCRIPTION) {
                             rateLimitedText.setText(getString(R.string.rate_limit_text_limited, 5));
                         } else {
-                            // No subscription, set the rate limit label to "Speed Boost" if active boost, otherwise to "2 Mb/s"
+                            // No subscription, check in the following order:
+                            // speed boost, show conduit running, default
                             if (hasActiveSpeedBoost) {
+                                // If there is an active speed boost, show the speed boost label
                                 rateLimitedText.setText(getString(R.string.rate_limit_text_speed_boost));
+                            } else if (showConduitRunning) {
+                                // Show Conduit app icon and "Unlimited" label if the conduit is running
+
+                                // Initialize conduitAppIcon only when needed
+                                if (conduitAppIcon == null) {
+                                    try {
+                                        PackageManager pm = requireContext().getPackageManager();
+                                        ApplicationInfo appInfo = pm.getApplicationInfo("ca.psiphon.conduit", 0);
+                                        conduitAppIcon = pm.getApplicationIcon(appInfo);
+                                    } catch (PackageManager.NameNotFoundException e) {
+                                        conduitAppIcon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_conduit_default);
+                                    }
+                                    if (conduitAppIcon != null) {
+                                        int size = (int) (rateLimitedText.getLineHeight());
+                                        conduitAppIcon.setBounds(0, 0, size, size);
+                                    }
+                                }
+
+                                if (conduitAppIcon != null) {
+                                    rateLimitedText.setCompoundDrawablePadding(getResources().getDimensionPixelSize(R.dimen.padding_small));
+                                    // Depending on the layout direction, set the icon to the left or right of the text
+                                    if (ViewCompat.getLayoutDirection(rateLimitedText) == ViewCompat.LAYOUT_DIRECTION_RTL) {
+                                        rateLimitedText.setCompoundDrawables(null, null, conduitAppIcon, null);
+                                    } else {
+                                        rateLimitedText.setCompoundDrawables(conduitAppIcon, null, null, null);
+                                    }
+                                }
+                                // Show the rate limit label "Unlimited"
+                                rateLimitedText.setText(getString(R.string.rate_limit_text_unlimited));
                             } else {
+                                // Set the default rate limit label to "2 Mb/s"
                                 rateLimitedText.setText(getString(R.string.rate_limit_text_limited, 2));
                             }
                         }
@@ -211,5 +270,17 @@ public class HomeTabFragment extends Fragment {
     public void onDestroy() {
         super.onDestroy();
         compositeDisposable.dispose();
+    }
+
+    private static class RateLimitDisplayState {
+        final SubscriptionState subscriptionState;
+        final boolean hasActiveSpeedBoost;
+        final boolean showConduitRunning;
+
+        RateLimitDisplayState(SubscriptionState subscriptionState, boolean hasActiveSpeedBoost, boolean showConduitRunning) {
+            this.subscriptionState = subscriptionState;
+            this.hasActiveSpeedBoost = hasActiveSpeedBoost;
+            this.showConduitRunning = showConduitRunning;
+        }
     }
 }
