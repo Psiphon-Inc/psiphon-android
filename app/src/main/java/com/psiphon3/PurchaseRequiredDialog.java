@@ -35,7 +35,6 @@ import androidx.lifecycle.LifecycleOwner;
 import com.psiphon3.log.MyLog;
 import com.psiphon3.subscription.R;
 
-import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
@@ -51,6 +50,7 @@ public class PurchaseRequiredDialog implements DefaultLifecycleObserver {
     private final ImageButton installConduitBtn;
     private final ImageButton updateConduitBtn;
     private final CardView updatePsiphonProCardView;
+    private final CardView disconnectCardView;
 
     private final View openConduitView;
     private final View installConduitView;
@@ -68,6 +68,8 @@ public class PurchaseRequiredDialog implements DefaultLifecycleObserver {
         subscribeCard = contentView.findViewById(R.id.subscribeCardView);
         speedBoostCard = contentView.findViewById(R.id.speedBoostCardView);
         openConduitCardView = contentView.findViewById(R.id.openConduitCardView);
+        updatePsiphonProCardView = contentView.findViewById(R.id.updatePsiphonProCardView);
+        disconnectCardView = contentView.findViewById(R.id.disconnectCardView);
 
         // Initialize the container views
         openConduitView = contentView.findViewById(R.id.openConduitView);
@@ -75,16 +77,16 @@ public class PurchaseRequiredDialog implements DefaultLifecycleObserver {
         updateConduitView = contentView.findViewById(R.id.updateConduitView);
         updatePsiphonProView = contentView.findViewById(R.id.updatePsiphonProView);
 
-        // Initialize the clickables
+        // Initialize the buttons
         installConduitBtn = contentView.findViewById(R.id.installConduitBtn);
         updateConduitBtn = contentView.findViewById(R.id.updateConduitBtn);
-        updatePsiphonProCardView = contentView.findViewById(R.id.updatePsiphonProCardView);
 
         // Set click listeners
         openConduitCardView.setOnClickListener(v -> launchConduit());
         installConduitBtn.setOnClickListener(v -> openPlayStoreConduit());
         updateConduitBtn.setOnClickListener(v -> openPlayStoreConduit());
         updatePsiphonProCardView.setOnClickListener(v -> openPlayStorePsiphonPro());
+        disconnectCardView.setOnClickListener(v -> disconnectAndDismiss());
 
         dialog = new Dialog(context, R.style.Theme_NoTitleDialog);
         dialog.setCancelable(false);
@@ -257,6 +259,13 @@ public class PurchaseRequiredDialog implements DefaultLifecycleObserver {
             dialog.getContext().startActivity(launchIntent);
             dialog.dismiss();
         }
+    }
+
+    private void disconnectAndDismiss() {
+        if (disconnectTunnelRunnable != null) {
+            disconnectTunnelRunnable.run();
+        }
+        dialog.dismiss();
     }
 
     public static class Builder {
