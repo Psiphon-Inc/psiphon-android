@@ -176,8 +176,14 @@ public class MainActivityViewModel extends AndroidViewModel implements DefaultLi
                 .map(logEntry -> MyLog.getStatusLogMessageForDisplay(logEntry.getLogJson(), getApplication()));
     }
 
+    public Flowable<PersonalPairingHelper.PersonalPairingState> personalPairingStateFlowable() {
+        return personalPairingHelper.observePersonalPairingState()
+                .distinctUntilChanged();
+    }
+
     public Flowable<Boolean> personalPairingEnabledFlowable() {
-        return personalPairingHelper.observePersonalPairingEnabled();
+        return personalPairingHelper.observePersonalPairingEnabled()
+                .distinctUntilChanged();
     }
 
     public Single<PersonalPairingHelper.ImportResult> handlePersonalPairingData(
@@ -194,9 +200,8 @@ public class MainActivityViewModel extends AndroidViewModel implements DefaultLi
         personalPairingHelper.setPersonalPairingState(isEnabled, data);
     }
 
-    public Flowable<PersonalPairingHelper.PersonalPairingState> observePersonalPairingState() {
-        return personalPairingHelper.observePersonalPairingState()
-                .distinctUntilChanged();
+    public void setPersonalParingEnabled(boolean isEnabled) {
+        personalPairingHelper.setPersonalPairingEnabled(isEnabled);
     }
 
     // Keep track of the last known pairing state to determine when tunnel restart is needed
@@ -208,7 +213,7 @@ public class MainActivityViewModel extends AndroidViewModel implements DefaultLi
     // - Compartment ID changes while pairing is enabled
     // returns a flowable that emits true when a restart is needed
     public Flowable<Boolean> pairingStateRestartTunnelFlowable() {
-        return observePersonalPairingState()
+        return personalPairingStateFlowable()
                 .map(currentState -> {
                     boolean shouldRestart = false;
 
@@ -223,6 +228,6 @@ public class MainActivityViewModel extends AndroidViewModel implements DefaultLi
                     lastKnownPersonalPairingState = currentState;
                     return shouldRestart;
                 })
-                .filter(shouldRestart -> shouldRestart); // Only emit when restart is needed
+                .switchMap(shouldRestart -> shouldRestart ? Flowable.just(true) : Flowable.empty());
     }
 }

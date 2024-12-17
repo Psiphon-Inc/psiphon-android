@@ -57,6 +57,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.PermissionChecker;
@@ -132,6 +133,9 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     private FloatingActionButton helpConnectFab;
     // Keeps track of the Psiphon Bump help state
     private PsiphonBumpHelpState psiphonBumpHelpState = PsiphonBumpHelpState.DISABLED;
+
+    private SwitchCompat personalPairingToggle;
+    private TextView personalPairingLabel;
 
     enum PsiphonBumpHelpState {
         DISABLED,
@@ -212,6 +216,13 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         setContentView(R.layout.main_activity);
 
         helpConnectFab = findViewById(R.id.help_connect_fab);
+
+        personalPairingToggle = findViewById(R.id.personalPairingToggle);
+        personalPairingToggle.setOnCheckedChangeListener((buttonView, isChecked) ->
+                viewModel.setPersonalParingEnabled(isChecked));
+
+        personalPairingLabel = findViewById(R.id.personalPairingLabel);
+
 
         EmbeddedValues.initialize(getApplicationContext());
 
@@ -393,13 +404,40 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                         .subscribe());
 
         // Observe personal pairing state changes and restart the tunnel if needed
+// Observe personal pairing state changes and restart the tunnel if needed
         compositeDisposable.add(
                 viewModel.pairingStateRestartTunnelFlowable()
                         .observeOn(AndroidSchedulers.mainThread())
-                        .switchMap(__ -> getTunnelServiceInteractor().tunnelStateFlowable())
-                        .filter(TunnelState::isRunning)
-                        .take(1)
-                        .doOnNext(__ -> getTunnelServiceInteractor().commandTunnelRestart())
+                        .switchMap(__ -> getTunnelServiceInteractor().tunnelStateFlowable()
+                                .filter(tunnelState -> !tunnelState.isUnknown())
+                                .take(1)
+                                .doOnNext(tunnelState -> {
+                                    if (tunnelState.isRunning()) {
+                                        getTunnelServiceInteractor().commandTunnelRestart();
+                                    }
+                                })
+                        )
+                        .subscribe());
+
+        // Observe personal paring state and update the UI
+        compositeDisposable.add(
+                viewModel.personalPairingStateFlowable()
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnNext(state -> {
+                            if (state.enabled) {
+                                String alias = state.data.alias;
+                                personalPairingToggle.setChecked(true);
+                                if (alias != null && !alias.isEmpty()) {
+                                    personalPairingLabel.setText(getString(R.string.preference_summary_personal_pairing_enabled_with_alias, alias));
+                                } else {
+                                    personalPairingLabel.setText(getString(R.string.preference_summary_personal_pairing_enabled));
+                                }
+                                personalPairingLabel.setVisibility(View.VISIBLE);
+                            } else {
+                                personalPairingToggle.setChecked(false);
+                                personalPairingLabel.setVisibility(View.INVISIBLE); // Not GONE, we want to keep the space
+                            }
+                        })
                         .subscribe());
     }
 
