@@ -181,11 +181,6 @@ public class MainActivityViewModel extends AndroidViewModel implements DefaultLi
                 .distinctUntilChanged();
     }
 
-    public Flowable<Boolean> personalPairingEnabledFlowable() {
-        return personalPairingHelper.observePersonalPairingEnabled()
-                .distinctUntilChanged();
-    }
-
     public Single<PersonalPairingHelper.ImportResult> handlePersonalPairingData(
             String input,
             Flowable<TunnelState> tunnelState) {

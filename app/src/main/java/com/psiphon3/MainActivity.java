@@ -452,10 +452,10 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         compositeDisposable.add(
                 Flowable.combineLatest(
                                 getTunnelServiceInteractor().tunnelStateFlowable(),
-                                viewModel.personalPairingEnabledFlowable(),
+                                viewModel.personalPairingStateFlowable(),
                                 (tunnelState, personalPairingEnabled) -> {
                                     // If personal pairing is enabled, override everything else
-                                    if (personalPairingEnabled) {
+                                    if (personalPairingEnabled.enabled) {
                                         updatePsiphonBumpHceState(false);
                                         helpConnectFab.setVisibility(View.GONE);
                                         helpConnectFab.setOnClickListener(null);

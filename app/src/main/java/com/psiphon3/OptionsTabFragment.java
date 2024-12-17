@@ -183,9 +183,9 @@ public class OptionsTabFragment extends PsiphonPreferenceFragmentCompat {
 
         // Observe 'Personal Pairing` signal from deep link intent handler
         // and update the preference summary
-        compositeDisposable.add(viewModel.personalPairingEnabledFlowable()
+        compositeDisposable.add(viewModel.personalPairingStateFlowable()
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext(__ -> setSummaryFromPreferences())
+                .doOnNext(this::setPersonalPairingSummary)
                 .subscribe());
     }
 
@@ -236,9 +236,11 @@ public class OptionsTabFragment extends PsiphonPreferenceFragmentCompat {
         } else {
             proxyOptionsPreference.setSummary(R.string.preference_summary_no_proxy);
         }
-        // Update Personal Pairing setting summary
-        if (multiProcessPreferences.getBoolean(getString(R.string.personalPairingEnabledPreference), false)) {
-            String alias = multiProcessPreferences.getString(getString(R.string.personalPairingAliasPreference), "");
+    }
+
+    private void setPersonalPairingSummary(PersonalPairingHelper.PersonalPairingState personalPairingState) {
+        if (personalPairingState.enabled) {
+            String alias = personalPairingState.data.alias;
             if (alias == null || alias.isEmpty()) {
                 // If no alias show just Enabled
                 personalPairingPreference.setSummary(R.string.preference_summary_personal_pairing_enabled);

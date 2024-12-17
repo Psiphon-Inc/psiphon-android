@@ -129,12 +129,6 @@ public class PersonalPairingHelper {
                 .toFlowable(BackpressureStrategy.LATEST);
     }
 
-    // Observe personal pairing state enabled flag changes
-    public Flowable<Boolean> observePersonalPairingEnabled() {
-        return personalPairingStateRelay.map(state -> state.enabled)
-                .toFlowable(BackpressureStrategy.LATEST);
-    }
-
     // Update personal pairing state enabled flag
     public void setPersonalPairingEnabled(boolean enabled) {
         PersonalPairingState currentState = personalPairingStateRelay.getValue();
