@@ -503,6 +503,12 @@
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">Bağlantıyı kes</string>
 
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe.-->
+    <string name="purchase_required_prompt_title">Bölgenizde Psiphon\'a nasıl erişebilirsiniz?</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe.-->
+    <string name="purchase_required_prompt_body">Bölgenizde Psiphon\'a erişim desteğinize ihtiyaç duyuyor. Psiphon\'u, ihtiyaç duyan insanlara erişilebilir kılmak için ya abone olun, ya bir Speed Boost satın alın ya da yeni Conduit mobil uygulamasını çalıştırın.</string>
+
     <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_hr">1 saat</string>
 
@@ -534,8 +540,26 @@
     <!-- Do not translate or transliterate 'PsiCash'. PsiCash is a unit of currency here. Reorder the format specifier '%s' if in the translated language ordering of unit and amount is different from English. -->
     <string name="psicash_price_format">%s PsiCash</string>
 
+    <!-- Icon description for the Conduit app icon, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_icon_description">Conduit uygulama simgesi</string>
+
+    <!-- Icon description for the Google Play app icon, do not translate or transliterate 'Google Play'. -->
+    <string name="google_play_icon_description">Google Play simgesi</string>
+
+    <!-- Title for the Install Conduit action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_install_title">Conduit Kur</string>
+
+    <!-- Description text for the clickable Conduit app card, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_card_description">Conduit mobil uygulamasını çalıştırın ve Psiphon\'a ücretsiz bir şekilde bağlı kalmaya devam edin.</string>
+
+    <!-- Clickable text label to open the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="launch_conduit_action">Conduit\'i Başlat</string>
+
     <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
     <string name="subscribe_card_title">Abone ol</string>
+
+    <!-- Description text under the Subscribe clickable item -->
+    <string name="subscribe_card_description">Psiphon\'a kesintisiz erişim için bir abonelik planı satın alın</string>
 
     <!-- Clickable text label, clicking this opens a dialog with various speed boost options available for purchase.
     'Speed Boost' is a reward that can be purchased with PsiCash credit.
@@ -543,4 +567,22 @@
     'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
     <string name="speed_boost_card_title">Speed Boost</string>
 
-    </resources>
+    <!-- Description text under the Speed Boost clickable item -->
+    <string name="speed_boost_card_description">Psiphon\'a kısa süreli erişim için PsiCash\'iniz ile bir Speed Boost alabilirsiniz.</string>
+
+    <!-- Clickable text label to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_title">Psiphon Pro\'yu Güncelle</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_update_title">Conduit\'i Güncelle</string>
+
+    <!-- Description for the 'Update' Action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_update_description">Bu özelliğe erişmek için Conduit\'i son sürüme güncelleyin</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_action_title">Psiphon Pro\'yu Güncelle</string>
+
+    <!-- Description for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_action_description">Bu özelliğe erişmek için Psiphon Pro\'yu son sürüme güncelleyin</string>
+
+</resources>

@@ -76,6 +76,9 @@
     <!-- PsiCash account 'log in' preference title as it appears in the app's preference screen. -->
     <string name="psicash_account_login_pref_title">ចូលប្រើប្រាស់</string>
 
+    <!-- PsiCash account 'manage account' preference title as it appears in the app's preference screen. -->
+    <string name="psicash_account_manage_pref_title">គ្រប់គ្រងគណនី</string>
+
     <!-- Input field caption for password on the PsiCash account sign screen -->
     <string name="psicash_account_login_password_hint">លេខកូដសម្ងាត់</string>
 
@@ -96,6 +99,9 @@
 
     <!--Generic 'close' button label -->
     <string name="label_close">បិទ</string>
+
+    <!-- Text that appears above the "Log in" button on the PsiCash sign in screen. -->
+    <string name="psicash_already_have_account_text">មានគណនីមួយហើយមែនទេ?</string>
 
     <!-- Clickable text on the home tab that appears on the home tab if user has an active subscription. Clicking the link opens 'Manage Subscription' screen of the Google Play app -->
     <string name="manage_my_subscription_link_text">គ្រប់គ្រងការភ្ជាប់គម្រោងរបស់អ្នក</string>

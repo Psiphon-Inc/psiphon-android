@@ -503,7 +503,7 @@
     <string name="psicash_price_format">%sPsiCash</string>
 
     <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
-    <string name="subscribe_card_title">Souscrire</string>
+    <string name="subscribe_card_title">S’abonner</string>
 
     <!-- Clickable text label, clicking this opens a dialog with various speed boost options available for purchase.
     'Speed Boost' is a reward that can be purchased with PsiCash credit.
