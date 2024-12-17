@@ -1018,15 +1018,21 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         importPairingDataToast.show();
     }
 
+    // Keep track of the update confirmation dialog to dismiss if we need to show a new one
+    AlertDialog updateConfirmationDialog;
     // Confirms updating existing personal pairing data if the compartment ID already present in the settings
     private void showUpdateConfirmationDialog(PersonalPairingHelper.PersonalPairingData newData, String existingId, boolean enabled) {
+        if (updateConfirmationDialog != null && updateConfirmationDialog.isShowing()) {
+            updateConfirmationDialog.dismiss();
+        }
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_pairing_update, null);
         TextView oldIdView = dialogView.findViewById(R.id.old_compartment_id);
         TextView newIdView = dialogView.findViewById(R.id.new_compartment_id);
         oldIdView.setText(existingId);
         newIdView.setText(newData.compartmentId);
 
-        new AlertDialog.Builder(this)
+        updateConfirmationDialog =  new AlertDialog.Builder(this)
+                .setIcon(R.drawable.ic_psiphon_alert_notification)
                 .setTitle(R.string.personal_pairing_update_title)
                 .setView(dialogView)
                 .setPositiveButton(R.string.personal_pairing_update_positive_button,
@@ -1038,11 +1044,19 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 .show();
     }
 
+    // Keep track of the enable confirmation dialog to dismiss if we need to show a new one
+    AlertDialog enableConfirmationDialog;
     // Confirms enabling personal pairing feature while importing personal pairing data
     private void showEnableConfirmationDialog(PersonalPairingHelper.PersonalPairingData data) {
-        new AlertDialog.Builder(this)
+        if (enableConfirmationDialog != null && enableConfirmationDialog.isShowing()) {
+            enableConfirmationDialog.dismiss();
+        }
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_pairing_enable, null);
+
+        enableConfirmationDialog = new AlertDialog.Builder(this)
+                .setIcon(R.drawable.ic_psiphon_alert_notification)
                 .setTitle(R.string.personal_pairing_enable_confirmation_dialog_title)
-                .setMessage(R.string.personal_pairing_enable_confirmation_dialog_message)
+                .setView(dialogView)
                 .setPositiveButton(R.string.lbl_yes, (dialog, which) ->
                         viewModel.confirmPersonalPairingImport(data, true))
                 .setNegativeButton(R.string.lbl_no, (dialog, which) ->
