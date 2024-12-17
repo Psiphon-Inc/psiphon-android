@@ -84,25 +84,56 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
+            <!-- Toggle Container -->
+            <LinearLayout
+                android:id="@+id/toggleContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_marginBottom="16dp">
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/personalPairingToggle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:switchPadding="12dp"
+                    android:text="@string/label_personal_pairing_settings"
+                    android:textSize="16sp"
+                    android:padding="8dp" />
+
+                <TextView
+                    android:id="@+id/personalPairingLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Via alias placeholder"
+                    android:textSize="12sp"
+                    android:alpha="0.8"
+                    android:visibility="visible" />
+            </LinearLayout>
+
             <LinearLayout
                 android:id="@+id/buttonPanel"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
+                android:layout_below="@id/toggleContainer"
                 android:orientation="horizontal"
                 android:weightSum="2.0">
 
                 <Button
                     android:id="@+id/toggleButton"
-                    android:layout_width="fill_parent"
-                    android:layout_height="fill_parent"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1.0"
                     android:text="@string/start"
                     android:textAppearance="?android:attr/textAppearanceSmall" />
 
                 <Button
                     android:id="@+id/openBrowserButton"
-                    android:layout_width="fill_parent"
-                    android:layout_height="fill_parent"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1.0"
                     android:text="@string/open_browser"
                     android:textAppearance="?android:attr/textAppearanceSmall" />
@@ -116,6 +147,7 @@
                 android:background="@drawable/connection_waiting_network_animation_drawable"
                 android:orientation="horizontal"
                 android:visibility="invisible" />
+
             <ProgressBar
                 android:id="@+id/connectionProgressBar"
                 style="?android:attr/progressBarStyleHorizontal"
@@ -126,6 +158,7 @@
                 android:indeterminate="true" />
 
         </RelativeLayout>
+
     </LinearLayout>
 
 </LinearLayout>
