@@ -1,0 +1,21 @@
+{
+  "version": 3,
+  "artifactType": {
+    "type": "APK",
+    "kind": "Directory"
+  },
+  "applicationId": "com.psiphon3",
+  "variantName": "release",
+  "elements": [
+    {
+      "type": "SINGLE",
+      "filters": [],
+      "attributes": [],
+      "versionCode": 1,
+      "versionName": "1",
+      "outputFile": "PsiphonAndroid-release.apk"
+    }
+  ],
+  "elementType": "File",
+  "minSdkVersionForDexing": 14
+}

@@ -240,7 +240,7 @@ public class OptionsTabFragment extends PsiphonPreferenceFragmentCompat {
 
     private void setPersonalPairingSummary(PersonalPairingHelper.PersonalPairingState personalPairingState) {
         if (personalPairingState.enabled) {
-            String alias = personalPairingState.data.alias;
+            String alias = personalPairingState.data == null ? null : personalPairingState.data.alias;
             if (alias == null || alias.isEmpty()) {
                 // If no alias show just Enabled
                 personalPairingPreference.setSummary(R.string.preference_summary_personal_pairing_enabled);

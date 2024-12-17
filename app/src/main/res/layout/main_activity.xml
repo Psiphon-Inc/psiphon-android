@@ -86,7 +86,7 @@
 
             <!-- Toggle Container -->
             <LinearLayout
-                android:id="@+id/toggleContainer"
+                android:id="@+id/personalPairingToggleContainer"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerHorizontal="true"
@@ -118,7 +118,7 @@
                 android:id="@+id/buttonPanel"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/toggleContainer"
+                android:layout_below="@id/personalPairingToggleContainer"
                 android:orientation="horizontal"
                 android:weightSum="2.0">
 

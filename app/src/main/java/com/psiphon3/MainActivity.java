@@ -134,6 +134,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     // Keeps track of the Psiphon Bump help state
     private PsiphonBumpHelpState psiphonBumpHelpState = PsiphonBumpHelpState.DISABLED;
 
+    private View personalPairingToggleContainer;
     private SwitchCompat personalPairingToggle;
     private TextView personalPairingLabel;
 
@@ -217,6 +218,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
         helpConnectFab = findViewById(R.id.help_connect_fab);
 
+        personalPairingToggleContainer = findViewById(R.id.personalPairingToggleContainer);
         personalPairingToggle = findViewById(R.id.personalPairingToggle);
         personalPairingToggle.setOnCheckedChangeListener((buttonView, isChecked) ->
                 viewModel.setPersonalParingEnabled(isChecked));
@@ -424,7 +426,15 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 viewModel.personalPairingStateFlowable()
                         .observeOn(AndroidSchedulers.mainThread())
                         .doOnNext(state -> {
-                            if (state.enabled) {
+                            if (state.data == null || state.data.compartmentId == null || state.data.compartmentId.isEmpty()) {
+                                // Hide the personal pairing toggle layout if there is no data
+                                personalPairingToggleContainer.setVisibility(View.GONE);
+                            } else {
+                                // Show the personal pairing toggle layout if there is data
+                                personalPairingToggleContainer.setVisibility(View.VISIBLE);
+                            }
+
+                            if (state.enabled && state.data != null && state.data.compartmentId != null && !state.data.compartmentId.isEmpty()) {
                                 String alias = state.data.alias;
                                 personalPairingToggle.setChecked(true);
                                 if (alias != null && !alias.isEmpty()) {
