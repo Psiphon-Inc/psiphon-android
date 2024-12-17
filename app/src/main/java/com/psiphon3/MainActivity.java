@@ -55,6 +55,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -69,8 +70,10 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
 import com.psiphon3.VpnRulesHelper;
 import com.psiphon3.log.LogsMaintenanceWorker;
+import com.psiphon3.log.MyLog;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
+import com.psiphon3.psiphonlibrary.PersonalPairingHelper;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.VpnAppsUtils;
@@ -92,9 +95,11 @@ import java.util.Map;
 import java.util.Set;
 
 import io.reactivex.Completable;
+import io.reactivex.Flowable;
 import io.reactivex.Maybe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.schedulers.Schedulers;
 
 public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
@@ -346,19 +351,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 .doOnNext(this::updateServiceStateUI)
                 .subscribe());
 
-        // If device supports Psiphon Bump observe tunnel state and update NFC UI and HCE state accordingly
-        if (Utils.supportsPsiphonBump(this)) {
-            compositeDisposable.add(getTunnelServiceInteractor().tunnelStateFlowable()
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .doOnNext(this::updatePsiphonBumpState)
-                    // disable Psiphon Bump HCE and hide help connect FAB when this subscription is
-                    // disposed.
-                    .doOnCancel(() -> {
-                        updatePsiphonBumpHceState(false);
-                        helpConnectFab.setVisibility(View.GONE);
-                    })
-                    .subscribe());
-        }
+        // Set up Psiphon Bump state handling
+        setupPsiphonBumpHandling();
 
         // Observe custom proxy validation results to show a toast for invalid ones
         compositeDisposable.add(viewModel.customProxyValidationResultFlowable()
@@ -397,6 +391,49 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                         .andThen(autoStartMaybe())
                         .doOnSuccess(__ -> startTunnel())
                         .subscribe());
+
+        // Observe personal pairing state changes and restart the tunnel if needed
+        compositeDisposable.add(
+                viewModel.pairingStateRestartTunnelFlowable()
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .switchMap(__ -> getTunnelServiceInteractor().tunnelStateFlowable())
+                        .filter(TunnelState::isRunning)
+                        .take(1)
+                        .doOnNext(__ -> getTunnelServiceInteractor().commandTunnelRestart())
+                        .subscribe());
+    }
+
+    private void setupPsiphonBumpHandling() {
+        if (!Utils.supportsPsiphonBump(this)) {
+            updatePsiphonBumpHceState(false);
+            helpConnectFab.setVisibility(View.GONE);
+            helpConnectFab.setOnClickListener(null);
+            return;
+        }
+
+        compositeDisposable.add(
+                Flowable.combineLatest(
+                                getTunnelServiceInteractor().tunnelStateFlowable(),
+                                viewModel.personalPairingEnabledFlowable(),
+                                (tunnelState, personalPairingEnabled) -> {
+                                    // If personal pairing is enabled, override everything else
+                                    if (personalPairingEnabled) {
+                                        updatePsiphonBumpHceState(false);
+                                        helpConnectFab.setVisibility(View.GONE);
+                                        helpConnectFab.setOnClickListener(null);
+                                        } else {
+                                        // Otherwise process normal tunnel state
+                                        updatePsiphonBumpState(tunnelState);
+                                    }
+                                    return tunnelState; // return tunnel state for further processing if needed
+                                })
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnCancel(() -> {
+                            updatePsiphonBumpHceState(false);
+                            helpConnectFab.setVisibility(View.GONE);
+                        })
+                        .subscribe()
+        );
     }
 
     // Check runtime permissions and show rationales if needed.
@@ -848,6 +885,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         }
     }
 
+    // Handles deep links and app links
     private boolean handleDeepLinkIntent(@NonNull Intent intent) {
         final String FWD_SLASH = "/";
 
@@ -857,38 +895,159 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         final String SETTINGS_PATH_VPN = "/vpn";
         final String SETTINGS_PATH_PROXY = "/proxy";
         final String SETTINGS_PATH_MORE_OPTIONS = "/more-options";
+        final String PAIR_HOST = "pair";
+        final String PAIR_PATH_PREFIX = "/pair";
+        final String HTTPS_SCHEME = "https";
+        final String APP_LINK_HOST = "hextempulant.net";
 
         Uri intentUri = intent.getData();
-        // Check if this is a deep link intent we can handle
-        if (!Intent.ACTION_VIEW.equals(intent.getAction()) ||
-                intentUri == null ||
-                !PSIPHON_SCHEME.equals(intentUri.getScheme())) {
-            // Intent not handled
+        // Check if the intent is a view action and has a valid URI
+        if (!Intent.ACTION_VIEW.equals(intent.getAction()) || intentUri == null) {
+            // Intent was not handled
             return false;
         }
 
+        String scheme = intentUri.getScheme();
+        String host = intentUri.getHost();
         String path = intentUri.getPath();
 
-        switch (intentUri.getHost()) {
-            case SETTINGS_HOST:
-                selectTabByTag("settings");
-                if (path != null) {
-                    // If uri path is "/vpn" or "/vpn/.*" then signal to navigate to VPN settings screen.
-                    // If the path is "/proxy" or "/proxy/.*" then signal to navigate to Proxy settings screen.
-                    // If the path is "/more-options" or "/more-options/.*" then signal to navigate to More Options screen.
-                    if (path.equals(SETTINGS_PATH_VPN) || path.startsWith(SETTINGS_PATH_VPN + FWD_SLASH)) {
-                        viewModel.signalOpenVpnSettings();
-                    } else if (path.equals(SETTINGS_PATH_PROXY) || path.startsWith(SETTINGS_PATH_PROXY + FWD_SLASH)) {
-                        viewModel.signalOpenProxySettings();
-                    } else if (path.equals(SETTINGS_PATH_MORE_OPTIONS) || path.startsWith(SETTINGS_PATH_MORE_OPTIONS)) {
-                        viewModel.signalOpenMoreOptions();
-                    }
+        // Handle Personal Pairing app links (https://hextempulant.net/pair/<base-64-encoded-data>) first
+        if (HTTPS_SCHEME.equals(scheme) && APP_LINK_HOST.equals(host)) {
+            // Only process paths that start with /pair/
+            if (path != null && path.startsWith(PAIR_PATH_PREFIX + FWD_SLASH)) {
+                // Extract everything after /pair/
+                String pairingData = path.substring(PAIR_PATH_PREFIX.length() + 1).split(FWD_SLASH)[0];
+                if (!pairingData.isEmpty()) {
+                    handlePersonalPairingData(pairingData);
+                    // Intent was handled
+                    return true;
                 }
-                // intent handled
-                return true;
+                MyLog.w("MainActivity::handleDeepLinkIntent: empty pairing data in URL");
+                // Intent was not handled
+                return false;
+            }
         }
-        // intent not handled
+
+        // Handle Personal Pairing deep links (psiphon://pair/<base-64-encoded-data>) next
+        if (PSIPHON_SCHEME.equals(scheme) && PAIR_HOST.equals(host)) {
+            // Return false if path is missing or invalid
+            if (path == null || path.length() <= 1) {
+                // Intent was not handled
+                return false;
+            }
+
+            // Remove leading slash and get the first path segment
+            String pathWithoutLeadingSlash = path.substring(1);
+            String[] pathSegments = pathWithoutLeadingSlash.split(FWD_SLASH);
+            String pairingData = pathSegments[0];
+
+            // Only handle if we have a non-empty pair code
+            if (!pairingData.isEmpty()) {
+                handlePersonalPairingData(pairingData);
+                // Intent was handled
+                return true;
+            }
+            MyLog.w("MainActivity::handleDeepLinkIntent: empty pairing data in deep link");
+            // Intent was not handled
+            return false;
+        }
+
+        // Finally, handle psiphon://settings/... deep links
+        if (SETTINGS_HOST.equals(host)) {
+            selectTabByTag("settings");
+            // If uri path is "/vpn" or "/vpn/.*" then signal to navigate to VPN settings screen.
+            // If the path is "/proxy" or "/proxy/.*" then signal to navigate to Proxy settings screen.
+            // If the path is "/more-options" or "/more-options/.*" then signal to navigate to More Options screen.
+            if (path != null) {
+                if (path.equals(SETTINGS_PATH_VPN) || path.startsWith(SETTINGS_PATH_VPN + FWD_SLASH)) {
+                    viewModel.signalOpenVpnSettings();
+                } else if (path.equals(SETTINGS_PATH_PROXY) || path.startsWith(SETTINGS_PATH_PROXY + FWD_SLASH)) {
+                    viewModel.signalOpenProxySettings();
+                } else if (path.equals(SETTINGS_PATH_MORE_OPTIONS) || path.startsWith(SETTINGS_PATH_MORE_OPTIONS + FWD_SLASH)) {
+                    viewModel.signalOpenMoreOptions();
+                }
+            }
+            // Intent was handled
+            return true;
+        }
+        // Intent was not handled
         return false;
+    }
+
+    // Handles personal pairing data import from deep / app links
+    private void handlePersonalPairingData(String input) {
+        Flowable<TunnelState> tunnelStateFlowable = getTunnelServiceInteractor()
+                .tunnelStateFlowable()
+                .filter(state -> !state.isUnknown());
+
+        compositeDisposable.add(
+                viewModel.handlePersonalPairingData(input, tunnelStateFlowable)
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(result -> {
+                            switch (result.action) {
+                                case SHOW_SUCCESS:
+                                    showToast(R.string.personal_pairing_data_import_success);
+                                    break;
+                                case SHOW_ALREADY_EXISTS:
+                                    showToast(R.string.personal_pairing_data_already_exists);
+                                    break;
+                                case SHOW_ERROR:
+                                    showToast(R.string.personal_pairing_invalid_data);
+                                    break;
+                                case PROMPT_ENABLE:
+                                    showEnableConfirmationDialog(result.data);
+                                    break;
+                                case PROMPT_UPDATE:
+                                    showUpdateConfirmationDialog(result.data, result.existingCompartmentId, result.existingEnabled);
+                                    break;
+                            }
+                        }, error -> showToast(R.string.personal_pairing_invalid_data))
+        );
+    }
+
+    // Keeps track of any import pairing data toast to cancel if we need to show a new one
+    Toast importPairingDataToast;
+
+    // Shows a toast while cancelling any current import pairing data toast
+    private void showToast(@StringRes int messageId) {
+        if (importPairingDataToast != null) {
+            importPairingDataToast.cancel();
+        }
+        importPairingDataToast = Toast.makeText(MainActivity.this, messageId, Toast.LENGTH_LONG);
+        importPairingDataToast.show();
+    }
+
+    // Confirms updating existing personal pairing data if the compartment ID already present in the settings
+    private void showUpdateConfirmationDialog(PersonalPairingHelper.PersonalPairingData newData, String existingId, boolean enabled) {
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_pairing_update, null);
+        TextView oldIdView = dialogView.findViewById(R.id.old_compartment_id);
+        TextView newIdView = dialogView.findViewById(R.id.new_compartment_id);
+        oldIdView.setText(existingId);
+        newIdView.setText(newData.compartmentId);
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.personal_pairing_update_title)
+                .setView(dialogView)
+                .setPositiveButton(R.string.personal_pairing_update_positive_button,
+                        (dialog, which) -> {
+                            viewModel.confirmPersonalPairingImport(newData, enabled);
+                            showToast(R.string.personal_pairing_data_update_success);
+                        })
+                .setNegativeButton(R.string.personal_pairing_update_negative_button, null)
+                .show();
+    }
+
+    // Confirms enabling personal pairing feature while importing personal pairing data
+    private void showEnableConfirmationDialog(PersonalPairingHelper.PersonalPairingData data) {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.personal_pairing_enable_confirmation_dialog_title)
+                .setMessage(R.string.personal_pairing_enable_confirmation_dialog_message)
+                .setPositiveButton(R.string.lbl_yes, (dialog, which) ->
+                        viewModel.confirmPersonalPairingImport(data, true))
+                .setNegativeButton(R.string.lbl_no, (dialog, which) ->
+                        viewModel.confirmPersonalPairingImport(data, false))
+                .show();
     }
 
     @Override
@@ -916,8 +1075,15 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     }
 
     private boolean shouldAutoStart() {
+        Intent intent = getIntent();
+
+        // Check if launched from a deep link or app link and prevent auto-start if so
+        boolean isDeepLink = Intent.ACTION_VIEW.equals(intent.getAction()) &&
+                (intent.getData() != null);
+
         return isFirstRun &&
-                !getIntent().getBooleanExtra(INTENT_EXTRA_PREVENT_AUTO_START, false);
+                !intent.getBooleanExtra(INTENT_EXTRA_PREVENT_AUTO_START, false) &&
+                !isDeepLink;
     }
 
     // Returns an object only if tunnel should be auto-started,

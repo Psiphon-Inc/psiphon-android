@@ -51,7 +51,7 @@
     <string name="bad_vpn_exclusion_blacklist_alert_message">You need to have at least one app unselected in this mode!</string>
     <string name="vpn_exclusions_preference_not_available_summary">Requires Android 5.0 or greater</string>
     <string name="vpn_always_on_preference_not_available_summary">Requires Android 7.0 or greater</string>
-    <string name="vpn_exclusions_tip_summary" >Select only one browser for classic browser-only mode</string>
+    <string name="vpn_exclusions_tip_summary">Select only one browser for classic browser-only mode</string>
     <!-- Title of the toolbar notification which is shown to the user when Psiphon server detects an unsafe Internet traffic -->
     <string name="unsafe_traffic_alert_notification_title">Psiphon MalAware</string>
     <!-- Content of the toolbar notification which is shown to the user when Psiphon server detects an unsafe Internet traffic -->
@@ -91,7 +91,7 @@
     <string name="vpn_data_collection_disclosure_top">%s uses the Android VPN service to provide you with uncensored access to Internet content. We collect, aggregate, and store the following information:</string>
 
     <!-- Data collection disclosure list item -->
-    <string name="vpn_data_collection_disclosure_bp1">Your city, country, ISP, and optionally, approximate location. The city, country, and ISP are derived from the IP address that you connect to our servers from, and the IP address itself is never logged. This data is collected for usage and performance statistics and service health purposes.</string>>
+    <string name="vpn_data_collection_disclosure_bp1">Your city, country, ISP, and optionally, approximate location. The city, country, and ISP are derived from the IP address that you connect to our servers from, and the IP address itself is never logged. This data is collected for usage and performance statistics and service health purposes.</string>
 
     <!-- Data collection disclosure list item -->
     <string name="vpn_data_collection_disclosure_bp2">Your email, when you send us a diagnostics or crash log feedback. Providing email in the feedback is optional.</string>
@@ -192,4 +192,84 @@
     <!--Approximate location permission rationale alert text. The format qualifier %s will be replaced by the app name, either 'Psiphon' or 'Psiphon Pro'  -->
     <string name="location_permission_rationale_text">Please allow %s to access your device\'s approximate location. Your location data estimate is used to optimize the Psiphon network, and is accurate to within about 3 square kilometers.</string>
 
+    <!-- Status summary appearing in the app settings below the Personal Pairing preference indicating that the feature is enabled -->
+    <string name="preference_summary_personal_pairing_enabled">Enabled</string>
+
+    <!-- Status summary appearing in the app settings below the Personal Pairing preference indicating that the feature is enabled with an alias, as in "Via John's Phone" -->
+    <string name="preference_summary_personal_pairing_enabled_with_alias">Via %1$s</string>
+
+    <!-- Status summary appearing in the app settings below the Personal Pairing preference indicating that the feature is disabled -->
+    <string name="preference_summary_personal_pairing_disabled">Disabled</string>
+
+    <!-- Personal Pairing Enable checkbox title -->
+    <string name="personal_pairing_enable_title">Enable Personal Pairing</string>
+
+    <!-- Personal Pairing Enable checkbox summary -->
+    <string name="personal_pairing_enable_summary">Connect to your personal peer</string>
+
+    <!-- Import Pairing URL button title -->
+    <string name="personal_pairing_import_title">Import pairing URL</string>
+
+    <!-- Import Pairing URL dialog title -->
+    <string name="personal_pairing_import_dialog_title">Pairing URL</string>
+
+    <!-- A message shown in the text field where the user should paste the pairing URL -->
+    <string name="personal_pairing_url_hint">Paste pairing URL here</string>
+
+    <!-- Personal Pairing Invalid URL Format error message -->
+    <string name="personal_pairing_invalid_url">Invalid pairing URL format</string>
+
+    <!-- Personal Pairing invalid Data Format error message -->
+    <string name="personal_pairing_invalid_data">Invalid pairing data format</string>
+
+    <!-- A warning message shown when the user tries to ebable Personal Pairing while the pairing compartment ID is not set -->
+    <string name="personal_pairing_need_compartment_id">Please import a pairing URL first</string>
+
+    <!-- Personal Pairing Compartment ID setting title -->
+    <string name="personal_pairing_compartment_id_title">Pairing ID</string>
+
+    <!-- Personal Pairing Compartment ID setting summary -->
+    <string name="personal_pairing_compartment_id_summary">Your unique pairing identifier</string>
+
+    <!-- Pairing Alias setting title -->
+    <string name="personal_pairing_alias_title">Pairing alias</string>
+
+    <!-- Pairing Alias setting summary -->
+    <string name="personal_pairing_alias_summary">A friendly name for this pairing configuration</string>
+
+    <!-- Button label for the Import button in the Import Pairing URL dialog -->
+    <string name="import_button">Import</string>
+
+    <!-- Label for the Personal Pairing preference in the app settings -->
+    <string name="label_personal_pairing_settings">Personal Pairing</string>
+
+    <!-- Personal Pairing data import success message -->
+    <string name="personal_pairing_data_import_success">Personal Pairing configuration saved</string>
+
+    <!-- Personal Pairing data import update success message -->
+    <string name="personal_pairing_data_update_success">Personal Pairing configuration updated</string>
+
+    <!-- Personal Pairing data import data already exists (as in, the user is trying to import the same data again) -->
+    <string name="personal_pairing_data_already_exists">Personal Pairing configuration already exists</string>
+
+    <!-- Personal Pairing data update confirmation dialog title -->
+    <string name="personal_pairing_update_title">Update Personal Pairing data</string>
+
+    <!-- Personal Pairing data update confirmation dialog message text before the current(old) pairing ID, as in "Current pairing ID: 123456" -->
+    <string name="personal_pairing_update_current_id_label">Current Personal Pairing ID:</string>
+
+    <!-- Personal Pairing data update confirmation dialog message text before the new pairing ID, as in "New pairing ID: 654321" -->
+    <string name="personal_pairing_update_new_id_label">New Personal Pairing ID:</string>
+
+    <!-- Personal Pairing data update confirmation dialog positive button label -->
+    <string name="personal_pairing_update_positive_button">Update</string>
+
+    <!-- Personal Pairing data update confirmation dialog negative button label -->
+    <string name="personal_pairing_update_negative_button">Cancel</string>
+
+    <!-- Personal Pairing enable the feature confirmation dialog title, appears when the user clicks the deep link to enable the feature and the tunnel is currently running -->
+    <string name="personal_pairing_enable_confirmation_dialog_title">Enable Personal Pairing</string>
+
+    <!-- Personal Pairing enable the feature confirmation dialog message, appears when the user clicks the deep link to enable the feature and the tunnel is currently running -->
+    <string name="personal_pairing_enable_confirmation_dialog_message">Enable personal pairing now? This will restart the active tunnel. Otherwise, settings will be imported and remain disabled until manually enabled.</string>
 </resources>

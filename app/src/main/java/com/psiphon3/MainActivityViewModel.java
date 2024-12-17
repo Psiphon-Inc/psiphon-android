@@ -34,10 +34,15 @@ import com.psiphon3.log.LoggingContentProvider;
 import com.psiphon3.log.LogsDataSourceFactory;
 import com.psiphon3.log.LogsLastEntryHelper;
 import com.psiphon3.log.MyLog;
+import com.psiphon3.psiphonlibrary.PersonalPairingHelper;
 import com.psiphon3.psiphonlibrary.UpstreamProxySettings;
+
+import java.util.Objects;
 
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
+import io.reactivex.Single;
+import io.reactivex.disposables.CompositeDisposable;
 
 public class MainActivityViewModel extends AndroidViewModel implements DefaultLifecycleObserver {
     private final PublishRelay<Boolean> customProxyValidationResultRelay = PublishRelay.create();
@@ -49,9 +54,12 @@ public class MainActivityViewModel extends AndroidViewModel implements DefaultLi
     private final Flowable<LogEntry> lastLogEntryFlowable;
     private final Flowable<PagedList<LogEntry>> logsPagedListFlowable;
     private final ContentObserver loggingObserver;
+    private final PersonalPairingHelper personalPairingHelper;
+    private final CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     public MainActivityViewModel(@NonNull Application application) {
         super(application);
+        personalPairingHelper = new PersonalPairingHelper(application);
         LogsLastEntryHelper logsLastEntryHelper = new LogsLastEntryHelper(application.getContentResolver());
         LogsDataSourceFactory logsDataSourceFactory = new LogsDataSourceFactory(application.getContentResolver());
 
@@ -92,6 +100,7 @@ public class MainActivityViewModel extends AndroidViewModel implements DefaultLi
     @Override
     protected void onCleared() {
         super.onCleared();
+        compositeDisposable.clear();
         getApplication().getContentResolver().unregisterContentObserver(loggingObserver);
     }
 
@@ -165,5 +174,55 @@ public class MainActivityViewModel extends AndroidViewModel implements DefaultLi
     public Flowable<String> lastLogEntryFlowable() {
         return lastLogEntryFlowable
                 .map(logEntry -> MyLog.getStatusLogMessageForDisplay(logEntry.getLogJson(), getApplication()));
+    }
+
+    public Flowable<Boolean> personalPairingEnabledFlowable() {
+        return personalPairingHelper.observePersonalPairingEnabled();
+    }
+
+    public Single<PersonalPairingHelper.ImportResult> handlePersonalPairingData(
+            String input,
+            Flowable<TunnelState> tunnelState) {
+        return personalPairingHelper.handleImport(input, tunnelState);
+    }
+
+    public void confirmPersonalPairingImport(PersonalPairingHelper.PersonalPairingData data, boolean enableSetting) {
+        personalPairingHelper.confirmImport(data, enableSetting);
+    }
+
+    public void setPersonalPairingState(boolean isEnabled, @NonNull PersonalPairingHelper.PersonalPairingData data) {
+        personalPairingHelper.setPersonalPairingState(isEnabled, data);
+    }
+
+    public Flowable<PersonalPairingHelper.PersonalPairingState> observePersonalPairingState() {
+        return personalPairingHelper.observePersonalPairingState()
+                .distinctUntilChanged();
+    }
+
+    // Keep track of the last known pairing state to determine when tunnel restart is needed
+    private PersonalPairingHelper.PersonalPairingState lastKnownPersonalPairingState;
+
+
+    // Observes pairing state changes and triggers tunnel restart when necessary. Restart occurs when:
+    // - Pairing is enabled/ disabled
+    // - Compartment ID changes while pairing is enabled
+    // returns a flowable that emits true when a restart is needed
+    public Flowable<Boolean> pairingStateRestartTunnelFlowable() {
+        return observePersonalPairingState()
+                .map(currentState -> {
+                    boolean shouldRestart = false;
+
+                    if (lastKnownPersonalPairingState != null) {
+                        boolean enableChanged = lastKnownPersonalPairingState.enabled != currentState.enabled;
+                        boolean compartmentChanged = lastKnownPersonalPairingState.enabled && currentState.enabled &&
+                                !Objects.equals(lastKnownPersonalPairingState.data.compartmentId, currentState.data.compartmentId);
+
+                        shouldRestart = enableChanged || compartmentChanged;
+                    }
+
+                    lastKnownPersonalPairingState = currentState;
+                    return shouldRestart;
+                })
+                .filter(shouldRestart -> shouldRestart); // Only emit when restart is needed
     }
 }
