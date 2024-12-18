@@ -99,7 +99,6 @@
                     android:id="@+id/personalPairingToggle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    app:switchPadding="12dp"
                     android:text="@string/label_personal_pairing_settings"
                     android:textSize="16sp"
                     android:padding="8dp" />
