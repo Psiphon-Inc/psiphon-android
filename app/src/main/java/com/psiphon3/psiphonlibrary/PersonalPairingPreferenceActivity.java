@@ -152,12 +152,14 @@ public class PersonalPairingPreferenceActivity extends LocalizedActivities.AppCo
                 enabledPref.setChecked(false);
             }
 
-            // Update summaries - just show the current values
-            String compartmentId = compartmentIdPref.getText();
-            compartmentIdPref.setSummary(!TextUtils.isEmpty(compartmentId) ? compartmentId : null);
+            // Update compartment ID and alias summaries if the compartment ID is set, otherwise show the default summary
+            if (hasCompartmentId) {
+                String compartmentId = compartmentIdPref.getText();
+                compartmentIdPref.setSummary(!TextUtils.isEmpty(compartmentId) ? compartmentId : null);
 
-            String name = aliasPref.getText();
-            aliasPref.setSummary(!TextUtils.isEmpty(name) ? name.replace("\n", " ") : null);
+                String name = aliasPref.getText();
+                aliasPref.setSummary(!TextUtils.isEmpty(name) ? name.replace("\n", " ") : null);
+            }
         }
 
         private void showToast(@StringRes int messageId, int toastLength) {
