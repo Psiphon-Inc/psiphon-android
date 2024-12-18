@@ -201,11 +201,14 @@
     <!-- Status summary appearing in the app settings below the Personal Pairing preference indicating that the feature is disabled -->
     <string name="preference_summary_personal_pairing_disabled">Disabled</string>
 
+    <!-- Personal Pairing preference screen title -->
+    <string name="personal_pairing_screen_title">Connect through a trusted peer\'s Conduit station for enhanced privacy and access. You\'ll need a pairing link to get started.</string>
+
     <!-- Personal Pairing Enable checkbox title -->
     <string name="personal_pairing_enable_title">Enable Personal Pairing</string>
 
     <!-- Personal Pairing Enable checkbox summary -->
-    <string name="personal_pairing_enable_summary">Connect to your personal peer</string>
+    <string name="personal_pairing_enable_summary">Connect via Conduit station</string>
 
     <!-- Import Pairing URL button title -->
     <string name="personal_pairing_import_title">Import pairing URL</string>
