@@ -1105,10 +1105,14 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 .setIcon(R.drawable.ic_psiphon_alert_notification)
                 .setTitle(R.string.personal_pairing_enable_confirmation_dialog_title)
                 .setView(dialogView)
-                .setPositiveButton(R.string.lbl_yes, (dialog, which) ->
-                        viewModel.confirmPersonalPairingImport(data, true))
-                .setNegativeButton(R.string.lbl_no, (dialog, which) ->
-                        viewModel.confirmPersonalPairingImport(data, false))
+                .setPositiveButton(R.string.lbl_yes, (dialog, which) -> {
+                    viewModel.confirmPersonalPairingImport(data, true);
+                    showToast(R.string.personal_pairing_data_import_success);
+                })
+                .setNegativeButton(R.string.lbl_no, (dialog, which) -> {
+                    viewModel.confirmPersonalPairingImport(data, false);
+                    showToast(R.string.personal_pairing_data_import_success);
+                })
                 .show();
     }
 
