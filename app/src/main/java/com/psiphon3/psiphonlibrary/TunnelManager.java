@@ -1375,7 +1375,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
 
             // Set the personal pairing config if config has a non-empty personal pairing compartment ID
             if (!TextUtils.isEmpty(tunnelConfig.personalPairingCompartmentId)) {
-                json.put("PersonalPairingCompartmentId", tunnelConfig.personalPairingCompartmentId);
+                json.put("InproxyClientPersonalCompartmentID", tunnelConfig.personalPairingCompartmentId);
             }
 
             return json.toString();
