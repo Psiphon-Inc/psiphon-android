@@ -27,4 +27,8 @@
         android:title="@string/personal_pairing_alias_title"
         android:summary="@string/personal_pairing_alias_summary" />
 
+    <Preference
+        android:key="@string/personalPairingResetPreference"
+        android:title="@string/personal_pairing_reset_title"
+        android:summary="@string/personal_pairing_reset_summary"/>
 </PreferenceScreen>

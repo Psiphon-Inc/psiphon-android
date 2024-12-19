@@ -22,10 +22,13 @@ package com.psiphon3.psiphonlibrary;
 import android.app.AlertDialog;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.InputFilter;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
@@ -62,6 +65,7 @@ public class PersonalPairingPreferenceActivity extends LocalizedActivities.AppCo
         private Preference importPref;
         private EditTextPreference compartmentIdPref;
         private EditTextPreference aliasPref;
+        private Preference resetPref;
         private Toast currentToast;
 
         @Override
@@ -75,6 +79,7 @@ public class PersonalPairingPreferenceActivity extends LocalizedActivities.AppCo
             importPref = preferences.findPreference(getString(R.string.personalPairingImportPreference));
             compartmentIdPref = preferences.findPreference(getString(R.string.personalPairingCompartmentIdPreference));
             aliasPref = preferences.findPreference(getString(R.string.personalPairingAliasPreference));
+            resetPref = preferences.findPreference(getString(R.string.personalPairingResetPreference));
 
             // Set initial values from current preferences
             final PreferenceGetter preferenceGetter = getPreferenceGetter();
@@ -107,6 +112,12 @@ public class PersonalPairingPreferenceActivity extends LocalizedActivities.AppCo
                 return true;
             });
 
+            // Set up reset click listener
+            resetPref.setOnPreferenceClickListener(preference -> {
+                showResetDialog();
+                return true;
+            });
+
             updatePersonalPairingPreferencesUI();
         }
 
@@ -133,6 +144,64 @@ public class PersonalPairingPreferenceActivity extends LocalizedActivities.AppCo
                     .show();
         }
 
+        private void showResetDialog() {
+            String compartmentId = compartmentIdPref.getText();
+
+            // Guard against empty ID
+            if (compartmentId == null || compartmentId.isEmpty()) {
+                showToast(R.string.personal_pairing_reset_error, Toast.LENGTH_SHORT);
+                return;
+            }
+
+            // Determine how many characters to request
+            int charsToRequest = Math.min(compartmentId.length(), 4);
+            String lastChars = compartmentId.substring(compartmentId.length() - charsToRequest);
+
+            View dialogView = LayoutInflater.from(getContext())
+                    .inflate(R.layout.dialog_reset_pairing, null);
+
+            TextView messageText = dialogView.findViewById(R.id.delete_message);
+            TextView symbolsText = dialogView.findViewById(R.id.delete_symbols);
+
+            messageText.setText(getString(R.string.personal_pairing_delete_message, charsToRequest));
+            symbolsText.setText(lastChars);
+
+            EditText deleteInput = dialogView.findViewById(R.id.delete_input);
+            deleteInput.setFilters(new InputFilter[] { new InputFilter.LengthFilter(charsToRequest) });
+
+            AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                    .setTitle(R.string.personal_pairing_reset_dialog_title)
+                    .setView(dialogView)
+                    .setPositiveButton(R.string.reset_button, null) // Set listener later to prevent auto-dismiss
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .create();
+
+            dialog.setOnShowListener(dialogInterface -> {
+                Button button = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+                button.setOnClickListener(view -> {
+                    String input = deleteInput.getText().toString();
+                    if (lastChars.equals(input)) {
+                        resetPairingPreferences();
+                        showToast(R.string.personal_pairing_reset_success, Toast.LENGTH_SHORT);
+                        dialog.dismiss();
+                    } else {
+                        showToast(R.string.personal_pairing_reset_invalid, Toast.LENGTH_SHORT);
+                    }
+                });
+            });
+
+            dialog.show();
+        }
+
+        private void resetPairingPreferences() {
+            compartmentIdPref.setText("");
+            compartmentIdPref.setSummary(R.string.personal_pairing_compartment_id_summary);
+            aliasPref.setText("");
+            aliasPref.setSummary(R.string.personal_pairing_alias_summary);
+            enabledPref.setChecked(false);
+            PersonalPairingHelper.resetPersonalPairingPreferences(getContext());
+        }
+
         private void updatePairingData(PersonalPairingHelper.PersonalPairingData data) {
             compartmentIdPref.setText(data.compartmentId);
             aliasPref.setText(data.alias);
@@ -145,6 +214,8 @@ public class PersonalPairingPreferenceActivity extends LocalizedActivities.AppCo
 
             // Update preference states
             aliasPref.setEnabled(hasCompartmentId); // Keep editable if compartment ID is set even if the feature is disabled
+            resetPref.setEnabled(hasCompartmentId);
+
             compartmentIdPref.setEnabled(isEnabled && hasCompartmentId);
 
             // If no compartment ID, ensure feature is disabled

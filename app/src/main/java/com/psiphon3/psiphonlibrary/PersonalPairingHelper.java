@@ -280,4 +280,12 @@ public class PersonalPairingHelper {
     public void confirmImport(PersonalPairingData data, boolean enableSetting) {
         setPersonalPairingState(enableSetting, data);
     }
+
+    // Reset all personal pairing preferences
+    public static void resetPersonalPairingPreferences(Context context) {
+        AppPreferences prefs = new AppPreferences(context);
+        prefs.remove(context.getString(R.string.personalPairingEnabledPreference));
+        prefs.remove(context.getString(R.string.personalPairingCompartmentIdPreference));
+        prefs.remove(context.getString(R.string.personalPairingAliasPreference));
+    }
 }

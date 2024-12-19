@@ -275,4 +275,31 @@
 
     <!-- Personal Pairing enable the feature confirmation dialog message, appears when the user clicks the deep link to enable the feature and the tunnel is currently running -->
     <string name="personal_pairing_enable_confirmation_dialog_message">Enable personal pairing now? This will restart the active tunnel. Otherwise, settings will be imported and remain disabled until manually enabled in the application settings.</string>
+
+    <!-- Personal Pairing clickable setting title to reset (remove) the pairing configuration -->
+    <string name="personal_pairing_reset_title">Reset Personal Pairing</string>
+
+    <!-- Personal Pairing clickable setting summary to reset (remove) the pairing configuration -->
+    <string name="personal_pairing_reset_summary">Remove this Personal Pairing configuration permanently</string>
+
+    <!-- Personal Pairing reset confirmation dialog title -->
+    <string name="personal_pairing_reset_dialog_title">Reset Personal Pairing</string>
+
+    <!-- Personal Pairing reset confirmation input field hint -->
+    <string name="personal_pairing_delete_hint">Enter symbols to confirm</string>
+
+    <!-- Personal Pairing reset confirmation dialog message, preserve the %d placeholder for the number of symbols to enter, the symbols will be shown below -->
+    <string name="personal_pairing_delete_message">To remove this Personal Pairing configuration, enter the last %d symbols of the Pairing ID:</string>
+
+    <!-- Personal Pairing reset operation error message -->
+    <string name="personal_pairing_reset_error">Unable to reset configuration</string>
+
+    <!-- Personal Pairing reset operation error message when the user enters incorrect confirmation symbols -->
+    <string name="personal_pairing_reset_invalid">Please enter correct confirmation symbols</string>
+
+    <!-- Personal Pairing reset operation success message -->
+    <string name="personal_pairing_reset_success">Configuration reset</string>
+
+    <!-- Generic reset button label -->
+    <string name="reset_button">Reset</string>
 </resources>
