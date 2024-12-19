@@ -26,6 +26,7 @@ import android.text.InputFilter;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -175,6 +176,18 @@ public class PersonalPairingPreferenceActivity extends LocalizedActivities.AppCo
                     .setPositiveButton(R.string.reset_button, null) // Set listener later to prevent auto-dismiss
                     .setNegativeButton(android.R.string.cancel, null)
                     .create();
+
+            // Allow pressing enter to submit
+            deleteInput.setOnEditorActionListener((v, actionId, event) -> {
+                if (actionId == EditorInfo.IME_ACTION_DONE) {
+                    Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+                    if (positiveButton != null) {
+                        positiveButton.performClick();
+                    }
+                    return true;
+                }
+                return false;
+            });
 
             dialog.setOnShowListener(dialogInterface -> {
                 Button button = dialog.getButton(AlertDialog.BUTTON_POSITIVE);

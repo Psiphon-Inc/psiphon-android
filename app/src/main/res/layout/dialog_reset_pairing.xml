@@ -28,6 +28,7 @@
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/delete_input"
+            android:imeOptions="actionDone"
             android:hint="@string/personal_pairing_delete_hint"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
