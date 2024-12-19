@@ -35,6 +35,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.ViewFlipper;
 
+import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -164,16 +165,20 @@ public class HomeTabFragment extends Fragment {
     }
 
     private void updateStatusUI(TunnelState tunnelState) {
+        @DrawableRes int statusIconResId;
         if (tunnelState.isRunning()) {
             if (tunnelState.connectionData().isConnected()) {
-                statusViewImage.setImageResource(R.drawable.status_icon_connected);
+                statusIconResId = tunnelState.connectionData().personalPairingEnabled() ?
+                        R.drawable.status_icon_connected_pp : R.drawable.status_icon_connected;
             } else {
-                statusViewImage.setImageResource(R.drawable.status_icon_connecting);
+                statusIconResId = tunnelState.connectionData().personalPairingEnabled() ?
+                        R.drawable.status_icon_connecting_pp : R.drawable.status_icon_connecting;
             }
         } else {
             // the tunnel state is either unknown or not running
-            statusViewImage.setImageResource(R.drawable.status_icon_disconnected);
+            statusIconResId = R.drawable.status_icon_disconnected;
         }
+        statusViewImage.setImageResource(statusIconResId);
     }
 
     private void loadEmbeddedWebView(String url) {

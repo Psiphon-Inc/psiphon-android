@@ -298,6 +298,7 @@ public class TunnelServiceInteractor {
         if (vpnApps != null) {
             tunnelState.vpnApps = vpnApps;
         }
+        tunnelState.isPersonalPairingMode = data.getBoolean(TunnelManager.DATA_TUNNEL_STATE_IS_PERSONAL_PAIRING_MODE);
         return tunnelState;
     }
 
@@ -352,6 +353,9 @@ public class TunnelServiceInteractor {
                                 .setHomePages(state.homePages)
                                 .setVpnMode(state.vpnMode)
                                 .setVpnApps(state.vpnApps)
+                                .setVpnMode(state.vpnMode)
+                                .setVpnApps(state.vpnApps)
+                                .setPersonalPairingEnabled(state.isPersonalPairingMode)
                                 .build();
                         tunnelState = TunnelState.running(connectionData);
                     } else {
