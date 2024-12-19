@@ -264,6 +264,13 @@
     <!-- Header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
     <string name="PaymentChooserActivity.UsingFreePlan">Vous utilisez l’abonnement gratuit, financé par des publicités, à vitesse limitée et port restreint. Vous pouvez continuer à utiliser cet abonnement ou le surclasser vers l’un de nos abonnements supérieurs.</string>
 
+    <!-- Alternative header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon n\'est plus gratuit dans votre région. Veuillez passer à l\'un de nos forfait premium pour continuer à utiliser le service</string>
+
+    <!-- Common description text for all time passes. A time pass is a single use license that is valid for a certain
+    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="PaymentChooserActivity.TimepassCommonDescription">Vitesse illimitée, sans interruption, avec des ports illimités pour chaque achat de time pass</string>
+
     <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., '7-day pass - CA$3.99' -->
     <string name="PaymentChooserActivity.TimepassTitlePrice7Text">Accès de 7 jours – %s</string>
@@ -283,9 +290,17 @@
     The string format argument is the formatted price and currency as specified by current locale, e.g., 'Basic - CA$5.99 monthly' -->
     <string name="PaymentChooserActivity.LimitedSubscriptionTitlePriceText">De base – %s mensuellement</string>
 
+    <!-- Description text on the button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+         Appears below 'Basic - CA$5.99 monthly' label in smaller font. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">Sans interruption, haut débit jusqu\'à 5 Mb/s avec des ports illimités</string>
+
     <!-- Label for button that user will click in order to buy an unlimited subscription for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., 'Unlimited - CA$11.99 monthly' -->
     <string name="PaymentChooserActivity.UnlimitedSubscriptionTitlePriceText">Illimité – %s mensuellement</string>
+
+    <!-- Description text on the button that user will click in order to buy an unlimited subscription for Psiphon Pro.
+         Appears below 'Unlimited - CA$11.99 monthly' label in smaller font-->
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">Vitesse illimitée, sans interruption, avec des ports illimités</string>
 
     <!-- Text Label that appears on the subscription buying button for Psiphon Pro in case if there
          is a trial period available for that subscription. The formated string is the length of the
@@ -468,47 +483,108 @@
     <!-- Text that appears above the "Create account" button on the PsiCash sign in screen. -->
     <string name="psicash_protect_psicash_text">Protégez votre PsiCash !</string>
 
+    <!-- Explanation text that appears below "Create account" button on the PsiCash sign in screen.
+    Do not translate or transliterate terms PsiCash or Psiphon, IMPORTANT: preserve the string %s#psicash-account as is, it will be replaced by the proper URL such as https://psiphon.ca/faq.html#psicash-account
+    and 'linkified' programmatically in the app. -->
+    <string name="psicash_create_account_explanation_text_updated">La création d\'un compte PsiCash vous permettra de conserver votre PsiCash si vous réinstallez l\'application ou si vous utilisez Psiphon sur un autre appareil. Rendez-vous sur %s#psicash-account pour en savoir plus.</string>
+
     <!-- Text that appears above the "Log in" button on the PsiCash sign in screen. -->
     <string name="psicash_already_have_account_text">Avez-vous déjà un compte?</string>
 
     <!-- Clickable text on the home tab that appears on the home tab if user has an active subscription. Clicking the link opens 'Manage Subscription' screen of the Google Play app -->
-    <string name="manage_my_subscription_link_text">Gérer vos abonnements</string>
+    <string name="manage_my_subscription_link_text">Gérer votre abonnement</string>
 
     <!-- Do not translate or transliterate 'Psiphon'. A short message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
     <string name="notification_payment_required_text">Psiphon n\'est plus gratuit dans votre région.</string>
 
     <!-- Do not translate or transliterate 'Psiphon'. A longer message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
-    <string name="notification_payment_required_text_big">Psiphon n\'est plus gratuit dans votre pays, appuyez ici pour en apprendre plus.</string>
+    <string name="notification_payment_required_text_big">Psiphon n\'est plus gratuit dans votre région, cliquez ici pour en savoir plus.</string>
 
     <!--Title of button that disconnects the VPN. -->
-    <string name="btn_disconnect">Se déconnecter</string>
+    <string name="btn_disconnect">Déconnexion</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe.-->
+    <string name="purchase_required_prompt_title">Comment accéder à Psiphon dans votre région ?</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe.-->
+    <string name="purchase_required_prompt_body">L\'accès à Psiphon dans votre région nécessite désormais votre soutien. Contibuez à maintenir Psiphon accessible aux personnes qui en ont le plus besoin en vous abonnant, en achetant un Speed Boost ou en utilisant la nouvelle application mobile Conduit.</string>
 
     <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_hr">1 heure</string>
 
     <!-- Label on a button. Clicking this button will buy 1 day (24hr) of Speed Boost. Translate number as well. -->
-    <string name="speed_boost_product_1_day">1  jour</string>
+    <string name="speed_boost_product_1_day">1 jour</string>
 
     <!-- Label on a button. Clicking this button will buy 1 week (7days) of Speed Boost. Translate number as well. -->
-    <string name="speed_boost_product_1_week">1 semaine</string>
+    <string name="speed_boost_product_1_week">1 semaine</string>
 
     <!-- Label on a button. Clicking this button will buy 1 months (31days) of Speed Boost. Translate number as well. -->
-    <string name="speed_boost_product_1_month">1 mois</string>
+    <string name="speed_boost_product_1_month">1 mois</string>
+
+    <!-- The 'days' part in a date interval string as in "10 d 13 hr". Reorder the format specifier '%d' if in the translated language ordering of time unit and amount is different from English. -->
+    <plurals name="speed_boost_left_days">
+        <item quantity="one">%d j</item>
+        <item quantity="many">%d j</item>
+        <item quantity="other">%d j</item>
+    </plurals>
+
+    <!-- The 'hours' part in a date interval string as in "9 d 11 hr". Reorder the format specifier '%d' if in the translated language ordering of time unit and amount is different from English. -->
+    <plurals name="speed_boost_left_hours">
+        <item quantity="one">%d h</item>
+        <item quantity="many">%d h</item>
+        <item quantity="other">%d h</item>
+    </plurals>
 
     <!-- This format string specifies the order of 'days' and 'hours' in the date interval string where the first argument is 'days' and the seconds is 'hours'. Examples: "20 d 11 hr", "1 d 2 hr", etc.
      Reorder the format specifiers '%1$s' and '%2$s' if in the translated language ordering 'days' and 'hours' in date interval string is different from English. -->
-    <string name="speed_boost_left_day_hour_ordered">%1$s%2$s</string>
+    <string name="speed_boost_left_day_hour_ordered">%1$s %2$s</string>
 
     <!-- Do not translate or transliterate 'PsiCash'. PsiCash is a unit of currency here. Reorder the format specifier '%s' if in the translated language ordering of unit and amount is different from English. -->
-    <string name="psicash_price_format">%sPsiCash</string>
+    <string name="psicash_price_format">%s PsiCash</string>
+
+    <!-- Icon description for the Conduit app icon, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_icon_description">Icône de l\'application Conduit</string>
+
+    <!-- Icon description for the Google Play app icon, do not translate or transliterate 'Google Play'. -->
+    <string name="google_play_icon_description">Icône Google Play</string>
+
+    <!-- Title for the Install Conduit action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_install_title">Installer Conduit</string>
+
+    <!-- Description text for the clickable Conduit app card, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_card_description">Lancez l\'application mobile Conduit et restez connecté à Psiphon gratuitement</string>
+
+    <!-- Clickable text label to open the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="launch_conduit_action">Lancer Conduit</string>
 
     <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
     <string name="subscribe_card_title">S’abonner</string>
+
+    <!-- Description text under the Subscribe clickable item -->
+    <string name="subscribe_card_description">Achetez un abonnement pour un accès ininterrompu à Psiphon</string>
 
     <!-- Clickable text label, clicking this opens a dialog with various speed boost options available for purchase.
     'Speed Boost' is a reward that can be purchased with PsiCash credit.
     It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
     'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_card_title">Survitesse</string>
+    <string name="speed_boost_card_title">Speed Boost</string>
 
-    </resources>
+    <!-- Description text under the Speed Boost clickable item -->
+    <string name="speed_boost_card_description">Achetez un Speed Boost avec votre PsiCash pour un accès chronométré à Psiphon</string>
+
+    <!-- Clickable text label to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_title">Mettre à jour Psiphon Pro</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_update_title">Mettre à jour Conduit</string>
+
+    <!-- Description for the 'Update' Action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_update_description">Mettre à jour la dernière version de Conduit pour accéder à cette fonctionnalité</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_action_title">Mettre à jour Psiphon Pro</string>
+
+    <!-- Description for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_action_description">Mettre à jour la dernière version de Psiphon Pro pour accéder à cette fonctionnalité</string>
+
+</resources>

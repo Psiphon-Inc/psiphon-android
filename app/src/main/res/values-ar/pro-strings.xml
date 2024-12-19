@@ -134,7 +134,7 @@
 
     <!-- Alert error message informing user that a recoverable error has occurred while trying to log in into PsiCash account.
     Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cannot_login_recoverable_message">لقد أجابك خادم PsiCash بحدوث خطأ أثناء محاولة ولوجك إليه. يُرجى المحاولة مرة أخرى لاحقا.</string>
+    <string name="psicash_cannot_login_recoverable_message">لقد أجابك خادم PsiCash بحدوث خطأ أثناء محاولة دخولك  إليه. يُرجى المحاولة مرة أخرى لاحقا.</string>
 
     <!-- Alert error message informing user that a critical error has occurred while trying to make a Speed Boost purchase with PsiCash and encouraging the user to
     send feedback diagnostics.  Note: 'PsiCash' should not be translated or transliterated. -->
@@ -149,7 +149,7 @@
     is restricted in size. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed. -->
-    <string name="speed_boost_active_label">السرعة الخارقة نشطة</string>
+    <string name="speed_boost_active_label">تعزيز السرعة مفعّل</string>
 
     <!-- Alert dialog action button caption. Clicking this button dismisses the alert dialog, keep concise -->
     <string name="psicash_snackbar_action_ok">موافق</string>
@@ -161,13 +161,13 @@
     'Speed Boost' is a reward that can be purchased with PsiCash credit.
     It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
     'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_button_caption">زيادة السرعة</string>
+    <string name="speed_boost_button_caption">Speed Boost</string>
 
     <!-- Text next to the button indicating to the user that they will earn PsiCash if they watch a video advertisement. -->
     <string name="psicash_purchase_free_description">شاهد فيديو واربح</string>
 
     <!-- Text next to the button indicating to the user that the rewarded video advertisement is only available when they are not connected to Psiphon. -->
-    <string name="psicash_purchase_free_not_available_not_running_description">يجب قطع الاتصال مع سايفون لمشاهدة فيديو وربح PsiCash</string>
+    <string name="psicash_purchase_free_not_available_not_running_description">يجب قطع الاتصال مع Psiphon لمشاهدة فيديو وربح PsiCash</string>
 
     <!-- Title of the button that loads and plays a video ad that rewards users with PsiCash -->
     <string name="psicash_purchase_free_button_price">مجانًا</string>
@@ -180,31 +180,31 @@
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed. Do not translate or transliterate word Psiphon -->
-    <string name="speed_boost_unavailable">يجب الاتصال بسايفون من أجل تفعيل وضع زيادة السرعة، اضغط على الزر بالأسفل وحاول مجددًا.</string>
+    <string name="speed_boost_unavailable">يجب الاتصال بـ Psiphon من أجل تفعيل وضع تعزيز السرعة، اضغط على الزر بالأسفل وحاول مجددًا.</string>
 
     <!-- Title of the button that is presented next to 'Speed Boost is unavailable when you are not connected to Psiphon' message,
         Also appears on the PsiCash account 'log out' confirmation dialog when the user tries to log out of their PsiCash account while the Psiphon tunnel is not running.
         Do not translate or transliterate word Psiphon -->
-    <string name="connect_to_psiphon_button_text">الاتصال بسايفون</string>
+    <string name="connect_to_psiphon_button_text">الاتصال بـ Psiphon</string>
 
     <!-- A title message to the premium user (a user with a subscription when they are trying to navigate to PsiCash and Speed Boost screen
         Do not translate or transliterate words PsiCash or Psiphon -->
-    <string name="psicash_store_subscription_title">اشتراكك في سايفون يعطيك خدمة افضل!</string>
+    <string name="psicash_store_subscription_title">اشتراكك في Psiphon يعطيك خدمة افضل!</string>
 
     <!-- A description message to the premium user (a user with a subscription) when they are trying to navigate to PsiCash and Speed Boost screen.
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed.
     Do not translate or transliterate words PsiCash or Psiphon -->
-    <string name="psicash_store_subscription_description">يمنحك اشتراكك في Psiphon بالفعل Speed Boost دائمًا، لذلك لا يوجد سبب لشراء المزيد. سيتم الاحتفاظ برصيدك في PsiCash إذا قررت إلغاء اشتراكك. ‎\n\nYou يزال بإمكانك الوصول إلى إعدادات حساب PsiCash بالانتقال إلى Options &gt; المزيد من الخيارات &gt; PsiCash Account</string>
+    <string name="psicash_store_subscription_description">يمنحك اشتراكك في Psiphon دائمًا بالفعل بتعزيز السرعة Speed Boost ، لذلك لا يوجد سبب لشراء المزيد. سيتم الاحتفاظ برصيدك في PsiCash إذا قررت إلغاء اشتراكك. ‎\n\nYou لا يزال بإمكانك الوصول إلى إعدادات حساب PsiCash بالانتقال إلى Options &gt; المزيد من الخيارات &gt; PsiCash Account</string>
 
     <!-- A message to the user seen when the users are trying to navigate to PsiCash store screen while Psiphon has not finished connecting to the server
     Do not translate or transliterate words Psiphon -->
-    <string name="wait_for_psiphon_to_finish_connect_to_use_psicash_store">يُرجى الانتظار حتى يقوم سايفون بإتمام الاتصال حتى تتمكن من استخدام متجر PsiCash.</string>
+    <string name="wait_for_psiphon_to_finish_connect_to_use_psicash_store">يُرجى الانتظار حتى يقوم Psiphon بإتمام الاتصال حتى تتمكن من استخدام متجر PsiCash.</string>
 
     <!-- A message to the user indicating that their PsiCash balance is most likely out of date and needs to be refreshed by connecting to Psiphon.
     Do not translate or transliterate words PsiCash or Psiphon -->
-    <string name="psicash_out_of_date_dialog_message">رصيد PsiCash الخاص بك منتهي الصلاحية. اتصل بسايفون للتحديث.</string>
+    <string name="psicash_out_of_date_dialog_message">رصيد PsiCash الخاص بك منتهي الصلاحية. اتصل بـ  Psiphon للتحديث.</string>
 
     <!-- A title of the screen seen when the user has purchased PsiCash from PlayStore while the tunnel was not connected. In this case the purchase
     still needs to be redeemed which can only happen when they are connected to Psiphon.
@@ -214,7 +214,7 @@
     <!-- A message to the user seen when the user has purchased PsiCash from PlayStore while the tunnel was not connected. In this case the purchase
     still needs to be redeemed which can only happen when they are connected to Psiphon.
     Do not translate or transliterate word Psiphon -->
-    <string name="connect_to_psiphon_to_finalize_your_transaction">اتصل بسايفون لإكمال المعاملة.</string>
+    <string name="connect_to_psiphon_to_finalize_your_transaction">اتصل بـ  Psiphon لإكمال المعاملة.</string>
 
     <!-- PsiCash tab title where users may purchase some PsiCash from PlayStore or get it for free by watching a video ad. Do not translate or transliterate word PsiCash -->
     <string name="add_psicash_tab_title">أضف PsiCash</string>
@@ -223,7 +223,7 @@
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed. -->
-    <string name="speed_boost_tab_title">زيادة السرعة</string>
+    <string name="speed_boost_tab_title">Speed Boost</string>
 
     <!-- A message shown when the PsiCash store is not available for whatever reason. Do not translate or transliterate word PsiCash -->
     <string name="psicash_store_not_available">متجر PsiCash غير متاح</string>
@@ -232,22 +232,22 @@
     <string name="please_wait_while_we_are_finalizing_your_purchase">يُرجى الانتظار بينما نقوم بإتمام عملية الشراء الخاصة بك.</string>
 
     <!-- Generic billing error message seen by user if there is a billing problem with the PsiCash purchase. Do not translate or transliterate word PsiCash -->
-    <string name="psicash_purchase_not_available_error_message">شراء PsiCash غير متاح حاليًا. يُرجى المحالة مجددًا في وقتٍ لاحق.</string>
+    <string name="psicash_purchase_not_available_error_message">شراء PsiCash غير متاح حاليًا. يُرجى المحاولة مجددًا في وقتٍ لاحق.</string>
 
     <!-- An alert message seen by the user when they try to use one of Speed Boost options but their PsiCash balance is insufficient.
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_insufficient_balance_alert">ليس لديك ما يكفي من PsiCash لتفعيل خيار زيادة السرعة، هل تريد إضافة المزيد؟</string>
+    <string name="speed_boost_insufficient_balance_alert">ليس لديك ما يكفي من PsiCash لتفعيل خيار تعزيز السرعة، هل تريد إضافة المزيد؟</string>
 
     <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
-    <string name="disallowed_traffic_alert_notification_title">ترقية سايفون برو</string>
+    <string name="disallowed_traffic_alert_notification_title">ترقية Psiphon Pro</string>
 
     <!-- Content of the toolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
-    <string name="disallowed_traffic_alert_notification_message">التطبيقات لا تعمل؟ اضغط هنا لتحسين تجربتك مع سايفون!</string>
+    <string name="disallowed_traffic_alert_notification_message">التطبيقات لا تعمل؟ اضغط هنا لتحسين تجربتك مع Psiphon!</string>
 
     <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
-    <string name="disallowed_traffic_alert_dialog_message">هناك بعض حركات المرور الغير مدعومة بواسطة النسخة المجانية من سايفون برو. يمكن شراء اشتراك أو زيادة السرعة لإطلاق العنان لإمكانيات سايفون الكاملة.</string>
+    <string name="disallowed_traffic_alert_dialog_message">هناك بعض حركات الإنترنت غير المدعومة بالنسخة المجانية من Psiphon Pro. يمكن شراء اشتراك أو تعزيز السرعة لإطلاق العنان لإمكانيات Psiphon الكاملة.</string>
 
     <!-- Text on the button which takes user to subscription screen -->
     <string name="btn_get_subscription">اشترك</string>
@@ -256,7 +256,7 @@
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed.-->
-    <string name="btn_get_speed_boost">زيادة السرعة</string>
+    <string name="btn_get_speed_boost">Speed Boost</string>
 
     <!-- Header text appearing on the subscriptions screen when the user has a limited subscription plan. Note the use of a non-breaking space in '5 Mb/s' -->
     <string name="PaymentChooserActivity.UsingLimitedPlan">أنت الآن تستخدم الخطة الأساسية بسرعة محدودة 5&#160;Mb/s. هل ترغب في الترقية إلى الخطة الغير محدودة؟</string>
