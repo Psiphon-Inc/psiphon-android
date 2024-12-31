@@ -58,7 +58,7 @@
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through Psiphon.
     Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
     anything that indicates a fast or unrestricted speed. -->
-    <string name="psicash_transaction_insufficient_balance_message">Không đủ tài khoản để mua Tăng Tốc</string>
+    <string name="psicash_transaction_insufficient_balance_message">Không đủ số dư để mua Tăng Tốc</string>
 
     <!-- Alert error message informing user that their Speed Boost purchase request failed because they tried to make the purchase with
     an out of date product price. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network
@@ -70,13 +70,13 @@
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through Psiphon.
     Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed',
     'blast off', or anything that indicates a fast or unrestricted speed. -->
-    <string name="psicash_transaction_existing_message">Bạn đang 1 lênh mua Tăng Tốc hoạt động.</string>
+    <string name="psicash_transaction_existing_message">Bạn đang có một lệnh mua Tăng Tốc.</string>
 
     <!-- Alert error message informing user that their Speed Boost purchase request failed because they attempted to buy a product that is no longer available
     and that they should try updating or reinstalling the app. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network
     connection speed through Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
     anything that indicates a fast or unrestricted speed. -->
-    <string name="psicash_transaction_type_not_found_message">Sản phẩm Tăng Tốc không tìm thấy. Ứng dụng của bạn có thể đã lỗi thời. Xin cập nhập.</string>
+    <string name="psicash_transaction_type_not_found_message">Không tìm thấy sản phẩm Tăng Tốc. Ứng dụng của bạn có thể đã lỗi thời. Xin tìm kiếm cập nhập.</string>
 
     <!-- Alert error message informing user that their Speed Boost purchase request failed because their app has entered an invalid state and that they
     should try updating or reinstalling the app. Note: 'PsiCash' should not be translated or transliterated. -->
@@ -174,7 +174,7 @@
 
     <!-- PsiCash in-app purchase disclaimer that appears on the bottom of the screen where users can buy different amounts of PsiCash from the PlayStore.
     Do not translate or transliterate terms PsiCash or Psiphon Pro, preserve the HTML <b/> tag in <b>Creating a PsiCash account</b> if possible -->
-    <string name="psicash_store_disclaimer">QUAN TRỌNG: <b>Tạo tài khoản PsiCash</b> sẽ giúp bạn bảo vệ PsiCash của mình nếu bạn gỡ cài đặt Psiphon Pro, xóa lưu trữ ứng dụng, hay dùng Psiphon trên một thiết bị khác.</string>
+    <string name="psicash_store_disclaimer">QUAN TRỌNG: <b>Việc tạo tài khoản PsiCash</b> sẽ giúp bạn bảo vệ PsiCash của mình nếu bạn gỡ cài đặt Psiphon Pro, xóa lưu trữ ứng dụng, hay dùng Psiphon trên một thiết bị khác.</string>
 
     <!-- A message to the user indicating that they need to be connected to Psiphon in order to use Speed Boost.
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
@@ -196,7 +196,7 @@
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed.
     Do not translate or transliterate words PsiCash or Psiphon -->
-    <string name="psicash_store_subscription_description">Thuê bao Psiphon của bạn đã bao gồm Tăng Tốc thường trực, do đó không cần phải mua thêm. Số dư PsiCash sẽ được giữ lại nếu bạn quyết định hủy bỏ thuê bao. \n\nBạn vẫn có thể truy cập vào phần thiết đặt tài khoản PsiCash bằng cách vào Tùy chọn &gt; Thêm tùy chọn &gt; Tài khoản PsiCash</string>
+    <string name="psicash_store_subscription_description">Thuê bao Psiphon của bạn đã bao gồm Tăng Tốc thường trực, do đó không cần phải mua thêm. Số dư PsiCash sẽ được giữ lại nếu bạn quyết định hủy bỏ thuê bao. \n\nBạn vẫn có thể truy cập vào phần thiết đặt tài khoản PsiCash bằng cách vào Tùy chọn &gt; Thêm Tùy chọn &gt; Tài khoản PsiCash</string>
 
     <!-- A message to the user seen when the users are trying to navigate to PsiCash store screen while Psiphon has not finished connecting to the server
     Do not translate or transliterate words Psiphon -->
@@ -265,7 +265,7 @@
     <string name="PaymentChooserActivity.UsingFreePlan">Bạn đang dùng gói miễn phí, hỗ trợ bằng quảng cáo, giới hạn tốc độ, giới hạn cổng. Bạn có thể tiếp tục dùng gói này hoặc nâng cấp lên một trong những gói cao cấp của chúng tôi.</string>
 
     <!-- Alternative header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
-    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon không còn miễn phí trong vùng bạn. Xin cập nhật lên một trong những gói cao cấp của chúng tôi để tiếp tục dùng dịch vụ này.</string>
+    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon không còn miễn phí trong khu vực của bạn. Xin cập nhật lên một trong những gói cao cấp của chúng tôi để tiếp tục dùng dịch vụ này.</string>
 
     <!-- Common description text for all time passes. A time pass is a single use license that is valid for a certain
     period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
@@ -563,10 +563,10 @@
     'Speed Boost' is a reward that can be purchased with PsiCash credit.
     It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
     'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_card_title">Tăng Tốc</string>
+    <string name="speed_boost_card_title">Tăng Tốc độ</string>
 
     <!-- Description text under the Speed Boost clickable item -->
-    <string name="speed_boost_card_description">Mua một Tăng Tốc với PsiCash để có thể truy cập Psiphon trong khoảng thời gian nhất định</string>
+    <string name="speed_boost_card_description">Mua một gói Tăng Tốc độ bằng PsiCash để có thể truy cập Psiphon trong một khoảng thời gian nhất định</string>
 
     <!-- Clickable text label to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
     <string name="update_psiphon_pro_title">Nâng cấp Psiphon Pro</string>
@@ -581,6 +581,6 @@
     <string name="update_psiphon_pro_action_title">Nâng cấp Psiphon Pro</string>
 
     <!-- Description for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
-    <string name="update_psiphon_pro_action_description">Nâng cấp phiên bản mới nhất của Psiphon Pro để truy cập tính năng này</string>
+    <string name="update_psiphon_pro_action_description">Nâng cấp lên phiên bản mới nhất của Psiphon Pro để truy cập tính năng này</string>
 
 </resources>

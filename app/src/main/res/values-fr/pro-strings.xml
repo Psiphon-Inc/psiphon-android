@@ -265,11 +265,11 @@
     <string name="PaymentChooserActivity.UsingFreePlan">Vous utilisez l’abonnement gratuit, financé par des publicités, à vitesse limitée et port restreint. Vous pouvez continuer à utiliser cet abonnement ou le surclasser vers l’un de nos abonnements supérieurs.</string>
 
     <!-- Alternative header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
-    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon n\'est plus gratuit dans votre région. Veuillez passer à l\'un de nos forfait premium pour continuer à utiliser le service</string>
+    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon n\'est plus gratuit dans votre région. Veuillez passer à l\'un de nos forfaits premium pour continuer à utiliser ce service</string>
 
     <!-- Common description text for all time passes. A time pass is a single use license that is valid for a certain
     period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
-    <string name="PaymentChooserActivity.TimepassCommonDescription">Vitesse illimitée, sans interruption, avec des ports illimités pour chaque achat de time pass</string>
+    <string name="PaymentChooserActivity.TimepassCommonDescription">Vitesse illimitée, sans interruption, avec des ports sans limites pour chaque achat de time pass</string>
 
     <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., '7-day pass - CA$3.99' -->
@@ -292,7 +292,7 @@
 
     <!-- Description text on the button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
          Appears below 'Basic - CA$5.99 monthly' label in smaller font. Note the use of a non-breaking space in '5 Mb/s' -->
-    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">Sans interruption, haut débit jusqu\'à 5 Mb/s avec des ports illimités</string>
+    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">Sans interruption, haut débit jusqu\'à 5 Mb/s avec des ports sans limites</string>
 
     <!-- Label for button that user will click in order to buy an unlimited subscription for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., 'Unlimited - CA$11.99 monthly' -->
@@ -300,7 +300,7 @@
 
     <!-- Description text on the button that user will click in order to buy an unlimited subscription for Psiphon Pro.
          Appears below 'Unlimited - CA$11.99 monthly' label in smaller font-->
-    <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">Vitesse illimitée, sans interruption, avec des ports illimités</string>
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">Vitesse illimitée, sans interruption, avec des ports sans limites</string>
 
     <!-- Text Label that appears on the subscription buying button for Psiphon Pro in case if there
          is a trial period available for that subscription. The formated string is the length of the
@@ -507,7 +507,7 @@
     <string name="purchase_required_prompt_title">Comment accéder à Psiphon dans votre région ?</string>
 
     <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe.-->
-    <string name="purchase_required_prompt_body">L\'accès à Psiphon dans votre région nécessite désormais votre soutien. Contibuez à maintenir Psiphon accessible aux personnes qui en ont le plus besoin en vous abonnant, en achetant un Speed Boost ou en utilisant la nouvelle application mobile Conduit.</string>
+    <string name="purchase_required_prompt_body">L\'accès à Psiphon dans votre région nécessite désormais votre soutien. Contribuez à maintenir Psiphon accessible aux personnes qui en ont le plus besoin en vous abonnant, en achetant un Speed Boost ou en utilisant la nouvelle application mobile Conduit.</string>
 
     <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_hr">1 heure</string>
@@ -579,12 +579,12 @@
     <string name="conduit_update_title">Mettre à jour Conduit</string>
 
     <!-- Description for the 'Update' Action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
-    <string name="conduit_update_description">Mettre à jour la dernière version de Conduit pour accéder à cette fonctionnalité</string>
+    <string name="conduit_update_description">Mettre à jour la dernière version de Conduit pour accéder à cette fonction.</string>
 
     <!-- Title for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
     <string name="update_psiphon_pro_action_title">Mettre à jour Psiphon Pro</string>
 
     <!-- Description for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
-    <string name="update_psiphon_pro_action_description">Mettre à jour la dernière version de Psiphon Pro pour accéder à cette fonctionnalité</string>
+    <string name="update_psiphon_pro_action_description">Mettre à jour la dernière version de Psiphon Pro pour accéder à cette fonction</string>
 
 </resources>

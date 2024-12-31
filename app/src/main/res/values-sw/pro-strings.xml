@@ -541,10 +541,10 @@
     <string name="psicash_price_format">%sPsiCash</string>
 
     <!-- Icon description for the Conduit app icon, do not translate or transliterate 'Conduit'. -->
-    <string name="conduit_icon_description">Alama ya programu ya Conduit</string>
+    <string name="conduit_icon_description">Ikoni ya programu ya Conduit</string>
 
     <!-- Icon description for the Google Play app icon, do not translate or transliterate 'Google Play'. -->
-    <string name="google_play_icon_description">Alama ya Google Play</string>
+    <string name="google_play_icon_description">Ikoni ya Google Play</string>
 
     <!-- Title for the Install Conduit action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
     <string name="conduit_install_title">Sakinisha Conduit</string>
@@ -565,7 +565,7 @@
     'Speed Boost' is a reward that can be purchased with PsiCash credit.
     It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
     'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_card_title">Kiongeza kasi</string>
+    <string name="speed_boost_card_title">Speed Boost</string>
 
     <!-- Description text under the Speed Boost clickable item -->
     <string name="speed_boost_card_description">Nunua Speed Boost ukitumia PsiCash yako ili uweze kupata Psiphon kwa wakati</string>
@@ -574,13 +574,13 @@
     <string name="update_psiphon_pro_title">Boresha Psiphon Pro</string>
 
     <!-- Title for the 'Update' action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
-    <string name="conduit_update_title">Boresha Conduit</string>
+    <string name="conduit_update_title">Sasisha Conduit</string>
 
     <!-- Description for the 'Update' Action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
     <string name="conduit_update_description">Pata toleo jipya zaidi la Conduit ili kupata kipengele hiki</string>
 
     <!-- Title for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
-    <string name="update_psiphon_pro_action_title">Boresha Psiphon Pro</string>
+    <string name="update_psiphon_pro_action_title">Sasisha Psiphon Pro</string>
 
     <!-- Description for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
     <string name="update_psiphon_pro_action_description">Pata toleo jipya zaidi la Psiphon Pro ili kufikia kipengele hiki</string>
