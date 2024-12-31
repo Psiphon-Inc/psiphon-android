@@ -67,15 +67,18 @@ public class BillingUtils {
                 errors.zipWith(
                         Flowable.range(1, maxRetries + 1),
                         (error, attempt) -> {
-                            if (isTransientError(error) && attempt <= maxRetries) {
-                                return attempt; // continue retrying
-                            } else {
-                                throw (error instanceof Exception)
-                                        ? (Exception) error // Propagate non-transient errors
-                                        : new RuntimeException("Non-transient error or max retries reached", error);
+                            // If we have reached the maximum number of retries, wrap the original error in a RuntimeException and return it
+                            if (attempt > maxRetries) {
+                                return Flowable.error(new RuntimeException("Max retries (" + maxRetries + ") reached", error));
                             }
+                            // If the error is transient, continue retrying
+                            if (isTransientError(error)) {
+                                return Flowable.timer(attempt * 500L, TimeUnit.MILLISECONDS);
+                            }
+                            // Otherwise, return the error as is
+                            return Flowable.error(error);
                         }
-                ).flatMap(attempt -> Flowable.timer(attempt * 500L, TimeUnit.MILLISECONDS))
+                ).flatMap(x -> x)
         );
     }
 

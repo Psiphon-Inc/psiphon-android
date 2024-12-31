@@ -233,8 +233,6 @@ public class GooglePlayBillingHelper {
             return;
         }
 
-        List<Completable> acknowledgeCompletables = new ArrayList<>();
-
         // Iterate from back to front, making it safe to remove purchases
         for (int i = purchaseList.size() - 1; i >= 0; i--) {
             Purchase purchase = purchaseList.get(i);
@@ -253,18 +251,14 @@ public class GooglePlayBillingHelper {
                 continue;
             }
 
-            // From Google sample app:
-            // If you do not acknowledge a purchase, the Google Play Store will provide a refund to the
-            // users within a few days of the transaction. Therefore you have to implement
-            // [BillingClient.acknowledgePurchaseAsync] inside your app.
-            acknowledgeCompletables.add(
-                    acknowledgePurchase(purchase)
-                            .onErrorResumeNext(error -> {
-                                MyLog.e("GooglePlayBillingHelper::processPurchases: failed to acknowledge purchase: " + purchase + ", error: " + error);
-                                // Complete to allow other acknowledgments to proceed
-                                return Completable.complete();
-                            })
-            );
+            // From Google developer documentation:
+            // Warning! All purchases require acknowledgement. Failure to acknowledge a purchase will result in that purchase being refunded.
+            //
+            // https://developer.android.com/google/play/billing/integrate#notifying-google
+            // After your app has granted entitlement to the user and notified them about the successful transaction, your app needs to notify
+            // Google that the purchase was successfully processed. This is done by acknowledging the purchase and must be done within three
+            // days to ensure the purchase isn't automatically refunded and entitlement revoked.
+            compositeDisposable.add(acknowledgePurchase(purchase).subscribe());
 
             // Check if this purchase is an expired timepass which needs to be consumed
             if (IAB_TIMEPASS_SKUS_TO_DAYS.containsKey(purchase.getSkus().get(0))) {
@@ -274,22 +268,9 @@ public class GooglePlayBillingHelper {
             }
         }
 
-        // Wait for all acknowledgePurchase subscriptions to complete
-        compositeDisposable.add(Completable.merge(acknowledgeCompletables)
-                // OLD COMMENT:
-                // If the initial purchase list contains not acknowledged purchases we need to
-                // update it since the purchases were just acknowledged.
-                // BillingClient.acknowledgePurchase does not yield the modified purchase after
-                // AcknowledgePurchaseResponseListener is called and the only way to do it currently
-                // is to query local purchases again, see https://stackoverflow.com/a/56468423
-
-                // NEW COMMENT:
-                // We are reverting to old behavior where the purchases would get acknowledged without
-                // bubbling up the error because BillingClient.acknowledgePurchase often results in an error
-                // due to the server connection problems. Since we call processPurchases often in the
-                // app we are assuming all purchases will get acknowledged eventually. The state of
-                // purchase.isAcknowledged field should not stop us from redeeming a purchase.
-                .subscribe(() -> purchaseStateBehaviorRelay.accept(PurchaseState.create(purchaseList))));
+        // Update the purchase state without waiting for the acknowledgment or consumption to complete.
+        // We call processPurchases() often enough to ensure that the purchases are eventually acknowledged and consumed.
+        purchaseStateBehaviorRelay.accept(PurchaseState.create(purchaseList));
     }
 
     public Single<List<Purchase>> getPurchases() {
@@ -429,6 +410,8 @@ public class GooglePlayBillingHelper {
                 .build();
 
         // Wrap the main logic with BillingUtils.withRetry
+        // Note that acknowledge operation is important since failing to acknowledge a purchase will result in
+        // that purchase being refunded. Therefore, we will retry it up to 5 times.
         return BillingUtils.withRetry(
                         connectionCompletable.andThen(Completable.create(emitter -> {
                             BillingClient client = billingClientManager.getBillingClient();
@@ -444,9 +427,10 @@ public class GooglePlayBillingHelper {
                                 }
                             });
                         })).toFlowable(), // Convert Completable to Flowable for retry logic
-                        3 // Retry up to 3 times
+                        5 // Retry up to 5 times
                 )
                 .ignoreElements() // Convert back to Completable
+                .doOnComplete(() -> MyLog.i("GooglePlayBillingHelper::acknowledgePurchase success for SKU: " + purchase.getSkus().get(0)))
                 .doOnError(err -> MyLog.e("GooglePlayBillingHelper::acknowledgePurchase error: " + err));
     }
 
@@ -482,6 +466,7 @@ public class GooglePlayBillingHelper {
                         5 // Retry up to 5 times
                 )
                 .firstOrError() // Convert back to Single
+                .doOnSuccess(__ -> MyLog.i("GooglePlayBillingHelper::consumePurchase success for SKU: " + purchase.getSkus().get(0)))
                 .doOnError(err -> MyLog.e("GooglePlayBillingHelper::consumePurchase error: " + err));
     }
 
