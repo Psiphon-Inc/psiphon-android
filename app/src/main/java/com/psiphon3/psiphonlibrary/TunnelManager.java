@@ -1919,68 +1919,78 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     }
                 }
             }
-            if (m_tunnelConfigAuthorizations != null && m_tunnelConfigAuthorizations.size() > 0) {
-                // Copy immutable config authorizations snapshot and build a list of not accepted
-                // authorizations by removing all elements of the accepted authorizations list.
-                //
-                // NOTE that the tunnel core does not re-read config values in case of automatic
-                // reconnects so the m_tunnelConfigAuthorizations snapshot may contain authorizations
-                // already removed from the persistent authorization storage.
-                List<Authorization> notAcceptedAuthorizations = new ArrayList<>(m_tunnelConfigAuthorizations);
-                if (acceptedAuthorizations.size() > 0) {
-                    notAcceptedAuthorizations.removeAll(acceptedAuthorizations);
-                }
 
-                // Try to remove all not accepted authorizations from the persistent storage
-                // NOTE: empty list check is performed and logged in Authorization::removeAuthorizations
-                MyLog.i("TunnelManager::onActiveAuthorizationIDs: check not accepted authorizations");
-                boolean hasChanged = Authorization.removeAuthorizations(getContext(), notAcceptedAuthorizations);
-                if (hasChanged) {
-                    final AppPreferences mp = new AppPreferences(getContext());
-                    mp.put(m_parentService.getString(R.string.persistentAuthorizationsRemovedFlag), true);
-                    sendClientMessage(ServiceToClientMessage.AUTHORIZATIONS_REMOVED.ordinal(), null);
-                }
-            } else {
-                MyLog.i("TunnelManager::onActiveAuthorizationIDs: current config authorizations list is empty");
-            }
+            // Handle removal of expired authorizations
+            // NOTE that the tunnel core does not re-read config values in case of automatic
+            // reconnects so the m_tunnelConfigAuthorizations snapshot may contain authorizations
+            // already removed from the persistent authorization storage.
+            handleExpiredAuthorizations(acceptedAuthorizations);
 
-            // Determine if user has a speed boost or subscription auth in the current tunnel run
-            // and update the tunnel config manager accordingly
-            boolean cancelNotifications = false;
-
+            // Get access types of the accepted authorizations
             Set<String> accessTypes = acceptedAuthorizations.stream()
                     .map(Authorization::accessType)
                     .collect(Collectors.toSet());
 
-            // Update the sponsorship state of tunnelConfigManager based on the accepted authorizations.
+            // Update tunnel config manager with the current authorization access types
             // If this update results in a change to the config, the tunnel config manager will emit the updated config
-            // through subscription to tunnelConfigManager.observeTunnelConfig(). This will automatically trigger a tunnel
+            // through Rx subscription to tunnelConfigManager.observeTunnelConfig(). This will automatically trigger a tunnel
             // restart with the new config.
-            if (accessTypes.contains(Authorization.ACCESS_TYPE_GOOGLE_SUBSCRIPTION)) {
-                MyLog.i("TunnelManager::onActiveAuthorizationIDs: user has unlimited subscription auth, update subscription state");
-                tunnelConfigManager.updateSubscriptionState(TunnelConfigManager.SubscriptionState.UNLIMITED);
-                cancelNotifications = true;
-            } else if (accessTypes.contains(Authorization.ACCESS_TYPE_GOOGLE_SUBSCRIPTION_LIMITED)) {
-                MyLog.i("TunnelManager::onActiveAuthorizationIDs: user has limited subscription auth, update subscription state");
-                tunnelConfigManager.updateSubscriptionState(TunnelConfigManager.SubscriptionState.LIMITED);
-                cancelNotifications = true;
-            } else {
-                MyLog.i("TunnelManager::onActiveAuthorizationIDs: user has no subscription auth, update subscription state");
-                tunnelConfigManager.updateSubscriptionState(TunnelConfigManager.SubscriptionState.NONE);
-            }
+            handleActiveAccessTypes(accessTypes);
 
-            if (accessTypes.contains(Authorization.ACCESS_TYPE_SPEED_BOOST)) {
-                MyLog.i("TunnelManager::onActiveAuthorizationIDs: user has speed boost auth, update speed boost state");
-                tunnelConfigManager.updateSpeedBoostState(true);
-                cancelNotifications = true;
-            }
+            // Handle notifications based on current authorization states
+            boolean hasSpeedBoostOrSubscription = accessTypes.contains(Authorization.ACCESS_TYPE_SPEED_BOOST) ||
+                    accessTypes.contains(Authorization.ACCESS_TYPE_GOOGLE_SUBSCRIPTION) ||
+                    accessTypes.contains(Authorization.ACCESS_TYPE_GOOGLE_SUBSCRIPTION_LIMITED);
 
             // If the user has a speed boost or subscription auth, cancel the purchase required notification and disallowed traffic alert
-            if (cancelNotifications) {
+            if (hasSpeedBoostOrSubscription) {
                 cancelPurchaseRequiredNotification();
                 cancelDisallowedTrafficAlertNotification();
             }
         });
+    }
+
+    private void handleExpiredAuthorizations(List<Authorization> acceptedAuthorizations) {
+        if (m_tunnelConfigAuthorizations != null && !m_tunnelConfigAuthorizations.isEmpty()) {
+            // Copy immutable config authorizations snapshot and build a list of not accepted
+            // authorizations by removing all elements of the accepted authorizations list.
+            List<Authorization> notAcceptedAuthorizations = new ArrayList<>(m_tunnelConfigAuthorizations);
+            if (!acceptedAuthorizations.isEmpty()) {
+                notAcceptedAuthorizations.removeAll(acceptedAuthorizations);
+            }
+
+            // Try to remove all not accepted authorizations from the persistent storage
+            // NOTE: empty list check is performed and logged in Authorization::removeAuthorizations
+            MyLog.i("TunnelManager::onActiveAuthorizationIDs: check not accepted authorizations");
+            boolean hasChanged = Authorization.removeAuthorizations(getContext(), notAcceptedAuthorizations);
+            if (hasChanged) {
+                final AppPreferences mp = new AppPreferences(getContext());
+                mp.put(m_parentService.getString(R.string.persistentAuthorizationsRemovedFlag), true);
+                sendClientMessage(ServiceToClientMessage.AUTHORIZATIONS_REMOVED.ordinal(), null);
+            }
+        } else {
+            MyLog.i("TunnelManager::onActiveAuthorizationIDs: current config authorizations list is empty");
+        }
+    }
+
+    private void handleActiveAccessTypes(Set<String> accessTypes) {
+        // Update subscription state
+        if (accessTypes.contains(Authorization.ACCESS_TYPE_GOOGLE_SUBSCRIPTION)) {
+            MyLog.i("TunnelManager::onActiveAuthorizationIDs: user has unlimited subscription auth, update subscription state");
+            tunnelConfigManager.updateSubscriptionState(TunnelConfigManager.SubscriptionState.UNLIMITED);
+        } else if (accessTypes.contains(Authorization.ACCESS_TYPE_GOOGLE_SUBSCRIPTION_LIMITED)) {
+            MyLog.i("TunnelManager::onActiveAuthorizationIDs: user has limited subscription auth, update subscription state");
+            tunnelConfigManager.updateSubscriptionState(TunnelConfigManager.SubscriptionState.LIMITED);
+        } else {
+            MyLog.i("TunnelManager::onActiveAuthorizationIDs: user has no subscription auth, update subscription state");
+            tunnelConfigManager.updateSubscriptionState(TunnelConfigManager.SubscriptionState.NONE);
+        }
+
+        // Update speed boost state
+        boolean hasSpeedBoost = accessTypes.contains(Authorization.ACCESS_TYPE_SPEED_BOOST);
+        MyLog.i("TunnelManager::onActiveAuthorizationIDs: user " +
+                (hasSpeedBoost ? "has" : "has no") + " speed boost auth, update speed boost state");
+        tunnelConfigManager.updateSpeedBoostState(hasSpeedBoost);
     }
 
     @Override
