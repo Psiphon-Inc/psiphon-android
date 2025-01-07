@@ -27,7 +27,7 @@ ext {
     rxandroidVersion = '2.1.1'
     rxrelayVersion = '2.1.0'
     autoValueVersion = '1.5.2'
-    okhttpVersion = '3.12.1'
+    okhttpVersion = '4.12.0'
     multidexVersion = '2.0.1'
     appcompatVersion = '1.2.0'
     cardviewVersion = '1.0.0'
