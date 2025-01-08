@@ -466,7 +466,12 @@ public class GooglePlayBillingHelper {
                         5 // Retry up to 5 times
                 )
                 .firstOrError() // Convert back to Single
-                .doOnSuccess(__ -> MyLog.i("GooglePlayBillingHelper::consumePurchase success for SKU: " + purchase.getSkus().get(0)))
+                .doOnSuccess(__ -> {
+                    MyLog.i("GooglePlayBillingHelper::consumePurchase success for SKU: " + purchase.getSkus().get(0));
+                    // Query all purchases to update the state of purchases after successful consumption.
+                    // This is necessary because the PurchaseUpdateListener is not triggered after a successful consumption, so we need to manually update the state.
+                    queryAllPurchases();
+                })
                 .doOnError(err -> MyLog.e("GooglePlayBillingHelper::consumePurchase error: " + err));
     }
 
