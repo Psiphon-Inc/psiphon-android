@@ -504,7 +504,7 @@
     <string name="btn_disconnect">Desconectar</string>
 
     <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe.-->
-    <string name="purchase_required_prompt_title">Como ter acesso àq Psiphon na sua região?</string>
+    <string name="purchase_required_prompt_title">Como ter acesso à Psiphon na sua região?</string>
 
     <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe.-->
     <string name="purchase_required_prompt_body">O acesso à Psiphon na sua região agora precisa do seu apoio. Ajude a manter a Psiphon acessível para as pessoas que mais precisam dela, seja através de uma assinatura, da compra de velocidade turbinada ou usando o novo aplicativo Conduit para celular</string>
@@ -532,7 +532,7 @@
     <plurals name="speed_boost_left_hours">
         <item quantity="one">%d horas</item>
         <item quantity="many">%d horas</item>
-        <item quantity="other">%d hora(s0</item>
+        <item quantity="other">%d hora(s)</item>
     </plurals>
 
     <!-- This format string specifies the order of 'days' and 'hours' in the date interval string where the first argument is 'days' and the seconds is 'hours'. Examples: "20 d 11 hr", "1 d 2 hr", etc.

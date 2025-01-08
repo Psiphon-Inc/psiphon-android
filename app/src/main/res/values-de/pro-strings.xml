@@ -13,16 +13,16 @@
 
     <!--  Summary text for 'Add custom HTTP headers' checkbox, appears underneath the checkbox title -->
     <string name="custom_proxy_headers_checkbox_description">Benutzerdefinierte HTTP-Kopfzeilen für alle ausgehenden Proxyanforderungen hinzufügen</string>
-    <string name="custom_proxy_header_group_1">Überschrift 1</string>
-    <string name="custom_proxy_header_group_2">Überschrift 2</string>
-    <string name="custom_proxy_header_group_3">Überschrift 3</string>
-    <string name="custom_proxy_header_group_4">Überschrift 4</string>
-    <string name="custom_proxy_header_group_5">Überschrift 5</string>
-    <string name="custom_proxy_header_group_6">Überschrift 6</string>
+    <string name="custom_proxy_header_group_1">Kopfzeile 1</string>
+    <string name="custom_proxy_header_group_2">Kopfzeile 2</string>
+    <string name="custom_proxy_header_group_3">Kopfzeile 3</string>
+    <string name="custom_proxy_header_group_4">Kopfzeile 4</string>
+    <string name="custom_proxy_header_group_5">Kopfzeile 5</string>
+    <string name="custom_proxy_header_group_6">Kopfzeile 6</string>
     <string name="custom_proxy_header_name">Kopfzeilennamen eingeben</string>
     <string name="custom_proxy_header_value">Kopfzeilenwert eingeben</string>
     <string name="custom_proxy_header_ignored_values">Warnung: Kopfzeilen mit leeren Namen werden ignoriert!</string>
-    <string name="custom_proxy_header_invalid_name">Fehler: Kopfzeilenname enthält ungültige Zeichen!</string>
+    <string name="custom_proxy_header_invalid_name">Fehler: Kopfzeilenname enthält unzulässige Zeichen!</string>
     <!-- Title for other text showing what the user's current speed limit is. Users have limited
          speed if they have not paid for premium service. -->
     <string name="rate_limit_text_title">Psiphon-Geschwindigkeitsbegrenzung:</string>
@@ -296,7 +296,7 @@
 
     <!-- Label for button that user will click in order to buy an unlimited subscription for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., 'Unlimited - CA$11.99 monthly' -->
-    <string name="PaymentChooserActivity.UnlimitedSubscriptionTitlePriceText">Unbegrenzt- %s monatlich</string>
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionTitlePriceText">Unbegrenzt - %s monatlich</string>
 
     <!-- Description text on the button that user will click in order to buy an unlimited subscription for Psiphon Pro.
          Appears below 'Unlimited - CA$11.99 monthly' label in smaller font-->
@@ -305,13 +305,13 @@
     <!-- Text Label that appears on the subscription buying button for Psiphon Pro in case if there
          is a trial period available for that subscription. The formated string is the length of the
          trial period in days. Keep as short as possible -->
-    <string name="PaymentChooserActivity.FreeTrialPeriod">Kostenlose Testversion - %d Tage</string>
+    <string name="PaymentChooserActivity.FreeTrialPeriod">Kostenloser Test - %d Tage</string>
 
     <!-- Extra text on all subscriptions buttons showing monthly price per subscription after free trial ends-->
-    <string name="PaymentChooserActivity.PriceAfterFreeTrialText">%s/Monat nach Ablauf der kostenlosen Testversion</string>
+    <string name="PaymentChooserActivity.PriceAfterFreeTrialText">%s/Monat nach Ablauf des kostenlosen Tests</string>
 
     <!-- Subscription terms text, appears at the bottom of the subscriptions screen -->
-    <string name="PaymentChooserActivity.SubscriptionsTerms">Kündigen Sie Ihr Abonnement jederzeit im Abschnitt „Abonnements“ bei Google Play. Wenn Sie Ihr Abonnement kündigen, verlieren Sie am Ende des aktuellen Abrechnungszeitraums den Zugriff auf die Premiumfunktionen, die in den Abonnementbedingungen angeboten werden. Nur eine kostenlose Testversion pro Benutzer. Am Ende Ihres kostenlosen Testzeitraums wird Ihnen automatisch der in den Abonnementbedingungen angegebene Betrag in Rechnung gestellt. Um Gebühren zu vermeiden, kündigen Sie das Abonnement vor Ablauf des Testzeitraums.</string>
+    <string name="PaymentChooserActivity.SubscriptionsTerms">Kündigen Sie Ihr Abonnement jederzeit im Abschnitt „Abonnements“ bei Google Play. Wenn Sie Ihr Abonnement kündigen, verlieren Sie am Ende des aktuellen Abrechnungszeitraums den Zugriff auf die Premiumfunktionen, die in den Abonnementbedingungen angeboten werden. Nur ein kostenloser Test pro Benutzer. Am Ende Ihres kostenlosen Testzeitraums wird Ihnen automatisch der in den Abonnementbedingungen angegebene Betrag in Rechnung gestellt. Um Gebühren zu vermeiden, kündigen Sie das Abonnement vor Ablauf des Testzeitraums.</string>
 
     <!-- Time pass explanation text -->
     <string name="PaymentChooserActivity.TimePassExplanation">Bei einem Zeitpass handelt es sich um eine Lizenz zur einmaligen Nutzung, die ab dem Kauf für einen bestimmten Zeitraum gültig ist und sich im Gegensatz zu einem Abonnement nach Ablauf nicht automatisch verlängert.</string>
@@ -371,7 +371,7 @@
 
     <!-- Alternative main body of the PsiCash account log out alert confirmation dialog for when Psiphon is not running.
             Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
-    <string name="psicash_logout_alert_disconnected_message">Durch die Verbindung mit dem Psiphon-Netzwerk ist eine sicherere Abmeldung von PsiCash möglich. Möchten Sie trotzdem fortfahren?</string>
+    <string name="psicash_logout_alert_disconnected_message">Die Verbindung mit dem Psiphon-Netzwerk ermöglicht eine sicherere Abmeldung von PsiCash. Möchten Sie trotzdem fortfahren?</string>
 
     <!-- Alternative main body of the PsiCash account log out alert confirmation dialog for when Psiphon is running but has not finished connecting yet.
             Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
