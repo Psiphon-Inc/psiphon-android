@@ -66,7 +66,6 @@ import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager.widget.ViewPager;
 
-import com.android.billingclient.api.SkuDetails;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
 import com.psiphon3.billing.GooglePlayBillingHelper;
@@ -85,8 +84,6 @@ import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
 import net.grandcentrix.tray.core.ItemNotFoundException;
-
-import org.json.JSONException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -114,7 +111,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     public static final String INTENT_EXTRA_PREVENT_AUTO_START = "com.psiphon3.MainActivity.PREVENT_AUTO_START";
 
     private static final String CURRENT_TAB = "currentTab";
-    private static final int PAYMENT_CHOOSER_ACTIVITY = 20001;
 
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private Button toggleButton;
@@ -343,8 +339,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        googlePlayBillingHelper.fetchAllProducts();
         googlePlayBillingHelper.queryAllPurchases();
-        googlePlayBillingHelper.queryAllSkuDetails();
 
         // Observe tunnel state changes to update UI
         compositeDisposable.add(getTunnelServiceInteractor().tunnelStateFlowable()
@@ -548,38 +544,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == PAYMENT_CHOOSER_ACTIVITY) {
-            if (resultCode == RESULT_OK) {
-                // if data intent is not present it means the payment chooser activity closed due to
-                // IAB failure, show "Subscription options not available" toast and return.
-                if(data == null) {
-                    showToast(R.string.subscription_options_currently_not_available);
-                    return;
-                }
-                String skuString = data.getStringExtra(PaymentChooserActivity.USER_PICKED_SKU_DETAILS_EXTRA);
-                String oldSkuString = data.getStringExtra(PaymentChooserActivity.USER_OLD_SKU_EXTRA);
-                String oldPurchaseToken = data.getStringExtra(PaymentChooserActivity.USER_OLD_PURCHASE_TOKEN_EXTRA);
-                try {
-                    if (TextUtils.isEmpty(skuString)) {
-                        throw new IllegalArgumentException("SKU is empty.");
-                    }
-                    SkuDetails skuDetails = new SkuDetails(skuString);
-                    compositeDisposable.add(googlePlayBillingHelper.launchFlow(this, oldSkuString, oldPurchaseToken, skuDetails)
-                            .doOnError(err -> {
-                                // Show "Subscription options not available" toast.
-                                showToast(R.string.subscription_options_currently_not_available);
-                            })
-                            .onErrorComplete()
-                            .subscribe());
-                } catch (JSONException | IllegalArgumentException e) {
-                    MyLog.e("MainActivity::onActivityResult purchase SKU error: " + e);
-                    // Show "Subscription options not available" toast.
-                    showToast(R.string.subscription_options_currently_not_available);
-                }
-            } else {
-                MyLog.i("MainActivity::onActivityResult: PaymentChooserActivity: canceled");
-            }
-        }
         if (requestCode == REQUEST_CODE_NOTIFICATION_RATIONALE ||
                 requestCode == REQUEST_CODE_LOCATION_RATIONALE) {
             // If we are returning from a permission rationale activity, run permissions check
@@ -600,7 +564,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             Intent intent = new Intent(activity, PaymentChooserActivity.class);
             intent.putExtra("tabIndex", tabIndex);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            activity.startActivityForResult(intent, PAYMENT_CHOOSER_ACTIVITY);
+            activity.startActivity(intent);
         } catch(RuntimeException ignored) {
         }
     }
@@ -610,7 +574,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             Intent intent = new Intent(activity, PaymentChooserActivity.class);
             intent.putExtra(PaymentChooserActivity.INTENT_EXTRA_UNLOCK_REQUIRED, true);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            activity.startActivityForResult(intent, PAYMENT_CHOOSER_ACTIVITY);
+            activity.startActivity(intent);
         } catch(RuntimeException ignored) {
         }
     }

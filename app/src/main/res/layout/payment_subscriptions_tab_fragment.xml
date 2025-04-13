@@ -66,6 +66,7 @@
                     android:layout_gravity="center_horizontal"
                     android:gravity="center_horizontal"
                     android:paddingHorizontal="16dp"
+                    android:visibility="gone"
                     android:text="@string/PaymentChooserActivity.PriceAfterFreeTrialText" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
@@ -125,6 +126,7 @@
                     android:layout_gravity="center_horizontal"
                     android:gravity="center_horizontal"
                     android:paddingHorizontal="16dp"
+                    android:visibility="gone"
                     android:text="@string/PaymentChooserActivity.PriceAfterFreeTrialText" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>

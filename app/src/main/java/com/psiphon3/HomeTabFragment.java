@@ -250,7 +250,7 @@ public class HomeTabFragment extends Fragment {
                 subscriptionState.status() == SubscriptionState.Status.HAS_UNLIMITED_SUBSCRIPTION) {
 
             String url = String.format(PLAY_STORE_SUBSCRIPTION_DEEPLINK_URL,
-                    subscriptionState.purchase().getSkus().get(0),
+                    subscriptionState.purchase().getProducts().get(0),
                     requireContext().getPackageName());
 
             SpannableString spannable = new SpannableString(manageSubscriptionLink.getText().toString());

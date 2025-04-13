@@ -24,7 +24,7 @@ android {
             defaultConfig {
                 applicationId "com.psiphon3.subscription"
                 resValue "string", "tray__authority", "${applicationId}.tray"
-                minSdkVersion 14
+                minSdkVersion 21 // Google Play Billing Library 7+ requires API level 21
                 compileSdk 34
                 targetSdkVersion 34
                 versionCode verCode
