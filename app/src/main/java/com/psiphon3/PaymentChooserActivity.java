@@ -40,15 +40,14 @@ import androidx.viewpager.widget.ViewPager;
 import com.android.billingclient.api.ProductDetails;
 import com.android.billingclient.api.Purchase;
 import com.google.android.material.tabs.TabLayout;
+import com.psiphon3.billing.BillingUtils;
 import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.log.MyLog;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.subscription.R;
 
-import java.text.NumberFormat;
 import java.time.Period;
 import java.time.format.DateTimeParseException;
-import java.util.Currency;
 import java.util.List;
 import java.util.Locale;
 
@@ -253,7 +252,7 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                                 priceAfterFreeTrialTv = fragmentView.findViewById(R.id.limitedSubscriptionPriceAfterFreeTrial);
                             }
 
-                            String priceText = getOfferPriceText(offerDetails);
+                            String priceText = getSubscriptionOfferPriceText(offerDetails);
 
                             String formatString = titlePriceTv.getText().toString();
                             titlePriceTv.setText(String.format(formatString, priceText));
@@ -326,7 +325,7 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
             }
         }
 
-        private String getOfferPriceText(ProductDetails.SubscriptionOfferDetails offerDetails) {
+        private String getSubscriptionOfferPriceText(ProductDetails.SubscriptionOfferDetails offerDetails) {
             List<ProductDetails.PricingPhase> phases = offerDetails.getPricingPhases().getPricingPhaseList();
 
             // Get the non-free-trial pricing phase
@@ -337,19 +336,9 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                 pricingPhase = phases.get(0); // Get the first phase
             }
 
-            String priceText = pricingPhase.getFormattedPrice();
-
-            // Use price formatter to format the price, fall back to the formatted price if it fails
-            try {
-                Currency currency = Currency.getInstance(pricingPhase.getPriceCurrencyCode());
-                NumberFormat priceFormatter = NumberFormat.getCurrencyInstance();
-                priceFormatter.setCurrency(currency);
-                priceText = priceFormatter.format(pricingPhase.getPriceAmountMicros() / 1000000.0f);
-            } catch (IllegalArgumentException e) {
-                // do nothing
-            }
-
-            return priceText;
+            return BillingUtils.formatPriceMicros(pricingPhase.getPriceCurrencyCode(),
+                    pricingPhase.getPriceAmountMicros(),
+                    pricingPhase.getFormattedPrice());
         }
 
         private ProductDetails.SubscriptionOfferDetails findBestMonthlyOffer(ProductDetails productDetails) {
@@ -461,9 +450,6 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                                 MyLog.w("PaymentChooserActivity error: unknown time pass period for sku: " + productDetails);
                                 continue;
                             }
-                            // Calculate price per day
-                            float pricePerDay = offerDetails.getPriceAmountMicros() / 1000000.0f / lifetimeInDays;
-
                             int clickableResId = getResources().getIdentifier("timepassClickable" + lifetimeInDays, "id", packageName);
                             int titlePriceTvResId = getResources().getIdentifier("timepassTitlePrice" + lifetimeInDays, "id", packageName);
                             int pricePerDayTvResId = getResources().getIdentifier("timepassPricePerDay" + lifetimeInDays, "id", packageName);
@@ -472,23 +458,26 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                             TextView titlePriceTv = fragmentView.findViewById(titlePriceTvResId);
                             TextView pricePerDayTv = fragmentView.findViewById(pricePerDayTvResId);
 
-                            // offerDetails.getFormattedPrice() returns a differently looking string than the one
-                            // we get by using priceFormatter below, so for consistency we'll use
-                            // priceFormatter on all prices.
-                            // If the formatting for pricePerDayText or priceText fails, use these as default
-                            String pricePerDayText = String.format(Locale.getDefault(), "%s%.2f",
-                                    offerDetails.getPriceCurrencyCode(), pricePerDay);
-                            String priceText = offerDetails.getFormattedPrice();
+                            // Total price in micros
+                            long priceAmountMicros = offerDetails.getPriceAmountMicros();
+                            long pricePerDayMicros = priceAmountMicros / lifetimeInDays;
 
-                            try {
-                                Currency currency = Currency.getInstance(offerDetails.getPriceCurrencyCode());
-                                NumberFormat priceFormatter = NumberFormat.getCurrencyInstance();
-                                priceFormatter.setCurrency(currency);
-                                pricePerDayText = priceFormatter.format(pricePerDay);
-                                priceText = priceFormatter.format(offerDetails.getPriceAmountMicros() / 1000000.0f);
-                            } catch (IllegalArgumentException e) {
-                                // do nothing
-                            }
+                            // Use our own formatter to ensure consistent formatting using offerDetails.getFormattedPrice() as fallback
+                            String priceText = BillingUtils.formatPriceMicros(offerDetails.getPriceCurrencyCode(),
+                                    priceAmountMicros,
+                                    offerDetails.getFormattedPrice());
+
+                            // Format price per day the same way
+                            // Note: This is slightly different from the previous calculation which divided by 1M first,
+                            // but since we format to 2 decimal places in the UI, the difference is negligible.
+                            // Previous: float pricePerDayToFormat = priceAmountMicros/1000000.0f/lifetimeInDays
+                            // Current: float pricePerDayToFormat = priceAmountMicros/lifetimeInDays/1000000.0f
+                            String defaultPricePerDayText = String.format(Locale.getDefault(), "%s%.2f",
+                                    offerDetails.getPriceCurrencyCode(), pricePerDayMicros / 1000000.0f);
+
+                            String pricePerDayText = BillingUtils.formatPriceMicros(offerDetails.getPriceCurrencyCode(),
+                                    pricePerDayMicros,
+                                    defaultPricePerDayText);
 
                             String formatString = titlePriceTv.getText().toString();
                             titlePriceTv.setText(String.format(formatString, priceText));
