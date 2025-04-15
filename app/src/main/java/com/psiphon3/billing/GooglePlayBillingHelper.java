@@ -80,18 +80,6 @@ public class GooglePlayBillingHelper {
         IAB_TIMEPASS_SKUS_TO_DAYS = Collections.unmodifiableMap(m);
     }
 
-    static public final Map<String, Integer> IAB_PSICASH_SKUS_TO_VALUE;
-
-    static {
-        Map<String, Integer> m = new HashMap<>();
-        m.put("psicash_1000", 1000);
-        m.put("psicash_5000", 5000);
-        m.put("psicash_10000", 10000);
-        m.put("psicash_30000", 30000);
-        m.put("psicash_100000", 100000);
-        IAB_PSICASH_SKUS_TO_VALUE = Collections.unmodifiableMap(m);
-    }
-
     private static GooglePlayBillingHelper INSTANCE = null;
     private final Completable connectionCompletable;
     private final PublishRelay<PurchasesUpdate> purchasesUpdatedRelay;
@@ -187,7 +175,6 @@ public class GooglePlayBillingHelper {
 
     private Single<List<SkuDetails>> getConsumablesSkuDetails() {
         List<String> ids = new ArrayList<>(IAB_TIMEPASS_SKUS_TO_DAYS.keySet());
-        ids.addAll(new ArrayList<>(IAB_PSICASH_SKUS_TO_VALUE.keySet()));
         return getSkuDetails(ids, BillingClient.SkuType.INAPP);
     }
 
@@ -442,8 +429,7 @@ public class GooglePlayBillingHelper {
 
         // Wrap the main logic with BillingUtils.withRetry
         // Note that consume operation is important and we will retry it up to 5 times because failing
-        // to consume a purchase will result in "Unfinished purchase" UI state for PsiCash purchases or
-        // prevent the user from purchasing a new time pass after the old one expires.
+        // to consume a purchase will prevent the user from making the same purchase again.
         return BillingUtils.withRetry(
                         connectionCompletable.andThen(Single.create((SingleEmitter<String> emitter) -> {
                             BillingClient client = billingClientManager.getBillingClient();
@@ -494,10 +480,6 @@ public class GooglePlayBillingHelper {
         long timepassExpiryMillis = purchase.getPurchaseTime() + lifetimeMillis;
 
         return System.currentTimeMillis() < timepassExpiryMillis;
-    }
-
-    static public boolean isPsiCashPurchase(@NonNull Purchase purchase) {
-        return IAB_PSICASH_SKUS_TO_VALUE.containsKey(purchase.getSkus().get(0));
     }
 
     public static class BillingException extends Exception {

@@ -3,7 +3,6 @@
     <string name="app_name_psiphon_pro" translatable="false">Psiphon Pro</string>
     <string name="psicash_purchase_free_amount" translatable="false">35</string>
     <string name="persistentPsiCashCustomData" translatable="false">persistentPsiCashCustomData</string>
-    <string name="persistentPsiCashPurchaseRedeemedFlag" translatable="false">persistentPsiCashPurchaseRedeemedFlag</string>
     <string name="psicashAccountLogoutPreferenceKey" translatable="false">psicashAccountLogoutPreferenceKey</string>
     <string name="psicashAccountLoginPreferenceKey" translatable="false">psicashAccountLoginPreferenceKey</string>
     <string name="psicashAccountManagePreferenceKey" translatable="false">psicashAccountManagePreferenceKey</string>
@@ -11,4 +10,7 @@
     <string name="psicashWebStorage" translatable="false">psicashWebStorage</string>
     <string name="showPurchaseRequiredPromptFlag" translatable="false">showPurchaseRequiredPromptFlag</string>
     <string name="preferencePendingSpeedBoostPurchase" translatable="false">preferencePendingSpeedBoostPurchase</string>
+    <string name="psicashPreferenceKey" translatable="false">psicashPreferenceKey</string>
+    <!-- This string is used in the settings under the PsiCash category and should not be translated -->
+    <string name="psicashSettingsPrefTitle" translatable="false">PsiCash</string>
 </resources>

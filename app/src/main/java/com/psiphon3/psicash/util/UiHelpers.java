@@ -92,12 +92,11 @@ public class UiHelpers {
         return snackbar;
     }
 
-    public static void openPsiCashStoreActivity(final FragmentActivity activity, int tabIndex) {
+    public static void openPsiCashStoreActivity(final FragmentActivity activity) {
         if (activity == null) {
             return;
         }
         Intent intent = new Intent(activity, PsiCashStoreActivity.class);
-        intent.putExtra("tabIndex", tabIndex);
         activity.startActivity(intent);
     }
 

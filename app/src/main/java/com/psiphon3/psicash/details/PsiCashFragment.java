@@ -41,7 +41,6 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.jakewharton.rxrelay2.Relay;
-import com.psiphon3.MainActivityViewModel;
 import com.psiphon3.TunnelState;
 import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.log.MyLog;
@@ -93,7 +92,6 @@ public class PsiCashFragment extends Fragment
     private View progressOverlay;
     private ImageView balanceIcon;
     private ViewGroup balanceLayout;
-    private Button psiCashPlusBtn;
     private Button psiCashAccountBtn;
 
     private Long currentUiBalance;
@@ -122,15 +120,11 @@ public class PsiCashFragment extends Fragment
         progressOverlay = requireView().findViewById(R.id.progress_overlay);
         speedBoostBtnContainer = requireView().findViewById(R.id.purchase_speedboost_clicker_container);
         speedBoostBtnClicker = requireView().findViewById(R.id.purchase_speedboost_clicker);
-        speedBoostBtnClicker.setOnClickListener(v ->
-                UiHelpers.openPsiCashStoreActivity(requireActivity(),
-                        getResources().getInteger(R.integer.speedBoostTabIndex)));
+        speedBoostBtnClicker.setOnClickListener(v -> UiHelpers.openPsiCashStoreActivity(requireActivity()));
         speedBoostBtnClickerLabel = requireView().findViewById(R.id.purchase_speedboost_clicker_label);
         balanceLabel = requireView().findViewById(R.id.psicash_balance_label);
         balanceIcon = requireView().findViewById(R.id.psicash_balance_icon);
         balanceLayout = requireView().findViewById(R.id.psicash_balance_layout);
-
-        psiCashPlusBtn = requireView().findViewById(R.id.psicash_purchase_plus_btn);
 
         psiCashAccountBtn = requireView().findViewById(R.id.psicash_account_btn);
         psiCashAccountBtn.setOnClickListener(v ->
@@ -148,7 +142,6 @@ public class PsiCashFragment extends Fragment
                     }
                     boolean hidePsiCashActionsUi = subscriptionState.hasValidPurchase();
                     speedBoostBtnContainer.setVisibility(hidePsiCashActionsUi ? View.GONE : View.VISIBLE);
-                    psiCashPlusBtn.setVisibility(hidePsiCashActionsUi ? View.GONE : View.VISIBLE);
                 })
                 .subscribe());
 
@@ -165,23 +158,13 @@ public class PsiCashFragment extends Fragment
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(TunnelServiceInteractor.AUTHORIZATIONS_REMOVED_BROADCAST_INTENT);
-        intentFilter.addAction(TunnelServiceInteractor.PSICASH_PURCHASE_REDEEMED_BROADCAST_INTENT);
         this.broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 String action = intent.getAction();
                 if (action != null && !isStopped) {
-                    switch (action) {
-                        case TunnelServiceInteractor.AUTHORIZATIONS_REMOVED_BROADCAST_INTENT:
-                            checkRemovePurchases();
-                            break;
-                        case TunnelServiceInteractor.PSICASH_PURCHASE_REDEEMED_BROADCAST_INTENT:
-                            GooglePlayBillingHelper.getInstance(context).queryAllPurchases();
-                            intentsPublishRelay.accept(PsiCashDetailsIntent.GetPsiCash.create(
-                                    tunnelStateFlowable));
-                            break;
-                        default:
-                            break;
+                    if (action.equals(TunnelServiceInteractor.AUTHORIZATIONS_REMOVED_BROADCAST_INTENT)) {
+                        checkRemovePurchases();
                     }
                 }
             }
@@ -285,19 +268,51 @@ public class PsiCashFragment extends Fragment
         if (fragmentView == null) {
             return;
         }
-        if (state.psiCashModel() == null ||
-                (!state.psiCashModel().hasTokens() && !state.psiCashModel().isAccount())) {
+
+        if (shouldHideUi(state)) {
             fragmentView.setVisibility(View.GONE);
             return;
         } // else
         fragmentView.setVisibility(View.VISIBLE);
         updateUiBalanceIcon(state);
-        updatePsiCashPlusButton(state);
+        updatePsiCashBalanceLayout(state);
         updatePsiCashAccountButton(state);
         updateUiBalanceLabel(state);
         updateSpeedBoostButton(state);
         updateUiProgressView(state);
         updateUiPsiCashError(state);
+    }
+
+    // Check if the UI should be hidden based on the PsiCash model state
+    private boolean shouldHideUi(PsiCashDetailsViewState state) {
+        if (state.psiCashModel() == null) {
+            return true;
+        }
+        // Check if the PsiCash library is either not initialized or if the user is not logged in
+        if (!state.psiCashModel().hasTokens()) {
+            return true;
+        }
+
+        // Check if the user has an active boost
+        PsiCashLib.Purchase purchase = state.psiCashModel().nextExpiringPurchase();
+        if (purchase != null) {
+            Date expiryDate = purchase.expiry;
+            if (expiryDate != null) {
+                long millisDiff = expiryDate.getTime() - new Date().getTime();
+                if (millisDiff > 0) {
+                    return false;
+                }
+            }
+        }
+        // Finally check if the user has enough balance to purchase a "1hr" speed boost
+        if (state.psiCashModel().purchasePrices() != null) {
+            for (PsiCashLib.PurchasePrice price : state.psiCashModel().purchasePrices()) {
+                if (price.distinguisher.equals("1hr") && price.price > state.psiCashModel().balance()) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private void updateUiPsiCashError(PsiCashDetailsViewState state) {
@@ -381,10 +396,9 @@ public class PsiCashFragment extends Fragment
         }
     }
 
-    private void updatePsiCashPlusButton(PsiCashDetailsViewState state) {
-        View.OnClickListener clickListener;
+    private void updatePsiCashBalanceLayout(PsiCashDetailsViewState state) {
         if (state.pendingRefresh()) {
-            clickListener = v -> {
+            View.OnClickListener clickListener = v -> {
                 final Activity activity = requireActivity();
                 if (activity.isFinishing()) {
                     return;
@@ -399,14 +413,8 @@ public class PsiCashFragment extends Fragment
                         .create()
                         .show();
             };
-        } else {
-            clickListener = v ->
-                    UiHelpers.openPsiCashStoreActivity(PsiCashFragment.this.requireActivity(),
-                            PsiCashFragment.this.getResources().getInteger(R.integer.psiCashTabIndex));
-
+            balanceLayout.setOnClickListener(clickListener);
         }
-        balanceLayout.setOnClickListener(clickListener);
-        psiCashPlusBtn.setOnClickListener(clickListener);
     }
 
     private void updatePsiCashAccountButton(PsiCashDetailsViewState state) {

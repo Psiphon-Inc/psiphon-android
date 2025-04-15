@@ -114,7 +114,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         TUNNEL_CONNECTION_STATE,
         DATA_TRANSFER_STATS,
         AUTHORIZATIONS_REMOVED,
-        PSICASH_PURCHASE_REDEEMED,
         PING,
         NFC_CONNECTION_INFO_EXCHANGE_EXPORT,
     }
@@ -419,31 +418,21 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         final AppPreferences multiProcessPreferences = new AppPreferences(getContext());
         return connectionObservable()
                 // Combine with latest state of hasPendingPsiCashPurchaseObservable
-                .withLatestFrom(purchaseVerifier.hasPendingPsiCashPurchaseObservable(), Pair::new)
                 .switchMap(pair -> {
-                    TunnelState.ConnectionData.NetworkConnectionState networkConnectionState = pair.first.first;
-                    boolean isRoutingThroughTunnel = pair.first.second;
-                    boolean hasPendingPsiCashPurchase = pair.second;
+                    TunnelState.ConnectionData.NetworkConnectionState networkConnectionState = pair.first;
+                    boolean isRoutingThroughTunnel = pair.second;
 
                     // The tunnel is connected but we are not routing traffic through the tunnel yet,
                     // check in the following order if:
                     // a) we have a pending Speed Boost purchase,
-                    // b) or we have a pending PsiCash purchase,
-                    // c) or we need to send a "Purchase Required" intent,
-                    // d) or we need to send a landing page intent.
+                    // b) or we need to send a "Purchase Required" intent,
+                    // c) or we need to send a landing page intent.
                     if (networkConnectionState == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED && !isRoutingThroughTunnel) {
                         if (multiProcessPreferences.getBoolean(getContext().getString(R.string.preferencePendingSpeedBoostPurchase), false)) {
                             // If there is a pending Speed Boost purchase start routing immediately
                             m_vpnManager.routeThroughTunnel(m_tunnel.getLocalSocksProxyPort());
                             m_isRoutingThroughTunnelPublishRelay.accept(Boolean.TRUE);
                             // Do not emit downstream if we just started routing.
-                            return Observable.empty();
-                        }
-                        if (hasPendingPsiCashPurchase) {
-                            // If there is a PsiCash purchase to redeem, start routing immediately
-                            m_vpnManager.routeThroughTunnel(m_tunnel.getLocalSocksProxyPort());
-                            m_isRoutingThroughTunnelPublishRelay.accept(Boolean.TRUE);
-                            // Do not emit downstream if we are just started routing.
                             return Observable.empty();
                         }
                         if (shouldShowPurchaseRequiredPrompt()) {
@@ -2190,12 +2179,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             case UNLIMITED_SUBSCRIPTION:
                 MyLog.i("TunnelManager: purchase verification result: UNLIMITED_SUBSCRIPTION, updating tunnel config manager subscription state");
                 tunnelConfigManager.updateSubscriptionState(TunnelConfigManager.SubscriptionState.UNLIMITED);
-                break;
-            case PSICASH_PURCHASE_REDEEMED:
-                MyLog.i("TunnelManager: purchase verification result: PSICASH_PURCHASE_REDEEMED, sending PSICASH_PURCHASE_REDEEMED message to client");
-                final AppPreferences mp = new AppPreferences(getContext());
-                mp.put(m_parentService.getString(R.string.persistentPsiCashPurchaseRedeemedFlag), true);
-                sendClientMessage(ServiceToClientMessage.PSICASH_PURCHASE_REDEEMED.ordinal(), null);
                 break;
         }
     }

@@ -63,7 +63,6 @@ import io.reactivex.disposables.Disposable;
 public class TunnelServiceInteractor {
     private static final String SERVICE_STARTING_BROADCAST_INTENT = "SERVICE_STARTING_BROADCAST_INTENT";
     public static final String AUTHORIZATIONS_REMOVED_BROADCAST_INTENT = "AUTHORIZATIONS_REMOVED_BROADCAST_INTENT";
-    public static final String PSICASH_PURCHASE_REDEEMED_BROADCAST_INTENT = "PSICASH_PURCHASE_REDEEMED_BROADCAST_INTENT";
 
     private final BroadcastReceiver broadcastReceiver;
     private Relay<TunnelState> tunnelStateRelay = BehaviorRelay.<TunnelState>create().toSerialized();
@@ -375,10 +374,6 @@ public class TunnelServiceInteractor {
                 case AUTHORIZATIONS_REMOVED:
                     LocalBroadcastManager.getInstance(tunnelServiceInteractor.context)
                             .sendBroadcast(new Intent().setAction(AUTHORIZATIONS_REMOVED_BROADCAST_INTENT));
-                    break;
-                case PSICASH_PURCHASE_REDEEMED:
-                    LocalBroadcastManager.getInstance(tunnelServiceInteractor.context)
-                            .sendBroadcast(new Intent().setAction(PSICASH_PURCHASE_REDEEMED_BROADCAST_INTENT));
                     break;
                 default:
                     super.handleMessage(msg);

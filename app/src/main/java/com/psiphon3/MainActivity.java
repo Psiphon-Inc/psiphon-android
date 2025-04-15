@@ -877,11 +877,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                                         })
                                         .subscribe()
                         ))
-                        .setSpeedBoostClickListener(v -> {
-                            UiHelpers.openPsiCashStoreActivity(this,
-                                    getResources().getInteger(R.integer.speedBoostTabIndex));
-                            purchaseRequiredDialog.dismiss();
-                        })
                         .setSubscribeClickListener(v -> {
                             MainActivity.openPaymentChooserActivity(MainActivity.this,
                                     getResources().getInteger(R.integer.subscriptionTabIndex));
@@ -906,11 +901,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                         .setPositiveButton(R.string.btn_get_subscription, (dialog, which) -> {
                             MainActivity.openPaymentChooserActivity(MainActivity.this,
                                     getResources().getInteger(R.integer.subscriptionTabIndex));
-                            dialog.dismiss();
-                        })
-                .setNegativeButton(R.string.btn_get_speed_boost, (dialog, which) -> {
-                            UiHelpers.openPsiCashStoreActivity(this,
-                                    getResources().getInteger(R.integer.speedBoostTabIndex));
                             dialog.dismiss();
                         })
                         .create();
@@ -974,10 +964,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
         final String PSIPHON_SCHEME = "psiphon";
 
-        final String PSICASH_HOST = "psicash";
-        final String PSICASH_PATH_BUY = "/buy";
-        final String PSICASH_PATH_SPEEDBOOST = "/speedboost";
-
         final String SETTINGS_HOST = "settings";
         final String SETTINGS_PATH_VPN = "/vpn";
         final String SETTINGS_PATH_PROXY = "/proxy";
@@ -999,27 +985,9 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         String path = intentUri.getPath();
 
         switch (intentUri.getHost()) {
-            case PSICASH_HOST:
-                // Default tab is 'Add PsiCash'
-                int tabIndex = getResources().getInteger(R.integer.psiCashTabIndex);
-
-                if (path != null) {
-                    if (path.equals(PSICASH_PATH_BUY) || path.startsWith(PSICASH_PATH_BUY + FWD_SLASH)) {
-                        // If the uri path is "/buy" or "/buy/.*" then navigate to Add PsiCash tab,
-                        tabIndex = getResources().getInteger(R.integer.psiCashTabIndex);
-                    } else if (path.equals(PSICASH_PATH_SPEEDBOOST) || path.startsWith(PSICASH_PATH_SPEEDBOOST + FWD_SLASH)) {
-                        // The path is "/speedboost" or "/speedboost/.*" - navigate to SpeedBoost tab
-                        tabIndex = getResources().getInteger(R.integer.speedBoostTabIndex);
-                    }
-                }
-
-                UiHelpers.openPsiCashStoreActivity(this, tabIndex);
-                // intent handled
-                return true;
-
             case SUBSCRIBE_HOST:
                 // Default tab is 'Subscription'
-                tabIndex = getResources().getInteger(R.integer.subscriptionTabIndex);
+                int tabIndex = getResources().getInteger(R.integer.subscriptionTabIndex);
 
                 if (path != null) {
                     if (path.equals(SUBSCRIPTION_PATH_SUBSCRIPTION) || path.startsWith(SUBSCRIPTION_PATH_SUBSCRIPTION + FWD_SLASH)) {

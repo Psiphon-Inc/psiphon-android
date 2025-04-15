@@ -95,12 +95,6 @@
         app:layout_constraintTop_toBottomOf="@id/psicash_sign_up_card_layout">
 
         <com.google.android.material.tabs.TabItem
-            android:id="@+id/purchase_psicash_tab"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/add_psicash_tab_title" />
-
-        <com.google.android.material.tabs.TabItem
             android:id="@+id/purchase_speedboost_tab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

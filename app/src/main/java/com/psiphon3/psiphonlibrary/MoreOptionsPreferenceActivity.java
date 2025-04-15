@@ -88,6 +88,7 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
         private PsiCashSettingsViewModel psiCashSettingsViewModel;
         private Disposable psiCashUpdatesDisposable;
         private View progressOverlay;
+        private Preference psiCashPref;
         private Preference psiCashAccountManagePref;
         private Preference psiCashAccountLoginPref;
         private Preference psiCashAccountLogoutPref;
@@ -328,10 +329,21 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
         }
 
         private void setupPsiCashAccount(PreferenceScreen preferenceScreen) {
+            psiCashPref = findPreference(getString(R.string.psicashPreferenceKey));
             psiCashAccountManagePref = findPreference(getString(R.string.psicashAccountManagePreferenceKey));
             psiCashAccountLoginPref = findPreference(getString(R.string.psicashAccountLoginPreferenceKey));
             psiCashAccountLogoutPref = findPreference(getString(R.string.psicashAccountLogoutPreferenceKey));
             psiCashAccountPrefCategory = findPreference(getString(R.string.psicashAccountPreferenceCategory));
+
+            psiCashPref.setOnPreferenceClickListener(preference -> {
+                if (preference.isVisible() && preference.isEnabled()) {
+                    try {
+                        UiHelpers.openPsiCashStoreActivity(requireActivity());
+                    } catch (RuntimeException ignored) {
+                    }
+                }
+                return true;
+            });
 
             psiCashAccountLoginPref.setOnPreferenceClickListener(preference -> {
                 if (preference.isVisible() && preference.isEnabled()) {
