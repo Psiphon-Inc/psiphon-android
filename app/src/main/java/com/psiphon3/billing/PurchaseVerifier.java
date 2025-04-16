@@ -75,92 +75,6 @@ public class PurchaseVerifier {
                 .toFlowable(BackpressureStrategy.LATEST);
     }
 
-    private Disposable psiCashPurchaseVerificationDisposable() {
-        return tunnelConnectionStateFlowable()
-                .switchMap(tunnelState -> {
-                    // Once connected run IAB check and pass PsiCash purchase and
-                    // current tunnel state connection data downstream.
-                    if (tunnelState.isRunning() && tunnelState.connectionData().isConnected()) {
-                        return googlePlayBillingHelper.purchaseStateFlowable()
-                                .flatMapIterable(PurchaseState::purchaseList)
-                                // Only pass through PsiCash purchases that we didn't previously
-                                // marked as invalid
-                                .filter(purchase -> {
-                                    if (purchase == null || !GooglePlayBillingHelper.isPsiCashPurchase(purchase)) {
-                                        return false;
-                                    }
-                                    // Check if we previously marked this purchase as 'bad'
-                                    if (invalidPurchaseTokensSet.size() > 0 &&
-                                            invalidPurchaseTokensSet.contains(purchase.getPurchaseToken())) {
-                                        MyLog.w("PurchaseVerifier: bad PsiCash purchase, continue.");
-                                        return false;
-                                    }
-                                    return true;
-                                })
-                                .map(purchase -> {
-                                    final AppPreferences mp = new AppPreferences(context);
-                                    final String psiCashCustomData = mp.getString(context.getString(R.string.persistentPsiCashCustomData), "");
-                                    return new Pair<>(purchase, psiCashCustomData);
-                                })
-
-                                // We want to avoid trying to redeem the same purchase multiple times
-                                // so we consider purchases distinct only if their purchase tokens and
-                                // order IDs differ and are ignoring all other fields such as isAcknowledged
-                                // which may change anytime for a purchase we have seen already.
-                                //
-                                // See comments in GooglePlayBillingHelper::processPurchases for more
-                                // details on the purchase acknowledgement.
-                                //
-                                // UPDATE: we also want to (re)try purchase verification in case the PsiCash
-                                // custom data has changed due to user login status change.
-                                .distinctUntilChanged((a, b) -> {
-                                    final Purchase purchaseA = a.first;
-                                    final Purchase purchaseB = b.first;
-                                    final String customDataA = a.second;
-                                    final String customDataB = b.second;
-
-                                    return purchaseA.getPurchaseToken().equals(purchaseB.getPurchaseToken()) &&
-                                            purchaseA.getOrderId().equals(purchaseB.getOrderId()) &&
-                                            customDataA.equals(customDataB);
-                                })
-                                .map(pair -> new Pair<>(pair, tunnelState.connectionData()));
-                    }
-                    // Not connected, do nothing
-                    return Flowable.empty();
-                })
-                // Do not use switchMap here, run the verification in full for each distinct purchase
-                .flatMap(pair -> {
-                    final Purchase purchase = pair.first.first;
-                    final String psiCashCustomData = pair.first.second;
-                    final TunnelState.ConnectionData connectionData = pair.second;
-
-                    if (TextUtils.isEmpty(psiCashCustomData)) {
-                        MyLog.w("PurchaseVerifier: error: can't redeem PsiCash purchase, custom data is empty");
-                        return Flowable.empty();
-                    }
-
-                    PurchaseVerificationNetworkHelper purchaseVerificationNetworkHelper =
-                            new PurchaseVerificationNetworkHelper.Builder(context)
-                                    .withConnectionData(connectionData)
-                                    .withCustomData(psiCashCustomData)
-                                    .build();
-
-                    MyLog.i("PurchaseVerifier: will try and redeem PsiCash purchase.");
-                    return purchaseVerificationNetworkHelper.verifyFlowable(purchase)
-                            .flatMap(json -> {
-                                // Purchase redeemed, consume and send PSICASH_PURCHASE_REDEEMED
-                                return googlePlayBillingHelper.consumePurchase(purchase)
-                                        .map(__ -> VerificationResult.PSICASH_PURCHASE_REDEEMED)
-                                        .toFlowable();
-                            })
-                            .doOnError(e -> MyLog.e("PurchaseVerifier: verifying PsiCash purchase failed with error: " + e))
-                            .onErrorResumeNext(Flowable.empty());
-
-                })
-                .doOnNext(verificationResultListener::onVerificationResult)
-                .subscribe();
-    }
-
     private Disposable subscriptionVerificationDisposable() {
         return tunnelConnectionStateFlowable()
                 .switchMap(tunnelState -> {
@@ -342,7 +256,6 @@ public class PurchaseVerifier {
     public void start() {
         // Start observing purchases and tunnel state and trigger verification
         compositeDisposable.add(subscriptionVerificationDisposable());
-        compositeDisposable.add(psiCashPurchaseVerificationDisposable());
 
         // Perform initial query to establish the baseline state of purchases
         googlePlayBillingHelper.queryAllPurchases();
@@ -355,26 +268,10 @@ public class PurchaseVerifier {
         googlePlayBillingHelper.stopObservePurchasesUpdates();
     }
 
-    public Observable<Boolean> hasPendingPsiCashPurchaseObservable() {
-        return googlePlayBillingHelper.purchaseStateFlowable()
-                .map(PurchaseState::purchaseList)
-                .distinctUntilChanged()
-                .toObservable()
-                .switchMap(purchaseList -> {
-                    for (Purchase purchase : purchaseList) {
-                        if (GooglePlayBillingHelper.isPsiCashPurchase(purchase)) {
-                            return Observable.just(Boolean.TRUE);
-                        }
-                    }
-                    return Observable.just(Boolean.FALSE);
-                });
-    }
-
     public enum VerificationResult {
         NO_SUBSCRIPTION,
         LIMITED_SUBSCRIPTION,
         UNLIMITED_SUBSCRIPTION,
-        PSICASH_PURCHASE_REDEEMED,
     }
 
     public interface VerificationResultListener {

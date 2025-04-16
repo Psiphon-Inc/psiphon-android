@@ -43,7 +43,6 @@ public class PurchaseRequiredDialog implements DefaultLifecycleObserver {
     private final Dialog dialog;
     // Always shown
     private final CardView subscribeCard;
-    private final CardView speedBoostCard;
 
 
     private final CardView openConduitCardView;
@@ -66,7 +65,6 @@ public class PurchaseRequiredDialog implements DefaultLifecycleObserver {
 
         // Initialize all final fields
         subscribeCard = contentView.findViewById(R.id.subscribeCardView);
-        speedBoostCard = contentView.findViewById(R.id.speedBoostCardView);
         openConduitCardView = contentView.findViewById(R.id.openConduitCardView);
         updatePsiphonProCardView = contentView.findViewById(R.id.updatePsiphonProCardView);
         disconnectCardView = contentView.findViewById(R.id.disconnectCardView);
@@ -100,10 +98,6 @@ public class PurchaseRequiredDialog implements DefaultLifecycleObserver {
 
     private void setSubscribeOnClickListener(View.OnClickListener listener) {
         subscribeCard.setOnClickListener(listener);
-    }
-
-    private void setSpeedBoostOnClickListener(View.OnClickListener listener) {
-        speedBoostCard.setOnClickListener(listener);
     }
 
     private void setDisconnectTunnelRunnable(Runnable runnable) {
@@ -279,11 +273,6 @@ public class PurchaseRequiredDialog implements DefaultLifecycleObserver {
 
         public Builder setSubscribeClickListener(View.OnClickListener listener) {
             dialog.setSubscribeOnClickListener(listener);
-            return this;
-        }
-
-        public Builder setSpeedBoostClickListener(View.OnClickListener listener) {
-            dialog.setSpeedBoostOnClickListener(listener);
             return this;
         }
 

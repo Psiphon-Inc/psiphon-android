@@ -237,11 +237,13 @@
     <!-- Generic billing error message seen by user if there is a billing problem with the PsiCash purchase. Do not translate or transliterate word PsiCash -->
     <string name="psicash_purchase_not_available_error_message">PsiCash purchase is currently not available, please try again later</string>
 
-    <!-- An alert message seen by the user when they try to use one of Speed Boost options but their PsiCash balance is insufficient.
+    <!-- An updated alert message seen by the user when they try to use one of Speed Boost options but their PsiCash balance is insufficient.
+    Note that since we are phasing out the PsiCash system, this message is no longer offering the user to buy more PsiCash, and is just informing
+    them that they do not have enough PsiCash to activate the Speed Boost option.
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_insufficient_balance_alert">You do not have enough PsiCash to activate this Speed Boost option, would you like to add some?</string>
+    <string name="speed_boost_insufficient_balance_alert_update">You do not have enough PsiCash to activate this Speed Boost option.</string>
 
     <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_notification_title">Upgrade Psiphon Pro</string>

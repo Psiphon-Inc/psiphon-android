@@ -60,10 +60,6 @@
                 <data
                     android:scheme="psiphon"
                     android:host="settings" />
-                <!-- Accepts URIs in the form of "psiphon://psicash” -->
-                <data
-                    android:scheme="psiphon"
-                    android:host="psicash" />
                 <!-- Accepts URIs in the form of "psiphon://subscribe” -->
                 <data
                     android:scheme="psiphon"

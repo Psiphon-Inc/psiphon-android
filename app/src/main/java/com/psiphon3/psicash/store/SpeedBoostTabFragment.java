@@ -40,7 +40,6 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.viewpager.widget.ViewPager;
 
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.TunnelState;
@@ -351,16 +350,8 @@ public class SpeedBoostTabFragment extends Fragment {
                         speedboostItemLayout.setOnClickListener(v -> new AlertDialog.Builder(requireActivity())
                                 .setIcon(R.drawable.psicash_coin)
                                 .setTitle(requireActivity().getString(R.string.speed_boost_button_caption))
-                                .setMessage(requireActivity().getString(R.string.speed_boost_insufficient_balance_alert))
-                                .setNegativeButton(R.string.lbl_no, (dialog, which) -> {
-                                })
-                                .setPositiveButton(R.string.lbl_yes, (dialog, which) -> {
-                                    FragmentActivity activity = getActivity();
-                                    if (activity == null || activity.isFinishing()) {
-                                        return;
-                                    }
-                                    final ViewPager viewPager = activity.findViewById(R.id.psicash_store_viewpager);
-                                    viewPager.setCurrentItem(getResources().getInteger(R.integer.psiCashTabIndex));
+                                .setMessage(requireActivity().getString(R.string.speed_boost_insufficient_balance_alert_update))
+                                .setPositiveButton(R.string.label_ok, (dialog, which) -> {
                                 })
                                 .setCancelable(true)
                                 .create()

@@ -65,7 +65,6 @@ public class StoreTabHostFragment extends Fragment
     private final PublishRelay<PsiCashStoreIntent> intentsPublishRelay = PublishRelay.create();
     private final PublishRelay<Pair<Long, Long>> balanceAnimationRelay = PublishRelay.create();
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
-    private BroadcastReceiver broadcastReceiver;
 
     private ViewPager viewPager;
     private Long currentUiBalance;
@@ -87,23 +86,6 @@ public class StoreTabHostFragment extends Fragment
         PsiCashStoreViewModel psiCashStoreViewModel = new ViewModelProvider(requireActivity(),
                 new ViewModelProvider.AndroidViewModelFactory(requireActivity().getApplication()))
                 .get(PsiCashStoreViewModel.class);
-
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(TunnelServiceInteractor.PSICASH_PURCHASE_REDEEMED_BROADCAST_INTENT);
-        this.broadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                if (TunnelServiceInteractor.PSICASH_PURCHASE_REDEEMED_BROADCAST_INTENT.equals(action)) {
-                    GooglePlayBillingHelper.getInstance(context).queryAllPurchases();
-                    psiCashStoreViewModel.processIntents(Observable.just(PsiCashStoreIntent.GetPsiCash.create(
-                            ((LocalizedActivities.AppCompatActivity) requireActivity())
-                                    .getTunnelServiceInteractor()
-                                    .tunnelStateFlowable())));
-                }
-            }
-        };
-        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(broadcastReceiver, intentFilter);
 
         balanceLabel = view.findViewById(R.id.psicash_balance_label);
         balanceIcon = view.findViewById(R.id.psicash_balance_icon);
@@ -146,12 +128,6 @@ public class StoreTabHostFragment extends Fragment
         viewPager = view.findViewById(R.id.psicash_store_viewpager);
         viewPager.setAdapter(pageAdapter);
         viewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
-
-        // Go to the tab specified in the opening intent extra
-        int tabIndex = requireActivity().getIntent().getIntExtra("tabIndex", 0);
-        if (tabIndex < pageAdapter.getCount()) {
-            viewPager.setCurrentItem(tabIndex);
-        }
 
         compositeDisposable.add(psiCashStoreViewModel.states()
                 // make sure onError doesn't cut ahead of onNext with the observeOn overload
@@ -261,7 +237,6 @@ public class StoreTabHostFragment extends Fragment
     @Override
     public void onDestroy() {
         super.onDestroy();
-        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(broadcastReceiver);
         compositeDisposable.dispose();
     }
 
@@ -277,8 +252,6 @@ public class StoreTabHostFragment extends Fragment
         public Fragment getItem(int position) {
             switch (position) {
                 case 0:
-                    return new AddPsiCashTabFragment();
-                case 1:
                     return new SpeedBoostTabFragment();
                 default:
                     return null;

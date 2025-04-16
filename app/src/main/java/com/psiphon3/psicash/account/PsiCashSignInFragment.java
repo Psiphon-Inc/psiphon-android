@@ -64,7 +64,6 @@ public class PsiCashSignInFragment extends Fragment
     private final Relay<PsiCashAccountIntent> intentsPublishRelay = PublishRelay.create();
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private Disposable psiCashUpdatesDisposable;
-    private BroadcastReceiver broadcastReceiver;
     private boolean isStopped;
     private View progressOverlay;
     private String accountSignupUrl;
@@ -94,23 +93,6 @@ public class PsiCashSignInFragment extends Fragment
                 ((LocalizedActivities.AppCompatActivity) requireActivity())
                         .getTunnelServiceInteractor()
                         .tunnelStateFlowable();
-
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(TunnelServiceInteractor.PSICASH_PURCHASE_REDEEMED_BROADCAST_INTENT);
-        this.broadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                if (action != null && !isStopped) {
-                    if (TunnelServiceInteractor.PSICASH_PURCHASE_REDEEMED_BROADCAST_INTENT.equals(action)) {
-                        GooglePlayBillingHelper.getInstance(context).queryAllPurchases();
-                        intentsPublishRelay.accept(PsiCashAccountIntent.GetPsiCash.create(
-                                tunnelStateFlowable));
-                    }
-                }
-            }
-        };
-        LocalBroadcastManager.getInstance(requireActivity()).registerReceiver(broadcastReceiver, intentFilter);
 
         // Subscribe and render PsiCash view states
         compositeDisposable.add(
@@ -185,7 +167,6 @@ public class PsiCashSignInFragment extends Fragment
     @Override
     public void onDestroy() {
         super.onDestroy();
-        LocalBroadcastManager.getInstance(requireActivity()).unregisterReceiver(broadcastReceiver);
         compositeDisposable.dispose();
     }
 

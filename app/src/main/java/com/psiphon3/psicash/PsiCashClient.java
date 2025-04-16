@@ -310,12 +310,6 @@ public class PsiCashClient {
         boolean isAccount = isAccount();
         builder.isAccount(isAccount);
 
-        boolean pendingRefresh = multiProcessPreferences
-                .getBoolean(appContext.getString(R.string.persistentPsiCashPurchaseRedeemedFlag),
-                        false) && hasTokens;
-
-        builder.pendingRefresh(pendingRefresh);
-
         String customData = null;
         if (hasTokens) {
             PsiCashLib.GetRewardedActivityDataResult rewardedActivityData = psiCashLibWrapper.getRewardedActivityData();
@@ -616,12 +610,6 @@ public class PsiCashClient {
                             }
                             if (result.status != null && result.status != PsiCashLib.Status.SUCCESS) {
                                 throw new PsiCashException.Transaction(result.status, isAccount());
-                            }
-                            if (isConnected) {
-                                // Reset purchase redeemed flag
-                                multiProcessPreferences
-                                        .put(appContext.getString(R.string.persistentPsiCashPurchaseRedeemedFlag),
-                                                false);
                             }
                             return result.reconnectRequired;
                         }));

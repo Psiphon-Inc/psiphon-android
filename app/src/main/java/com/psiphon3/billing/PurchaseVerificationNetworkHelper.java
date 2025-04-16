@@ -53,7 +53,6 @@ public class PurchaseVerificationNetworkHelper {
     private static final int TIMEOUT_SECONDS = 30;
 
     private static final String SUBSCRIPTION_VERIFICATION_URL;
-    private static final String PSICASH_VERIFICATION_URL;
     private static final MediaType JSON = MediaType.parse("application/json");
     private static final String HTTP_USER_AGENT = "Psiphon-Verifier-Android";
     private static final int TRIES_COUNT = 5;
@@ -63,7 +62,6 @@ public class PurchaseVerificationNetworkHelper {
                 "dev-subscription.psiphon3.com" :
                 "subscription.psiphon3.com";
         SUBSCRIPTION_VERIFICATION_URL = "https://" + serverName + "/v2/playstore/subscription";
-        PSICASH_VERIFICATION_URL = "https://" + serverName + "/v2/playstore/psicash";
     }
 
     private OkHttpClient.Builder okHttpClientBuilder;
@@ -120,9 +118,6 @@ public class PurchaseVerificationNetworkHelper {
                     GooglePlayBillingHelper.isLimitedSubscription(purchase) ||
                             GooglePlayBillingHelper.isUnlimitedSubscription(purchase);
 
-            final String url = GooglePlayBillingHelper.isPsiCashPurchase(purchase) ?
-                    PSICASH_VERIFICATION_URL : SUBSCRIPTION_VERIFICATION_URL;
-
             json.put("is_subscription", isSubscription);
             json.put("package_name", ctx.getPackageName());
             json.put("product_id", purchase.getSkus().get(0));
@@ -141,7 +136,7 @@ public class PurchaseVerificationNetworkHelper {
             final String metaDataHeader = new JSONObject(metaData).toString();
 
             Request request = new Request.Builder()
-                    .url(url)
+                    .url(SUBSCRIPTION_VERIFICATION_URL)
                     .post(requestBody)
                     .addHeader("User-Agent", HTTP_USER_AGENT)
                     .addHeader("X-Verifier-Metadata", metaDataHeader)
