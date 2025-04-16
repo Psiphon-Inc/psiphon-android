@@ -310,6 +310,11 @@ public class PsiCashClient {
         boolean isAccount = isAccount();
         builder.isAccount(isAccount);
 
+        // Even though pendingRefresh is no longer used, we must explicitly set it
+        // as it's a required field in PsiCashModel. We're not modifying the model
+        // since the entire system is being phased out anyway.
+        builder.pendingRefresh(false);
+
         String customData = null;
         if (hasTokens) {
             PsiCashLib.GetRewardedActivityDataResult rewardedActivityData = psiCashLibWrapper.getRewardedActivityData();
