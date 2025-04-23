@@ -1901,7 +1901,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             MyLog.i("TunnelManager::onActiveAuthorizationIDs: user " +
                     (hasSpeedBoost ? "has" : "has no") + " speed boost auth, update speed boost state");
 
-            // TODO: check if restart is needed here, also check if we want to stop routing during restart.
             tunnelConfigManager.updateSpeedBoostState(hasSpeedBoost);
 
             // Handle notifications based on current authorization states
