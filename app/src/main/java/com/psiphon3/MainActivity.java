@@ -75,7 +75,6 @@ import com.psiphon3.log.LogsMaintenanceWorker;
 import com.psiphon3.log.MyLog;
 import com.psiphon3.psicash.PsiCashClient;
 import com.psiphon3.psicash.PsiCashException;
-import com.psiphon3.psicash.util.UiHelpers;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.psiphonlibrary.TunnelManager;
@@ -132,7 +131,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     private boolean isFirstRun = true;
     private AlertDialog upstreamProxyErrorAlertDialog;
     private AlertDialog disallowedTrafficAlertDialog;
-    private PurchaseRequiredDialog purchaseRequiredDialog;
+    private UnlockRequiredDialog unlockRequiredDialog;
     private MenuItem psiphonBumpHelpItem;
     private FloatingActionButton helpConnectFab;
     // Keeps track of the Psiphon Bump help state
@@ -600,6 +599,16 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         }
     }
 
+    public static void unlockWithSubscription(FragmentActivity activity) {
+        try {
+            Intent intent = new Intent(activity, PaymentChooserActivity.class);
+            intent.putExtra(PaymentChooserActivity.INTENT_EXTRA_UNLOCK_REQUIRED, true);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            activity.startActivityForResult(intent, PAYMENT_CHOOSER_ACTIVITY);
+        } catch(RuntimeException ignored) {
+        }
+    }
+
     private void updateServiceStateUI(final TunnelState tunnelState) {
         if (tunnelState.isUnknown()) {
             openBrowserButton.setEnabled(false);
@@ -800,11 +809,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         // Examples:
         // psiphon://settings
         // psiphon://settings/vpn
-        // psiphon://psicash
-        // psiphon://psicash/
-        // psiphon://psicash/buy
-        // psiphon://psicash/speedboost
-        // psiphon://psicash/speedboost/extras
         // psiphon://subscribe
         // psiphon://subscribe/timepass
         // psiphon://subscribe/subscription
@@ -854,9 +858,9 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             toast.show();
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_VPN_REVOKED)) {
             showVpnAlertDialog(R.string.StatusActivity_VpnRevokedTitle, R.string.StatusActivity_VpnRevokedMessage);
-        } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_SHOW_PURCHASE_PROMPT)) {
+        } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_SHOW_UNLOCK_REQUIRED)) {
             if (!isFinishing()) {
-                if (purchaseRequiredDialog != null && purchaseRequiredDialog.isShowing()) {
+                if (unlockRequiredDialog != null && unlockRequiredDialog.isShowing()) {
                     // Already showing, do nothing
                     return;
                 }
@@ -865,7 +869,14 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                     disallowedTrafficAlertDialog.dismiss();
                 }
 
-                purchaseRequiredDialog = new PurchaseRequiredDialog.Builder(this, this)
+                // Get unlock options from the intent extras
+                Bundle extras = intent.getExtras();
+                ArrayList<String> unlockOptionsList = null;
+                if (extras != null) {
+                    unlockOptionsList = extras.getStringArrayList(TunnelManager.DATA_UNLOCK_OPTIONS);
+                }
+                unlockRequiredDialog = new UnlockRequiredDialog.Builder(this, this)
+                        .setUnlockOptionsList(unlockOptionsList)
                         .setDisconnectTunnelRunnable(() -> compositeDisposable.add(
                                 getTunnelServiceInteractor().tunnelStateFlowable()
                                         .filter(state -> !state.isUnknown())
@@ -878,15 +889,14 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                                         .subscribe()
                         ))
                         .setSubscribeClickListener(v -> {
-                            MainActivity.openPaymentChooserActivity(MainActivity.this,
-                                    getResources().getInteger(R.integer.subscriptionTabIndex));
-                            purchaseRequiredDialog.dismiss();
+                            MainActivity.unlockWithSubscription(MainActivity.this);
+                            unlockRequiredDialog.dismiss();
                         })
                         .show();
             }
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_DISALLOWED_TRAFFIC)) {
             // Do not show disallowed traffic alert if purchase required prompt is showing
-            if (purchaseRequiredDialog != null && purchaseRequiredDialog.isShowing()) {
+            if (unlockRequiredDialog != null && unlockRequiredDialog.isShowing()) {
                 return;
             }
             if (!isFinishing()) {

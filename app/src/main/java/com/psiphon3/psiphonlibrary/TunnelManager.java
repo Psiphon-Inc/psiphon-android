@@ -56,6 +56,7 @@ import com.psiphon3.Location;
 import com.psiphon3.PackageHelper;
 import com.psiphon3.PsiphonCrashService;
 import com.psiphon3.TunnelState;
+import com.psiphon3.UnlockOptions;
 import com.psiphon3.VpnManager;
 import com.psiphon3.billing.PurchaseVerifier;
 import com.psiphon3.log.MyLog;
@@ -78,9 +79,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import ca.psiphon.PsiphonTunnel;
@@ -127,7 +130,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     public static final String INTENT_ACTION_DISALLOWED_TRAFFIC = "com.psiphon3.psiphonlibrary.TunnelManager.INTENT_ACTION_DISALLOWED_TRAFFIC";
     public static final String INTENT_ACTION_UNSAFE_TRAFFIC = "com.psiphon3.psiphonlibrary.TunnelManager.INTENT_ACTION_UNSAFE_TRAFFIC";
     public static final String INTENT_ACTION_UPSTREAM_PROXY_ERROR = "com.psiphon3.psiphonlibrary.TunnelManager.UPSTREAM_PROXY_ERROR";
-    public static final String INTENT_ACTION_SHOW_PURCHASE_PROMPT = "com.psiphon3.psiphonlibrary.TunnelManager.INTENT_ACTION_SHOW_PURCHASE_PROMPT";
+    public static final String INTENT_ACTION_SHOW_UNLOCK_REQUIRED = "com.psiphon3.psiphonlibrary.TunnelManager.INTENT_ACTION_SHOW_UNLOCK_REQUIRED";
 
     // Service -> Client bundle parameter names
     static final String DATA_TUNNEL_STATE_IS_RUNNING = "isRunning";
@@ -147,6 +150,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     public static final String DATA_UNSAFE_TRAFFIC_SUBJECTS_LIST = "dataUnsafeTrafficSubjects";
     public static final String DATA_UNSAFE_TRAFFIC_ACTION_URLS_LIST = "dataUnsafeTrafficActionUrls";
     public static final String DATA_NFC_CONNECTION_INFO_EXCHANGE = "dataNfcConnectionInfoExchange";
+    public static final String DATA_UNLOCK_OPTIONS = "unlockOptions";
 
     // a snapshot of all authorizations pulled by getPsiphonConfig
     private List<Authorization> m_tunnelConfigAuthorizations;
@@ -206,10 +210,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
     private boolean disallowedTrafficNotificationAlreadyShown = false;
 
-    private boolean showPurchaseRequiredPromptFlag = false;
     private final CountDownLatch tunnelThreadStartedLock = new CountDownLatch(1);
     private Disposable trimMemoryUiHiddenDisposable;
     private TunnelConfigManager tunnelConfigManager;
+    private final UnlockOptions unlockOptions = new UnlockOptions();
 
 
     TunnelManager(Service parentService) {
@@ -335,7 +339,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     }
 
     private void setupConduitStateObserver() {
-        if (conduitStateObserver != null && !conduitStateObserver.isDisposed()){
+        if (conduitStateObserver != null && !conduitStateObserver.isDisposed()) {
             conduitStateObserver.dispose();
         }
         // Configure runtime trusted signatures
@@ -343,27 +347,30 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 PackageHelper.readTrustedSignaturesFromFile(getContext().getApplicationContext())
         );
 
-        conduitStateObserver = ConduitStateManager.newManager(getContext()).stateFlowable()
-                .doOnNext(state -> MyLog.i("TunnelManager: Conduit state observer: " + state))
-                // Filter out UNKNOWN Conduit state
-                .filter(state -> state.status() != ConduitState.Status.UNKNOWN)
-                .flatMap(state -> {
-                    if (!showPurchaseRequiredPromptFlag) {
+        // Observe the unlock options for changes and if Conduit unlock option is present
+        // start observing the conduit state and update the tunnel config manager accordingly
+        conduitStateObserver = unlockOptions.getCheckersChangedFlowable()
+                .map(ignored -> unlockOptions.hasConduit())
+                .doOnNext(hasConduit -> MyLog.i(
+                        "TunnelManager: unlock options changed, has 'conduit': " + hasConduit))
+                .switchMap(hasConduit -> {
+                    if (!hasConduit) {
                         return Flowable.empty();
+                    } else {
+                        // Only update the tunnel config manager if the conduit unlock option is present
+                        return ConduitStateManager.newManager(getContext()).stateFlowable()
+                                .doOnNext(state -> MyLog.i("TunnelManager: Conduit state: " + state))
+                                .filter(state -> state.status() != ConduitState.Status.UNKNOWN)
+                                .map(state -> state.status() == ConduitState.Status.RUNNING)
+                                .onErrorReturnItem(false)
+                                .doOnNext(isRunning -> {
+                                    MyLog.i("TunnelManager: updating tunnel config manager with conduit state: " + isRunning);
+                                    tunnelConfigManager.updateConduitState(isRunning);
+                                });
                     }
-                    return Flowable.just(state.status() == ConduitState.Status.RUNNING);
-                })
-                .onErrorResumeNext(e -> {
-                    MyLog.e("TunnelManager: Conduit state observer: error getting Conduit state: " + e);
-                    return Flowable.just(Boolean.FALSE);
-                })
-                .doOnNext(isRunning -> {
-                    MyLog.i("TunnelManager: Conduit state observer: Conduit is running: " + isRunning + ", updating tunnel config manager");
-                    tunnelConfigManager.updateConduitState(isRunning);
                 })
                 .subscribe();
 
-        // Add to composite disposable for lifecycle management
         m_compositeDisposable.add(conduitStateObserver);
     }
 
@@ -394,18 +401,18 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                             // Do not emit downstream if we just started routing.
                             return Observable.empty();
                         }
-                        if (shouldShowPurchaseRequiredPrompt()) {
+                        if (unlockOptions.unlockRequired()) {
                             // Cancel "Psiphon isn't free" notification if it still showing.
-                            cancelPurchaseRequiredNotification();
+                            cancelUnlockRequiredNotification();
                             if (canSendIntentToActivity()) {
                                 m_vpnManager.routeThroughTunnel(m_tunnel.getLocalSocksProxyPort());
-                                sendShowPurchaseRequiredIntent();
+                                sendUnlockRequiredIntent();
                                 m_isRoutingThroughTunnelPublishRelay.accept(Boolean.TRUE);
                                 // Do not emit downstream if we are just started routing.
                                 return Observable.empty();
                             }
                             // Emit CONNECTING and start waiting for an activity to bind
-                            return waitSendIntentAndRouteThroughTunnelCompletable(this::sendShowPurchaseRequiredIntent)
+                            return waitSendIntentAndRouteThroughTunnelCompletable(this::sendUnlockRequiredIntent)
                                     .<TunnelState.ConnectionData.NetworkConnectionState>toObservable()
                                     .startWith(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
                         }
@@ -433,7 +440,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 .distinctUntilChanged()
                 .doOnNext(networkConnectionState -> {
                     m_tunnelState.networkConnectionState = networkConnectionState;
-
                     sendClientMessage(ServiceToClientMessage.TUNNEL_CONNECTION_STATE.ordinal(), getTunnelStateBundle());
                     // Don't update notification to CONNECTING, etc., when a stop was commanded.
                     if (!m_isStopping.get()) {
@@ -507,28 +513,17 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         mNotificationManager.notify(R.id.notification_id_open_app_to_keep_connecting, notificationBuilder.build());
     }
 
-    private boolean shouldShowPurchaseRequiredPrompt() {
-        // Return true if all of the following is satisfied:
-        // 1. Tunnel config is set
-        // 2. The config is not a subscription config
-        // 3. The config is not a speed boost config
-        // 4. The config is not a conduit running config
-        // 4. Application parameter ShowPurchaseRequiredPrompt is set and true.
-        return tunnelConfigManager.getCurrentConfig() != null &&
-                !tunnelConfigManager.isSubscriptionActive() &&
-                !tunnelConfigManager.isSpeedBoostActive() &&
-                !tunnelConfigManager.isConduitRunningActive() &&
-                showPurchaseRequiredPromptFlag;
-    }
-
-    private void sendShowPurchaseRequiredIntent() {
-        PendingIntent showPurchaseRequiredPendingIntent = getPendingIntent(m_parentService, INTENT_ACTION_SHOW_PURCHASE_PROMPT);
+    private void sendUnlockRequiredIntent() {
+        Bundle bundle = new Bundle();
+        bundle.putStringArrayList(DATA_UNLOCK_OPTIONS, new ArrayList<>(unlockOptions.getActiveUnlockOptions()));
+        PendingIntent showUnlockRequiredIntent = getPendingIntent(m_parentService,
+                INTENT_ACTION_SHOW_UNLOCK_REQUIRED, bundle);
         try {
-            showPurchaseRequiredPendingIntent.send();
+            showUnlockRequiredIntent.send();
             // Cancel disallowed traffic alert too if it is showing
             cancelDisallowedTrafficAlertNotification();
         } catch (PendingIntent.CanceledException e) {
-            MyLog.w("showPurchaseRequiredPendingIntent send failed: " + e);
+            MyLog.w("TunnelManager: sendUnlockRequiredIntent() failed: " + e);
         }
     }
 
@@ -542,7 +537,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         }
         // Cancel potentially dangling notifications.
         cancelDisallowedTrafficAlertNotification();
-        cancelPurchaseRequiredNotification();
+        cancelUnlockRequiredNotification();
 
         stopAndWaitForTunnel();
         m_compositeDisposable.dispose();
@@ -558,9 +553,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         }
     }
 
-    private void cancelPurchaseRequiredNotification() {
+    private void cancelUnlockRequiredNotification() {
         if (mNotificationManager != null) {
-            mNotificationManager.cancel(R.id.notification_id_purchase_required);
+            mNotificationManager.cancel(R.id.notification_id_unlock_required);
         }
     }
 
@@ -1572,7 +1567,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         // the communication thread.
         trimMemoryUiHiddenDisposable = Completable.fromAction(() -> {
                     boolean tunnelHasStarted = tunnelThreadStartedLock.await(5, TimeUnit.SECONDS);
-                    if (tunnelHasStarted && shouldShowPurchaseRequiredPrompt()) {
+                    if (tunnelHasStarted && unlockOptions.unlockRequired()) {
                         m_vpnManager.stopRouteThroughTunnel();
                         m_isRoutingThroughTunnelPublishRelay.accept(Boolean.FALSE);
                     }
@@ -1910,7 +1905,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
             // If the user has a speed boost or subscription auth, cancel the purchase required notification and disallowed traffic alert
             if (hasSpeedBoostOrSubscription) {
-                cancelPurchaseRequiredNotification();
+                cancelUnlockRequiredNotification();
                 cancelDisallowedTrafficAlertNotification();
             }
         });
@@ -1964,8 +1959,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 return;
             }
 
-            // Also do not show the alert if we are showing or going to show the Purchase Required UI
-            if(shouldShowPurchaseRequiredPrompt()) {
+            // Also do not show the alert if we are showing or going to show the Unlock Required UI
+            if(unlockOptions.unlockRequired()) {
                 return;
             }
 
@@ -2042,7 +2037,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
         // Process the application parameters
         processDeviceLocationPrecision(params);
-        processPurchaseRequiredPrompt(params);
+        processUnlockOptions(params);
         processTrustedApps(params);
     }
 
@@ -2061,18 +2056,56 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         }
     }
 
-    private void processPurchaseRequiredPrompt(JSONObject params) {
-        // Parse the purchase required prompt flag from the parameters json object
+    private void processUnlockOptions(JSONObject params) {
+        // Parse the unlock options configuration from the parameters json object
         // The expected format is:
         // {
-        //     "ShowPurchaseRequiredPrompt": true
+        //     "UnlockOptions": {
+        //         "Subscription": {}, // Value is ignored, presence of the key enables the check
+        //         "Conduit": {} // Value is ignored, presence of the key enables the check
+        //     }
         // }
+        Map<String, Supplier<Boolean>> checkers = new ConcurrentHashMap<>();
+
         try {
-            showPurchaseRequiredPromptFlag = params.optBoolean("ShowPurchaseRequiredPrompt");
-            final AppPreferences mp = new AppPreferences(getContext());
-            mp.put(m_parentService.getString(R.string.showPurchaseRequiredPromptFlag), showPurchaseRequiredPromptFlag);
+            JSONObject unlockOptionsJson = params.optJSONObject("UnlockOptions");
+
+            if (unlockOptionsJson != null) {
+                // Process each key in the JSON
+                Iterator<String> keys = unlockOptionsJson.keys();
+                while (keys.hasNext()) {
+                    String checkerType = keys.next();
+
+                    switch (checkerType) {
+                        // Subscription checker - ignores params
+                        // NOTE: During PsiCash phase-out transition, we're treating both subscription and speed boost
+                        // as valid subscription methods. After transition, this should be simplified to:
+                        // unlockOptions.addChecker(UnlockOptions.CHECKER_SUBSCRIPTION, tunnelConfigManager::isSubscriptionActive);
+                        case UnlockOptions.CHECKER_SUBSCRIPTION:
+                            checkers.put(
+                                    UnlockOptions.CHECKER_SUBSCRIPTION,
+                                    () -> tunnelConfigManager.isSubscriptionActive() || tunnelConfigManager.isSpeedBoostActive()
+                            );
+                            break;
+
+                        // Conduit checker - ignores params
+                        case UnlockOptions.CHECKER_CONDUIT:
+                            checkers.put(
+                                    UnlockOptions.CHECKER_CONDUIT,
+                                    tunnelConfigManager::isConduitRunningActive
+                            );
+                            break;
+
+                        default:
+                            MyLog.w("TunnelManager: unknown unlock option checker type: " + checkerType);
+                            break;
+                    }
+                }
+            }
         } catch (Exception e) {
-            MyLog.e("TunnelManager: failed to parse purchase required prompt flag: " + e);
+            MyLog.e("TunnelManager: failed to parse UnlockOptions: " + e);
+        } finally {
+            unlockOptions.setCheckers(checkers);
         }
     }
 

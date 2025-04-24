@@ -47,6 +47,9 @@ import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+
 import java.text.NumberFormat;
 import java.time.Period;
 import java.time.format.DateTimeParseException;
@@ -61,6 +64,7 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
     public static final String USER_PICKED_SKU_DETAILS_EXTRA = "USER_PICKED_SKU_DETAILS_EXTRA";
     public static final String USER_OLD_SKU_EXTRA = "USER_OLD_SKU_EXTRA";
     public static final String USER_OLD_PURCHASE_TOKEN_EXTRA = "USER_OLD_PURCHASE_TOKEN_EXTRA";
+    public static final String INTENT_EXTRA_UNLOCK_REQUIRED = "INTENT_EXTRA_UNLOCK_REQUIRED";
     private GooglePlayBillingHelper googlePlayBillingHelper;
 
     @Override
@@ -108,9 +112,12 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
 
                         default:
                             // Update the "You are using...plan" text
-                            final AppPreferences mp = new AppPreferences(getApplicationContext());
-                            boolean purchaseRequired = mp.getBoolean(getString(R.string.showPurchaseRequiredPromptFlag), false);
-                            @StringRes int stringResId = purchaseRequired ?
+                            boolean unlockRequired = false;
+                            if (getIntent() != null) {
+                                unlockRequired =
+                                        getIntent().getBooleanExtra(INTENT_EXTRA_UNLOCK_REQUIRED, false);
+                            }
+                            @StringRes int stringResId = unlockRequired ?
                                     R.string.PaymentChooserActivity_PsiphonNotFreeRegion : R.string.PaymentChooserActivity_UsingFreePlan;
                             ((TextView) findViewById(R.id.payment_chooser_current_plan)).setText(stringResId);
                             // Setup the two tab pager with all purchase options
