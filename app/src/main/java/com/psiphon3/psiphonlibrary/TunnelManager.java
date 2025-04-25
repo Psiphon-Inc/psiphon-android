@@ -207,15 +207,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     private boolean disallowedTrafficNotificationAlreadyShown = false;
 
     private boolean showPurchaseRequiredPromptFlag = false;
-    private final AtomicBoolean isSpeedBoostEndRestart = new AtomicBoolean(false) ;
     private final CountDownLatch tunnelThreadStartedLock = new CountDownLatch(1);
     private Disposable trimMemoryUiHiddenDisposable;
     private TunnelConfigManager tunnelConfigManager;
-
-    // Speed Boost, Conduit, and Device Location initial state singles to be used in TunnelConfigManager
-    private Single<Boolean> speedBoostStateSingle;
-    private Single<Boolean> conduitStateSingle;
-    private Single<String> deviceLocationSingle;
 
 
     TunnelManager(Service parentService) {
@@ -273,41 +267,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         purchaseVerifier = new PurchaseVerifier(getContext(), this);
         tunnelConfigManager = new TunnelConfigManager(getContext());
 
-        // Get the initial speed boost by checking if there are any persisted authorizations with
-        // the access type SPEED_BOOST
-        speedBoostStateSingle = Single.fromCallable(() -> {
-                    List<Authorization> authorizations = Authorization.geAllPersistedAuthorizations(getContext());
-                    return authorizations.stream()
-                            .anyMatch(auth -> Authorization.ACCESS_TYPE_SPEED_BOOST.equals(auth.accessType()));
-                })
-                .subscribeOn(Schedulers.io());
-
-        // Get the initial conduit state and return a boolean indicating whether the conduit is running
-        conduitStateSingle = ConduitStateManager.newManager(getContext()).stateFlowable()
-                // Filter out UNKNOWN states
-                .filter(state -> state.status() != ConduitState.Status.UNKNOWN)
-                // Wait for up to 1 second for the first state
-                .timeout(1000, java.util.concurrent.TimeUnit.MILLISECONDS)
-                .firstOrError()
-                .doOnSuccess(state -> MyLog.i("TunnelManager: initial Conduit state: " + state))
-                // Any state other than RUNNING is considered not running
-                .map(state -> state.status() == ConduitState.Status.RUNNING ? Boolean.TRUE : Boolean.FALSE)
-                // If there is an error, log it and treat it as Conduit not running
-                .onErrorReturn(e -> {
-                    MyLog.e("TurnelManager: error getting initial Conduit state: " + e);
-                    return Boolean.FALSE;
-                });
-
-        // Get persisted device location precision and return a GeoHash string for the device location
-        // with the given precision
-        deviceLocationSingle = Single.fromCallable(() -> {
-                    AppPreferences preferences = new AppPreferences(getContext());
-                    return preferences.getInt(getContext().getString(R.string.deviceLocationPrecisionParameter), 0);
-                })
-                .flatMap(deviceLocationPrecision -> Location.getGeoHashSingle(getContext(), deviceLocationPrecision, 1000))
-                .doOnError(e -> MyLog.e("Error getting device location: " + e))
-                .onErrorReturnItem("");
-
         // Start all subscription and purchase verification observers
         purchaseVerifier.start();
 
@@ -336,7 +295,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             m_firstStart = false;
             m_tunnelThreadStopSignal = new CountDownLatch(1);
             m_compositeDisposable.add(
-                    tunnelConfigManager.initConfiguration(speedBoostStateSingle, conduitStateSingle, deviceLocationSingle, purchaseVerifier.subscriptionStateSingle())
+                    tunnelConfigManager.initConfiguration(speedBoostStateSingle(), conduitStateSingle(), deviceLocationSingle(), purchaseVerifier.subscriptionStateSingle())
                             .doOnSuccess(config -> {
                                 MyLog.i("TunnelManager: tunnel config initialized");
                                 m_tunnelThread = new Thread(this::runTunnel);
@@ -475,15 +434,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 .doOnNext(networkConnectionState -> {
                     m_tunnelState.networkConnectionState = networkConnectionState;
 
-                    if (networkConnectionState == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED) {
-                        // If we restarted the tunnel because of speed boost sponsor ID reset then
-                        // check if Purchase Required UI should be shown.
-                        if (isSpeedBoostEndRestart.compareAndSet(true, false)) {
-                            if (shouldShowPurchaseRequiredPrompt()) {
-                                showPurchasedRequiredUi();
-                            }
-                        }
-                    }
                     sendClientMessage(ServiceToClientMessage.TUNNEL_CONNECTION_STATE.ordinal(), getTunnelStateBundle());
                     // Don't update notification to CONNECTING, etc., when a stop was commanded.
                     if (!m_isStopping.get()) {
@@ -555,36 +505,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 .setContentIntent(m_notificationPendingIntent);
 
         mNotificationManager.notify(R.id.notification_id_open_app_to_keep_connecting, notificationBuilder.build());
-    }
-
-    private void showPurchasedRequiredUi() {
-        PendingIntent purchaseRequiredPendingIntent = getPendingIntent(m_parentService, INTENT_ACTION_SHOW_PURCHASE_PROMPT);
-        // If Android < 10 or there is a live activity client then send the intent right away,
-        // otherwise show a notification.
-        if (Build.VERSION.SDK_INT < 29 || pingForActivity()) {
-            try {
-                purchaseRequiredPendingIntent.send();
-            } catch (PendingIntent.CanceledException e) {
-                MyLog.w("purchaseRequiredPendingIntent send failed: " + e);
-            }
-        } else {
-            if (mNotificationManager == null) {
-                return;
-            }
-            NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(getContext(), NOTIFICATION_SERVER_ALERT_CHANNEL_ID);
-            notificationBuilder
-                    .setSmallIcon(R.drawable.ic_psiphon_alert_notification)
-                    .setAutoCancel(true)
-                    .setGroup(getContext().getString(R.string.alert_notification_group))
-                    .setContentTitle(getContext().getString(R.string.notification_title_action_required))
-                    .setContentText(getContext().getString(R.string.notification_payment_required_text))
-                    .setStyle(new NotificationCompat.BigTextStyle()
-                            .bigText(getContext().getString(R.string.notification_payment_required_text_big)))
-                    .setPriority(NotificationCompat.PRIORITY_MAX)
-                    .setContentIntent(purchaseRequiredPendingIntent);
-
-            mNotificationManager.notify(R.id.notification_id_purchase_required, notificationBuilder.build());
-        }
     }
 
     private boolean shouldShowPurchaseRequiredPrompt() {
@@ -960,9 +880,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                         // This emission automatically triggers a tunnel restart through the Rx subscription in the onStartCommand() method.
                         MyLog.i("TunnelManager: received restart tunnel message");
                         manager.m_compositeDisposable.add(
-                                manager.tunnelConfigManager.initConfiguration(manager.speedBoostStateSingle,
-                                                manager.conduitStateSingle,
-                                                manager.deviceLocationSingle,
+                                manager.tunnelConfigManager.initConfiguration(manager.speedBoostStateSingle(),
+                                                manager.conduitStateSingle(),
+                                                manager.deviceLocationSingle(),
                                                 manager.purchaseVerifier.subscriptionStateSingle())
                                         .subscribe());
                     }
@@ -1016,6 +936,49 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     super.handleMessage(msg);
             }
         }
+    }
+
+    // Get the initial conduit state and return a boolean indicating whether the conduit is running
+    // Note that we are not using a member variable for the conduit state single because
+    // ConduitStateManager.stateFlowable() should not be reused across multiple calls.
+    private Single<Boolean> conduitStateSingle() {
+        return ConduitStateManager.newManager(getContext()).stateFlowable()
+                // Filter out UNKNOWN states
+                .filter(state -> state.status() != ConduitState.Status.UNKNOWN)
+                // Wait for up to 1 second for the first state
+                .timeout(1000, java.util.concurrent.TimeUnit.MILLISECONDS)
+                .firstOrError()
+                .doOnSuccess(state -> MyLog.i("TunnelManager: initial Conduit state: " + state))
+                // Any state other than RUNNING is considered not running
+                .map(state -> state.status() == ConduitState.Status.RUNNING ? Boolean.TRUE : Boolean.FALSE)
+                // If there is an error, log it and treat it as Conduit not running
+                .onErrorReturn(e -> {
+                    MyLog.e("TurnelManager: error getting initial Conduit state: " + e);
+                    return Boolean.FALSE;
+                });
+    }
+
+    // Get the initial speed boost by checking if there are any persisted authorizations with
+    // the access type SPEED_BOOST
+    private Single<Boolean> speedBoostStateSingle() {
+        return Single.fromCallable(() -> {
+                    List<Authorization> authorizations = Authorization.geAllPersistedAuthorizations(getContext());
+                    return authorizations.stream()
+                            .anyMatch(auth -> Authorization.ACCESS_TYPE_SPEED_BOOST.equals(auth.accessType()));
+                })
+                .subscribeOn(Schedulers.io());
+    }
+
+    // Get persisted device location precision and return a GeoHash string for the device location
+    // with the given precision
+    private Single <String> deviceLocationSingle() {
+        return Single.fromCallable(() -> {
+                    AppPreferences preferences = new AppPreferences(getContext());
+                    return preferences.getInt(getContext().getString(R.string.deviceLocationPrecisionParameter), 0);
+                })
+                .flatMap(deviceLocationPrecision -> Location.getGeoHashSingle(getContext(), deviceLocationPrecision, 1000))
+                .doOnError(e -> MyLog.e("Error getting device location: " + e))
+                .onErrorReturnItem("");
     }
 
     private static void setLocale(TunnelManager manager) {
@@ -1894,7 +1857,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     @Override
     public void onActiveAuthorizationIDs(List<String> acceptedAuthorizationIds) {
         m_Handler.post(() -> {
+            // Subscriptions and time passes are handled by the purchase verifier.
+            // Purchase verifier will handle the lists of accepted authorizations, requesting
+            // new ones if needed, and updating tunnel config manager with the subscription state
+            // depending on the verification result.
             purchaseVerifier.onActiveAuthorizationIDs(acceptedAuthorizationIds);
+
             // Build a list of accepted authorizations from the authorizations snapshot.
             List<Authorization> acceptedAuthorizations = new ArrayList<>();
 
@@ -1920,11 +1888,20 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     .map(Authorization::accessType)
                     .collect(Collectors.toSet());
 
-            // Update tunnel config manager with the current authorization access types
+            // Update tunnel config manager with speed boost authorization status.
             // If this update results in a change to the config, the tunnel config manager will emit the updated config
             // through Rx subscription to tunnelConfigManager.observeTunnelConfig(). This will automatically trigger a tunnel
             // restart with the new config.
-            handleActiveAccessTypes(accessTypes);
+            //
+            // Note: Subscription state updates are handled separately by the purchase verifier above.
+            boolean hasSpeedBoost = acceptedAuthorizations.stream()
+                    .map(Authorization::accessType)
+                    .anyMatch(accessType -> accessType.equals(Authorization.ACCESS_TYPE_SPEED_BOOST));
+
+            MyLog.i("TunnelManager::onActiveAuthorizationIDs: user " +
+                    (hasSpeedBoost ? "has" : "has no") + " speed boost auth, update speed boost state");
+
+            tunnelConfigManager.updateSpeedBoostState(hasSpeedBoost);
 
             // Handle notifications based on current authorization states
             boolean hasSpeedBoostOrSubscription = accessTypes.contains(Authorization.ACCESS_TYPE_SPEED_BOOST) ||
@@ -1960,26 +1937,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         } else {
             MyLog.i("TunnelManager::onActiveAuthorizationIDs: current config authorizations list is empty");
         }
-    }
-
-    private void handleActiveAccessTypes(Set<String> accessTypes) {
-        // Update subscription state
-        if (accessTypes.contains(Authorization.ACCESS_TYPE_GOOGLE_SUBSCRIPTION)) {
-            MyLog.i("TunnelManager::onActiveAuthorizationIDs: user has unlimited subscription auth, update subscription state");
-            tunnelConfigManager.updateSubscriptionState(TunnelConfigManager.SubscriptionState.UNLIMITED);
-        } else if (accessTypes.contains(Authorization.ACCESS_TYPE_GOOGLE_SUBSCRIPTION_LIMITED)) {
-            MyLog.i("TunnelManager::onActiveAuthorizationIDs: user has limited subscription auth, update subscription state");
-            tunnelConfigManager.updateSubscriptionState(TunnelConfigManager.SubscriptionState.LIMITED);
-        } else {
-            MyLog.i("TunnelManager::onActiveAuthorizationIDs: user has no subscription auth, update subscription state");
-            tunnelConfigManager.updateSubscriptionState(TunnelConfigManager.SubscriptionState.NONE);
-        }
-
-        // Update speed boost state
-        boolean hasSpeedBoost = accessTypes.contains(Authorization.ACCESS_TYPE_SPEED_BOOST);
-        MyLog.i("TunnelManager::onActiveAuthorizationIDs: user " +
-                (hasSpeedBoost ? "has" : "has no") + " speed boost auth, update speed boost state");
-        tunnelConfigManager.updateSpeedBoostState(hasSpeedBoost);
     }
 
     @Override
@@ -2164,21 +2121,25 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     public void onVerificationResult(PurchaseVerifier.VerificationResult action) {
         // Update the subscription state in the tunnel config manager based on the purchase verification result.
         // This applies to the following verification outcomes: NO_SUBSCRIPTION, LIMITED_SUBSCRIPTION, or UNLIMITED_SUBSCRIPTION.
-        // If this update causes the tunnel configuration to change, the tunnel config manager will emit the updated config
-        // through subscription to tunnelConfigManager.observeTunnelConfig(). This will automatically trigger a tunnel restart
-        // with the new config.
+        //
+        // As a temporary workaround we force a manual restart on new subscription authorizations even if the subscription state of the config
+        // hasn't changed to ensure that new authorizations are picked up by the tunnel.
         switch (action) {
             case NO_SUBSCRIPTION:
                 MyLog.i("TunnelManager: purchase verification result: NO_SUBSCRIPTION, updating tunnel config manager subscription state");
                 tunnelConfigManager.updateSubscriptionState(TunnelConfigManager.SubscriptionState.NONE);
                 break;
             case LIMITED_SUBSCRIPTION:
-                MyLog.i("TunnelManager: purchase verification result: LIMITED_SUBSCRIPTION, updating tunnel config manager subscription state");
+                MyLog.i("TunnelManager: purchase verification result: LIMITED_SUBSCRIPTION, updating tunnel config manager subscription state and restarting tunnel");
                 tunnelConfigManager.updateSubscriptionState(TunnelConfigManager.SubscriptionState.LIMITED);
+                // Temporary workaround: force tunnel restart to ensure new subscription authorizations take effect.
+                onRestartTunnel();
                 break;
             case UNLIMITED_SUBSCRIPTION:
-                MyLog.i("TunnelManager: purchase verification result: UNLIMITED_SUBSCRIPTION, updating tunnel config manager subscription state");
+                MyLog.i("TunnelManager: purchase verification result: UNLIMITED_SUBSCRIPTION, updating tunnel config manager subscription state and restarting tunnel");
                 tunnelConfigManager.updateSubscriptionState(TunnelConfigManager.SubscriptionState.UNLIMITED);
+                // Temporary workaround: force tunnel restart to ensure new subscription authorizations take effect.
+                onRestartTunnel();
                 break;
         }
     }
