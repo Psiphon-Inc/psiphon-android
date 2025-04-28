@@ -59,6 +59,7 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
     private final View installConduitView;
     private final View updateConduitView;
     private final View updatePsiphonProView;
+    private final View dividerView;
 
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private Runnable disconnectTunnelRunnable;
@@ -81,6 +82,7 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
         installConduitView = contentView.findViewById(R.id.installConduitView);
         updateConduitView = contentView.findViewById(R.id.updateConduitView);
         updatePsiphonProView = contentView.findViewById(R.id.updatePsiphonProView);
+        dividerView = contentView.findViewById(R.id.divider);
 
         // Initialize the buttons
         installConduitBtn = contentView.findViewById(R.id.installConduitBtn);
@@ -140,6 +142,11 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
         // Set visibility of the subscription and conduit containers based on the unlock options
         subscriptionContainerView.setVisibility(hasSubscriptionUnlockOption() ? View.VISIBLE : View.GONE);
         conduitContainerView.setVisibility(hasConduitUnlockOption() ? View.VISIBLE : View.GONE);
+        // Show the divider only if both subscription and conduit options are available
+        // NOTE: INVISIBLE is used to maintain the spacing
+        dividerView.findViewById(R.id.divider).setVisibility(
+                (hasSubscriptionUnlockOption() && hasConduitUnlockOption()) ? View.VISIBLE : View.INVISIBLE
+        );
 
 
         dialog.show();

@@ -18,7 +18,7 @@ public class UnlockOptions {
     public static final String CHECKER_CONDUIT = "Conduit";
 
     private final Map<String, Supplier<Boolean>> checkers = new ConcurrentHashMap<>();
-    private final BehaviorRelay<Object> checkersChangedRelay = BehaviorRelay.create();
+    private final BehaviorRelay<Set<String>> checkersSetRelay = BehaviorRelay.create();
 
 
     // Check if we need to show the unlock dialog
@@ -42,8 +42,8 @@ public class UnlockOptions {
         checkers.clear();
         checkers.putAll(checkersMap);
 
-        // Notify that the checkers have changed
-        checkersChangedRelay.accept(new Object());
+        // Update the relay with the current set of checkers
+        checkersSetRelay.accept(checkersMap.keySet());
     }
 
     public Set<String> getActiveUnlockOptions() {
@@ -58,8 +58,8 @@ public class UnlockOptions {
         return checkers.containsKey(CHECKER_SUBSCRIPTION);
     }
 
-    public Flowable<Object> getCheckersChangedFlowable() {
-        return checkersChangedRelay
+    public Flowable<Set<String>> getCheckersSetFlowable() {
+        return checkersSetRelay
                 .hide()
                 .distinctUntilChanged()
                 .toFlowable(BackpressureStrategy.LATEST);

@@ -349,10 +349,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
         // Observe the unlock options for changes and if Conduit unlock option is present
         // start observing the conduit state and update the tunnel config manager accordingly
-        conduitStateObserver = unlockOptions.getCheckersChangedFlowable()
+        conduitStateObserver = unlockOptions.getCheckersSetFlowable()
                 .map(ignored -> unlockOptions.hasConduit())
                 .doOnNext(hasConduit -> MyLog.i(
-                        "TunnelManager: unlock options changed, has 'conduit': " + hasConduit))
+                        "TunnelManager: conduit unlock option present: " + hasConduit))
                 .switchMap(hasConduit -> {
                     if (!hasConduit) {
                         return Flowable.empty();
