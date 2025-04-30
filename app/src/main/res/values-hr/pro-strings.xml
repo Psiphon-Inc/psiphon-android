@@ -13,6 +13,11 @@
     <string name="custom_proxy_header_group_6">Zaglavlje 6</string>
     <string name="custom_proxy_header_name">Unesite ime zaglavlja</string>
     <string name="custom_proxy_header_value">Unesite vrijednost zaglavlja</string>
+    <!-- Indicates the user's current speed limit. The placeholder will be a number like '1' or '2.5',
+         and is in megabits-per-second. Users have limited speed if they have not paid for premium
+         service. -->
+    <string name="rate_limit_text_limited">%d Mb/s</string>
+
     <!-- Indicates that the user has an active speed boost.'Speed Boost' is a reward that can be purchased with PsiCash credit.
     It provides unlimited network connection speed through Psiphon.
     Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or

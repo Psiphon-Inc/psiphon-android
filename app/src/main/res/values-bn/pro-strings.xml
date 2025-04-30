@@ -13,6 +13,11 @@
     <string name="custom_proxy_header_group_6">হেডার 6</string>
     <string name="custom_proxy_header_name">হেডারের নাম লিখুন</string>
     <string name="custom_proxy_header_value">হেডার মান লিখুন</string>
+    <!-- Indicates the user's current speed limit. The placeholder will be a number like '1' or '2.5',
+         and is in megabits-per-second. Users have limited speed if they have not paid for premium
+         service. -->
+    <string name="rate_limit_text_limited">%dMb/s</string>
+
     <!-- Alert dialog action button caption. Clicking this button dismisses the alert dialog, keep concise -->
     <string name="psicash_snackbar_action_ok">ঠিক আছে</string>
 

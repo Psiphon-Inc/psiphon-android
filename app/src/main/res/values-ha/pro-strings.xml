@@ -145,6 +145,9 @@
     <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_hr">Sa\'a 1</string>
 
+    <!-- Do not translate or transliterate 'PsiCash'. PsiCash is a unit of currency here. Reorder the format specifier '%s' if in the translated language ordering of unit and amount is different from English. -->
+    <string name="psicash_price_format">%s PsiCash</string>
+
     <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
     <string name="subscribe_card_title">Biya kudi</string>
 

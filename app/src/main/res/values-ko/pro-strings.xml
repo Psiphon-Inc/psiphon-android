@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Indicates the user's current speed limit. The placeholder will be a number like '1' or '2.5',
+         and is in megabits-per-second. Users have limited speed if they have not paid for premium
+         service. -->
+    <string name="rate_limit_text_limited">%d Mb/s</string>
+
     <!-- Indicates that the user has no speed limit. They have paid for premium service and therefore
          have access to a full-speed connection. Users have limited speed if they have not paid for
          premium service. -->
@@ -49,6 +54,10 @@
 
     <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_hr">1시간</string>
+
+    <!-- This format string specifies the order of 'days' and 'hours' in the date interval string where the first argument is 'days' and the seconds is 'hours'. Examples: "20 d 11 hr", "1 d 2 hr", etc.
+     Reorder the format specifiers '%1$s' and '%2$s' if in the translated language ordering 'days' and 'hours' in date interval string is different from English. -->
+    <string name="speed_boost_left_day_hour_ordered">%1$s %2$s</string>
 
     <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
     <string name="subscribe_card_title">구독</string>

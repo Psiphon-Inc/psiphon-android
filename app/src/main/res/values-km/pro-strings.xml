@@ -115,6 +115,10 @@
     <!-- Label on a button. Clicking this button will buy 1 day (24hr) of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_day">1 ថ្ងៃ</string>
 
+    <!-- This format string specifies the order of 'days' and 'hours' in the date interval string where the first argument is 'days' and the seconds is 'hours'. Examples: "20 d 11 hr", "1 d 2 hr", etc.
+     Reorder the format specifiers '%1$s' and '%2$s' if in the translated language ordering 'days' and 'hours' in date interval string is different from English. -->
+    <string name="speed_boost_left_day_hour_ordered">%1$s %2$s</string>
+
     <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
     <string name="subscribe_card_title">ភ្ជាប់សេវា</string>
 
