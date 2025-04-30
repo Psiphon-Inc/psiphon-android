@@ -99,6 +99,7 @@ import io.reactivex.Completable;
 import io.reactivex.Maybe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
 
 public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
@@ -132,6 +133,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     private AlertDialog upstreamProxyErrorAlertDialog;
     private AlertDialog disallowedTrafficAlertDialog;
     private UnlockRequiredDialog unlockRequiredDialog;
+    private Disposable unlockDialogDismissDisposable;
+
     private MenuItem psiphonBumpHelpItem;
     private FloatingActionButton helpConnectFab;
     // Keeps track of the Psiphon Bump help state
@@ -310,6 +313,9 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     public void onDestroy() {
         compositeDisposable.dispose();
         googlePlayBillingHelper.stopObservePurchasesUpdates();
+        if (unlockDialogDismissDisposable != null && !unlockDialogDismissDisposable.isDisposed()) {
+            unlockDialogDismissDisposable.dispose();
+        }
         super.onDestroy();
     }
 
@@ -893,6 +899,21 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                             unlockRequiredDialog.dismiss();
                         })
                         .show();
+
+                // Auto-dismiss the unlock dialog if the tunnel is stopped by something other than
+                // this dialog (e.g., from the notification).
+                // NOTE: This subscription is intentionally not added to compositeDisposable because
+                // that gets cleared when the activity is paused. We want to keep this subscription
+                // alive for the duration of the activity lifecycle.
+                unlockDialogDismissDisposable = getTunnelServiceInteractor().tunnelStateFlowable()
+                        .filter(TunnelState::isStopped)
+                        .firstOrError()
+                        .doOnSuccess(state -> {
+                            if (unlockRequiredDialog != null && unlockRequiredDialog.isShowing()) {
+                                unlockRequiredDialog.dismiss();
+                            }
+                        })
+                        .subscribe();
             }
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_DISALLOWED_TRAFFIC)) {
             // Do not show disallowed traffic alert if purchase required prompt is showing
