@@ -118,11 +118,11 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
     }
 
     boolean hasConduitUnlockOption() {
-        return unlockOptionsList != null && unlockOptionsList.contains(UnlockOptions.CHECKER_CONDUIT);
+        return unlockOptionsList != null && unlockOptionsList.contains(UnlockOptions.UNLOCK_ENTRY_CONDUIT);
     }
 
     boolean hasSubscriptionUnlockOption() {
-        return unlockOptionsList != null && unlockOptionsList.contains(UnlockOptions.CHECKER_SUBSCRIPTION);
+        return unlockOptionsList != null && unlockOptionsList.contains(UnlockOptions.UNLOCK_ENTRY_SUBSCRIPTION);
     }
 
     boolean hasValidUnlockOptions() {
