@@ -35,7 +35,7 @@ import androidx.lifecycle.LifecycleOwner;
 import com.psiphon3.log.MyLog;
 import com.psiphon3.subscription.R;
 
-import java.util.List;
+import java.util.Map;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
@@ -64,7 +64,7 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private Runnable disconnectTunnelRunnable;
     private Disposable updateStateDisposable;
-    private List<String> unlockOptionsList;
+    private Map<String, Boolean> unlockOptionsMap;
 
     private UnlockRequiredDialog(Context context) {
         View contentView = LayoutInflater.from(context).inflate(R.layout.unlock_required_prompt_layout, null);
@@ -113,39 +113,47 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
         this.disconnectTunnelRunnable = runnable;
     }
     
-    private void setUnlockOptionsList(List<String> unlockOptionsList) {
-        this.unlockOptionsList = unlockOptionsList;
+
+    private void setUnlockOptionsMap(Map<String, Boolean> unlockOptionsMap) {
+        this.unlockOptionsMap = unlockOptionsMap;
     }
 
-    boolean hasConduitUnlockOption() {
-        return unlockOptionsList != null && unlockOptionsList.contains(UnlockOptions.UNLOCK_ENTRY_CONDUIT);
+    boolean hasConduitUnlockEntry() {
+        return unlockOptionsMap != null && unlockOptionsMap.containsKey(UnlockOptions.UNLOCK_ENTRY_CONDUIT);
     }
 
-    boolean hasSubscriptionUnlockOption() {
-        return unlockOptionsList != null && unlockOptionsList.contains(UnlockOptions.UNLOCK_ENTRY_SUBSCRIPTION);
+    boolean isConduitEntryDisplayable() {
+        return unlockOptionsMap != null && Boolean.TRUE.equals(unlockOptionsMap.get(UnlockOptions.UNLOCK_ENTRY_CONDUIT));
     }
 
-    boolean hasValidUnlockOptions() {
-        if (!hasConduitUnlockOption() && !hasSubscriptionUnlockOption()) {
-            MyLog.w("UnlockRequiredDialog: no recognized unlock options in the list: " + unlockOptionsList);
+    boolean isSubscriptionEntryDisplayable() {
+        return unlockOptionsMap != null && Boolean.TRUE.equals(unlockOptionsMap.get(UnlockOptions.UNLOCK_ENTRY_SUBSCRIPTION));
+    }
+
+    boolean hasDisplayableEntries() {
+        if (unlockOptionsMap == null) {
             return false;
         }
-        return true;
+
+        for (Boolean display : unlockOptionsMap.values()) {
+            if (display != null && display) return true;
+        }
+        return false;
     }
 
     private void show() {
-        if (!hasValidUnlockOptions()) {
-            MyLog.i("UnlockRequiredDialog: no valid unlock options, not showing dialog");
+        if (!hasDisplayableEntries()) {
+            MyLog.w("UnlockRequiredDialog: no displayable entries present, not showing dialog");
             return;
         }
 
-        // Set visibility of the subscription and conduit containers based on the unlock options
-        subscriptionContainerView.setVisibility(hasSubscriptionUnlockOption() ? View.VISIBLE : View.GONE);
-        conduitContainerView.setVisibility(hasConduitUnlockOption() ? View.VISIBLE : View.GONE);
-        // Show the divider only if both subscription and conduit options are available
+        // Set visibility of the subscription and Conduit containers based on the unlock entries
+        subscriptionContainerView.setVisibility(isSubscriptionEntryDisplayable() ? View.VISIBLE : View.GONE);
+        conduitContainerView.setVisibility(isConduitEntryDisplayable() ? View.VISIBLE : View.GONE);
+        // Show the divider only if both subscription and Conduit are displayable
         // NOTE: INVISIBLE is used to maintain the spacing
         dividerView.findViewById(R.id.divider).setVisibility(
-                (hasSubscriptionUnlockOption() && hasConduitUnlockOption()) ? View.VISIBLE : View.INVISIBLE
+                (isSubscriptionEntryDisplayable() && isConduitEntryDisplayable()) ? View.VISIBLE : View.INVISIBLE
         );
 
 
@@ -190,8 +198,8 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
     }
 
     private void subscribeToConduitState() {
-        if (!hasConduitUnlockOption()) {
-            MyLog.i("UnlockRequiredDialog: Conduit option not active, skipping Conduit state subscription");
+        if (!hasConduitUnlockEntry()) {
+            MyLog.i("UnlockRequiredDialog: Conduit unlock entry not present, skipping Conduit state subscription");
             return;
         }
         // If already subscribed, do nothing
@@ -209,9 +217,7 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
                                 this::updateConduitUI,
-                                throwable -> {
-                                    hideConduitUI();
-                                }
+                                throwable -> hideConduitUI()
                         );
         compositeDisposable.add(updateStateDisposable);
     }
@@ -328,8 +334,8 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
             return this;
         }
         
-        public Builder setUnlockOptionsList(List<String> unlockOptionsList) {
-            dialog.setUnlockOptionsList(unlockOptionsList);
+        public Builder setUnlockOptionsMap(Map<String, Boolean> unlockOptionsMap) {
+            dialog.setUnlockOptionsMap(unlockOptionsMap);
             return this;
         }
 

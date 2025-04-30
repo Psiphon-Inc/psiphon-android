@@ -875,14 +875,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                     disallowedTrafficAlertDialog.dismiss();
                 }
 
-                // Get unlock options from the intent extras
-                Bundle extras = intent.getExtras();
-                ArrayList<String> unlockOptionsList = null;
-                if (extras != null) {
-                    unlockOptionsList = extras.getStringArrayList(TunnelManager.DATA_UNLOCK_OPTIONS);
-                }
                 unlockRequiredDialog = new UnlockRequiredDialog.Builder(this, this)
-                        .setUnlockOptionsList(unlockOptionsList)
+                        .setUnlockOptionsMap(UnlockOptions.fromBundle(intent.getExtras()))
                         .setDisconnectTunnelRunnable(() -> compositeDisposable.add(
                                 getTunnelServiceInteractor().tunnelStateFlowable()
                                         .filter(state -> !state.isUnknown())

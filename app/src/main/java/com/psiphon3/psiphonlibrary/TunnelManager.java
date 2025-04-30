@@ -149,7 +149,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     public static final String DATA_UNSAFE_TRAFFIC_SUBJECTS_LIST = "dataUnsafeTrafficSubjects";
     public static final String DATA_UNSAFE_TRAFFIC_ACTION_URLS_LIST = "dataUnsafeTrafficActionUrls";
     public static final String DATA_NFC_CONNECTION_INFO_EXCHANGE = "dataNfcConnectionInfoExchange";
-    public static final String DATA_UNLOCK_OPTIONS = "unlockOptions";
 
     // a snapshot of all authorizations pulled by getPsiphonConfig
     private List<Authorization> m_tunnelConfigAuthorizations;
@@ -361,6 +360,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                                 .doOnNext(state -> MyLog.i("TunnelManager: Conduit state: " + state))
                                 .filter(state -> state.status() != ConduitState.Status.UNKNOWN)
                                 .map(state -> state.status() == ConduitState.Status.RUNNING)
+                                .doOnError(e -> MyLog.e("TunnelManager: Conduit state error: " + e))
                                 .onErrorReturnItem(false)
                                 .doOnNext(isRunning -> {
                                     MyLog.i("TunnelManager: updating tunnel config manager with Conduit state: " + isRunning);
@@ -513,10 +513,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     }
 
     private void sendUnlockRequiredIntent() {
-        Bundle bundle = new Bundle();
-        bundle.putStringArrayList(DATA_UNLOCK_OPTIONS, new ArrayList<>(unlockOptions.getDisplayableUnlockOptions()));
         PendingIntent showUnlockRequiredIntent = getPendingIntent(m_parentService,
-                INTENT_ACTION_SHOW_UNLOCK_REQUIRED, bundle);
+                INTENT_ACTION_SHOW_UNLOCK_REQUIRED, unlockOptions.toBundle());
         try {
             showUnlockRequiredIntent.send();
             // Cancel disallowed traffic alert too if it is showing
