@@ -509,7 +509,7 @@
     <string name="btn_disconnect">Disconnect</string>
 
     <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
-    <string name="purchase_required_prompt_title">How to access Psiphon in your region?</string>
+    <string name="purchase_required_prompt_title">How to access Psiphon in your region.</string>
 
     <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
     <string name="unlock_required_prompt_body">Access to Psiphon in your region now requires your support. Help keep Psiphon accessible for people who need it most by selecting an available option to continue.</string>
