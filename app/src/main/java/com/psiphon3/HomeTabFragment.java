@@ -51,10 +51,10 @@ import com.psiphon3.log.MyLog;
 import com.psiphon3.psicash.details.PsiCashDetailsViewModel;
 import com.psiphon3.psicash.details.PsiCashFragment;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
+import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
 
-import net.grandcentrix.tray.AppPreferences;
-
+import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
@@ -111,20 +111,23 @@ public class HomeTabFragment extends Fragment {
 
         googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(requireContext());
 
-        showConduitRunningObservable = Observable.fromCallable(() ->
-                        new AppPreferences(requireContext()).getBoolean(getString(R.string.showPurchaseRequiredPromptFlag), false))
-                .flatMap(isPurchaseRequired -> {
-                    if (isPurchaseRequired) {
+        showConduitRunningObservable = ((LocalizedActivities.AppCompatActivity) requireActivity())
+                .getTunnelServiceInteractor().tunnelStateFlowable()
+                .switchMap(tunnelState -> {
+                    // If tunnel is running check if sponsor ID matches CONDUIT_RUNNING_SPONSOR_ID
+                    if (tunnelState.isRunning() && tunnelState.connectionData() != null) {
+                        return Flowable.just(tunnelState.connectionData().sponsorId().equals(BuildConfig.CONDUIT_RUNNING_SPONSOR_ID));
+                    } else {
+                        // If tunnel is not running, check if Conduit is running directly
                         return ConduitStateManager.newManager(requireContext()).stateFlowable()
                                 .filter(state -> state.status() != ConduitState.Status.UNKNOWN)
                                 .map(state -> state.status() == ConduitState.Status.RUNNING)
                                 .doOnError(throwable -> MyLog.e("HomeTabFragment: error getting conduit state", throwable))
-                                .onErrorReturnItem(false)
-                                .toObservable();
-                    } else {
-                        return Observable.just(false);
+                                .onErrorReturnItem(false);
                     }
-                });
+                })
+                .distinctUntilChanged()
+                .toObservable();
     }
 
     @Override
