@@ -1,10 +1,12 @@
 package com.psiphon3;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.jakewharton.rxrelay2.BehaviorRelay;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,52 +16,79 @@ import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 
 public class UnlockOptions {
-    public static final String CHECKER_SUBSCRIPTION = "Subscription";
-    public static final String CHECKER_CONDUIT = "Conduit";
+    public static final String UNLOCK_ENTRY_SUBSCRIPTION = "Subscription";
+    public static final String UNLOCK_ENTRY_CONDUIT = "Conduit";
 
-    private final Map<String, Supplier<Boolean>> checkers = new ConcurrentHashMap<>();
-    private final BehaviorRelay<Set<String>> checkersSetRelay = BehaviorRelay.create();
+    private final Map<String, UnlockEntry> entries = new ConcurrentHashMap<>();
+    private final BehaviorRelay<Set<String>> entriesSetRelay = BehaviorRelay.create();
 
+    public static class UnlockEntry {
+        public final Supplier<Boolean> checker;
+        public final Boolean display;
+
+        public UnlockEntry(@NonNull Supplier<Boolean> checker, @Nullable Boolean display) {
+            this.checker = checker;
+            this.display = display;
+        }
+
+        public boolean isDisplayable() {
+            // If display is not set, we assume it should be displayed
+            return display == null || display;
+        }
+    }
 
     // Check if we need to show the unlock dialog
     public boolean unlockRequired() {
-        if (checkers.isEmpty()) {
+        if (entries.isEmpty()) {
             // No checkers available, no need to show the unlock dialog
             return false;
         }
-        for (Supplier<Boolean> checker : checkers.values()) {
-            if (checker.get()) {
+
+        boolean hasAtLeasOneDisplayableEntry = false;
+
+        for (UnlockEntry entry : entries.values()) {
+            if (entry.isDisplayable()) {
+                hasAtLeasOneDisplayableEntry = true;
+            }
+            if (entry.checker.get()) {
                 // If any checker passed, we don't need to show the unlock dialog
                 return false;
             }
         }
 
-        // No checker passed, we need to show the unlock dialog
-        return true;
+        // If no checkers passed and we have at least one displayable entry,
+        // we need to show the unlock dialog
+        return hasAtLeasOneDisplayableEntry;
     }
 
-    public synchronized void setCheckers(@NonNull  Map<String, Supplier<Boolean>> checkersMap) {
-        checkers.clear();
-        checkers.putAll(checkersMap);
+    public synchronized void setEntries(@NonNull  Map<String, UnlockEntry> entryMap) {
+        entries.clear();
+        entries.putAll(entryMap);
 
         // Update the relay with the current set of checkers
-        checkersSetRelay.accept(checkersMap.keySet());
+        entriesSetRelay.accept(entryMap.keySet());
     }
 
-    public Set<String> getActiveUnlockOptions() {
-        return new HashSet<>(checkers.keySet());
+    public List<String> getDisplayableUnlockOptions() {
+        List<String> displayable = new ArrayList<>();
+        for (Map.Entry<String, UnlockEntry> entry : entries.entrySet()) {
+            if (entry.getValue().isDisplayable()) {
+                displayable.add(entry.getKey());
+            }
+        }
+        return displayable;
     }
 
-    public boolean hasConduit() {
-        return checkers.containsKey(CHECKER_CONDUIT);
+    public boolean hasConduitEntry() {
+        return entries.containsKey(UNLOCK_ENTRY_CONDUIT);
     }
 
-    public boolean hasSubscription() {
-        return checkers.containsKey(CHECKER_SUBSCRIPTION);
+    public boolean hasSubscriptionEntry() {
+        return entries.containsKey(UNLOCK_ENTRY_SUBSCRIPTION);
     }
 
-    public Flowable<Set<String>> getCheckersSetFlowable() {
-        return checkersSetRelay
+    public Flowable<Set<String>> getEntriesSetFlowable() {
+        return entriesSetRelay
                 .hide()
                 .distinctUntilChanged()
                 .toFlowable(BackpressureStrategy.LATEST);

@@ -83,7 +83,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import ca.psiphon.PsiphonTunnel;
@@ -347,12 +346,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 PackageHelper.readTrustedSignaturesFromFile(getContext().getApplicationContext())
         );
 
-        // Observe the unlock options for changes and if Conduit unlock option is present
+        // Observe the unlock options entries for changes and if Conduit unlock entry is present
         // start observing the conduit state and update the tunnel config manager accordingly
-        conduitStateObserver = unlockOptions.getCheckersSetFlowable()
-                .map(ignored -> unlockOptions.hasConduit())
+        conduitStateObserver = unlockOptions.getEntriesSetFlowable()
+                .map(ignored -> unlockOptions.hasConduitEntry())
                 .doOnNext(hasConduit -> MyLog.i(
-                        "TunnelManager: conduit unlock option present: " + hasConduit))
+                        "TunnelManager: Conduit unlock entry present: " + hasConduit))
                 .switchMap(hasConduit -> {
                     if (!hasConduit) {
                         return Flowable.empty();
@@ -364,7 +363,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                                 .map(state -> state.status() == ConduitState.Status.RUNNING)
                                 .onErrorReturnItem(false)
                                 .doOnNext(isRunning -> {
-                                    MyLog.i("TunnelManager: updating tunnel config manager with conduit state: " + isRunning);
+                                    MyLog.i("TunnelManager: updating tunnel config manager with Conduit state: " + isRunning);
                                     tunnelConfigManager.updateConduitState(isRunning);
                                 });
                     }
@@ -515,7 +514,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
     private void sendUnlockRequiredIntent() {
         Bundle bundle = new Bundle();
-        bundle.putStringArrayList(DATA_UNLOCK_OPTIONS, new ArrayList<>(unlockOptions.getActiveUnlockOptions()));
+        bundle.putStringArrayList(DATA_UNLOCK_OPTIONS, new ArrayList<>(unlockOptions.getDisplayableUnlockOptions()));
         PendingIntent showUnlockRequiredIntent = getPendingIntent(m_parentService,
                 INTENT_ACTION_SHOW_UNLOCK_REQUIRED, bundle);
         try {
@@ -2057,15 +2056,14 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     }
 
     private void processUnlockOptions(JSONObject params) {
-        // Parse the unlock options configuration from the parameters json object
-        // The expected format is:
+        // Expected format:
         // {
         //     "UnlockOptions": {
-        //         "Subscription": {}, // Value is ignored, presence of the key enables the check
-        //         "Conduit": {} // Value is ignored, presence of the key enables the check
+        //         "Subscription": {}, // Empty or missing "display" field is defaulted to true
+        //         "Conduit": { "display": false }
         //     }
         // }
-        Map<String, Supplier<Boolean>> checkers = new ConcurrentHashMap<>();
+        Map<String, UnlockOptions.UnlockEntry> entries = new ConcurrentHashMap<>();
 
         try {
             JSONObject unlockOptionsJson = params.optJSONObject("UnlockOptions");
@@ -2075,24 +2073,34 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 Iterator<String> keys = unlockOptionsJson.keys();
                 while (keys.hasNext()) {
                     String checkerType = keys.next();
+                    JSONObject entryObject = unlockOptionsJson.optJSONObject(checkerType);
+                    Boolean display = entryObject != null && entryObject.has("display")
+                            ? entryObject.optBoolean("display")
+                            : null;
 
                     switch (checkerType) {
-                        // Subscription checker - ignores params
+                        // Subscription checker
                         // NOTE: During PsiCash phase-out transition, we're treating both subscription and speed boost
                         // as valid subscription methods. After transition, this should be simplified to:
                         // unlockOptions.addChecker(UnlockOptions.CHECKER_SUBSCRIPTION, tunnelConfigManager::isSubscriptionActive);
-                        case UnlockOptions.CHECKER_SUBSCRIPTION:
-                            checkers.put(
-                                    UnlockOptions.CHECKER_SUBSCRIPTION,
-                                    () -> tunnelConfigManager.isSubscriptionActive() || tunnelConfigManager.isSpeedBoostActive()
+                        case UnlockOptions.UNLOCK_ENTRY_SUBSCRIPTION:
+                            entries.put(
+                                    UnlockOptions.UNLOCK_ENTRY_SUBSCRIPTION,
+                                    new UnlockOptions.UnlockEntry(
+                                            () -> tunnelConfigManager.isSubscriptionActive() || tunnelConfigManager.isSpeedBoostActive(),
+                                            display
+                                    )
                             );
                             break;
 
-                        // Conduit checker - ignores params
-                        case UnlockOptions.CHECKER_CONDUIT:
-                            checkers.put(
-                                    UnlockOptions.CHECKER_CONDUIT,
-                                    tunnelConfigManager::isConduitRunningActive
+                        // Conduit checker
+                        case UnlockOptions.UNLOCK_ENTRY_CONDUIT:
+                            entries.put(
+                                    UnlockOptions.UNLOCK_ENTRY_CONDUIT,
+                                    new UnlockOptions.UnlockEntry(
+                                            tunnelConfigManager::isConduitRunningActive,
+                                            display
+                                    )
                             );
                             break;
 
@@ -2105,7 +2113,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         } catch (Exception e) {
             MyLog.e("TunnelManager: failed to parse UnlockOptions: " + e);
         } finally {
-            unlockOptions.setCheckers(checkers);
+            unlockOptions.setEntries(entries);
         }
     }
 
