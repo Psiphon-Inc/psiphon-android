@@ -1,12 +1,13 @@
 package com.psiphon3;
 
+import android.os.Bundle;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.jakewharton.rxrelay2.BehaviorRelay;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -69,14 +70,28 @@ public class UnlockOptions {
         entriesSetRelay.accept(entryMap.keySet());
     }
 
-    public List<String> getDisplayableUnlockOptions() {
-        List<String> displayable = new ArrayList<>();
+    public Bundle toBundle() {
+        Bundle bundle = new Bundle();
         for (Map.Entry<String, UnlockEntry> entry : entries.entrySet()) {
-            if (entry.getValue().isDisplayable()) {
-                displayable.add(entry.getKey());
+            Bundle entryBundle = new Bundle();
+            entryBundle.putBoolean("display", entry.getValue().isDisplayable());
+            bundle.putBundle(entry.getKey(), entryBundle);
+        }
+        return bundle;
+    }
+
+    public static Map<String, Boolean> fromBundle(@Nullable Bundle bundle) {
+        Map<String, Boolean> result = new HashMap<>();
+        if (bundle == null) {
+            return result;
+        }
+        for (String key : bundle.keySet()) {
+            Bundle entry = bundle.getBundle(key);
+            if (entry != null && entry.containsKey("display")) {
+                result.put(key, entry.getBoolean("display"));
             }
         }
-        return displayable;
+        return result;
     }
 
     public boolean hasConduitEntry() {
