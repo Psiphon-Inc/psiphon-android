@@ -234,12 +234,6 @@
     <!-- Generic billing error message seen by user if there is a billing problem with the PsiCash purchase. Do not translate or transliterate word PsiCash -->
     <string name="psicash_purchase_not_available_error_message">PsiCash खरीदारी फिलहाल उपलब्ध नहीं है, कृपया बाद में पुनःप्रयास करें</string>
 
-    <!-- An alert message seen by the user when they try to use one of Speed Boost options but their PsiCash balance is insufficient.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
-    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
-    indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_insufficient_balance_alert">इस स्पीड बूस्ट विकल्प को सक्रिय करने के लिए आपके पास पर्याप्त PsiCash नहीं है, क्या आप कुछ और जोड़ना चाहेंगे/चाहेंगी?</string>
-
     <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_notification_title">Psiphon Pro को अपग्रेड करें</string>
 
@@ -502,12 +496,6 @@
 
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">डिस्कनेक्ट करें</string>
-
-    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe.-->
-    <string name="purchase_required_prompt_title">अपने क्षेत्र में Psiphon तक कैसे पहुंचें?</string>
-
-    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe.-->
-    <string name="purchase_required_prompt_body">आपके क्षेत्र में Psiphon तक पहुंच के लिए अब आपके समर्थन की आवश्यकता है। सब्स्क्राइब करके, स्पीड बूस्ट खरीदकर, या नई Conduit मोबाइल ऐप चलाकर उन लोगों के लिए Psiphon को पहुंचने योग्य बनाए रखने में सहायता करें जिन्हें इसकी सबसे अधिक आवश्यकता है।</string>
 
     <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_hr">1 घंटा</string>

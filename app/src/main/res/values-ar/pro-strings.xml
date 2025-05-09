@@ -234,12 +234,6 @@
     <!-- Generic billing error message seen by user if there is a billing problem with the PsiCash purchase. Do not translate or transliterate word PsiCash -->
     <string name="psicash_purchase_not_available_error_message">شراء PsiCash غير متاح حاليًا. يُرجى المحاولة مجددًا في وقتٍ لاحق.</string>
 
-    <!-- An alert message seen by the user when they try to use one of Speed Boost options but their PsiCash balance is insufficient.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
-    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
-    indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_insufficient_balance_alert">ليس لديك ما يكفي من PsiCash لتفعيل خيار تعزيز السرعة، هل تريد إضافة المزيد؟</string>
-
     <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_notification_title">ترقية Psiphon Pro</string>
 
@@ -502,12 +496,6 @@
 
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">قطع الاتصال</string>
-
-    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe.-->
-    <string name="purchase_required_prompt_title">كيف تتصل بـ Psiphon في منطقتك؟</string>
-
-    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe.-->
-    <string name="purchase_required_prompt_body">الوصول إلى Psiphon في منطقتك يتطلب دعمك الآن. ساعد في الحفاظ على إتاحة Psiphon للأشخاص الذين يحتاجون إليه بشدة من خلال الاشتراك، أو شراء تعزيز السرعة، أو تشغيل تطبيق Conduit الجديد على الهاتف المحمول.</string>
 
     <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_hr">ساعة</string>

@@ -234,12 +234,6 @@
     <!-- Generic billing error message seen by user if there is a billing problem with the PsiCash purchase. Do not translate or transliterate word PsiCash -->
     <string name="psicash_purchase_not_available_error_message">Ununuzi wa PsiCash haupatikani kwa sasa, tafadhali jaribu tena baadaye.</string>
 
-    <!-- An alert message seen by the user when they try to use one of Speed Boost options but their PsiCash balance is insufficient.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
-    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
-    indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_insufficient_balance_alert">Huna salio la kutosha la PsiCash kuwezesha chaguo hili la Speed Boost. Je, ungependa kuongeza salio?</string>
-
     <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_notification_title">Boresha Psiphon Pro</string>
 
@@ -502,12 +496,6 @@
 
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">Ondoa muunganisho</string>
-
-    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe.-->
-    <string name="purchase_required_prompt_title">Jinsi ya kupata Psiphon katika eneo lako?</string>
-
-    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe.-->
-    <string name="purchase_required_prompt_body">Upatikanaji wa Psiphon katika eneo lako sasa unahitaji msaada wako. Saidia kuifanya Psiphon iweze kufikiwa na watu wanaoihitaji zaidi kwa kujisajili, kununua Speed Boost, au kuendesha programu mpya ya simu ya Conduit.</string>
 
     <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_hr">Lisaa1</string>
