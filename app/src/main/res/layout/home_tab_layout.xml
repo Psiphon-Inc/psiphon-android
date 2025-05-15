@@ -51,7 +51,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:drawablePadding="4dp"
-                android:text="1.5 Mbps"
                 android:visibility="gone"
                 android:textAppearance="?android:attr/textAppearanceMedium"
                 app:drawableStartCompat="@drawable/arrow_upward" />
@@ -62,7 +61,6 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:drawablePadding="4dp"
-                android:text="5.2 Mbps"
                 android:visibility="gone"
                 android:textAppearance="?android:attr/textAppearanceMedium"
                 app:drawableStartCompat="@drawable/arrow_downward" />
@@ -72,7 +70,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:drawablePadding="4dp"
-                android:text="5.2 Mbps"
                 android:visibility="gone"
                 android:textAppearance="?android:attr/textAppearanceMedium"
                 app:drawableStartCompat="@drawable/arrow_upward_downward" />
