@@ -81,8 +81,7 @@
         android:id="@+id/subscriptionCardView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
+        android:layout_marginHorizontal="8dp"
         android:layout_marginTop="8dp"
         app:cardCornerRadius="8dp"
         app:cardElevation="4dp"
@@ -95,8 +94,7 @@
             android:layout_height="wrap_content"
             android:gravity="center_horizontal"
             android:orientation="vertical"
-            android:paddingTop="16dp"
-            android:paddingBottom="16dp">
+            android:paddingVertical="16dp">
 
             <!-- Access label (e.g. Subscription: Active) -->
             <TextView
@@ -105,7 +103,6 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:textAppearance="?android:attr/textAppearanceSmall"
-                android:layout_marginBottom="8dp"
                 android:visibility="visible" />
 
             <!-- Upgrade Button -->
@@ -113,9 +110,8 @@
                 android:id="@+id/upgradeButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="12dp"
                 android:layout_marginHorizontal="12dp"
-                android:layout_marginBottom="12dp"
                 android:text="@string/rate_limit_text_subscribe_button"
                 android:visibility="gone" />
 
@@ -126,6 +122,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:text="@string/manage_my_subscription_link_text"
+                android:layout_marginTop="12dp"
                 android:visibility="gone" />
         </LinearLayout>
     </androidx.cardview.widget.CardView>
