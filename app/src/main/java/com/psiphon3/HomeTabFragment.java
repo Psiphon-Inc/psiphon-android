@@ -27,10 +27,6 @@ import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.method.LinkMovementMethod;
 import android.text.style.URLSpan;
-import android.transition.Slide;
-import android.transition.Transition;
-import android.transition.TransitionManager;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -43,35 +39,29 @@ import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
-import androidx.lifecycle.ViewModelProvider;
 
 import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.billing.SubscriptionState;
 import com.psiphon3.log.MyLog;
-import com.psiphon3.psicash.details.PsiCashDetailsViewModel;
 import com.psiphon3.psicash.details.PsiCashFragment;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
 
 import io.reactivex.Flowable;
-import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 
 public class HomeTabFragment extends Fragment {
     private static final String PLAY_STORE_SUBSCRIPTION_DEEPLINK_URL = "https://play.google.com/store/account/subscriptions?sku=%s&package=%s";
-    private View rateLimitConstraintLayout;
-    private View rateLimitedTextSection;
-    private TextView rateLimitedText;
-    private TextView rateUnlimitedText;
     private TextView manageSubscriptionLink;
-    private Button rateLimitUpgradeButton;
-    private final CompositeDisposable compositeDisposable = new CompositeDisposable();
-    private PsiCashDetailsViewModel psiCashDetailsViewModel;
-    private GooglePlayBillingHelper googlePlayBillingHelper;
-    private Observable<Boolean> showConduitRunningObservable;
+    private TextView upRateLimitTextView;
+    private TextView downRateLimitTextView;
+    private TextView combinedRateLimitTextView;
+    private TextView accessStatusLabel;
+    private Button upgradeButton;
     private Drawable conduitAppIcon;
+    private final CompositeDisposable compositeDisposable = new CompositeDisposable();
 
 
     @Nullable
@@ -84,18 +74,17 @@ public class HomeTabFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        rateLimitedTextSection = view.findViewById(R.id.rateLimitedTextSection);
-        rateLimitedText = view.findViewById(R.id.rateLimitedText);
-        rateUnlimitedText = view.findViewById(R.id.rateUnlimitedText);
-
         manageSubscriptionLink = view.findViewById(R.id.manageSubscriptionLink);
+        upRateLimitTextView = view.findViewById(R.id.upRateLimitTextView);
+        downRateLimitTextView = view.findViewById(R.id.downRateLimitTextView);
+        combinedRateLimitTextView = view.findViewById(R.id.combinedRateLimitTextView);
+        accessStatusLabel = view.findViewById(R.id.accessStatusLabel);
+        upgradeButton = view.findViewById(R.id.upgradeButton);
 
-        rateLimitUpgradeButton = view.findViewById(R.id.rateLimitUpgradeButton);
-        rateLimitUpgradeButton.setOnClickListener(v ->
+        upgradeButton.setOnClickListener(v ->
                 MainActivity.openPaymentChooserActivity(requireActivity(),
                         getResources().getInteger(R.integer.subscriptionTabIndex)));
 
-        rateLimitConstraintLayout = view.findViewById(R.id.rateLimitConstraintLayout);
 
         if (savedInstanceState == null) {
             getChildFragmentManager()
@@ -105,14 +94,26 @@ public class HomeTabFragment extends Fragment {
                     .commit();
         }
 
-        psiCashDetailsViewModel = new ViewModelProvider(requireActivity(),
-                new ViewModelProvider.AndroidViewModelFactory(requireActivity().getApplication()))
-                .get(PsiCashDetailsViewModel.class);
+    }
 
-        googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(requireContext());
+    @Override
+    public void onPause() {
+        super.onPause();
+        compositeDisposable.clear();
+    }
 
-        showConduitRunningObservable = ((LocalizedActivities.AppCompatActivity) requireActivity())
-                .getTunnelServiceInteractor().tunnelStateFlowable()
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        Flowable<TunnelState> tunnelStateFlowable = ((LocalizedActivities.AppCompatActivity) requireActivity())
+                .getTunnelServiceInteractor().tunnelStateFlowable();
+
+        Flowable<RateLimitHelper.Display> rateLimitFlowable =
+                tunnelStateFlowable.map(state -> RateLimitHelper.getDisplay(requireContext()))
+                        .distinctUntilChanged();
+
+        Flowable<Boolean> conduitIsRunningFlowable = tunnelStateFlowable
                 .switchMap(tunnelState -> {
                     // If tunnel is running check if sponsor ID matches CONDUIT_RUNNING_SPONSOR_ID
                     if (tunnelState.isRunning() && tunnelState.connectionData() != null) {
@@ -126,147 +127,23 @@ public class HomeTabFragment extends Fragment {
                                 .onErrorReturnItem(false);
                     }
                 })
-                .distinctUntilChanged()
-                .toObservable();
-    }
+                .distinctUntilChanged();
 
-    @Override
-    public void onPause() {
-        super.onPause();
-        compositeDisposable.clear();
-    }
+        Flowable<SubscriptionState> subscriptionStateFlowable =
+                GooglePlayBillingHelper.getInstance(requireContext())
+                        .subscriptionStateFlowable()
+                        .distinctUntilChanged();
 
-    @Override
-    public void onResume() {
-        super.onResume();
-
-        // Observe subscription and speed boost states and update rate limit badge and 'Subscribe' button UI
-        compositeDisposable.add(Observable.combineLatest(
-                        googlePlayBillingHelper.subscriptionStateFlowable()
-                                .distinctUntilChanged()
-                                .toObservable(),
-                        psiCashDetailsViewModel.hasActiveSpeedBoostObservable(),
-                        showConduitRunningObservable,
-                        RateLimitDisplayState::new)
-                .distinctUntilChanged()
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext(rateLimitDisplayState -> {
-                    SubscriptionState subscriptionState = rateLimitDisplayState.subscriptionState;
-                    boolean hasActiveSpeedBoost = rateLimitDisplayState.hasActiveSpeedBoost;
-                    boolean showConduitRunning = rateLimitDisplayState.showConduitRunning;
-
-                    // Show "Manage subscription" link if subscription, hide otherwise
-                    if (subscriptionState.status() == SubscriptionState.Status.HAS_LIMITED_SUBSCRIPTION ||
-                            subscriptionState.status() == SubscriptionState.Status.HAS_UNLIMITED_SUBSCRIPTION) {
-                        String url = String.format(PLAY_STORE_SUBSCRIPTION_DEEPLINK_URL,
-                                subscriptionState.purchase().getSkus().get(0),
-                                requireContext().getPackageName());
-                        CharSequence charSequence = manageSubscriptionLink.getText().toString();
-                        SpannableString spannableString = new SpannableString(charSequence);
-                        spannableString.setSpan(new URLSpan(url), 0, spannableString.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        manageSubscriptionLink.setText(spannableString, TextView.BufferType.SPANNABLE);
-                        manageSubscriptionLink.setMovementMethod(LinkMovementMethod.getInstance());
-                        manageSubscriptionLink.setVisibility(View.VISIBLE);
-                    } else {
-                        manageSubscriptionLink.setVisibility(View.GONE);
-                    }
-
-                    // If time pass or unlimited subscription hide the "Upgrade" button and show the "UNLIMITED" label
-                    if (subscriptionState.status() == SubscriptionState.Status.HAS_TIME_PASS ||
-                            subscriptionState.status() == SubscriptionState.Status.HAS_UNLIMITED_SUBSCRIPTION) {
-                        // Hide the rate limit label
-                        rateLimitedText.setVisibility(View.GONE);
-                        // Show the "Unlimited" label
-                        rateUnlimitedText.setVisibility(View.VISIBLE);
-                        // Hide the "Upgrade" button
-                        rateLimitUpgradeButton.setVisibility(View.GONE);
-                    } else {
-                        // Hide the "Unlimited" label
-                        rateUnlimitedText.setVisibility(View.GONE);
-                        // Show the "Upgrade" button
-                        rateLimitUpgradeButton.setVisibility(View.VISIBLE);
-                        // Clear all drawables from the rate limit label
-                        rateLimitedText.setCompoundDrawables(null, null, null, null);
-
-                        // For limited subscription set rate limit label to "5 Mb/s"
-                        if (subscriptionState.status() == SubscriptionState.Status.HAS_LIMITED_SUBSCRIPTION) {
-                            rateLimitedText.setText(getString(R.string.rate_limit_text_limited, 5));
-                        } else {
-                            // No subscription, check in the following order:
-                            // speed boost, show conduit running, default
-                            if (hasActiveSpeedBoost) {
-                                // If there is an active speed boost, show the speed boost label
-                                rateLimitedText.setText(getString(R.string.rate_limit_text_speed_boost));
-                            } else if (showConduitRunning) {
-                                // Show Conduit app icon and "Unlimited" label if the conduit is running
-
-                                // Initialize conduitAppIcon only when needed
-                                if (conduitAppIcon == null) {
-                                    try {
-                                        PackageManager pm = requireContext().getPackageManager();
-                                        ApplicationInfo appInfo = pm.getApplicationInfo("ca.psiphon.conduit", 0);
-                                        conduitAppIcon = pm.getApplicationIcon(appInfo);
-                                    } catch (PackageManager.NameNotFoundException e) {
-                                        conduitAppIcon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_conduit_default);
-                                    }
-                                    if (conduitAppIcon != null) {
-                                        int size = (int) (rateLimitedText.getLineHeight());
-                                        conduitAppIcon.setBounds(0, 0, size, size);
-                                    }
-                                }
-
-                                if (conduitAppIcon != null) {
-                                    rateLimitedText.setCompoundDrawablePadding(getResources().getDimensionPixelSize(R.dimen.padding_small));
-                                    // Depending on the layout direction, set the icon to the left or right of the text
-                                    if (ViewCompat.getLayoutDirection(rateLimitedText) == ViewCompat.LAYOUT_DIRECTION_RTL) {
-                                        rateLimitedText.setCompoundDrawables(null, null, conduitAppIcon, null);
-                                    } else {
-                                        rateLimitedText.setCompoundDrawables(conduitAppIcon, null, null, null);
-                                    }
-                                }
-                                // Show the rate limit label "Unlimited"
-                                rateLimitedText.setText(getString(R.string.rate_limit_text_unlimited));
-                            } else {
-                                // Set the default rate limit label to "2 Mb/s"
-                                rateLimitedText.setText(getString(R.string.rate_limit_text_limited, 2));
-                            }
-                        }
-                        // Show the rate limit label
-                        rateLimitedText.setVisibility(View.VISIBLE);
-                    }
-                    rateLimitedTextSection.setVisibility(View.VISIBLE);
-                })
-                .subscribe());
-
-        compositeDisposable.add(((LocalizedActivities.AppCompatActivity) requireActivity())
-                .getTunnelServiceInteractor().tunnelStateFlowable()
-                .observeOn(AndroidSchedulers.mainThread())
-                        .doOnNext(tunnelState -> {
-                            // Hide the whole rate limit / subscription badge container layout if
-                            // tunnel is running and connected
-                            if (tunnelState.isRunning() && !tunnelState.connectionData().isConnected()) {
-                                if (rateLimitConstraintLayout.getVisibility() == View.VISIBLE) {
-                                    changeVisibility(rateLimitConstraintLayout, View.GONE);
-                                }
-                            } else {
-                                if (rateLimitConstraintLayout.getVisibility() == View.GONE) {
-                                    changeVisibility(rateLimitConstraintLayout, View.VISIBLE);
-                                }
-                            }
-                        })
-                .subscribe());
-
-    }
-
-    // Animate the visibility change of a view if the device is running Lollipop or higher
-    private void changeVisibility(View view, int visible) {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-            Transition transition = new Slide(Gravity.BOTTOM);
-            transition.setDuration(300);
-            transition.addTarget(view);
-            TransitionManager.beginDelayedTransition((ViewGroup) view.getParent(), transition);
-        }
-        view.setVisibility(visible);
+        compositeDisposable.add(
+                Flowable.combineLatest(
+                                rateLimitFlowable,
+                                subscriptionStateFlowable,
+                                tunnelStateFlowable,
+                                conduitIsRunningFlowable,
+                                UiState::new)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnNext(this::render)
+                        .subscribe());
     }
 
     @Override
@@ -275,15 +152,165 @@ public class HomeTabFragment extends Fragment {
         compositeDisposable.dispose();
     }
 
-    private static class RateLimitDisplayState {
-        final SubscriptionState subscriptionState;
-        final boolean hasActiveSpeedBoost;
-        final boolean showConduitRunning;
+    private void render(UiState uiState) {
+        boolean isTunnelConnecting = uiState.tunnelState.isRunning() && !uiState.tunnelState.connectionData().isConnected();
+        boolean isTunnelConnected = uiState.tunnelState.isRunning() && uiState.tunnelState.connectionData().isConnected();
+        renderRateLimitDisplay(uiState.rateLimitDisplay, isTunnelConnected);
+        renderAccessStatus(uiState.subscriptionState, uiState.conduitIsRunning);
+        renderSubscriptionActions(uiState.subscriptionState, isTunnelConnecting);
+    }
 
-        RateLimitDisplayState(SubscriptionState subscriptionState, boolean hasActiveSpeedBoost, boolean showConduitRunning) {
+
+    private void renderAccessStatus(SubscriptionState subscriptionState, boolean conduitIsRunning) {
+        // Limited subscription - display subscription_limited
+        // Unlimited subscription - display subscription_unlimited
+        // Time pass - display time_pass_active
+        // No subscription - display subscription_none if conduit is not running or conduit_active if conduit is running
+
+        String labelText;
+
+        switch (subscriptionState.status()) {
+            case HAS_LIMITED_SUBSCRIPTION:
+                labelText = getString(R.string.subscription_limited);
+                break;
+            case HAS_UNLIMITED_SUBSCRIPTION:
+                labelText = getString(R.string.subscription_unlimited);
+                break;
+            case HAS_TIME_PASS:
+                labelText = getString(R.string.time_pass_active);
+                break;
+            case HAS_NO_SUBSCRIPTION:
+            default:
+                labelText = conduitIsRunning
+                        ? getString(R.string.conduit_active)
+                        : getString(R.string.subscription_none);
+                break;
+        }
+
+        accessStatusLabel.setText(labelText);
+
+        if (subscriptionState.status() == SubscriptionState.Status.HAS_NO_SUBSCRIPTION && conduitIsRunning) {
+            // Initialize conduitAppIcon only when needed
+            if (conduitAppIcon == null) {
+                try {
+                    PackageManager pm = requireContext().getPackageManager();
+                    ApplicationInfo appInfo = pm.getApplicationInfo("ca.psiphon.conduit", 0);
+                    conduitAppIcon = pm.getApplicationIcon(appInfo);
+                } catch (PackageManager.NameNotFoundException e) {
+                    conduitAppIcon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_conduit_default);
+                }
+
+                if (conduitAppIcon != null) {
+                    int size = accessStatusLabel.getLineHeight();
+                    conduitAppIcon.setBounds(0, 0, size, size);
+                }
+            }
+
+            if (conduitAppIcon != null) {
+                accessStatusLabel.setCompoundDrawablePadding(getResources().getDimensionPixelSize(R.dimen.padding_small));
+                if (ViewCompat.getLayoutDirection(accessStatusLabel) == ViewCompat.LAYOUT_DIRECTION_RTL) {
+                    accessStatusLabel.setCompoundDrawables(null, null, conduitAppIcon, null);
+                } else {
+                    accessStatusLabel.setCompoundDrawables(conduitAppIcon, null, null, null);
+                }
+            }
+        } else {
+            // Clear drawable if not showing Conduit state
+            accessStatusLabel.setCompoundDrawables(null, null, null, null);
+        }
+    }
+
+    private void renderSubscriptionActions(SubscriptionState subscriptionState, boolean disableActions) {
+        // No subscription - show the upgrade button, and hide the manage subscription link
+        // Limited subscription - show the upgrade button, and show the manage subscription link
+        // Unlimited subscription - hide the upgrade button, and show the manage subscription link
+        // Time pass - hide the upgrade button, hide the manage subscription link
+
+        SubscriptionState.Status status = subscriptionState.status();
+
+        boolean showUpgradeButton = status == SubscriptionState.Status.HAS_LIMITED_SUBSCRIPTION ||
+                status == SubscriptionState.Status.HAS_NO_SUBSCRIPTION;
+
+        boolean showManageLink = status == SubscriptionState.Status.HAS_LIMITED_SUBSCRIPTION ||
+                status == SubscriptionState.Status.HAS_UNLIMITED_SUBSCRIPTION;
+
+        upgradeButton.setVisibility(showUpgradeButton ? View.VISIBLE : View.GONE);
+        upgradeButton.setEnabled(!disableActions);
+
+        if (showManageLink) {
+            setManageSubscriptionLink(subscriptionState, !disableActions);
+        } else {
+            manageSubscriptionLink.setVisibility(View.GONE);
+        }
+    }
+
+    private void setManageSubscriptionLink(SubscriptionState subscriptionState, boolean enabled) {
+        // If we have a subscription, set up and show the manage subscription link
+        if (subscriptionState.status() == SubscriptionState.Status.HAS_LIMITED_SUBSCRIPTION ||
+                subscriptionState.status() == SubscriptionState.Status.HAS_UNLIMITED_SUBSCRIPTION) {
+
+            String url = String.format(PLAY_STORE_SUBSCRIPTION_DEEPLINK_URL,
+                    subscriptionState.purchase().getSkus().get(0),
+                    requireContext().getPackageName());
+
+            SpannableString spannable = new SpannableString(manageSubscriptionLink.getText().toString());
+            spannable.setSpan(new URLSpan(url), 0, spannable.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            manageSubscriptionLink.setText(spannable, TextView.BufferType.SPANNABLE);
+            manageSubscriptionLink.setMovementMethod(LinkMovementMethod.getInstance());
+
+            manageSubscriptionLink.setVisibility(View.VISIBLE);
+            manageSubscriptionLink.setEnabled(enabled);
+            manageSubscriptionLink.setAlpha(enabled ? 1.0f : 0.5f);
+        } else {
+            manageSubscriptionLink.setVisibility(View.GONE);
+        }
+    }
+
+    private void renderRateLimitDisplay(RateLimitHelper.Display rateLimitDisplay, boolean isTunnelConnected) {
+        if (rateLimitDisplay.isSymmetric) {
+            upRateLimitTextView.setVisibility(View.GONE);
+            downRateLimitTextView.setVisibility(View.GONE);
+
+            combinedRateLimitTextView.setVisibility(View.VISIBLE);
+            combinedRateLimitTextView.setText(rateLimitDisplay.combined);
+            applyEffect(combinedRateLimitTextView, isTunnelConnected);
+        } else {
+            upRateLimitTextView.setVisibility(View.VISIBLE);
+            downRateLimitTextView.setVisibility(View.VISIBLE);
+            combinedRateLimitTextView.setVisibility(View.GONE);
+
+            upRateLimitTextView.setText(rateLimitDisplay.up);
+            downRateLimitTextView.setText(rateLimitDisplay.down);
+            applyEffect(upRateLimitTextView, isTunnelConnected);
+            applyEffect(downRateLimitTextView, isTunnelConnected);
+        }
+    }
+
+    private void applyEffect(TextView textView, boolean isTunnelConnected) {
+        if (isTunnelConnected) {
+            textView.setShadowLayer(7f, 0f, 0f,
+                    ContextCompat.getColor(textView.getContext(), R.color.rate_limit_glow));
+            textView.setAlpha(1f); // ensure full opacity
+        } else {
+            textView.setShadowLayer(0f, 0f, 0f, 0);
+            textView.setAlpha(0.4f); // dim if stale
+        }
+    }
+
+    private static class UiState {
+        private final SubscriptionState subscriptionState;
+        private final TunnelState tunnelState;
+        private final boolean conduitIsRunning;
+        private final RateLimitHelper.Display rateLimitDisplay;
+
+        public UiState(RateLimitHelper.Display rateLimitDisplay,
+                       SubscriptionState subscriptionState,
+                       TunnelState tunnelState,
+                       boolean conduitIsRunning) {
             this.subscriptionState = subscriptionState;
-            this.hasActiveSpeedBoost = hasActiveSpeedBoost;
-            this.showConduitRunning = showConduitRunning;
+            this.tunnelState = tunnelState;
+            this.conduitIsRunning = conduitIsRunning;
+            this.rateLimitDisplay = rateLimitDisplay;
         }
     }
 }

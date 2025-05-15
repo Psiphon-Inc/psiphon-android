@@ -299,6 +299,8 @@ public class TunnelServiceInteractor {
         if (homePages != null && tunnelState.isConnected()) {
             tunnelState.homePages = homePages;
         }
+        tunnelState.upstreamRateLimitBytesPerSecond = data.getLong(TunnelManager.DATA_TUNNEL_STATE_UPSTREAM_RATE_LIMIT, -1);
+        tunnelState.downstreamRateLimitBytesPerSecond = data.getLong(TunnelManager.DATA_TUNNEL_STATE_DOWNSTREAM_RATE_LIMIT, -1);
         return tunnelState;
     }
 
@@ -351,6 +353,8 @@ public class TunnelServiceInteractor {
                                 .setSponsorId(state.sponsorId)
                                 .setHttpPort(state.listeningLocalHttpProxyPort)
                                 .setHomePages(state.homePages)
+                                .setUpstreamRateLimitBytesPerSecond(state.upstreamRateLimitBytesPerSecond)
+                                .setDownstreamRateLimitBytesPerSecond(state.downstreamRateLimitBytesPerSecond)
                                 .build();
                         tunnelState = TunnelState.running(connectionData);
                     } else {
