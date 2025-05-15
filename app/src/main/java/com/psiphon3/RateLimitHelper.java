@@ -9,6 +9,7 @@ import com.psiphon3.subscription.R;
 import net.grandcentrix.tray.AppPreferences;
 
 import java.util.Locale;
+import java.util.Objects;
 
 public class RateLimitHelper {
     private static final String KEY_UPSTREAM_RATE_LIMIT = "rate_limit_upstream";
@@ -94,6 +95,23 @@ public class RateLimitHelper {
             this.up = up;
             this.down = down;
             this.combined = combined;
+        }
+
+        // Override equals and hashCode for proper comparison when used in the Rx chains with distinctUntilChanged
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Display display = (Display) o;
+            return isSymmetric == display.isSymmetric &&
+                    Objects.equals(up, display.up) &&
+                    Objects.equals(down, display.down) &&
+                    Objects.equals(combined, display.combined);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(isSymmetric, up, down, combined);
         }
     }
 }
