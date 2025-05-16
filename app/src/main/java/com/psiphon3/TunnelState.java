@@ -54,6 +54,10 @@ public abstract class TunnelState {
 
         public abstract int httpPort();
 
+        public abstract long upstreamRateLimitBytesPerSecond();
+
+        public abstract long downstreamRateLimitBytesPerSecond();
+
         @Nullable
         public abstract ArrayList<String> homePages();
 
@@ -65,6 +69,8 @@ public abstract class TunnelState {
                     .setPropagationChannelId("")
                     .setSponsorId("")
                     .setHttpPort(0)
+                    .setUpstreamRateLimitBytesPerSecond(-1)
+                    .setDownstreamRateLimitBytesPerSecond(-1)
                     .setHomePages(null);
         }
 
@@ -83,6 +89,10 @@ public abstract class TunnelState {
             public abstract Builder setHttpPort(int port);
 
             public abstract Builder setHomePages(@Nullable ArrayList<String> homePages);
+
+            public abstract Builder setUpstreamRateLimitBytesPerSecond(long upstreamRateLimit);
+
+            public abstract Builder setDownstreamRateLimitBytesPerSecond(long downstreamRateLimit);
 
             public abstract ConnectionData build();
         }

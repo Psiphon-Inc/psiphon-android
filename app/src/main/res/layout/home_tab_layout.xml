@@ -2,47 +2,136 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/homeTab"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
-    <!-- Using 0dp, which is the equivalent of "MATCH_CONSTRAINT" -->
-    <LinearLayout
-        android:layout_width="fill_parent"
+    <!-- Scrollable main content -->
+    <ScrollView
+        android:id="@+id/psicashContainer"
+        android:layout_width="0dp"
         android:layout_height="0dp"
-        android:orientation="vertical"
-        app:layout_constraintBottom_toTopOf="@id/rateLimitConstraintLayout"
+        android:fillViewport="true"
+        app:layout_constraintBottom_toTopOf="@+id/speedDisplay"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
+        <FrameLayout
+            android:id="@+id/psicash_fragment_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp" />
+    </ScrollView>
 
+    <!-- Speed display section (always visible) -->
+    <LinearLayout
+        android:id="@+id/speedDisplay"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingVertical="16dp"
+        app:layout_constraintBottom_toTopOf="@+id/subscriptionCardView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/rate_limit_text_title"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+        <LinearLayout
+            android:id="@+id/rateLimitSection"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:gravity="center_horizontal"
+            android:orientation="horizontal">
 
-        <ScrollView
-            android:id="@+id/psicashContainer"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:orientation="vertical"
-            android:scrollbarAlwaysDrawVerticalTrack="false">
+            <TextView
+                android:id="@+id/upRateLimitTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:drawablePadding="4dp"
+                android:visibility="gone"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                app:drawableStartCompat="@drawable/arrow_upward" />
 
-            <FrameLayout
-                android:id="@+id/psicash_fragment_container"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-        </ScrollView>
+            <TextView
+                android:id="@+id/downRateLimitTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:drawablePadding="4dp"
+                android:visibility="gone"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                app:drawableStartCompat="@drawable/arrow_downward" />
 
+            <TextView
+                android:id="@+id/combinedRateLimitTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:drawablePadding="4dp"
+                android:visibility="gone"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                app:drawableStartCompat="@drawable/arrow_upward_downward" />
+        </LinearLayout>
     </LinearLayout>
 
-    <include
-        layout="@layout/rate_limit_info"
-        android:layout_width="fill_parent"
+    <!-- Subscription card as direct child of main layout -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/subscriptionCardView"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginHorizontal="8dp"
+        android:layout_marginTop="8dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent">
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingVertical="16dp">
+
+            <!-- Access label (e.g. Subscription: Active) -->
+            <TextView
+                android:id="@+id/accessStatusLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:visibility="visible" />
+
+            <!-- Upgrade Button -->
+            <Button
+                android:id="@+id/upgradeButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:layout_marginHorizontal="12dp"
+                android:text="@string/rate_limit_text_subscribe_button"
+                android:visibility="gone" />
+
+            <!-- Manage Subscription Button -->
+            <TextView
+                android:id="@+id/manageSubscriptionLink"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:text="@string/manage_my_subscription_link_text"
+                android:layout_marginTop="12dp"
+                android:visibility="gone" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Snackbar anchor -->
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:id="@+id/snackbar_anchor_layout"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:layout_height="wrap_content"
         android:layout_margin="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

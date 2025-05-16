@@ -55,6 +55,7 @@ import com.psiphon3.ConduitStateManager;
 import com.psiphon3.Location;
 import com.psiphon3.PackageHelper;
 import com.psiphon3.PsiphonCrashService;
+import com.psiphon3.RateLimitHelper;
 import com.psiphon3.TunnelState;
 import com.psiphon3.UnlockOptions;
 import com.psiphon3.VpnManager;
@@ -139,6 +140,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     static final String DATA_TUNNEL_STATE_CLIENT_REGION = "clientRegion";
     static final String DATA_TUNNEL_STATE_SPONSOR_ID = "sponsorId";
     public static final String DATA_TUNNEL_STATE_HOME_PAGES = "homePages";
+    public static final String DATA_TUNNEL_STATE_UPSTREAM_RATE_LIMIT = "upstreamRateLimit";
+    public static final String DATA_TUNNEL_STATE_DOWNSTREAM_RATE_LIMIT = "downstreamRateLimit";
     static final String DATA_TRANSFER_STATS_CONNECTED_TIME = "dataTransferStatsConnectedTime";
     static final String DATA_TRANSFER_STATS_TOTAL_BYTES_SENT = "dataTransferStatsTotalBytesSent";
     static final String DATA_TRANSFER_STATS_TOTAL_BYTES_RECEIVED = "dataTransferStatsTotalBytesReceived";
@@ -168,6 +171,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         String clientRegion = "";
         String sponsorId = "";
         ArrayList<String> homePages = new ArrayList<>();
+        // Rate limits set to -1 indicate that the rate limit is not set, since 0 is
+        // a valid rate limit and means 'no limit'.
+        long upstreamRateLimitBytesPerSecond = -1;
+        long downstreamRateLimitBytesPerSecond = -1;
 
         boolean isConnected() {
             return networkConnectionState == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED;
@@ -1042,6 +1049,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         data.putString(DATA_TUNNEL_STATE_CLIENT_REGION, m_tunnelState.clientRegion);
         data.putString(DATA_TUNNEL_STATE_SPONSOR_ID, m_tunnelState.sponsorId);
         data.putStringArrayList(DATA_TUNNEL_STATE_HOME_PAGES, m_tunnelState.homePages);
+        data.putLong(DATA_TUNNEL_STATE_UPSTREAM_RATE_LIMIT, m_tunnelState.upstreamRateLimitBytesPerSecond);
+        data.putLong(DATA_TUNNEL_STATE_DOWNSTREAM_RATE_LIMIT, m_tunnelState.downstreamRateLimitBytesPerSecond);
         return data;
     }
 
@@ -2181,5 +2190,19 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 onRestartTunnel();
                 break;
         }
+    }
+
+    @Override
+    public void onTrafficRateLimits(long upBytesPerSecond, long downBytesPerSecond) {
+        m_Handler.post(new Runnable() {
+            @Override
+            public void run() {
+                m_tunnelState.upstreamRateLimitBytesPerSecond = upBytesPerSecond;
+                m_tunnelState.downstreamRateLimitBytesPerSecond = downBytesPerSecond;
+                RateLimitHelper.setRateLimits(getContext(), upBytesPerSecond, downBytesPerSecond);
+                // Send the updated tunnel state with the rate limits to the client(s) to trigger UI update
+                sendClientMessage(ServiceToClientMessage.TUNNEL_CONNECTION_STATE.ordinal(), getTunnelStateBundle());
+            }
+        });
     }
 }
