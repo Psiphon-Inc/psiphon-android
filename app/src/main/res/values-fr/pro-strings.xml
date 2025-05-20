@@ -12,7 +12,7 @@
     <string name="custom_proxy_headers_checkbox_title">Ajouter des en-têtes HTTP personnalisés</string>
 
     <!--  Summary text for 'Add custom HTTP headers' checkbox, appears underneath the checkbox title -->
-    <string name="custom_proxy_headers_checkbox_description">Ajouter des en-têtes HTTP personnalisés à toutes les requêtes sortantes vers le mandataire</string>
+    <string name="custom_proxy_headers_checkbox_description">Ajoutez des en-têtes HTTP personnalisés à toutes les requêtes sortantes vers le mandataire</string>
     <string name="custom_proxy_header_group_1">En-tête 1</string>
     <string name="custom_proxy_header_group_2">En-tête 2</string>
     <string name="custom_proxy_header_group_3">En-tête 3</string>
@@ -27,21 +27,20 @@
          speed if they have not paid for premium service. -->
     <string name="rate_limit_text_title">Limite de vitesse de Psiphon :</string>
 
-    <!-- Indicates the user's current speed limit. The placeholder will be a number like '1' or '2.5',
-         and is in megabits-per-second. Users have limited speed if they have not paid for premium
-         service. -->
-    <string name="rate_limit_text_limited">%d Mo/s</string>
+    <!--
+        Template for rendering a rate value and its unit label.
+        %1$s = numeric value (e.g., "5.3"), %2$s = unit label (e.g., "MB/s").
+        Reorder the format specifiers if in your language the unit appears before the value.
+        Example output: "5.3 MB/s", "1.2 Kbps".
+        Reorder the format specifiers '%1$s' and '%2$s' if in the translated language ordering numeric value and rate unit in speed rate string is different from English.
+    -->
+    <string name="rate_with_unit_template">%1$s %2$s</string>
 
-    <!-- Indicates that the user has no speed limit. They have paid for premium service and therefore
-         have access to a full-speed connection. Users have limited speed if they have not paid for
-         premium service. -->
-    <string name="rate_limit_text_unlimited">Illimitée</string>
-
-    <!-- Indicates that the user has an active speed boost.'Speed Boost' is a reward that can be purchased with PsiCash credit.
-    It provides unlimited network connection speed through Psiphon.
-    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
-    anything that indicates a fast or unrestricted speed. -->
-    <string name="rate_limit_text_speed_boost">Survitesse.</string>
+    <string name="rate_unit_kbps_bits">Kbit/s</string>
+    <string name="rate_unit_mbps_bits">Mbit/s</string>
+    <string name="rate_unit_gbps_bits">Gbps</string>
+    <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
+    <string name="speed_rate_limit_not_available">Non disponible</string>
 
     <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
          the workflow to subscribe for premium access. -->
@@ -76,11 +75,11 @@
     and that they should try updating or reinstalling the app. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network
     connection speed through Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
     anything that indicates a fast or unrestricted speed. -->
-    <string name="psicash_transaction_type_not_found_message">Le produit Survitesse est introuvable. Votre appli est peut-être périmée. Veuillez vérifier la présence de mises à jour.</string>
+    <string name="psicash_transaction_type_not_found_message">Le produit Survitesse est introuvable. Votre appli est peut-être périmée. Vérifiez la présence de mises à jour.</string>
 
     <!-- Alert error message informing user that their Speed Boost purchase request failed because their app has entered an invalid state and that they
     should try updating or reinstalling the app. Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_transaction_invalid_tokens_message">L’appli est entrée dans un état invalide. Veuillez réinstaller l’appli pour continuer à utiliser le PsiCash.</string>
+    <string name="psicash_transaction_invalid_tokens_message">L’appli est entrée dans un état invalide. Réinstallez l’appli pour continuer à utiliser le PsiCash.</string>
 
     <!-- Alert error message informing user that their Speed Boost purchase request failed because their PsiCash account tokens have expired and they need to
     log in again prior to retrying last operation. Note: 'PsiCash' should not be translated or transliterated. -->
@@ -88,61 +87,61 @@
 
     <!-- Alert error message informing user that the request failed due to a 'bad request' error.
     Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_transaction_bad_request_message">Le serveur PsiCash a indiqué que la demande était invalide. Veuillez réessayer plus tard.</string>
+    <string name="psicash_transaction_bad_request_message">Le serveur PsiCash a indiqué que la demande était invalide. Réessayez plus tard.</string>
 
     <!-- Alert error message informing user that their Speed Boost purchase request failed due to a server error and that they should try again in a few minutes -->
-    <string name="transaction_server_error_message">Erreur du serveur. Veuillez réessayer dans quelques minutes</string>
+    <string name="transaction_server_error_message">Erreur du serveur. Réessayez dans quelques minutes</string>
 
     <!-- Alert error message informing user that a critical PsiCash related error has occurred and encouraging users to send feedback diagnostics -->
-    <string name="psicash_critical_error_message">Une erreur irrécupérable est survenue. Veuillez envoyer une rétroaction.</string>
+    <string name="psicash_critical_error_message">Une erreur irrécupérable est survenue. Envoyez une rétroaction.</string>
 
     <!-- Alert error message informing user that a critical PsiCash error has occurred and their PsiCash balance and purchases are reset(lost) -->
     <string name="psicash_critical_error_reset_message">Une erreur irrécupérable est survenue. Vos solde PsiCash et autre état ont été réinitialisés.</string>
 
     <!-- Alert error message informing user that a recoverable PsiCash related error has occurred and last action will most likely succeed next time. -->
-    <string name="psicash_recoverable_error_message">Une erreur récupérable est survenue. Veuillez réessayer.</string>
+    <string name="psicash_recoverable_error_message">Une erreur récupérable est survenue. Réessayez.</string>
 
     <!-- Alert message informing user that a PsiCash rewarded video is currently not available. -->
-    <string name="psicash_video_not_available_message">La vidéo n’est pas accessible, veuillez réessayer plus tard.</string>
+    <string name="psicash_video_not_available_message">La vidéo n’est pas accessible, Réessayez plus tard.</string>
 
     <!-- Alert error message informing user that an unexpected error has occurred and encouraging the user to send feedback diagnostics. -->
-    <string name="unexpected_error_occured_send_feedback_message">Une erreur inattendue est survenue. Veuillez envoyer une rétroaction.</string>
+    <string name="unexpected_error_occured_send_feedback_message">Une erreur inattendue est survenue. Envoyez une rétroaction.</string>
 
     <!-- Alert error message informing user that the Psiphon tunnel needs to be running in order to make a Speed Boost purchase.
      'Speed Boost' is a reward that can be purchased with PsiCash credit.
     It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
     'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed. -->
-    <string name="speed_boost_connect_to_purchase_message">Veuillez lancer Psiphon pour effectuer un achat de Survitesse.</string>
+    <string name="speed_boost_connect_to_purchase_message">Lancez Psiphon pour effectuer un achat de Survitesse.</string>
 
     <!-- Alert error message informing user that the Psiphon tunnel needs to complete its connection sequence in order to make a Speed Boost purchase.
      'Speed Boost' is a reward that can be purchased with PsiCash credit.
     It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
     'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_wait_tunnel_to_connect_to_purchase_message">Veuillez attendre la connexion du tunnel pour un achat de Survitesse.</string>
+    <string name="speed_boost_wait_tunnel_to_connect_to_purchase_message">Attendez la connexion du tunnel pour un achat de Survitesse.</string>
 
     <!-- Alert error message informing user that a critical error has occurred while trying to retrieve PsiCash balance and encouraging the user to
     send feedback diagnostics.  Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cant_get_balance_critical_message">Il est impossible d’obtenir le solde PsiCash du serveur. Veuillez envoyer une rétroaction.</string>
+    <string name="psicash_cant_get_balance_critical_message">Il est impossible d’obtenir le solde PsiCash du serveur. Envoyez une rétroaction.</string>
 
     <!-- Alert error message informing user that a recoverable error has occurred while trying to retrieve PsiCash balance and last action will most
     likely succeed next time.  Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cant_get_balance_recoverable_message">Il est impossible d’obtenir le solde PsiCash du serveur pour l’instant. Veuillez réessayer plus tard.</string>
+    <string name="psicash_cant_get_balance_recoverable_message">Il est impossible d’obtenir le solde PsiCash du serveur pour l’instant. Réessayez plus tard.</string>
 
     <!-- Alert error message informing user that a critical error has occurred while trying to log in into PsiCash account and encouraging the user to
     send feedback diagnostics.  Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cannot_login_critical_message">Le serveur PsiCash a répondu par une erreur lors de la tentative de connexion. Veuillez envoyer une rétroaction.</string>
+    <string name="psicash_cannot_login_critical_message">Le serveur PsiCash a répondu par une erreur lors de la tentative de connexion. Envoyez une rétroaction.</string>
 
     <!-- Alert error message informing user that a recoverable error has occurred while trying to log in into PsiCash account.
     Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cannot_login_recoverable_message">Le serveur PsiCash a répondu par une erreur lors de la tentative de connexion. Veuillez réessayer plus tard.</string>
+    <string name="psicash_cannot_login_recoverable_message">Le serveur PsiCash a répondu par une erreur lors de la tentative de connexion. Réessayez plus tard.</string>
 
     <!-- Alert error message informing user that a critical error has occurred while trying to make a Speed Boost purchase with PsiCash and encouraging the user to
     send feedback diagnostics.  Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cannot_make_purchase_critical_message">Le serveur PsiCash a répondu par une erreur lors de la tentative d’achat. Veuillez envoyer une rétroaction.</string>
+    <string name="psicash_cannot_make_purchase_critical_message">Le serveur PsiCash a répondu par une erreur lors de la tentative d’achat. Envoyez une rétroaction.</string>
 
     <!-- Alert error message informing user that a recoverable error has occurred while trying to make a Speed Boost purchase with PsiCash.
     Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cannot_make_purchase_recoverable_message">Le serveur PsiCash a répondu par une erreur lors de la tentative d’achat. Veuillez réessayer plus tard.</string>
+    <string name="psicash_cannot_make_purchase_recoverable_message">Le serveur PsiCash a répondu par une erreur lors de la tentative d’achat. Réessayez plus tard.</string>
 
     <!-- Text which appears in the Speed Boost meter when the user has activated Speed Boost accompanied with a countdown timer showing how much time
     of the Speed Boost mode has left, like following 'Speed Boost Active - 16:49'. Please keep this text concise as the width of the text box
@@ -155,7 +154,7 @@
     <string name="psicash_snackbar_action_ok">Valider</string>
 
     <!-- Auto dismissable alert message informing users that subscription options are not available at the moment -->
-    <string name="subscription_options_currently_not_available">Les options d’abonnement ne sont pas proposées en ce moment, veuillez réessayer plus tard.</string>
+    <string name="subscription_options_currently_not_available">Les options d’abonnement ne sont pas proposées en ce moment, Réessayez plus tard.</string>
 
     <!-- Speed Boost button that opens a dialog with various speed boost options available for purchase.
     'Speed Boost' is a reward that can be purchased with PsiCash credit.
@@ -200,7 +199,7 @@
 
     <!-- A message to the user seen when the users are trying to navigate to PsiCash store screen while Psiphon has not finished connecting to the server
     Do not translate or transliterate words Psiphon -->
-    <string name="wait_for_psiphon_to_finish_connect_to_use_psicash_store">Veuillez attendre que Psiphon finisse de se connecter pour utiliser la boutique PsiCash</string>
+    <string name="wait_for_psiphon_to_finish_connect_to_use_psicash_store">Attendez que Psiphon finisse de se connecter pour utiliser la boutique PsiCash</string>
 
     <!-- A message to the user indicating that their PsiCash balance is most likely out of date and needs to be refreshed by connecting to Psiphon.
     Do not translate or transliterate words PsiCash or Psiphon -->
@@ -229,10 +228,18 @@
     <string name="psicash_store_not_available">La boutique PsiCash n’est pas accessible</string>
 
     <!-- A message to the user seen when the user just purchased PsiCash from PlayStore while connected to Psiphon and the purchase is in process of being redeemed -->
-    <string name="please_wait_while_we_are_finalizing_your_purchase">Veuillez patienter pendant que nous finalisons votre achat</string>
+    <string name="please_wait_while_we_are_finalizing_your_purchase">Patientez pendant que nous finalisons votre achat</string>
 
     <!-- Generic billing error message seen by user if there is a billing problem with the PsiCash purchase. Do not translate or transliterate word PsiCash -->
-    <string name="psicash_purchase_not_available_error_message">L’achat de PsiCash n’est pas proposé en ce moment, veuillez réessayer plus tard.</string>
+    <string name="psicash_purchase_not_available_error_message">L’achat de PsiCash n’est pas proposé en ce moment, Réessayez plus tard.</string>
+
+    <!-- An updated alert message seen by the user when they try to use one of Speed Boost options but their PsiCash balance is insufficient.
+    Note that since we are phasing out the PsiCash system, this message is no longer offering the user to buy more PsiCash, and is just informing
+    them that they do not have enough PsiCash to activate the Speed Boost option.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed.-->
+    <string name="speed_boost_insufficient_balance_alert_update">Vous n’avez pas assez de PsiCash pour activer cette option de Survitesse.</string>
 
     <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_notification_title">Surclasser Psiphon Pro</string>
@@ -259,11 +266,11 @@
     <string name="PaymentChooserActivity.UsingFreePlan">Vous utilisez l’abonnement gratuit, financé par des publicités, à vitesse limitée et port restreint. Vous pouvez continuer à utiliser cet abonnement ou le surclasser vers l’un de nos abonnements supérieurs.</string>
 
     <!-- Alternative header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
-    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon n\'est plus gratuit dans votre région. Veuillez passer à l\'un de nos forfaits premium pour continuer à utiliser ce service</string>
+    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon n\'est plus gratuit dans votre région. Passez à l\'un de nos forfaits premium pour continuer à utiliser ce service</string>
 
     <!-- Common description text for all time passes. A time pass is a single use license that is valid for a certain
     period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
-    <string name="PaymentChooserActivity.TimepassCommonDescription">Vitesse illimitée, sans interruption, avec des ports sans limites pour chaque achat de time pass</string>
+    <string name="PaymentChooserActivity.TimepassCommonDescription">Sans interruption, vitesse illimitée, sans restriction de port pour chaque achat d’accès à durée limitée</string>
 
     <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., '7-day pass - CA$3.99' -->
@@ -286,7 +293,7 @@
 
     <!-- Description text on the button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
          Appears below 'Basic - CA$5.99 monthly' label in smaller font. Note the use of a non-breaking space in '5 Mb/s' -->
-    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">Sans interruption, haut débit jusqu\'à 5 Mb/s avec des ports sans limites</string>
+    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">Sans interruption, haut débit jusqu’à 5 Mb/s sans restrictions de port</string>
 
     <!-- Label for button that user will click in order to buy an unlimited subscription for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., 'Unlimited - CA$11.99 monthly' -->
@@ -294,7 +301,7 @@
 
     <!-- Description text on the button that user will click in order to buy an unlimited subscription for Psiphon Pro.
          Appears below 'Unlimited - CA$11.99 monthly' label in smaller font-->
-    <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">Vitesse illimitée, sans interruption, avec des ports sans limites</string>
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">Sans interruption, vitesse illimitée, sans restriction de port</string>
 
     <!-- Text Label that appears on the subscription buying button for Psiphon Pro in case if there
          is a trial period available for that subscription. The formated string is the length of the
@@ -385,7 +392,7 @@
 
     <!-- A message to the user shown when the users are trying to navigate to PsiCash account sign in screen while Psiphon has not finished connecting to the server
             Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
-    <string name="wait_for_psiphon_to_finish_connect_to_use_psicash_account">Veuillez attendre que Psiphon finisse de se connecter pour accéder à la connexion au compte PsiCash</string>
+    <string name="wait_for_psiphon_to_finish_connect_to_use_psicash_account">Attendez que Psiphon finisse de se connecter pour accéder à la connexion au compte PsiCash</string>
 
     <!-- A message to the user indicating that they need to be connected to Psiphon in order to access PsiCash account sign in screen.
             Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
@@ -397,7 +404,7 @@
 
     <!-- Main text of the dialog shown to the user when they have a PsiCash account, but they are logged out while trying to access the PsiCash store screen.
         Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_account_login_required_message">Veuillez vous connecter à votre compte PsiCash pour accéder à la boutique PsiCash</string>
+    <string name="psicash_account_login_required_message">Connectez-vous à votre compte PsiCash pour accéder à la boutique PsiCash</string>
 
     <!-- Label of the button on the dialog shown to the user when they have a PsiCash account, but they are logged out while trying to access the PsiCash store screen.
         Note: 'PsiCash' should not be translated or transliterated. -->
@@ -405,7 +412,7 @@
 
     <!-- Main text of the dialog shown to the user when the PsiCash has entered invalid state due to an internal error while trying to access the PsiCash store screen, and encouraging the user to send feedback.
         Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_invalid_state_fragment_text">Erreur PsiCash inattendue, veuillez envoyer une rétroaction</string>
+    <string name="psicash_invalid_state_fragment_text">Erreur PsiCash inattendue, Envoye une rétroaction</string>
 
     <!-- PsiCash account generic title
         Note: 'PsiCash' should not be translated or transliterated. -->
@@ -463,13 +470,13 @@
     <string name="psicash_webview_error_alert_title">Erreur</string>
 
     <!--Generic 'error' alert prompt message-->
-    <string name="psicash_webview_error_alert_message">Une erreur est survenue, veuillez ressayer plus tard.</string>
+    <string name="psicash_webview_error_alert_message">Une erreur est survenue. Réessayez plus tard.</string>
 
     <!-- A message shown on the blocking overlay when the users are trying to interact with
     PsiCash account Create,Forgot Password, or Manage Account web page loaded internally while
     Psiphon is connecting to the server.
     Note: 'Psiphon' should not be translated or transliterated. -->
-    <string name="psicash_web_wait_tunnel_connecting">Veuillez patienter alors que Psiphon se connecte</string>
+    <string name="psicash_web_wait_tunnel_connecting">Patientez alors que Psiphon se connecte</string>
 
     <!--Generic 'close' button label -->
     <string name="label_close">Fermer</string>
@@ -480,7 +487,7 @@
     <!-- Explanation text that appears below "Create account" button on the PsiCash sign in screen.
     Do not translate or transliterate terms PsiCash or Psiphon, IMPORTANT: preserve the string %s#psicash-account as is, it will be replaced by the proper URL such as https://psiphon.ca/faq.html#psicash-account
     and 'linkified' programmatically in the app. -->
-    <string name="psicash_create_account_explanation_text_updated">La création d\'un compte PsiCash vous permettra de conserver votre PsiCash si vous réinstallez l\'application ou si vous utilisez Psiphon sur un autre appareil. Rendez-vous sur %s#psicash-account pour en savoir plus.</string>
+    <string name="psicash_create_account_explanation_text_updated">La création d’un compte PsiCash vous aidera à conserver votre PsiCash si vous réinstallez l’appli ou si vous utilisez Psiphon sur un autre appareil. Rndez-vous sur %s#psicash-account pour en apprendre davantage.</string>
 
     <!-- Text that appears above the "Log in" button on the PsiCash sign in screen. -->
     <string name="psicash_already_have_account_text">Avez-vous déjà un compte?</string>
@@ -489,13 +496,19 @@
     <string name="manage_my_subscription_link_text">Gérer votre abonnement</string>
 
     <!-- Do not translate or transliterate 'Psiphon'. A short message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
-    <string name="notification_payment_required_text">Psiphon n\'est plus gratuit dans votre région.</string>
+    <string name="notification_payment_required_text">Psiphon n’est plus gratuit dans votre région.</string>
 
     <!-- Do not translate or transliterate 'Psiphon'. A longer message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
-    <string name="notification_payment_required_text_big">Psiphon n\'est plus gratuit dans votre région, cliquez ici pour en savoir plus.</string>
+    <string name="notification_payment_required_text_big">Psiphon n’est plus gratuit dans votre région, touchez ici pour en apprendre davantage.</string>
 
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">Déconnexion</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="purchase_required_prompt_title">Accéder à Psiphon dans votre région.</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="unlock_required_prompt_body">L’accès à Psiphon dans votre région nécessite désormais votre soutien. Contribuez à maintenir Psiphon accessible aux personnes qui en ont le plus besoin en choisissant une des options proposées afin de poursuivre.</string>
 
     <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_hr">1 heure</string>
@@ -528,10 +541,10 @@
     <string name="speed_boost_left_day_hour_ordered">%1$s %2$s</string>
 
     <!-- Do not translate or transliterate 'PsiCash'. PsiCash is a unit of currency here. Reorder the format specifier '%s' if in the translated language ordering of unit and amount is different from English. -->
-    <string name="psicash_price_format">%s PsiCash</string>
+    <string name="psicash_price_format">%s PsiCash</string>
 
     <!-- Icon description for the Conduit app icon, do not translate or transliterate 'Conduit'. -->
-    <string name="conduit_icon_description">Icône de l\'application Conduit</string>
+    <string name="conduit_icon_description">Icône de l’appli Conduit</string>
 
     <!-- Icon description for the Google Play app icon, do not translate or transliterate 'Google Play'. -->
     <string name="google_play_icon_description">Icône Google Play</string>
@@ -540,7 +553,7 @@
     <string name="conduit_install_title">Installer Conduit</string>
 
     <!-- Description text for the clickable Conduit app card, do not translate or transliterate 'Conduit'. -->
-    <string name="conduit_card_description">Lancez l\'application mobile Conduit et restez connecté à Psiphon gratuitement</string>
+    <string name="conduit_card_description">Lancez l’appli mobile Conduit et pour une connexion gratuite à Psiphon</string>
 
     <!-- Clickable text label to open the Conduit app, do not translate or transliterate 'Conduit'. -->
     <string name="launch_conduit_action">Lancer Conduit</string>
@@ -555,10 +568,10 @@
     'Speed Boost' is a reward that can be purchased with PsiCash credit.
     It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
     'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_card_title">Speed Boost</string>
+    <string name="speed_boost_card_title">Survitesse</string>
 
     <!-- Description text under the Speed Boost clickable item -->
-    <string name="speed_boost_card_description">Achetez un Speed Boost avec votre PsiCash pour un accès chronométré à Psiphon</string>
+    <string name="speed_boost_card_description">Achetez Survitesse avec votre PsiCash pour un accès chronométré à Psiphon</string>
 
     <!-- Clickable text label to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
     <string name="update_psiphon_pro_title">Mettre à jour Psiphon Pro</string>
@@ -567,12 +580,12 @@
     <string name="conduit_update_title">Mettre à jour Conduit</string>
 
     <!-- Description for the 'Update' Action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
-    <string name="conduit_update_description">Mettre à jour la dernière version de Conduit pour accéder à cette fonction.</string>
+    <string name="conduit_update_description">Installez la version la plus récente de Conduit pour accéder à cette fonction</string>
 
     <!-- Title for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
     <string name="update_psiphon_pro_action_title">Mettre à jour Psiphon Pro</string>
 
     <!-- Description for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
-    <string name="update_psiphon_pro_action_description">Mettre à jour la dernière version de Psiphon Pro pour accéder à cette fonction</string>
+    <string name="update_psiphon_pro_action_description">Installez la version la plus récente de Psiphon Pro pour accéder à cette fonction</string>
 
-</resources>
+    </resources>

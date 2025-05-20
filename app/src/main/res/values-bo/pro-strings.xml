@@ -1,10 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Indicates that the user has no speed limit. They have paid for premium service and therefore
-         have access to a full-speed connection. Users have limited speed if they have not paid for
-         premium service. -->
-    <string name="rate_limit_text_unlimited">ཚད་མེད།</string>
-
     <!-- Alert dialog action button caption. Clicking this button dismisses the alert dialog, keep concise -->
     <string name="psicash_snackbar_action_ok">འགྲིག་འདུག</string>
 

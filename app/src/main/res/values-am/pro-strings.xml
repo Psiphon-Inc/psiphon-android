@@ -13,19 +13,8 @@
     <string name="custom_proxy_header_group_6">ራስጌ 6</string>
     <string name="custom_proxy_header_name">የራስጌ ስም ያስገቡ</string>
     <string name="custom_proxy_header_value">የራስጌ ዕሴት ያስገቡ</string>
-    <!-- Indicates that the user has no speed limit. They have paid for premium service and therefore
-         have access to a full-speed connection. Users have limited speed if they have not paid for
-         premium service. -->
-    <string name="rate_limit_text_unlimited">ያልተወሰነ </string>
-
-    <!-- Indicates that the user has an active speed boost.'Speed Boost' is a reward that can be purchased with PsiCash credit.
-    It provides unlimited network connection speed through Psiphon.
-    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
-    anything that indicates a fast or unrestricted speed. -->
-    <string name="rate_limit_text_speed_boost">9382/52-+
-ፍ0
-\
-YT VCጭማሬ</string>
+    <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
+    <string name="speed_rate_limit_not_available">የለም</string>
 
     <!-- Text which appears in the Speed Boost meter when the user has activated Speed Boost accompanied with a countdown timer showing how much time
     of the Speed Boost mode has left, like following 'Speed Boost Active - 16:49'. Please keep this text concise as the width of the text box

@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Indicates the user's current speed limit. The placeholder will be a number like '1' or '2.5',
-         and is in megabits-per-second. Users have limited speed if they have not paid for premium
-         service. -->
-    <string name="rate_limit_text_limited">%d Mb/s</string>
+    <!--
+        Template for rendering a rate value and its unit label.
+        %1$s = numeric value (e.g., "5.3"), %2$s = unit label (e.g., "MB/s").
+        Reorder the format specifiers if in your language the unit appears before the value.
+        Example output: "5.3 MB/s", "1.2 Kbps".
+        Reorder the format specifiers '%1$s' and '%2$s' if in the translated language ordering numeric value and rate unit in speed rate string is different from English.
+    -->
+    <string name="rate_with_unit_template">%1$s %2$s</string>
 
-    <!-- Indicates that the user has no speed limit. They have paid for premium service and therefore
-         have access to a full-speed connection. Users have limited speed if they have not paid for
-         premium service. -->
-    <string name="rate_limit_text_unlimited">ไม่จำกัด</string>
+    <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
+    <string name="speed_rate_limit_not_available">ไม่สามารถใช้ได้</string>
 
     <!-- Title of the button that loads and plays a video ad that rewards users with PsiCash -->
     <string name="psicash_purchase_free_button_price">ฟรี</string>

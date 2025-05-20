@@ -13,11 +13,6 @@
     <string name="custom_proxy_header_group_6">Сархати 6</string>
     <string name="custom_proxy_header_name">Ворид намудани номи сархат</string>
     <string name="custom_proxy_header_value">Ворид намудани арзиши сархат</string>
-    <!-- Indicates that the user has no speed limit. They have paid for premium service and therefore
-         have access to a full-speed connection. Users have limited speed if they have not paid for
-         premium service. -->
-    <string name="rate_limit_text_unlimited">Номаҳдуд</string>
-
     <!-- Alert dialog action button caption. Clicking this button dismisses the alert dialog, keep concise -->
     <string name="psicash_snackbar_action_ok">ОК</string>
 

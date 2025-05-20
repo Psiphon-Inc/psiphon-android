@@ -13,12 +13,6 @@
     <string name="custom_proxy_header_group_6">ಹೆಡರ್‌ 6</string>
     <string name="custom_proxy_header_name">ಹೆಡರ್‌ ಹೆಸರನ್ನು ನಮೂದಿಸಿ</string>
     <string name="custom_proxy_header_value">ಹೆಡರ್ ಮೌಲ್ಯವನ್ನು ನಮೂದಿಸಿ</string>
-    <!-- Indicates that the user has an active speed boost.'Speed Boost' is a reward that can be purchased with PsiCash credit.
-    It provides unlimited network connection speed through Psiphon.
-    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
-    anything that indicates a fast or unrestricted speed. -->
-    <string name="rate_limit_text_speed_boost">ವೇಗ ವರ್ಧಕ</string>
-
     <!-- Text which appears in the Speed Boost meter when the user has activated Speed Boost accompanied with a countdown timer showing how much time
     of the Speed Boost mode has left, like following 'Speed Boost Active - 16:49'. Please keep this text concise as the width of the text box
     is restricted in size. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through

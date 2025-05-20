@@ -13,12 +13,6 @@
     <string name="custom_proxy_header_group_6">Bayani na sama da za\'a fara gani na 6</string>
     <string name="custom_proxy_header_name">Shigar da sunan bayanin da za\'a fara gani a sama</string>
     <string name="custom_proxy_header_value">Shigar da darajar sunan da za\'a fara gani</string>
-    <!-- Indicates that the user has an active speed boost.'Speed Boost' is a reward that can be purchased with PsiCash credit.
-    It provides unlimited network connection speed through Psiphon.
-    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
-    anything that indicates a fast or unrestricted speed. -->
-    <string name="rate_limit_text_speed_boost">Speed Boost</string>
-
     <!-- Alert error message informing user that their Speed Boost purchase request failed because they attempted to buy a product that is no longer available
     and that they should try updating or reinstalling the app. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network
     connection speed through Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or

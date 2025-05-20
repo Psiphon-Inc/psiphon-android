@@ -13,6 +13,9 @@
     <string name="custom_proxy_header_group_6">Hode 6</string>
     <string name="custom_proxy_header_name">Skriv inn hodenavn</string>
     <string name="custom_proxy_header_value">Skriv inn hodeverdi</string>
+    <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
+    <string name="speed_rate_limit_not_available">Opptatt</string>
+
     <!-- Alert dialog action button caption. Clicking this button dismisses the alert dialog, keep concise -->
     <string name="psicash_snackbar_action_ok">Ok</string>
 

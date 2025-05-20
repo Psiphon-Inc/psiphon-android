@@ -27,21 +27,8 @@
          speed if they have not paid for premium service. -->
     <string name="rate_limit_text_title">Psiphon နှုန်းကန့်သတ်မှု -</string>
 
-    <!-- Indicates the user's current speed limit. The placeholder will be a number like '1' or '2.5',
-         and is in megabits-per-second. Users have limited speed if they have not paid for premium
-         service. -->
-    <string name="rate_limit_text_limited">%d Mb/s</string>
-
-    <!-- Indicates that the user has no speed limit. They have paid for premium service and therefore
-         have access to a full-speed connection. Users have limited speed if they have not paid for
-         premium service. -->
-    <string name="rate_limit_text_unlimited">အကန့်အသတ်မရှိ</string>
-
-    <!-- Indicates that the user has an active speed boost.'Speed Boost' is a reward that can be purchased with PsiCash credit.
-    It provides unlimited network connection speed through Psiphon.
-    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
-    anything that indicates a fast or unrestricted speed. -->
-    <string name="rate_limit_text_speed_boost">နှုန်းမြင့်</string>
+    <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
+    <string name="speed_rate_limit_not_available">မရရှိနိုင်သော</string>
 
     <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
          the workflow to subscribe for premium access. -->

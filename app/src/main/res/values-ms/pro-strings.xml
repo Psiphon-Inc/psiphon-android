@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
+    <string name="speed_rate_limit_not_available">Tidak tersedia</string>
+
     <!-- Text on the button which takes user to subscription screen -->
     <string name="btn_get_subscription">Langgan</string>
 
