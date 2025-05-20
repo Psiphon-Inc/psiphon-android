@@ -21,6 +21,8 @@ package com.psiphon3.billing;
 
 import com.android.billingclient.api.BillingClient.BillingResponseCode;
 
+import java.text.NumberFormat;
+import java.util.Currency;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Flowable;
@@ -103,5 +105,25 @@ public class BillingUtils {
                     || responseCode == BillingResponseCode.NETWORK_ERROR;
         }
         return false;
+    }
+
+    /**
+     * Formats a price with the appropriate currency symbol, used for displaying in-app prices in the UI
+     *
+     * @param currencyCode ISO 4217 currency code (e.g. "USD")
+     * @param priceAmountMicros Price in micros (1/1,000,000 of the currency unit)
+     * @param defaultFormattedPrice Fallback formatted price if formatting fails
+     * @return Formatted price string with currency symbol
+     */
+    public static String formatPriceMicros(String currencyCode, long priceAmountMicros, String defaultFormattedPrice) {
+        try {
+            Currency currency = Currency.getInstance(currencyCode);
+            NumberFormat priceFormatter = NumberFormat.getCurrencyInstance();
+            priceFormatter.setCurrency(currency);
+            return priceFormatter.format(priceAmountMicros / 1000000.0f);
+        } catch (IllegalArgumentException e) {
+            // do nothing, use default formatted price
+            return defaultFormattedPrice;
+        }
     }
 }

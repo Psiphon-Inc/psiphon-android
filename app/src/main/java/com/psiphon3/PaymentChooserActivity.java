@@ -19,14 +19,14 @@
 
 package com.psiphon3;
 
-import android.content.Intent;
-import android.os.Build;
+import android.content.Context;
 import android.os.Bundle;
-import android.text.TextUtils;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -37,33 +37,26 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
+import com.android.billingclient.api.ProductDetails;
 import com.android.billingclient.api.Purchase;
-import com.android.billingclient.api.SkuDetails;
 import com.google.android.material.tabs.TabLayout;
+import com.psiphon3.billing.BillingUtils;
 import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.log.MyLog;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.subscription.R;
 
-import net.grandcentrix.tray.AppPreferences;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-
-import java.text.NumberFormat;
 import java.time.Period;
 import java.time.format.DateTimeParseException;
-import java.util.Currency;
+import java.util.List;
 import java.util.Locale;
 
-import io.reactivex.Observable;
+import io.reactivex.Completable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
 
 public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivity {
-    public static final String USER_PICKED_SKU_DETAILS_EXTRA = "USER_PICKED_SKU_DETAILS_EXTRA";
-    public static final String USER_OLD_SKU_EXTRA = "USER_OLD_SKU_EXTRA";
-    public static final String USER_OLD_PURCHASE_TOKEN_EXTRA = "USER_OLD_PURCHASE_TOKEN_EXTRA";
     public static final String INTENT_EXTRA_UNLOCK_REQUIRED = "INTENT_EXTRA_UNLOCK_REQUIRED";
     private GooglePlayBillingHelper googlePlayBillingHelper;
 
@@ -80,18 +73,20 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                     findViewById(R.id.progress_overlay).setVisibility(View.GONE);
                     switch (subscriptionState.status()) {
                         case IAB_FAILURE:
-                            // Finishing the activity with RESULT_OK and empty SKU will result
-                            // in "Subscriptions options are not available" toast.
-                            // The error will be logged elsewhere
-                            setResult(RESULT_OK);
-                            finish();
+                            // Show a toast indicating that subscription options are not available
+                            // and finish the activity
+                            if (!isFinishing()) {
+                                showSubscriptionNotAvailableToast(this);
+                                finish();
+                            }
                             return;
 
                         case HAS_UNLIMITED_SUBSCRIPTION:
                         case HAS_TIME_PASS:
                             // User has an unlimited subscription, finish the activity silently.
-                            setResult(RESULT_CANCELED);
-                            finish();
+                            if (!isFinishing()) {
+                                finish();
+                            }
                             return;
 
                         case HAS_LIMITED_SUBSCRIPTION:
@@ -155,7 +150,6 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
     protected void onResume() {
         super.onResume();
         googlePlayBillingHelper.queryAllPurchases();
-        googlePlayBillingHelper.queryAllSkuDetails();
     }
 
     static class PageAdapter extends FragmentPagerAdapter {
@@ -187,7 +181,8 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
     public static class SubscriptionFragment extends Fragment {
         private Purchase limitedSubscriptionPurchase;
         private View fragmentView;
-        private CompositeDisposable compositeDisposable = new CompositeDisposable();
+        private final CompositeDisposable compositeDisposable = new CompositeDisposable();
+        private Disposable purchaseFlowDisposable;
 
         @Nullable
         @Override
@@ -201,43 +196,51 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
             super.onActivityCreated(savedInstanceState);
             final FragmentActivity activity = getActivity();
             GooglePlayBillingHelper googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(activity.getApplicationContext());
-            compositeDisposable.add(googlePlayBillingHelper.allSkuDetailsSingle()
-                    .toObservable()
-                    .flatMap(Observable::fromIterable)
-                    .filter(skuDetails -> {
-                        String sku = skuDetails.getSku();
-                        // If user has limited subscription only pass through unlimited subscription
-                        if (limitedSubscriptionPurchase != null) {
-                            return sku.equals(GooglePlayBillingHelper.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU);
-                        }
-                        // Otherwise pass all available subscriptions
-                        return sku.equals(GooglePlayBillingHelper.IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU) ||
-                                sku.equals(GooglePlayBillingHelper.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU);
-                    })
-                    .toList()
+            compositeDisposable.add(googlePlayBillingHelper.getSubscriptionProductDetails()
                     .observeOn(AndroidSchedulers.mainThread())
-                    .doOnSuccess(skuDetailsList -> {
-                        if (skuDetailsList == null || skuDetailsList.size() == 0) {
-                            MyLog.e("PaymentChooserActivity: subscription SKU error: sku details list is empty.");
-                            // finish the activity and show "Subscription options not available" toast.
+                    .doOnSuccess(productDetailsList -> {
+                        if (productDetailsList == null || productDetailsList.isEmpty()) {
+                            MyLog.e("PaymentChooserActivity: subscription error: product details list is empty, closing activity.");
+                            // Show a toast indicating that subscription options are not available
+                            // and finish the activity
                             if (!activity.isFinishing()) {
-                                activity.setResult(RESULT_OK);
+                                showSubscriptionNotAvailableToast(activity);
                                 activity.finish();
                             }
                             return;
                         } // else
-                        for (SkuDetails skuDetails : skuDetailsList) {
-                            if (skuDetails == null) {
-                                MyLog.e("PaymentChooserActivity: subscription SKU error: sku details is null.");
+                        for (ProductDetails productDetails : productDetailsList) {
+                            if (productDetails == null ) {
+                                MyLog.e("PaymentChooserActivity: subscription product details list error: product details is null.");
                                 continue;
                             }
+                            // If the user has a limited subscription, skip showing, so we only show the unlimited subscription
+                            if (limitedSubscriptionPurchase != null &&
+                                    productDetails.getProductId().equals(GooglePlayBillingHelper.IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU)) {
+                                MyLog.i("PaymentChooserActivity: skipping limited subscription product details because user already has it.");
+                                continue;
+                            }
+
+                            // Get subscription offer details
+                            List<ProductDetails.SubscriptionOfferDetails> offerDetailsList = productDetails.getSubscriptionOfferDetails();
+                            if (offerDetailsList == null || offerDetailsList.isEmpty()) {
+                                MyLog.e("PaymentChooserActivity: no subscription offers for product " + productDetails.getProductId());
+                                continue;
+                            }
+
+                            ProductDetails.SubscriptionOfferDetails offerDetails = findBestMonthlyOffer(productDetails);
+                            if (offerDetails == null) {
+                                MyLog.e("PaymentChooserActivity: no monthly subscription offer for product " + productDetails.getProductId());
+                                continue;
+                            }
+
 
                             ViewGroup clickable;
                             TextView titlePriceTv;
                             TextView freeTrialTv;
                             TextView priceAfterFreeTrialTv;
 
-                            if (skuDetails.getSku().equals(GooglePlayBillingHelper.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU)) {
+                            if (productDetails.getProductId().equals(GooglePlayBillingHelper.IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU)) {
                                 clickable = fragmentView.findViewById(R.id.unlimitedSubscriptionClickable);
                                 titlePriceTv = fragmentView.findViewById(R.id.unlimitedSubscriptionTitlePrice);
                                 freeTrialTv = fragmentView.findViewById(R.id.unlimitedSubscriptionFreeTrialPeriod);
@@ -248,20 +251,9 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                                 freeTrialTv = fragmentView.findViewById(R.id.limitedSubscriptionFreeTrialPeriod);
                                 priceAfterFreeTrialTv = fragmentView.findViewById(R.id.limitedSubscriptionPriceAfterFreeTrial);
                             }
-                            // skuDetails.getPrice() returns a differently looking string than the one
-                            // we get by using priceFormatter below, so for consistency we'll use
-                            // priceFormatter on all prices.
-                            // If the formatting for priceText fails, use skuDetails.getPrice() as default
-                            String priceText = skuDetails.getPrice();
 
-                            try {
-                                Currency currency = Currency.getInstance(skuDetails.getPriceCurrencyCode());
-                                NumberFormat priceFormatter = NumberFormat.getCurrencyInstance();
-                                priceFormatter.setCurrency(currency);
-                                priceText = priceFormatter.format(skuDetails.getPriceAmountMicros() / 1000000.0f);
-                            } catch (IllegalArgumentException e) {
-                                // do nothing
-                            }
+                            String priceText = getSubscriptionOfferPriceText(offerDetails);
+
                             String formatString = titlePriceTv.getText().toString();
                             titlePriceTv.setText(String.format(formatString, priceText));
                             formatString = priceAfterFreeTrialTv.getText().toString();
@@ -269,37 +261,134 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
 
                             clickable.setVisibility(View.VISIBLE);
                             clickable.setOnClickListener(v -> {
-                                if (!activity.isFinishing()) {
-                                    MyLog.i("PaymentChooserActivity: subscription purchase button clicked.");
-                                    Intent data = new Intent();
-                                    data.putExtra(USER_PICKED_SKU_DETAILS_EXTRA, skuDetails.getOriginalJson());
-                                    if (limitedSubscriptionPurchase != null) {
-                                        data.putExtra(USER_OLD_SKU_EXTRA, limitedSubscriptionPurchase.getSkus().get(0));
-                                        data.putExtra(USER_OLD_PURCHASE_TOKEN_EXTRA, limitedSubscriptionPurchase.getPurchaseToken());
-                                    }
-                                    activity.setResult(RESULT_OK, data);
-                                    activity.finish();
+                                if (activity.isFinishing()) {
+                                    return;
                                 }
+                                MyLog.i("PaymentChooserActivity: subscription purchase button clicked.");
+                                if (purchaseFlowDisposable != null && !purchaseFlowDisposable.isDisposed()) {
+                                    MyLog.i("PaymentChooserActivity: a purchase flow already in progress, ignoring click.");
+                                    return;
+                                }
+
+
+                                Completable subscriptionPurchaseFlowCompletable =
+                                        limitedSubscriptionPurchase != null ?
+                                        googlePlayBillingHelper.launchReplacementSubscriptionPurchaseFlow(activity, productDetails, offerDetails, limitedSubscriptionPurchase.getPurchaseToken()) :
+                                        googlePlayBillingHelper.launchNewSubscriptionPurchaseFlow(activity, productDetails, offerDetails);
+
+                                purchaseFlowDisposable = subscriptionPurchaseFlowCompletable
+                                        .doOnComplete(() -> {
+                                            if (!activity.isFinishing()) {
+                                                // finish the activity on successful purchase flow launch
+                                                activity.finish();
+                                            }
+                                        })
+                                        .doOnError(err -> {
+                                            if (!activity.isFinishing()) {
+                                                // Show a toast indicating that subscription options are not available on error
+                                                // and finish the activity
+                                                showSubscriptionNotAvailableToast(activity);
+                                                activity.finish();
+                                            }
+                                        })
+                                        .subscribe();
+                                compositeDisposable.add(purchaseFlowDisposable);
                             });
 
-                            String freeTrialPeriodISO8061 = skuDetails.getFreeTrialPeriod();
-                            if (!TextUtils.isEmpty(freeTrialPeriodISO8061)) {
-                                try {
-                                    Period period = Period.parse(freeTrialPeriodISO8061);
-                                    long freeTrialPeriodInDays = period.getDays();
-                                    if (freeTrialPeriodInDays > 0L) {
-                                        formatString = freeTrialTv.getText().toString();
-                                        String freeTrialPeriodText = String.format(formatString, freeTrialPeriodInDays);
-                                        freeTrialTv.setText(freeTrialPeriodText);
-                                        freeTrialTv.setVisibility(View.VISIBLE);
-                                    }
-                                } catch (DateTimeParseException e) {
-                                    MyLog.w("PaymentChooserActivity: failed to parse free trial period: " + freeTrialPeriodISO8061);
-                                }
+                            long freeTrialDays = getOfferFreeTrialDays(offerDetails);
+                            if (freeTrialDays > 0L) {
+                                String formatStringFreeTrial = freeTrialTv.getText().toString();
+                                String freeTrialPeriodText = String.format(formatStringFreeTrial, freeTrialDays);
+                                freeTrialTv.setText(freeTrialPeriodText);
+                                // If free trial offer is available, show the free trial period and the price after free trial
+                                freeTrialTv.setVisibility(View.VISIBLE);
+                                priceAfterFreeTrialTv.setVisibility(View.VISIBLE);
                             }
                         }
                     })
                     .subscribe());
+        }
+
+        private int getOfferFreeTrialDays(ProductDetails.SubscriptionOfferDetails offerDetails) {
+            if (!hasFreeTrialOffer(offerDetails)) {
+                return 0;
+            }
+            ProductDetails.PricingPhase freeTrialPhase = offerDetails.getPricingPhases().getPricingPhaseList().get(0);
+            String freeTrialPeriodISO8061 = freeTrialPhase.getBillingPeriod();
+            try {
+                Period period = Period.parse(freeTrialPeriodISO8061);
+                // Convert the period to days, note that the month and year conversion is approximate
+                return period.getDays() + period.getMonths() * 30 + period.getYears() * 365;
+            } catch (DateTimeParseException e) {
+                MyLog.w("PaymentChooserActivity: failed to parse free trial period: " + freeTrialPeriodISO8061);
+                return 0;
+            }
+        }
+
+        private String getSubscriptionOfferPriceText(ProductDetails.SubscriptionOfferDetails offerDetails) {
+            List<ProductDetails.PricingPhase> phases = offerDetails.getPricingPhases().getPricingPhaseList();
+
+            // Get the non-free-trial pricing phase
+            ProductDetails.PricingPhase pricingPhase;
+            if (hasFreeTrialOffer(offerDetails)) {
+                pricingPhase = phases.get(1); // Get the phase after the free trial
+            } else {
+                pricingPhase = phases.get(0); // Get the first phase
+            }
+
+            return BillingUtils.formatPriceMicros(pricingPhase.getPriceCurrencyCode(),
+                    pricingPhase.getPriceAmountMicros(),
+                    pricingPhase.getFormattedPrice());
+        }
+
+        private ProductDetails.SubscriptionOfferDetails findBestMonthlyOffer(ProductDetails productDetails) {
+            List<ProductDetails.SubscriptionOfferDetails> offerDetailsList = productDetails.getSubscriptionOfferDetails();
+            if (offerDetailsList == null || offerDetailsList.isEmpty()) {
+                return null;
+            }
+
+            // First priority: Find any monthly offer with a free trial
+            for (ProductDetails.SubscriptionOfferDetails offer : offerDetailsList) {
+                // Check if it's a monthly plan
+                if (isMonthlySubscription(offer)) {
+                    // Check if it has a free trial
+                    if (hasFreeTrialOffer(offer)) {
+                        return offer;
+                    }
+                }
+            }
+
+            // Second priority: Just find any monthly offer
+            for (ProductDetails.SubscriptionOfferDetails offer : offerDetailsList) {
+                if (isMonthlySubscription(offer)) {
+                    return offer;
+                }
+            }
+
+            // No suitable offers found
+            return null;
+        }
+
+        private boolean isMonthlySubscription(ProductDetails.SubscriptionOfferDetails offer) {
+            List<ProductDetails.PricingPhase> pricingPhases = offer.getPricingPhases().getPricingPhaseList();
+            if (pricingPhases.isEmpty()) return false;
+
+            // Get the base pricing phase (the one that's not a free trial)
+            ProductDetails.PricingPhase basePricingPhase;
+            if (pricingPhases.size() > 1 && pricingPhases.get(0).getPriceAmountMicros() == 0) {
+                basePricingPhase = pricingPhases.get(1);
+            } else {
+                basePricingPhase = pricingPhases.get(0);
+            }
+
+            // Check if it's monthly (P1M = Period 1 Month in ISO 8601)
+            return basePricingPhase.getBillingPeriod().equals("P1M");
+        }
+
+        private boolean hasFreeTrialOffer(ProductDetails.SubscriptionOfferDetails offer) {
+            List<ProductDetails.PricingPhase> phases = offer.getPricingPhases().getPricingPhaseList();
+            // Check if there are at least two phases and the first one is free
+            return phases.size() > 1 && phases.get(0).getPriceAmountMicros() == 0;
         }
 
         @Override
@@ -315,7 +404,8 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
 
     public static class TimePassFragment extends Fragment {
         private View fragmentView;
-        private CompositeDisposable compositeDisposable = new CompositeDisposable();
+        private final CompositeDisposable compositeDisposable = new CompositeDisposable();
+        private Disposable purchaseFlowDisposable;
 
         @Nullable
         @Override
@@ -330,39 +420,36 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
             final FragmentActivity activity = getActivity();
             final String packageName = activity.getPackageName();
             GooglePlayBillingHelper googlePlayBillingHelper = GooglePlayBillingHelper.getInstance(activity.getApplicationContext());
-            compositeDisposable.add(googlePlayBillingHelper.allSkuDetailsSingle()
-                    .toObservable()
-                    .flatMap(Observable::fromIterable)
-                    .filter(skuDetails -> {
-                        String sku = skuDetails.getSku();
-                        return GooglePlayBillingHelper.IAB_TIMEPASS_SKUS_TO_DAYS.containsKey(sku);
-                    })
-                    .toList()
+            compositeDisposable.add(googlePlayBillingHelper.getTimePassProductDetails()
                     .observeOn(AndroidSchedulers.mainThread())
-                    .doOnSuccess(skuDetailsList -> {
-                        if (skuDetailsList == null || skuDetailsList.size() == 0) {
-                            MyLog.e("PaymentChooserActivity: time pass SKU error: sku details list is empty.");
-                            // finish the activity and show "Subscription options not available" toast.
+                    .doOnSuccess(productDetailsList -> {
+                        if (productDetailsList == null || productDetailsList.isEmpty()) {
+                            MyLog.e("PaymentChooserActivity: time pass error: product details list is empty, closing activity.");
+                            // Show a toast indicating that subscription options are not available
+                            // and finish the activity
                             if (!activity.isFinishing()) {
-                                activity.setResult(RESULT_OK);
+                                showSubscriptionNotAvailableToast(activity);
                                 activity.finish();
                             }
                             return;
                         } // else
-                        for (SkuDetails skuDetails : skuDetailsList) {
-                            if (skuDetails == null) {
-                                MyLog.e("PaymentChooserActivity: time pass SKU error: sku details is null.");
+                        for (ProductDetails productDetails : productDetailsList) {
+                            if (productDetails == null) {
+                                MyLog.e("PaymentChooserActivity: skipping time pass product with null ProductDetails");
                                 continue;
                             }
-                            // Get pre-calculated life time in days for time passes
-                            Long lifetimeInDays = GooglePlayBillingHelper.IAB_TIMEPASS_SKUS_TO_DAYS.get(skuDetails.getSku());
-                            if (lifetimeInDays == null || lifetimeInDays == 0L) {
-                                MyLog.w("PaymentChooserActivity error: unknown time pass period for sku: " + skuDetails);
+                            ProductDetails.OneTimePurchaseOfferDetails offerDetails = productDetails.getOneTimePurchaseOfferDetails();
+                            if (offerDetails == null) {
+                                MyLog.w("PaymentChooserActivity: skipping one time product with null OneTimePurchaseOfferDetails");
                                 continue;
                             }
-                            // Calculate price per day
-                            float pricePerDay = skuDetails.getPriceAmountMicros() / 1000000.0f / lifetimeInDays;
 
+                            // Get pre-calculated life time in days for time passes
+                            Long lifetimeInDays = GooglePlayBillingHelper.IAB_TIMEPASS_SKUS_TO_DAYS.get(productDetails.getProductId());
+                            if (lifetimeInDays == null || lifetimeInDays == 0L) {
+                                MyLog.w("PaymentChooserActivity error: unknown time pass period for sku: " + productDetails);
+                                continue;
+                            }
                             int clickableResId = getResources().getIdentifier("timepassClickable" + lifetimeInDays, "id", packageName);
                             int titlePriceTvResId = getResources().getIdentifier("timepassTitlePrice" + lifetimeInDays, "id", packageName);
                             int pricePerDayTvResId = getResources().getIdentifier("timepassPricePerDay" + lifetimeInDays, "id", packageName);
@@ -371,23 +458,26 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
                             TextView titlePriceTv = fragmentView.findViewById(titlePriceTvResId);
                             TextView pricePerDayTv = fragmentView.findViewById(pricePerDayTvResId);
 
-                            // skuDetails.getPrice() returns a differently looking string than the one
-                            // we get by using priceFormatter below, so for consistency we'll use
-                            // priceFormatter on all prices.
-                            // If the formatting for pricePerDayText or priceText fails, use these as default
-                            String pricePerDayText = String.format(Locale.getDefault(), "%s%.2f",
-                                    skuDetails.getPriceCurrencyCode(), pricePerDay);
-                            String priceText = skuDetails.getPrice();
+                            // Total price in micros
+                            long priceAmountMicros = offerDetails.getPriceAmountMicros();
+                            long pricePerDayMicros = priceAmountMicros / lifetimeInDays;
 
-                            try {
-                                Currency currency = Currency.getInstance(skuDetails.getPriceCurrencyCode());
-                                NumberFormat priceFormatter = NumberFormat.getCurrencyInstance();
-                                priceFormatter.setCurrency(currency);
-                                pricePerDayText = priceFormatter.format(pricePerDay);
-                                priceText = priceFormatter.format(skuDetails.getPriceAmountMicros() / 1000000.0f);
-                            } catch (IllegalArgumentException e) {
-                                // do nothing
-                            }
+                            // Use our own formatter to ensure consistent formatting using offerDetails.getFormattedPrice() as fallback
+                            String priceText = BillingUtils.formatPriceMicros(offerDetails.getPriceCurrencyCode(),
+                                    priceAmountMicros,
+                                    offerDetails.getFormattedPrice());
+
+                            // Format price per day the same way
+                            // Note: This is slightly different from the previous calculation which divided by 1M first,
+                            // but since we format to 2 decimal places in the UI, the difference is negligible.
+                            // Previous: float pricePerDayToFormat = priceAmountMicros/1000000.0f/lifetimeInDays
+                            // Current: float pricePerDayToFormat = priceAmountMicros/lifetimeInDays/1000000.0f
+                            String defaultPricePerDayText = String.format(Locale.getDefault(), "%s%.2f",
+                                    offerDetails.getPriceCurrencyCode(), pricePerDayMicros / 1000000.0f);
+
+                            String pricePerDayText = BillingUtils.formatPriceMicros(offerDetails.getPriceCurrencyCode(),
+                                    pricePerDayMicros,
+                                    defaultPricePerDayText);
 
                             String formatString = titlePriceTv.getText().toString();
                             titlePriceTv.setText(String.format(formatString, priceText));
@@ -396,13 +486,33 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
 
                             clickable.setVisibility(View.VISIBLE);
                             clickable.setOnClickListener(v -> {
-                                if (!activity.isFinishing()) {
-                                    MyLog.i("PaymentChooserActivity: time pass purchase button clicked.");
-                                    Intent data = new Intent();
-                                    data.putExtra(USER_PICKED_SKU_DETAILS_EXTRA, skuDetails.getOriginalJson());
-                                    activity.setResult(RESULT_OK, data);
-                                    activity.finish();
+                                if (activity.isFinishing()) {
+                                    return;
                                 }
+
+                                MyLog.i("PaymentChooserActivity: time pass purchase button clicked.");
+
+                                if (purchaseFlowDisposable != null && !purchaseFlowDisposable.isDisposed()) {
+                                    MyLog.i("PaymentChooserActivity: a purchase flow already in progress, ignoring click.");
+                                    return;
+                                }
+
+                                purchaseFlowDisposable = googlePlayBillingHelper
+                                        .launchOneTimePurchaseFlow(activity, productDetails)
+                                        .doOnComplete(() -> {
+                                            if (!activity.isFinishing()) {
+                                                // finish the activity after successful purchase flow launch
+                                                activity.finish();
+                                            }
+                                        })
+                                        .doOnError(err -> {
+                                            // Show a toast indicating that subscription options are not available on error
+                                            // and finish the activity
+                                            showSubscriptionNotAvailableToast(activity);
+                                            activity.finish();
+                                        })
+                                        .subscribe();
+                                compositeDisposable.add(purchaseFlowDisposable);
                             });
                         }
                     })
@@ -414,5 +524,13 @@ public class PaymentChooserActivity extends LocalizedActivities.AppCompatActivit
             super.onDestroy();
             compositeDisposable.dispose();
         }
+    }
+
+    static void showSubscriptionNotAvailableToast(Context context) {
+        // Show a toast indicating that subscription options are not available
+        // This is a generic message that is shown when billing errors occur
+        Toast toast = Toast.makeText(context, R.string.subscription_options_currently_not_available, Toast.LENGTH_LONG);
+        toast.setGravity(Gravity.CENTER, 0, 0);
+        toast.show();
     }
 }

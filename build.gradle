@@ -38,7 +38,7 @@ ext {
     lifecycleViewModelVersion = '2.2.0'
     mockitoVersion = '2.7.22'
     testRunnerVersion = '0.5'
-    playStoreBillingClientVersion = '6.0.1'
+    playStoreBillingClientVersion = '7.1.1'
     coreLibraryDesugaringVersion = '1.1.5'
     preferenceVersion = '1.1.1'
     localBroadCastManagerVersion = '1.0.0'
