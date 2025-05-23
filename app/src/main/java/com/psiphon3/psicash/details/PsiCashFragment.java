@@ -64,6 +64,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import ca.psiphon.psicashlib.PsiCashLib;
 import io.reactivex.Flowable;
@@ -99,6 +100,7 @@ public class PsiCashFragment extends Fragment
     private BroadcastReceiver broadcastReceiver;
     private boolean isStopped;
     private Disposable psiCashUpdatesDisposable;
+    private Consumer<Boolean> visibilityChangeListener;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -269,11 +271,18 @@ public class PsiCashFragment extends Fragment
             return;
         }
 
-        if (shouldHideUi(state)) {
-            fragmentView.setVisibility(View.GONE);
+        boolean shouldHide = shouldHideUi(state);
+        fragmentView.setVisibility(shouldHide ? View.GONE : View.VISIBLE);
+
+        if (visibilityChangeListener != null) {
+            visibilityChangeListener.accept(!shouldHide);
+        }
+
+        if (shouldHide) {
             return;
-        } // else
-        fragmentView.setVisibility(View.VISIBLE);
+        }
+
+        // continue updating the UI if the UI is not hidden
         updateUiBalanceIcon(state);
         updatePsiCashBalanceLayout(state);
         updatePsiCashAccountButton(state);
@@ -495,6 +504,10 @@ public class PsiCashFragment extends Fragment
     public void onCountDownFinish() {
         // Update state when finished
         intentsPublishRelay.accept(PsiCashDetailsIntent.GetPsiCash.create(tunnelStateFlowable));
+    }
+
+    public void setVisibilityChangeListener(Consumer<Boolean> listener) {
+        this.visibilityChangeListener = listener;
     }
 
     private static class SpeedBoostCountDownTimer extends CountDownTimer {
