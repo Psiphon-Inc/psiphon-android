@@ -167,7 +167,9 @@ public class HomeTabFragment extends Fragment {
                         .subscriptionStateFlowable()
                         .distinctUntilChanged();
 
-        Flowable<String> lastLogEntryFlowable = mainActivityViewModel.lastLogEntryFlowable();
+        Flowable<String> lastLogEntryFlowable = mainActivityViewModel.lastLogEntryFlowable()
+                .startWith("")
+                .distinctUntilChanged();
 
         compositeDisposable.add(
                 Flowable.combineLatest(
@@ -335,7 +337,9 @@ public class HomeTabFragment extends Fragment {
     }
 
     private void renderTunnelState(TunnelState tunnelState, String lastLogEntry) {
-        lastLogEntryTv.setText(lastLogEntry);
+        if (!lastLogEntry.isEmpty()) {
+            lastLogEntryTv.setText(lastLogEntry);
+        }
         if (tunnelState.isRunning()) {
             if (tunnelState.connectionData().isConnected()) {
                 tunnelStateImageView.setImageResource(R.drawable.status_icon_connected);
