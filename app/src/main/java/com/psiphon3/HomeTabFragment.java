@@ -19,6 +19,7 @@
 
 package com.psiphon3;
 
+import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
@@ -31,6 +32,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -39,11 +41,13 @@ import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.billing.SubscriptionState;
 import com.psiphon3.log.MyLog;
 import com.psiphon3.psicash.details.PsiCashFragment;
+import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
@@ -54,6 +58,7 @@ import io.reactivex.disposables.CompositeDisposable;
 
 public class HomeTabFragment extends Fragment {
     private static final String PLAY_STORE_SUBSCRIPTION_DEEPLINK_URL = "https://play.google.com/store/account/subscriptions?sku=%s&package=%s";
+    MainActivityViewModel mainActivityViewModel;
     private TextView manageSubscriptionLink;
     private TextView upRateLimitTextView;
     private TextView downRateLimitTextView;
@@ -62,6 +67,10 @@ public class HomeTabFragment extends Fragment {
     private Button upgradeButton;
     private Drawable conduitAppIcon;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
+    private View tunnelStateContainer;
+    private View psicashContainer;
+    private ImageView tunnelStateImageView;
+    private TextView lastLogEntryTv;
 
 
     @Nullable
@@ -74,12 +83,20 @@ public class HomeTabFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        mainActivityViewModel = new ViewModelProvider(requireActivity(),
+                new ViewModelProvider.AndroidViewModelFactory(requireActivity().getApplication()))
+                .get(MainActivityViewModel.class);
+
         manageSubscriptionLink = view.findViewById(R.id.manageSubscriptionLink);
         upRateLimitTextView = view.findViewById(R.id.upRateLimitTextView);
         downRateLimitTextView = view.findViewById(R.id.downRateLimitTextView);
         combinedRateLimitTextView = view.findViewById(R.id.combinedRateLimitTextView);
         accessStatusLabel = view.findViewById(R.id.accessStatusLabel);
         upgradeButton = view.findViewById(R.id.upgradeButton);
+        tunnelStateContainer = view.findViewById(R.id.tunnelStateContainer);
+        tunnelStateImageView = view.findViewById(R.id.tunnelStateImageView);
+        lastLogEntryTv = view.findViewById(R.id.lastLogEntryTv);
+        psicashContainer = view.findViewById(R.id.psicashContainer);
 
         upgradeButton.setOnClickListener(v ->
                 MainActivity.openPaymentChooserActivity(requireActivity(),
@@ -87,13 +104,29 @@ public class HomeTabFragment extends Fragment {
 
 
         if (savedInstanceState == null) {
+            PsiCashFragment psiCashFragment = new PsiCashFragment();
+            psiCashFragment.setVisibilityChangeListener(this::onPsiCashVisibilityChanged);
             getChildFragmentManager()
                     .beginTransaction()
                     .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
-                    .add(R.id.psicash_fragment_container, new PsiCashFragment())
+                    .add(R.id.psicash_fragment_container, psiCashFragment)
                     .commit();
         }
 
+        // Render initial state to avoid incomplete UI
+        render(UiState.initial(requireContext()));
+    }
+
+    // This method is called by the PsiCashFragment's visibility change listener.
+    // It toggles visibility between the tunnel status container and the PsiCash container:
+    // when PsiCash is visible, the tunnel status is hidden, and vice versa.
+    // This is part of a soft phase-out of PsiCash; once PsiCash is fully removed,
+    // the tunnel status UI will always be visible by default.
+    private void onPsiCashVisibilityChanged(Boolean isPsiCashVisible) {
+        if (psicashContainer != null && tunnelStateContainer != null) {
+            psicashContainer.setVisibility(isPsiCashVisible ? View.VISIBLE : View.GONE);
+            tunnelStateContainer.setVisibility(isPsiCashVisible ? View.GONE : View.VISIBLE);
+        }
     }
 
     @Override
@@ -134,12 +167,15 @@ public class HomeTabFragment extends Fragment {
                         .subscriptionStateFlowable()
                         .distinctUntilChanged();
 
+        Flowable<String> lastLogEntryFlowable = mainActivityViewModel.lastLogEntryFlowable();
+
         compositeDisposable.add(
                 Flowable.combineLatest(
                                 rateLimitFlowable,
                                 subscriptionStateFlowable,
                                 tunnelStateFlowable,
                                 conduitIsRunningFlowable,
+                                lastLogEntryFlowable,
                                 UiState::new)
                         .observeOn(AndroidSchedulers.mainThread())
                         .doOnNext(this::render)
@@ -158,6 +194,7 @@ public class HomeTabFragment extends Fragment {
         renderRateLimitDisplay(uiState.rateLimitDisplay, isTunnelConnected);
         renderAccessStatus(uiState.subscriptionState, uiState.conduitIsRunning);
         renderSubscriptionActions(uiState.subscriptionState, isTunnelConnecting);
+        renderTunnelState(uiState.tunnelState, uiState.lastLogEntry);
     }
 
 
@@ -297,20 +334,47 @@ public class HomeTabFragment extends Fragment {
         }
     }
 
+    private void renderTunnelState(TunnelState tunnelState, String lastLogEntry) {
+        lastLogEntryTv.setText(lastLogEntry);
+        if (tunnelState.isRunning()) {
+            if (tunnelState.connectionData().isConnected()) {
+                tunnelStateImageView.setImageResource(R.drawable.status_icon_connected);
+            } else {
+                tunnelStateImageView.setImageResource(R.drawable.status_icon_connecting);
+            }
+        } else {
+            // the tunnel state is either unknown or not running
+            tunnelStateImageView.setImageResource(R.drawable.status_icon_disconnected);
+        }
+    }
+
     private static class UiState {
         private final SubscriptionState subscriptionState;
         private final TunnelState tunnelState;
         private final boolean conduitIsRunning;
         private final RateLimitHelper.Display rateLimitDisplay;
+        private final String lastLogEntry;
 
         public UiState(RateLimitHelper.Display rateLimitDisplay,
                        SubscriptionState subscriptionState,
                        TunnelState tunnelState,
-                       boolean conduitIsRunning) {
+                       boolean conduitIsRunning,
+                       String lastLogEntry) {
             this.subscriptionState = subscriptionState;
             this.tunnelState = tunnelState;
             this.conduitIsRunning = conduitIsRunning;
             this.rateLimitDisplay = rateLimitDisplay;
+            this.lastLogEntry = lastLogEntry;
+        }
+
+        public static UiState initial(Context context) {
+            return new UiState(
+                    RateLimitHelper.Display.initial(context),
+                    SubscriptionState.notApplicable(),
+                    TunnelState.unknown(),
+                    false,
+                    ""
+            );
         }
     }
 }

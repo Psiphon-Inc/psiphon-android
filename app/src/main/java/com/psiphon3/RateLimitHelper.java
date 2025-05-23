@@ -97,6 +97,10 @@ public class RateLimitHelper {
             this.combined = combined;
         }
 
+        public static Display initial(Context context) {
+            return new Display(true, null, null, context.getString(R.string.speed_rate_limit_not_available));
+        }
+
         // Override equals and hashCode for proper comparison when used in the Rx chains with distinctUntilChanged
         @Override
         public boolean equals(Object o) {
