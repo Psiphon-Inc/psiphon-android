@@ -36,11 +36,20 @@
     -->
     <string name="rate_with_unit_template">%1$s %2$s</string>
 
-    <string name="rate_unit_kbps_bits">Kbps</string>
-    <string name="rate_unit_mbps_bits">Mbps</string>
-    <string name="rate_unit_gbps_bits">Gbps</string>
+    <!-- Unit labels used with 'rate_with_unit_template' for bit-per-second speeds. These represent: bits, kilobits, megabits, etc. per second. -->
+    <string name="rate_unit_bps_bits">b/sn</string>
+    <string name="rate_unit_kbps_bits">Kb/sn</string>
+    <string name="rate_unit_mbps_bits">Mb/sn</string>
+    <string name="rate_unit_gbps_bits">Gb/sn</string>
+    <string name="rate_unit_tbps_bits">Tb/sn</string>
+    <string name="rate_unit_pbps_bits">Pb/sn</string>
+
+
     <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
     <string name="speed_rate_limit_not_available">Kullanılamaz</string>
+
+    <!-- Text shown on the home tab under Psiphon speed limit label when the there is no speed limit, like when the user has an unlimited subscription, for example -->
+    <string name="speed_rate_limit_no_limit">Sınırlama yok</string>
 
     <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
          the workflow to subscribe for premium access. -->
@@ -79,7 +88,7 @@
 
     <!-- Alert error message informing user that their Speed Boost purchase request failed because their app has entered an invalid state and that they
     should try updating or reinstalling the app. Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_transaction_invalid_tokens_message">Uygulama geçersiz bir duruma geçti. Lütfen PsiCash kullanmaya devam etmek için uygulamayı yeniden kurun.</string>
+    <string name="psicash_transaction_invalid_tokens_message">Uygulama geçersiz bir duruma geçti. Lütfen PsiCash kullanmayı sürdürmek için uygulamayı yeniden kurun.</string>
 
     <!-- Alert error message informing user that their Speed Boost purchase request failed because their PsiCash account tokens have expired and they need to
     log in again prior to retrying last operation. Note: 'PsiCash' should not be translated or transliterated. -->
@@ -242,10 +251,10 @@
     <string name="speed_boost_insufficient_balance_alert_update">Bu Speed Boost seçeneğini etkinleştirmek için yeterli PsiCash birikiminiz yok.</string>
 
     <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
-    <string name="disallowed_traffic_alert_notification_title">Psiphon Pro Yükselt</string>
+    <string name="disallowed_traffic_alert_notification_title">Psiphon Pro sürümüne yükselt</string>
 
     <!-- Content of the toolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
-    <string name="disallowed_traffic_alert_notification_message">Uygulamalar çalışmıyor mu? Psiphon deneyiminizi arttırmak için buraya tıklayın!</string>
+    <string name="disallowed_traffic_alert_notification_message">Uygulamalar çalışmıyor mu? Psiphon deneyiminizi iyileştirmek için buraya tıklayın!</string>
 
     <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_dialog_message">Ücretsiz Psiphon Pro sürümüyle, İnternet trafiğinin bazı kısımları desteklenmiyor. Psiphon deneyiminizi tam olarak yaşamak için bir abonelik veya Speed Boost satın alın.</string>
@@ -260,29 +269,29 @@
     <string name="btn_get_speed_boost">Speed Boost</string>
 
     <!-- Header text appearing on the subscriptions screen when the user has a limited subscription plan. Note the use of a non-breaking space in '5 Mb/s' -->
-    <string name="PaymentChooserActivity.UsingLimitedPlan">Temel planı 5&#160;Mb/s hız sınırı ile kullanıyorsunuz. Sınırsız plana yükseltmek ister misiniz?</string>
+    <string name="PaymentChooserActivity.UsingLimitedPlan">Temel paketi 5&#160;Mb/s hız sınırı ile kullanıyorsunuz. Sınırsız pakete yükseltmek ister misiniz?</string>
 
     <!-- Header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
-    <string name="PaymentChooserActivity.UsingFreePlan">Ücretsiz, reklam destekli, hız sınırlı, bağlantı noktası kısıtlamalı planı kullanıyorsunuz. Bu planı kullanmaya devam edebilir ya da premium planlarımızdan birine yükseltebilirsiniz.</string>
+    <string name="PaymentChooserActivity.UsingFreePlan">Ücretsiz, reklam destekli, hız sınırlı, bağlantı noktası kısıtlamalı paketi kullanıyorsunuz. Bu paketi kullanmayı sürdürebilir ya da ücretli paketlerimizden birine yükseltebilirsiniz.</string>
 
     <!-- Alternative header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
-    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon artık bölgenizde ücretsiz olarak kullanılamıyor. Hizmeti kullanmayı sürdürmek için lütfen ücretli planlarımızdan birine geçin</string>
+    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon artık bölgenizde ücretsiz olarak kullanılamıyor. Hizmeti kullanmayı sürdürmek için lütfen ücretli paketlerimizden birine geçin</string>
 
     <!-- Common description text for all time passes. A time pass is a single use license that is valid for a certain
     period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
-    <string name="PaymentChooserActivity.TimepassCommonDescription">Satın alacağınız her zaman planı ile kesintisiz erişim elde edin, hız ve bağlantı noktası sınırlamasını kaldırın</string>
+    <string name="PaymentChooserActivity.TimepassCommonDescription">Satın alacağınız her zaman paketi ile kesintisiz erişim elde edin, hız ve bağlantı noktası sınırlamasını kaldırın</string>
 
     <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., '7-day pass - CA$3.99' -->
-    <string name="PaymentChooserActivity.TimepassTitlePrice7Text">7 günlük plan - %s</string>
+    <string name="PaymentChooserActivity.TimepassTitlePrice7Text">7 günlük paket - %s</string>
 
     <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., '30-day pass - CA$8.99' -->
-    <string name="PaymentChooserActivity.TimepassTitlePrice30Text">30 günlük plan - %s</string>
+    <string name="PaymentChooserActivity.TimepassTitlePrice30Text">30 günlük paket - %s</string>
 
     <!-- Label for button that user will click to buy a 360-day pass for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., '360-day pass - CA$99.99' -->
-    <string name="PaymentChooserActivity.TimepassTitlePrice360Text">360 günlük plan - %s</string>
+    <string name="PaymentChooserActivity.TimepassTitlePrice360Text">360 günlük paket - %s</string>
 
     <!-- Extra label showing price per day on all time pass buttons. Keep as short as possible. -->
     <string name="PaymentChooserActivity.TimepassPricePerDayText">%s/gün</string>
@@ -312,7 +321,7 @@
     <string name="PaymentChooserActivity.PriceAfterFreeTrialText">Deneme süresi bittikten sonra %s/ay</string>
 
     <!-- Subscription terms text, appears at the bottom of the subscriptions screen -->
-    <string name="PaymentChooserActivity.SubscriptionsTerms">Aboneliğinizi istediğiniz zaman, Google Play abonelikler bölümünden iptal edebilirsiniz. Aboneliğinizi iptal ettiğinizde, geçerli fatura döneminin sonunda abonelik planınız tarafından sunulan premium özelliklere erişiminizi kaybedersiniz. Her kullanıcının yalnızca bir ücretsiz deneme hakkı vardır. Ücretsiz deneme süresinin sonunda, seçilmiş abonelik planının ücreti otomatik olarak alınır. Otomatik ödemeleri engellemek için deneme süresi sona ermeden aboneliği iptal edin.</string>
+    <string name="PaymentChooserActivity.SubscriptionsTerms">Aboneliğinizi istediğiniz zaman, Google Play abonelikler bölümünden iptal edebilirsiniz. Aboneliğinizi iptal ettiğinizde, geçerli fatura döneminin sonunda abonelik paketiniz tarafından sunulan ücretli özelliklere erişiminizi kaybedersiniz. Her kullanıcının yalnızca bir ücretsiz deneme hakkı vardır. Ücretsiz deneme süresinin sonunda, seçilmiş abonelik paketinin ücreti otomatik olarak alınır. Otomatik ödemeleri engellemek için deneme süresi sona ermeden aboneliği iptal edin.</string>
 
     <!-- Time pass explanation text -->
     <string name="PaymentChooserActivity.TimePassExplanation">Zaman paketi, abonelikten farklı olarak, satın alındığı andan itibaren belirli bir süre için geçerli olan ve sona erdikten sonra otomatik olarak yenilenmeyen tek kullanımlık bir lisanstır.</string>
@@ -368,15 +377,15 @@
 
     <!-- Main body of the PsiCash account log out alert confirmation dialog.
             Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_logout_alert_connected_message">PsiCash hesabınızın oturumunu şimdi kapatmak istiyor musunuz?</string>
+    <string name="psicash_logout_alert_connected_message">PsiCash hesabınızın oturumunu kapatmak istediğinize emin misiniz?</string>
 
     <!-- Alternative main body of the PsiCash account log out alert confirmation dialog for when Psiphon is not running.
             Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
-    <string name="psicash_logout_alert_disconnected_message">Psiphon ağına bağlı olmak, PsiCash oturumunun daha güvenli şekilde kapatılmasını sağlar. Yine de devam etmek istiyor musunuz?</string>
+    <string name="psicash_logout_alert_disconnected_message">Psiphon ağına bağlı olmak, PsiCash oturumunun daha güvenli şekilde kapatılmasını sağlar. Yine de ilerlemek istiyor musunuz?</string>
 
     <!-- Alternative main body of the PsiCash account log out alert confirmation dialog for when Psiphon is running but has not finished connecting yet.
             Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
-    <string name="psicash_logout_alert_connecting_message">Psiphon ağına bağlı olmak, PsiCash oturumunun daha güvenli şekilde kapatılmasını sağlar. Psiphon uygulamasının bağlantıyı kurmasını beklemek mi yoksa devam etmek mi istersiniz?</string>
+    <string name="psicash_logout_alert_connecting_message">Psiphon ağına bağlı olmak, PsiCash oturumunun daha güvenli şekilde kapatılmasını sağlar. Psiphon uygulamasının bağlantı kurmasını beklemek mi yoksa ilerlemek mi istersiniz?</string>
 
     <!-- Button on the PsiCash account log out alert confirmation dialog for when Psiphon is running but has not finished connecting yet. Dismisses the log out dialog without any further action when clicked. -->
     <string name="psicash_wait_lbl">Bekle</string>
@@ -548,19 +557,19 @@
     <string name="google_play_icon_description">Google Play simgesi</string>
 
     <!-- Title for the Install Conduit action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
-    <string name="conduit_install_title">Conduit Kur</string>
+    <string name="conduit_install_title">Conduit kur</string>
 
     <!-- Description text for the clickable Conduit app card, do not translate or transliterate 'Conduit'. -->
-    <string name="conduit_card_description">Conduit mobil uygulamasını çalıştırın ve Psiphon\'a ücretsiz bir şekilde bağlı kalmaya devam edin.</string>
+    <string name="conduit_card_description">Conduit mobil uygulamasını çalıştırın ve ücretsiz Psiphon bağlantısı kullanmayı sürdürün.</string>
 
     <!-- Clickable text label to open the Conduit app, do not translate or transliterate 'Conduit'. -->
-    <string name="launch_conduit_action">Conduit\'i Başlat</string>
+    <string name="launch_conduit_action">Conduit uygulamasını başlat</string>
 
     <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
     <string name="subscribe_card_title">Abone ol</string>
 
     <!-- Description text under the Subscribe clickable item -->
-    <string name="subscribe_card_description">Psiphon\'a kesintisiz erişim için bir abonelik planı satın alın</string>
+    <string name="subscribe_card_description">Kesintisiz Psiphon erişimi için bir abonelik paketi satın alın</string>
 
     <!-- Clickable text label, clicking this opens a dialog with various speed boost options available for purchase.
     'Speed Boost' is a reward that can be purchased with PsiCash credit.
@@ -569,21 +578,37 @@
     <string name="speed_boost_card_title">Speed Boost</string>
 
     <!-- Description text under the Speed Boost clickable item -->
-    <string name="speed_boost_card_description">Psiphon\'a kısa süreli erişim için PsiCash\'iniz ile bir Speed Boost alabilirsiniz.</string>
+    <string name="speed_boost_card_description">Kısa süreli Psiphon erişimi için PsiCash birikiminiz ile Speed Boost alabilirsiniz.</string>
 
     <!-- Clickable text label to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
-    <string name="update_psiphon_pro_title">Psiphon Pro\'yu Güncelle</string>
+    <string name="update_psiphon_pro_title">Psiphon Pro sürümünü güncelle</string>
 
     <!-- Title for the 'Update' action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
-    <string name="conduit_update_title">Conduit\'i Güncelle</string>
+    <string name="conduit_update_title">Conduit uygulamasını güncelle</string>
 
     <!-- Description for the 'Update' Action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
-    <string name="conduit_update_description">Bu özelliğe erişmek için Conduit\'i son sürüme güncelleyin</string>
+    <string name="conduit_update_description">Bu özelliğe erişmek için son Conduit sürümüne güncelleyin</string>
 
     <!-- Title for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
-    <string name="update_psiphon_pro_action_title">Psiphon Pro\'yu Güncelle</string>
+    <string name="update_psiphon_pro_action_title">Psiphon Pro sürümünü güncelle</string>
 
     <!-- Description for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
-    <string name="update_psiphon_pro_action_description">Bu özelliğe erişmek için Psiphon Pro\'yu son sürüme güncelleyin</string>
+    <string name="update_psiphon_pro_action_description">Bu özelliğe erişmek için son Psiphon Pro sürümüne güncelleyin</string>
 
-    </resources>
+    <!-- Access status label shown on the home tab when the user has a limited subscription plan -->
+    <string name="subscription_limited">Abonelik: Sınırlı</string>
+
+    <!-- Access status label shown on the home tab when the user has an unlimited subscription plan -->
+    <string name="subscription_unlimited">Abonelik: Sınırsız</string>
+
+    <!-- Access status label shown on the home tab when the user has time pass plan. A time pass is a single use license that is valid for a certain
+    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="time_pass_active">Zaman paketi: Etkin</string>
+
+    <!-- Access status label shown on the home tab when the user has no subscription or time pass plan -->
+    <string name="subscription_none">Ücretsiz erişim</string>
+
+    <!-- Access status label shown on the home tab when the user is running the Conduit app on the same device which may provide enhanced access to Psiphon.
+     Do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_active">Conduit: Etkin</string>
+</resources>
