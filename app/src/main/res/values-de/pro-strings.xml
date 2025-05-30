@@ -36,9 +36,12 @@
     -->
     <string name="rate_with_unit_template">%1$s %2$s</string>
 
+    <string name="rate_unit_bps_bits">Bit/s</string>
     <string name="rate_unit_kbps_bits">Kbit/s</string>
     <string name="rate_unit_mbps_bits">Mbit/s</string>
     <string name="rate_unit_gbps_bits">Gbit/s</string>
+    <string name="rate_unit_tbps_bits">Tbit/s</string>
+    <string name="rate_unit_pbps_bits">Pbit/s</string>
     <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
     <string name="speed_rate_limit_not_available">Nicht verfügbar</string>
 
@@ -204,6 +207,10 @@
     Do not translate or transliterate words Psiphon -->
     <string name="wait_for_psiphon_to_finish_connect_to_use_psicash_store">Bitte warten Sie, bis Psiphon die Verbindung hergestellt hat, um den PsiCash-Store zu nutzen</string>
 
+    <!-- A title for PsiCash related screens and dialogs.
+        Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_generic_title">PsiCash</string>
+
     <!-- A message to the user indicating that their PsiCash balance is most likely out of date and needs to be refreshed by connecting to Psiphon.
     Do not translate or transliterate words PsiCash or Psiphon -->
     <string name="psicash_out_of_date_dialog_message">Ihr PsiCash-Guthaben ist veraltet. Stellen Sie zum Aktualisieren eine Verbindung zu Psiphon her.</string>
@@ -253,6 +260,14 @@
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed.-->
     <string name="btn_get_speed_boost">Speed Boost</string>
+
+    <!-- An updated alert message seen by the user when they try to use one of Speed Boost options but their PsiCash balance is insufficient.
+    Note that since we are phasing out the PsiCash system, this message is no longer offering the user to buy more PsiCash, and is just informing
+    them that they do not have enough PsiCash to activate the Speed Boost option.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed.-->
+    <string name="speed_boost_insufficient_balance_alert_update">Sie haben nicht genug PsiCash, um diese Speed Boost-Option zu aktivieren.</string>
 
     <!-- Header text appearing on the subscriptions screen when the user has a limited subscription plan. Note the use of a non-breaking space in '5 Mb/s' -->
     <string name="PaymentChooserActivity.UsingLimitedPlan">Sie nutzen den Basistarif mit einer auf 5&#160;Mbit/s begrenzten Geschwindigkeit. Möchten Sie auf den Tarif mit unbegrenzter Geschwindigkeit upgraden?</string>
@@ -498,6 +513,12 @@
 
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">Trennen</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="purchase_required_prompt_title">So greifen Sie auf Psiphon in Ihrer Region zu.</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="unlock_required_prompt_body">Der Zugang zu Psiphon in Ihrer Region erfordert jetzt Ihre Unterstützung. Helfen Sie dabei, Psiphon für diejenigen zugänglich zu halten, die es am meisten brauchen, indem Sie eine verfügbare Option auswählen, um fortzufahren.</string>
 
     <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_hr">1 Stunde</string>
