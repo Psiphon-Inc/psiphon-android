@@ -83,6 +83,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -366,8 +367,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                                 .doOnNext(state -> MyLog.i("TunnelManager: Conduit state: " + state))
                                 .filter(state -> state.status() != ConduitState.Status.UNKNOWN)
                                 .map(state -> state.status() == ConduitState.Status.RUNNING)
-                                .doOnError(e -> MyLog.e("TunnelManager: Conduit state error: " + e))
-                                .onErrorReturnItem(false)
+                                .onErrorReturnItem(false) // Should not ever happen but just in case
                                 .doOnNext(isRunning -> {
                                     MyLog.i("TunnelManager: updating tunnel config manager with Conduit state: " + isRunning);
                                     tunnelConfigManager.updateConduitState(isRunning);
@@ -966,8 +966,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         return ConduitStateManager.newManager(getContext()).stateFlowable()
                 // Filter out UNKNOWN states
                 .filter(state -> state.status() != ConduitState.Status.UNKNOWN)
-                // Wait for up to 1 second for the first state
-                .timeout(1000, java.util.concurrent.TimeUnit.MILLISECONDS)
+                // Wait for up to 1 second for the first state, explicit timeout error
+                .timeout(1000, java.util.concurrent.TimeUnit.MILLISECONDS,
+                        Flowable.error(new TimeoutException("Conduit state timeout")))
                 .firstOrError()
                 .doOnSuccess(state -> MyLog.i("TunnelManager: initial Conduit state: " + state))
                 // Any state other than RUNNING is considered not running

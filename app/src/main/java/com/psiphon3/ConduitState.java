@@ -21,6 +21,7 @@ public abstract class ConduitState {
         NOT_INSTALLED,
         INCOMPATIBLE_VERSION,
         UNSUPPORTED_SCHEMA,
+        ERROR,
     }
 
     @NonNull
@@ -54,6 +55,13 @@ public abstract class ConduitState {
 
     public static ConduitState fromJson(String jsonString) throws IllegalArgumentException {
         return Parser.INSTANCE.parse(jsonString);
+    }
+
+    public static ConduitState error(String message) {
+        return builder()
+                .setStatus(Status.ERROR)
+                .setMessage(message)
+                .build();
     }
 
     private enum Parser {
