@@ -36,20 +36,11 @@
     -->
     <string name="rate_with_unit_template">%1$s %2$s</string>
 
-    <!-- Unit labels used with 'rate_with_unit_template' for bit-per-second speeds. These represent: bits, kilobits, megabits, etc. per second. -->
-    <string name="rate_unit_bps_bits">bps</string>
     <string name="rate_unit_kbps_bits">Kbps</string>
     <string name="rate_unit_mbps_bits">Mbps</string>
     <string name="rate_unit_gbps_bits">Gbps</string>
-    <string name="rate_unit_tbps_bits">Tbps</string>
-    <string name="rate_unit_pbps_bits">Pbps</string>
-
-
     <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
     <string name="speed_rate_limit_not_available">غير متوفر</string>
-
-    <!-- Text shown on the home tab under Psiphon speed limit label when the there is no speed limit, like when the user has an unlimited subscription, for example -->
-    <string name="speed_rate_limit_no_limit">بلا حدود</string>
 
     <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
          the workflow to subscribe for premium access. -->
@@ -241,14 +232,6 @@
 
     <!-- Generic billing error message seen by user if there is a billing problem with the PsiCash purchase. Do not translate or transliterate word PsiCash -->
     <string name="psicash_purchase_not_available_error_message">شراء PsiCash غير متاح حاليًا. يُرجى المحاولة مجددًا في وقتٍ لاحق.</string>
-
-    <!-- An updated alert message seen by the user when they try to use one of Speed Boost options but their PsiCash balance is insufficient.
-    Note that since we are phasing out the PsiCash system, this message is no longer offering the user to buy more PsiCash, and is just informing
-    them that they do not have enough PsiCash to activate the Speed Boost option.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
-    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
-    indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_insufficient_balance_alert_update">ليس لديك ما يكفي من PsiCash لتفعيل خيار تعزيز السرعة</string>
 
     <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_notification_title">ترقية Psiphon Pro</string>
@@ -513,12 +496,6 @@
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">قطع الاتصال</string>
 
-    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
-    <string name="purchase_required_prompt_title">كيفية الوصول إلى Psiphon في منطقتك</string>
-
-    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
-    <string name="unlock_required_prompt_body">يتطلب الوصول إلى Psiphon في منطقتك الآن دعمك. ساعد في إبقاء Psiphon متاحًا لمن هم في أمسّ الحاجة إليه باختيار خيار متاح للمتابعة.</string>
-
     <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_hr">ساعة</string>
 
@@ -603,20 +580,4 @@
     <!-- Description for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
     <string name="update_psiphon_pro_action_description">تحديث إلى أحدث إصدار من Psiphon Pro للوصول إلى هذه الميزة</string>
 
-    <!-- Access status label shown on the home tab when the user has a limited subscription plan -->
-    <string name="subscription_limited">الاشتراك محدود</string>
-
-    <!-- Access status label shown on the home tab when the user has an unlimited subscription plan -->
-    <string name="subscription_unlimited">الاشتراك: غير محدود</string>
-
-    <!-- Access status label shown on the home tab when the user has time pass plan. A time pass is a single use license that is valid for a certain
-    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
-    <string name="time_pass_active">تايم باس: مُفَعَّل</string>
-
-    <!-- Access status label shown on the home tab when the user has no subscription or time pass plan -->
-    <string name="subscription_none">الدخول مجاني</string>
-
-    <!-- Access status label shown on the home tab when the user is running the Conduit app on the same device which may provide enhanced access to Psiphon.
-     Do not translate or transliterate 'Conduit'. -->
-    <string name="conduit_active">Conduit: مُفَعَّل</string>
-</resources>
+    </resources>
