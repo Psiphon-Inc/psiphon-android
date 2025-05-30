@@ -330,7 +330,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:gravity="center_horizontal"
-                            android:text="@string/btn_disconnect"
+                            android:text="@string/label_dismiss"
                             android:textAppearance="@style/TextAppearance.AppCompat.Headline"
                             android:textStyle="normal" />
 

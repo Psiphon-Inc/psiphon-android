@@ -130,7 +130,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     public static final String INTENT_ACTION_DISALLOWED_TRAFFIC = "com.psiphon3.psiphonlibrary.TunnelManager.INTENT_ACTION_DISALLOWED_TRAFFIC";
     public static final String INTENT_ACTION_UNSAFE_TRAFFIC = "com.psiphon3.psiphonlibrary.TunnelManager.INTENT_ACTION_UNSAFE_TRAFFIC";
     public static final String INTENT_ACTION_UPSTREAM_PROXY_ERROR = "com.psiphon3.psiphonlibrary.TunnelManager.UPSTREAM_PROXY_ERROR";
-    public static final String INTENT_ACTION_SHOW_UNLOCK_REQUIRED = "com.psiphon3.psiphonlibrary.TunnelManager.INTENT_ACTION_SHOW_UNLOCK_REQUIRED";
 
     // Service -> Client bundle parameter names
     static final String DATA_TUNNEL_STATE_IS_RUNNING = "isRunning";
@@ -407,21 +406,21 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                             // Do not emit downstream if we just started routing.
                             return Observable.empty();
                         }
+                        // Handle unlock required case
                         if (unlockOptions.unlockRequired()) {
-                            // Cancel "Psiphon isn't free" notification if it still showing.
+                            // If there is an unlock required, deliver the intent to the client Activity
+                            // either by sending it directly or showing a notification
+                            deliverUnlockRequiredUI();
+                            // Command the service to stop immediately if unlock is required.
+                            signalStopService();
+                            // Do not emit downstream
+                            return Observable.empty();
+                        } else {
+                            // If there is no unlock required, we should cancel the unlock required notification
+                            // and continue to handling landing pages.
                             cancelUnlockRequiredNotification();
-                            if (canSendIntentToActivity()) {
-                                m_vpnManager.routeThroughTunnel(m_tunnel.getLocalSocksProxyPort());
-                                sendUnlockRequiredIntent();
-                                m_isRoutingThroughTunnelPublishRelay.accept(Boolean.TRUE);
-                                // Do not emit downstream if we are just started routing.
-                                return Observable.empty();
-                            }
-                            // Emit CONNECTING and start waiting for an activity to bind
-                            return waitSendIntentAndRouteThroughTunnelCompletable(this::sendUnlockRequiredIntent)
-                                    .<TunnelState.ConnectionData.NetworkConnectionState>toObservable()
-                                    .startWith(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
                         }
+
                         if (m_tunnelState.homePages != null && m_tunnelState.homePages.size() != 0) {
                             if (canSendIntentToActivity()) {
                                 m_vpnManager.routeThroughTunnel(m_tunnel.getLocalSocksProxyPort());
@@ -519,16 +518,38 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         mNotificationManager.notify(R.id.notification_id_open_app_to_keep_connecting, notificationBuilder.build());
     }
 
-    private void sendUnlockRequiredIntent() {
-        PendingIntent showUnlockRequiredIntent = getPendingIntent(m_parentService,
-                INTENT_ACTION_SHOW_UNLOCK_REQUIRED, unlockOptions.toBundle());
-        try {
-            showUnlockRequiredIntent.send();
-            // Cancel disallowed traffic alert too if it is showing
-            cancelDisallowedTrafficAlertNotification();
-        } catch (PendingIntent.CanceledException e) {
-            MyLog.w("TunnelManager: sendUnlockRequiredIntent() failed: " + e);
+    private void deliverUnlockRequiredUI() {
+        // persist the unlock options
+        String jsonString = unlockOptions.toJsonString();
+        UnlockOptions.toFile(getContext(), jsonString);
+
+        if (canSendIntentToActivity()) {
+            try {
+                m_notificationPendingIntent.send();
+            } catch (PendingIntent.CanceledException e) {
+                showUnlockRequiredNotification();
+            }
+        } else {
+            showUnlockRequiredNotification();
         }
+    }
+
+    private void showUnlockRequiredNotification() {
+        if (mNotificationManager == null) {
+            return;
+        }
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(getContext(), NOTIFICATION_SERVER_ALERT_CHANNEL_ID);
+        notificationBuilder
+                .setSmallIcon(R.drawable.ic_psiphon_alert_notification)
+                .setGroup(getContext().getString(R.string.alert_notification_group))
+                .setContentTitle(getContext().getString(R.string.notification_title_action_required))
+                .setContentText(getContext().getString(R.string.notification_text_unlock_required_short))
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .bigText(getContext().getString(R.string.notification_text_unlock_required_long)))
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setContentIntent(m_notificationPendingIntent);
+
+        mNotificationManager.notify(R.id.notification_id_unlock_required, notificationBuilder.build());
     }
 
     // Implementation of android.app.Service.onDestroy
@@ -539,9 +560,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             // Cancel upstream proxy error notification
             mNotificationManager.cancel(R.id.notification_id_upstream_proxy_error);
         }
-        // Cancel potentially dangling notifications.
+        // Cancel potentially dangling disallowed traffic alert notification, but not the unlock
+        // required notification, since it is supposed to be shown even after the tunnel is stopped
+        // and service is destroyed.
         cancelDisallowedTrafficAlertNotification();
-        cancelUnlockRequiredNotification();
 
         stopAndWaitForTunnel();
         m_compositeDisposable.dispose();
@@ -1909,7 +1931,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     accessTypes.contains(Authorization.ACCESS_TYPE_GOOGLE_SUBSCRIPTION) ||
                     accessTypes.contains(Authorization.ACCESS_TYPE_GOOGLE_SUBSCRIPTION_LIMITED);
 
-            // If the user has a speed boost or subscription auth, cancel the purchase required notification and disallowed traffic alert
+            // If the user has a speed boost or subscription auth, cancel the unlock required notification and disallowed traffic alert
             if (hasSpeedBoostOrSubscription) {
                 cancelUnlockRequiredNotification();
                 cancelDisallowedTrafficAlertNotification();

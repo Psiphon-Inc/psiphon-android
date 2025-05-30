@@ -57,6 +57,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.PermissionChecker;
 import androidx.fragment.app.Fragment;
@@ -90,6 +91,7 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import io.reactivex.Completable;
@@ -324,6 +326,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
             // There could be multiple permissions requested, check if we were granted a location
             // one and start location update if so.
@@ -362,6 +365,29 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                     .subscribe());
         }
 
+         // If we are going to show the Unlock Required dialog, we do not want to run any
+        // potentially disruptive onResume actions such as showing toasts, alerts,
+        // The rest of the flow will run after the dialog is dismissed.
+        if (handleUnlockRequiredUi()) {
+            return;
+        }
+
+        handleDisruptiveOnResumeActions();
+    }
+
+    private boolean handleUnlockRequiredUi() {
+        // Check for persisted unlock options first
+        Map<String, Boolean> unlockOptionsMap = UnlockOptions.fromFile(this);
+        if (!unlockOptionsMap.isEmpty()) {
+            // if we have unlock options, we do not need to run the rest of potentially disruptive
+            // onResume logic, so return early.
+            // We will run the rest of onResume logic after the dialog is dismissed.
+            return showUnlockRequiredDialog(unlockOptionsMap);
+        }
+        return false;
+    }
+
+    private void handleDisruptiveOnResumeActions() {
         // Observe custom proxy validation results to show a toast for invalid ones
         compositeDisposable.add(viewModel.customProxyValidationResultFlowable()
                 .observeOn(AndroidSchedulers.mainThread())
@@ -390,6 +416,49 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                         .andThen(autoStartMaybe())
                         .doOnSuccess(__ -> startTunnel())
                         .subscribe());
+    }
+
+    private boolean showUnlockRequiredDialog(Map<String, Boolean> unlockOptionsMap) {
+        if (isFinishing()) {
+            return false;
+        }
+
+        if (unlockRequiredDialog != null && unlockRequiredDialog.isShowing()) {
+            // Already showing, do nothing
+            return false;
+        }
+
+        // Cancel disallowed traffic alert if it is showing
+        if (disallowedTrafficAlertDialog != null && disallowedTrafficAlertDialog.isShowing()) {
+            disallowedTrafficAlertDialog.dismiss();
+        }
+
+        unlockRequiredDialog = new UnlockRequiredDialog.Builder(this, this)
+                .setUnlockOptionsMap(unlockOptionsMap) // ← Changed from UnlockOptions.fromBundle(intent.getExtras())
+                .setDisconnectTunnelRunnable(() -> compositeDisposable.add(
+                        getTunnelServiceInteractor().tunnelStateFlowable()
+                                .filter(state -> !state.isUnknown())
+                                .firstOrError()
+                                .doOnSuccess(state -> {
+                                    if (state.isRunning()) {
+                                        getTunnelServiceInteractor().stopTunnelService();
+                                    }
+                                })
+                                .subscribe()
+                ))
+                .setSubscribeClickListener(v -> {
+                    MainActivity.unlockWithSubscription(MainActivity.this);
+                    unlockRequiredDialog.dismiss();
+                    // Run remaining onResume logic after user action
+                    handleDisruptiveOnResumeActions();
+                })
+                .show();
+
+        // Only clear data and cancel notification AFTER successfully showing dialog
+        UnlockOptions.clear(this);
+        NotificationManagerCompat.from(this).cancel(R.id.notification_id_unlock_required);
+
+        return true;
     }
 
     // Check runtime permissions and show rationales if needed.
@@ -828,51 +897,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             toast.show();
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_VPN_REVOKED)) {
             showVpnAlertDialog(R.string.StatusActivity_VpnRevokedTitle, R.string.StatusActivity_VpnRevokedMessage);
-        } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_SHOW_UNLOCK_REQUIRED)) {
-            if (!isFinishing()) {
-                if (unlockRequiredDialog != null && unlockRequiredDialog.isShowing()) {
-                    // Already showing, do nothing
-                    return;
-                }
-                // Cancel disallowed traffic alert if it is showing
-                if (disallowedTrafficAlertDialog != null && disallowedTrafficAlertDialog.isShowing()) {
-                    disallowedTrafficAlertDialog.dismiss();
-                }
-
-                unlockRequiredDialog = new UnlockRequiredDialog.Builder(this, this)
-                        .setUnlockOptionsMap(UnlockOptions.fromBundle(intent.getExtras()))
-                        .setDisconnectTunnelRunnable(() -> compositeDisposable.add(
-                                getTunnelServiceInteractor().tunnelStateFlowable()
-                                        .filter(state -> !state.isUnknown())
-                                        .firstOrError()
-                                        .doOnSuccess(state -> {
-                                            if (state.isRunning()) {
-                                                getTunnelServiceInteractor().stopTunnelService();
-                                            }
-                                        })
-                                        .subscribe()
-                        ))
-                        .setSubscribeClickListener(v -> {
-                            MainActivity.unlockWithSubscription(MainActivity.this);
-                            unlockRequiredDialog.dismiss();
-                        })
-                        .show();
-
-                // Auto-dismiss the unlock dialog if the tunnel is stopped by something other than
-                // this dialog (e.g., from the notification).
-                // NOTE: This subscription is intentionally not added to compositeDisposable because
-                // that gets cleared when the activity is paused. We want to keep this subscription
-                // alive for the duration of the activity lifecycle.
-                unlockDialogDismissDisposable = getTunnelServiceInteractor().tunnelStateFlowable()
-                        .filter(TunnelState::isStopped)
-                        .firstOrError()
-                        .doOnSuccess(state -> {
-                            if (unlockRequiredDialog != null && unlockRequiredDialog.isShowing()) {
-                                unlockRequiredDialog.dismiss();
-                            }
-                        })
-                        .subscribe();
-            }
         } else if (0 == intent.getAction().compareTo(TunnelManager.INTENT_ACTION_DISALLOWED_TRAFFIC)) {
             // Do not show disallowed traffic alert if purchase required prompt is showing
             if (unlockRequiredDialog != null && unlockRequiredDialog.isShowing()) {
@@ -1183,3 +1207,4 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         }
     }
 }
+
