@@ -79,4 +79,82 @@
     <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
     <string name="subscribe_card_title">Падпісацца</string>
 
+    <!-- Missing translations needed for Belarusian -->
+    <!-- Summary text for 'Custom HTTP header' option -->
+    <string name="custom_proxy_headers_summary">Наладзіць дадатковыя карыстальніцкія загалоўкі HTTP для запытаў проксі</string>
+    
+    <!-- Checkbox that toggles adding custom headers feature-->
+    <string name="custom_proxy_headers_checkbox_title">Дадаць карыстальніцкія загалоўкі HTTP</string>
+    
+    <!-- Summary text for 'Add custom HTTP headers' checkbox -->
+    <string name="custom_proxy_headers_checkbox_description">Дадаць карыстальніцкія загалоўкі HTTP для ўсіх зыходных запытаў проксі HTTP</string>
+    
+    <string name="custom_proxy_header_ignored_values">Папярэджанне: загалоўкі з пустымі назвамі будуць праігнараваны!</string>
+    <string name="custom_proxy_header_invalid_name">Памылка: назва загалоўка утрымлівае недапушчальныя сімвалы!</string>
+    
+    <!-- Speed limit related strings -->
+    <string name="rate_limit_text_title">Ліміт хуткасці Psiphon:</string>
+    <string name="rate_with_unit_template">%1$s %2$s</string>
+    <string name="rate_unit_bps_bits">bps</string>
+    <string name="rate_unit_kbps_bits">Kbps</string>
+    <string name="rate_unit_mbps_bits">Mbps</string>
+    <string name="rate_unit_gbps_bits">Gbps</string>
+    <string name="rate_unit_tbps_bits">Tbps</string>
+    <string name="rate_unit_pbps_bits">Pbps</string>
+    <string name="speed_rate_limit_not_available">Недаступна</string>
+    <string name="speed_rate_limit_no_limit">Без ліміта</string>
+    <string name="rate_limit_text_subscribe_button">Палепшыць зараз!</string>
+    
+    <!-- Speed Boost related strings -->
+    <string name="speed_boost_active_label">Прыскарэнне хуткасці актыўна</string>
+    <string name="speed_boost_button_caption">Прыскарэнне хуткасці</string>
+    <string name="speed_boost_tab_title">Прыскарэнне хуткасці</string>
+    <string name="btn_get_speed_boost">Прыскарэнне хуткасці</string>
+    <string name="speed_boost_card_title">Прыскарэнне хуткасці</string>
+    
+    <!-- Plurals for time remaining -->
+    <plurals name="speed_boost_left_days">
+        <item quantity="one">%d д</item>
+        <item quantity="few">%d д</item>
+        <item quantity="many">%d д</item>
+        <item quantity="other">%d д</item>
+    </plurals>
+    
+    <plurals name="speed_boost_left_hours">
+        <item quantity="one">%d г</item>
+        <item quantity="few">%d г</item>
+        <item quantity="many">%d г</item>
+        <item quantity="other">%d г</item>
+    </plurals>
+    
+    <string name="speed_boost_left_day_hour_ordered">%1$s %2$s</string>
+    <string name="psicash_price_format">%s PsiCash</string>
+    
+    <!-- Icon descriptions -->
+    <string name="conduit_icon_description">Іконка прыложання Conduit</string>
+    <string name="google_play_icon_description">Іконка Google Play</string>
+    
+    <!-- Conduit related strings -->
+    <string name="conduit_install_title">Усталяваць Conduit</string>
+    <string name="conduit_card_description">Запусціце мабільную прыложанне Conduit і заставайцеся падключанымі да Psiphon бесплатна</string>
+    <string name="launch_conduit_action">Запусціць Conduit</string>
+    <string name="conduit_update_title">Абнавіць Conduit</string>
+    <string name="conduit_update_description">Абнавіце да найновшай версіі Conduit, каб отрымаць доступ да гэтай функцыі</string>
+    
+    <!-- Update related strings -->
+    <string name="update_psiphon_pro_title">Абнавіць Psiphon Pro</string>
+    <string name="update_psiphon_pro_action_title">Абнавіць Psiphon Pro</string>
+    <string name="update_psiphon_pro_action_description">Абнавіце да найновшай версіі Psiphon Pro, каб отрымаць доступ да гэтай функцыі</string>
+    
+    <!-- Card descriptions -->
+    <string name="subscribe_card_description">Купіце план падпіскі для бесперабойнага доступу да Psiphon</string>
+    <string name="speed_boost_card_description">Купіце Прыскарэнне хуткасці за PsiCash для часовага доступу да Psiphon</string>
+    
+    <!-- Access status labels -->
+    <string name="subscription_limited">Падпіска: Мэжаваная</string>
+    <string name="subscription_unlimited">Падпіска: Безмежная</string>
+    <string name="time_pass_active">Часовы пропуск: Актыўны</string>
+    <string name="subscription_none">Бесплатны доступ</string>
+    <string name="conduit_active">Conduit: Актыўны</string>
+
     </resources>

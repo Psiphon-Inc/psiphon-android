@@ -33,4 +33,95 @@
     <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
     <string name="subscribe_card_title">Abunə ol</string>
 
+    <!-- Missing translations needed for Azerbaijani -->
+    <!-- New option title in the 'More options' dialog -->
+    <string name="custom_proxy_headers_title">Xüsusi HTTP başlıqları</string>
+    
+    <!-- Summary text for 'Custom HTTP header' option -->
+    <string name="custom_proxy_headers_summary">Proksi tələbləri üçün əlavə xüsusi HTTP başlıqları quraşdırın</string>
+    
+    <!-- Checkbox that toggles adding custom headers feature-->
+    <string name="custom_proxy_headers_checkbox_title">Xüsusi HTTP başlıqları əlavə edin</string>
+    
+    <!-- Summary text for 'Add custom HTTP headers' checkbox -->
+    <string name="custom_proxy_headers_checkbox_description">Bütün gedgən HTTP proksi tələblərinə xüsusi HTTP başlıqları əlavə edin</string>
+    
+    <string name="custom_proxy_header_group_1">Başlıq 1</string>
+    <string name="custom_proxy_header_group_2">Başlıq 2</string>
+    <string name="custom_proxy_header_group_3">Başlıq 3</string>
+    <string name="custom_proxy_header_group_4">Başlıq 4</string>
+    <string name="custom_proxy_header_group_5">Başlıq 5</string>
+    <string name="custom_proxy_header_group_6">Başlıq 6</string>
+    <string name="custom_proxy_header_name">Başlıq adını daxil edin</string>
+    <string name="custom_proxy_header_value">Başlıq dəyərini daxil edin</string>
+    <string name="custom_proxy_header_ignored_values">Xəbərdaplıq: boş adlı başlıqlar nəzərə alınmayacaq!</string>
+    <string name="custom_proxy_header_invalid_name">Xəta: başlıq adında qanúnsuz simvollar var!</string>
+    
+    <!-- Speed limit related strings -->
+    <string name="rate_limit_text_title">Psiphon sürət həddi:</string>
+    <string name="rate_with_unit_template">%1$s %2$s</string>
+    <string name="rate_unit_bps_bits">bps</string>
+    <string name="rate_unit_kbps_bits">Kbps</string>
+    <string name="rate_unit_mbps_bits">Mbps</string>
+    <string name="rate_unit_gbps_bits">Gbps</string>
+    <string name="rate_unit_tbps_bits">Tbps</string>
+    <string name="rate_unit_pbps_bits">Pbps</string>
+    <string name="speed_rate_limit_not_available">Mövcud deyil</string>
+    <string name="speed_rate_limit_no_limit">Hədd yoxdur</string>
+    <string name="rate_limit_text_subscribe_button">Indi yüksəldin!</string>
+    
+    <!-- Speed Boost related strings -->
+    <string name="speed_boost_active_label">Sürət Artımı Aktivdir</string>
+    <string name="speed_boost_button_caption">Sürət Artımı</string>
+    <string name="speed_boost_tab_title">Sürət Artımı</string>
+    <string name="btn_get_speed_boost">Sürət Artımı</string>
+    <string name="speed_boost_card_title">Sürət Artımı</string>
+    
+    <!-- Time duration labels -->
+    <string name="speed_boost_product_1_hr">1 saat</string>
+    <string name="speed_boost_product_1_day">1 gün</string>
+    <string name="speed_boost_product_1_week">1 həftə</string>
+    <string name="speed_boost_product_1_month">1 ay</string>
+    
+    <!-- Plurals for time remaining -->
+    <plurals name="speed_boost_left_days">
+        <item quantity="one">%d g</item>
+        <item quantity="other">%d g</item>
+    </plurals>
+    
+    <plurals name="speed_boost_left_hours">
+        <item quantity="one">%d s</item>
+        <item quantity="other">%d s</item>
+    </plurals>
+    
+    <string name="speed_boost_left_day_hour_ordered">%1$s %2$s</string>
+    <string name="psicash_price_format">%s PsiCash</string>
+    
+    <!-- Icon descriptions -->
+    <string name="conduit_icon_description">Conduit tətbiq ikonu</string>
+    <string name="google_play_icon_description">Google Play ikonu</string>
+    
+    <!-- Conduit related strings -->
+    <string name="conduit_install_title">Conduit quraşdır</string>
+    <string name="conduit_card_description">Conduit mobil tətbiqini işlədin və Psiphon ilə pulsuz bağlı qalın</string>
+    <string name="launch_conduit_action">Conduit aç</string>
+    <string name="conduit_update_title">Conduit yənilə</string>
+    <string name="conduit_update_description">Bu funksiyanı əldə etmək üçün Conduit-in ən son versiyaya yəniləyin</string>
+    
+    <!-- Update related strings -->
+    <string name="update_psiphon_pro_title">Psiphon Pro yənilə</string>
+    <string name="update_psiphon_pro_action_title">Psiphon Pro yənilə</string>
+    <string name="update_psiphon_pro_action_description">Bu funksiyanı əldə etmək üçün Psiphon Pro-nun ən son versiyaya yəniləyin</string>
+    
+    <!-- Card descriptions -->
+    <string name="subscribe_card_description">Psiphon-a dağılmadan gələcuk üçün abunəlik planı alın</string>
+    <string name="speed_boost_card_description">Psiphon-a vaxtlı gələcuk üçün PsiCash ilə Sürət Artımı alın</string>
+    
+    <!-- Access status labels -->
+    <string name="subscription_limited">Abunəlik: Məhdud</string>
+    <string name="subscription_unlimited">Abunəlik: Məhdudsuz</string>
+    <string name="time_pass_active">Vaxt Keçidi: Aktiv</string>
+    <string name="subscription_none">Pulsuz Gələcuk</string>
+    <string name="conduit_active">Conduit: Aktiv</string>
+
     </resources>

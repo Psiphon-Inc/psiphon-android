@@ -82,4 +82,80 @@
     <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
     <string name="subscribe_card_title">সাবস্ক্রাইব</string>
 
+    <!-- Missing translations needed for Bengali -->
+    <!-- Summary text for 'Custom HTTP header' option -->
+    <string name="custom_proxy_headers_summary">প্রক্সি অনুরোধের জন্য অতিরিক্ত কাস্টম HTTP হেডার সেটআপ করুন</string>
+    
+    <!-- Checkbox that toggles adding custom headers feature-->
+    <string name="custom_proxy_headers_checkbox_title">কাস্টম HTTP হেডার যোগ করুন</string>
+    
+    <!-- Summary text for 'Add custom HTTP headers' checkbox -->
+    <string name="custom_proxy_headers_checkbox_description">সমস্ত আউটগোইং HTTP প্রক্সি অনুরোধে কাস্টম HTTP হেডার যোগ করুন</string>
+    
+    <string name="custom_proxy_header_ignored_values">সতর্কতা: খালি নামের হেডারগুলি উপেক্ষা করা হবে!</string>
+    <string name="custom_proxy_header_invalid_name">ত্রুটি: হেডারের নামে অবৈধ অক্ষর রয়েছে!</string>
+    
+    <!-- Speed limit related strings -->
+    <string name="rate_limit_text_title">Psiphon গতির সীমা:</string>
+    <string name="rate_with_unit_template">%1$s %2$s</string>
+    <string name="rate_unit_bps_bits">bps</string>
+    <string name="rate_unit_tbps_bits">Tbps</string>
+    <string name="rate_unit_pbps_bits">Pbps</string>
+    <string name="speed_rate_limit_no_limit">কোনো সীমা নেই</string>
+    <string name="rate_limit_text_subscribe_button">অ্যাপগ্রেড করুন!</string>
+    
+    <!-- Speed Boost related strings -->
+    <string name="speed_boost_active_label">স্পিড বুস্ট সক্রিয়</string>
+    <string name="speed_boost_button_caption">স্পিড বুস্ট</string>
+    <string name="speed_boost_tab_title">স্পিড বুস্ট</string>
+    <string name="btn_get_speed_boost">স্পিড বুস্ট</string>
+    <string name="speed_boost_card_title">স্পিড বুস্ট</string>
+    
+    <!-- Missing speed boost product duration -->
+    <string name="speed_boost_product_1_month">১ মাস</string>
+    
+    <!-- Plurals for time remaining -->
+    <plurals name="speed_boost_left_days">
+        <item quantity="one">%d দ</item>
+        <item quantity="other">%d দ</item>
+    </plurals>
+    
+    <plurals name="speed_boost_left_hours">
+        <item quantity="one">%d ঘ</item>
+        <item quantity="other">%d ঘ</item>
+    </plurals>
+    
+    <string name="speed_boost_left_day_hour_ordered">%1$s %2$s</string>
+    <string name="psicash_price_format">%s PsiCash</string>
+    
+    <!-- Icon descriptions -->
+    <string name="conduit_icon_description">Conduit অ্যাপ আইকন</string>
+    <string name="google_play_icon_description">Google Play আইকন</string>
+    
+    <!-- Conduit related strings -->
+    <string name="conduit_install_title">Conduit ইনস্টল করুন</string>
+    <string name="conduit_card_description">Conduit মোবাইল অ্যাপ চালু করুন এবং বিনামূল্যে Psiphon এর সাথে সংযুক্ত থাকুন</string>
+    <string name="launch_conduit_action">Conduit চালু করুন</string>
+    <string name="conduit_update_title">Conduit আপডেট করুন</string>
+    <string name="conduit_update_description">এই বৈশিষ্ট্য অ্যাক্সেস করতে Conduit এর সর্বশেষ ভার্সনে আপডেট করুন</string>
+    
+    <!-- Update related strings -->
+    <string name="update_psiphon_pro_title">Psiphon Pro আপডেট করুন</string>
+    <string name="update_psiphon_pro_action_title">Psiphon Pro আপডেট করুন</string>
+    <string name="update_psiphon_pro_action_description">এই বৈশিষ্ট্য অ্যাক্সেস করতে Psiphon Pro এর সর্বশেষ ভার্সনে আপডেট করুন</string>
+    
+    <!-- Card descriptions -->
+    <string name="subscribe_card_description">Psiphon এ নিরবচ্ছিন্ন অ্যাক্সেসের জন্য একটি সাবসক্রিপশন প্ল্যান কিনুন</string>
+    <string name="speed_boost_card_description">Psiphon এ সময়িত অ্যাক্সেসের জন্য আপনার PsiCash দিয়ে একটি স্পিড বুস্ট কিনুন</string>
+    
+    <!-- Account related strings -->
+    <string name="psicash_account_create_account_btn_lbl">অ্যাকাউন্ট তৈরি করুন</string>
+    
+    <!-- Access status labels -->
+    <string name="subscription_limited">সাবসক্রিপশন: সীমিত</string>
+    <string name="subscription_unlimited">সাবসক্রিপশন: অসীম</string>
+    <string name="time_pass_active">টাইম পাস: সক্রিয়</string>
+    <string name="subscription_none">বিনামূল্যে অ্যাক্সেস</string>
+    <string name="conduit_active">Conduit: সক্রিয়</string>
+
     </resources>

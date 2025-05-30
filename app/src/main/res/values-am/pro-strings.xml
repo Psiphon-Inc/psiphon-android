@@ -5,6 +5,14 @@
         to HTTP proxy requests. Users may specify up to 3 custom headers -->
     <string name="custom_proxy_headers_title">ብጁ \'ኤችቲቲፒ\' (የዳበረ ጽሁፍ ማስተላለፊያ ፕሮቶኮል) ራስጌዎች</string>
 
+    <!--  Summary text for 'Custom HTTP header' option, appears underneath the option title -->
+    <string name="custom_proxy_headers_summary">ተጨማሪ ብጁ HTTP ራስጌዎችን ለፕሮክሲ ጥያቄዎች ያዋቅሩ</string>
+
+    <!-- Checkbox that toggles adding custom headers feature-->
+    <string name="custom_proxy_headers_checkbox_title">ብጁ HTTP ራስጌዎችን ያክሉ</string>
+
+    <!--  Summary text for 'Add custom HTTP headers' checkbox, appears underneath the checkbox title -->
+    <string name="custom_proxy_headers_checkbox_description">ለሁሉም ወጪ HTTP ፕሮክሲ ጥያቄዎች ብጁ HTTP ራስጌዎችን ያክሉ</string>
     <string name="custom_proxy_header_group_1">ራስጌ 1</string>
     <string name="custom_proxy_header_group_2">ራስጌ 2</string>
     <string name="custom_proxy_header_group_3">ራስጌ 3</string>
@@ -13,6 +21,35 @@
     <string name="custom_proxy_header_group_6">ራስጌ 6</string>
     <string name="custom_proxy_header_name">የራስጌ ስም ያስገቡ</string>
     <string name="custom_proxy_header_value">የራስጌ ዕሴት ያስገቡ</string>
+    <string name="custom_proxy_header_ignored_values">ማስጠንቀቂያ፡ ባዶ ስሞች ያላቸው ራስጌዎች ይተዋሉ!</string>
+    <string name="custom_proxy_header_invalid_name">ስህተት፡ የራስጌ ስም ሕገወጥ ቁምፊዎችን ይዟል!</string>
+    <!-- Title for other text showing what the user's current speed limit is. Users have limited
+         speed if they have not paid for premium service. -->
+    <string name="rate_limit_text_title">የPsiphon ፍጥነት ገደብ፡</string>
+
+    <!--
+        Template for rendering a rate value and its unit label.
+        %1$s = numeric value (e.g., "5.3"), %2$s = unit label (e.g., "MB/s").
+        Reorder the format specifiers if in your language the unit appears before the value.
+        Example output: "5.3 MB/s", "1.2 Kbps".
+        Reorder the format specifiers '%1$s' and '%2$s' if in the translated language ordering numeric value and rate unit in speed rate string is different from English.
+    -->
+    <string name="rate_with_unit_template">%1$s %2$s</string>
+
+    <!-- Unit labels used with 'rate_with_unit_template' for bit-per-second speeds. These represent: bits, kilobits, megabits, etc. per second. -->
+    <string name="rate_unit_bps_bits">bps</string>
+    <string name="rate_unit_kbps_bits">Kbps</string>
+    <string name="rate_unit_mbps_bits">Mbps</string>
+    <string name="rate_unit_gbps_bits">Gbps</string>
+    <string name="rate_unit_tbps_bits">Tbps</string>
+    <string name="rate_unit_pbps_bits">Pbps</string>
+
+    <!-- Text shown on the home tab under Psiphon speed limit label when the there is no speed limit, like when the user has an unlimited subscription, for example -->
+    <string name="speed_rate_limit_no_limit">ገደብ የለም</string>
+
+    <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
+         the workflow to subscribe for premium access. -->
+    <string name="rate_limit_text_subscribe_button">አሁንኑ አስተካክል!</string>
     <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
     <string name="speed_rate_limit_not_available">የለም</string>
 
@@ -30,10 +67,7 @@
     'Speed Boost' is a reward that can be purchased with PsiCash credit.
     It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
     'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_button_caption">9382/52-+
-ፍ0
-\
-YT VCጭማሬ</string>
+    <string name="speed_boost_button_caption">ፍጥነት ጭማሬ</string>
 
     <!-- Title of the button that loads and plays a video ad that rewards users with PsiCash -->
     <string name="psicash_purchase_free_button_price">ነጻ</string>
@@ -50,10 +84,7 @@ YT VCጭማሬ</string>
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed. -->
-    <string name="speed_boost_tab_title">9382/52-+
-ፍ0
-\
-YT VCጭማሬ</string>
+    <string name="speed_boost_tab_title">ፍጥነት ጭማሬ</string>
 
     <!-- Text on the button which takes user to subscription screen -->
     <string name="btn_get_subscription">ይመዝገቡ </string>
@@ -62,10 +93,7 @@ YT VCጭማሬ</string>
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
     Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
     indicates a fast or unrestricted speed.-->
-    <string name="btn_get_speed_boost">9382/52-+
-ፍ0
-\
-YT VCጭማሬ</string>
+    <string name="btn_get_speed_boost">ፍጥነት ጭማሬ</string>
 
     <!-- Title of the button that dismisses PsiCash account login error alert dialog-->
     <string name="psicash_login_error_alert_dismiss">አሰናብት</string>
@@ -122,9 +150,85 @@ YT VCጭማሬ</string>
     'Speed Boost' is a reward that can be purchased with PsiCash credit.
     It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
     'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_card_title">9382/52-+
-ፍ0
-\
-YT VCጭማሬ</string>
+    <string name="speed_boost_card_title">ፍጥነት ጭማሬ</string>
+
+    <!-- Missing strings that need to be added -->
+    <!-- Alert error message informing user that their Speed Boost purchase request failed because of an unknown error. Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_transaction_invalid_message">ከPsiCash አገልጋይ ልክ ያልሆነ ምላሽ።</string>
+
+    <!-- Internal message not seen by the users, indicates successful Speed Boost purchase. -->
+    <string name="psicash_transaction_success_message">በሥዬት ተላቅቻል።</string>
+
+    <!-- Alert error message informing user that their Speed Boost purchase request failed because they have an insufficient balance. -->
+    <string name="psicash_transaction_insufficient_balance_message">ለፍጥነት ጭማሬ ግራ አልታዋቅው ባላንስ።</string>
+
+    <!-- The 'days' part in a date interval string as in "10 d 13 hr". -->
+    <plurals name="speed_boost_left_days">
+        <item quantity="one">%d ቀ</item>
+        <item quantity="other">%d ቀ</item>
+    </plurals>
+
+    <!-- The 'hours' part in a date interval string as in "9 d 11 hr". -->
+    <plurals name="speed_boost_left_hours">
+        <item quantity="one">%d ሰ</item>
+        <item quantity="other">%d ሰ</item>
+    </plurals>
+
+    <!-- This format string specifies the order of 'days' and 'hours' in the date interval string -->
+    <string name="speed_boost_left_day_hour_ordered">%1$s %2$s</string>
+
+    <!-- Do not translate or transliterate 'PsiCash'. PsiCash is a unit of currency here. -->
+    <string name="psicash_price_format">%s PsiCash</string>
+
+    <!-- Icon description for the Conduit app icon, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_icon_description">የConduit መተግበሪያ አዶ</string>
+
+    <!-- Icon description for the Google Play app icon, do not translate or transliterate 'Google Play'. -->
+    <string name="google_play_icon_description">የGoogle Play አዶ</string>
+
+    <!-- Title for the Install Conduit action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_install_title">Conduitን ጫን</string>
+
+    <!-- Description text for the clickable Conduit app card, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_card_description">የConduit ሞባይል መተግበሪያን ያስሩ እና ነጻ ሆነው ከPsiphon ጋር ቀጥለው ይሆዩ</string>
+
+    <!-- Clickable text label to open the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="launch_conduit_action">Conduitን ክፈት</string>
+
+    <!-- Description text under the Subscribe clickable item -->
+    <string name="subscribe_card_description">ያላቋረጠ የPsiphon መዳረሻ ለማግኘት ምዝገባ እቅድ ይግዙ</string>
+
+    <!-- Description text under the Speed Boost clickable item -->
+    <string name="speed_boost_card_description">ሰዓት ተኮር የPsiphon መዳረሻ ለማግኘት በPsiCash ፍጥነት ጭማሬ ይግዙ</string>
+
+    <!-- Clickable text label to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_title">Psiphon Proን ያዘምኑ</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_update_title">Conduitን ያዘምኑ</string>
+
+    <!-- Description for the 'Update' Action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_update_description">ይህንን ባህሪ ለመጠቀም ወደ የቅርብ ጊዜው የConduit ሥሪት ያዘምኑ</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_action_title">Psiphon Proን ያዘምኑ</string>
+
+    <!-- Description for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_action_description">ይህንን ባህሪ ለመጠቀም ወደ የቅርብ ጊዜው የPsiphon Pro ሥሪት ያዘምኑ</string>
+
+    <!-- Access status label shown on the home tab when the user has a limited subscription plan -->
+    <string name="subscription_limited">ምዝገባ፦ የተገደበ</string>
+
+    <!-- Access status label shown on the home tab when the user has an unlimited subscription plan -->
+    <string name="subscription_unlimited">ምዝገባ፦ ያላገደበ</string>
+
+    <!-- Access status label shown on the home tab when the user has time pass plan. -->
+    <string name="time_pass_active">የጊዜ ፈቃድ፦ ሰራተኛ</string>
+
+    <!-- Access status label shown on the home tab when the user has no subscription or time pass plan -->
+    <string name="subscription_none">ነጻ መዳረሻ</string>
+
+    <!-- Access status label shown on the home tab when the user is running the Conduit app on the same device which may provide enhanced access to Psiphon. Do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_active">Conduit፦ ሰራተኛ</string>
 
     </resources>

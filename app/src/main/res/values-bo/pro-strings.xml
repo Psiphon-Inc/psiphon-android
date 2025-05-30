@@ -25,13 +25,13 @@
     <string name="psicash_account_create_account_btn_lbl">དྲྭ་ཐོག་ཁ་བྱང་བཟོས།</string>
 
     <!--Generic 'close' alert prompt title-->
-    <string name="psicash_webview_close_alert_title">Close</string>
+    <string name="psicash_webview_close_alert_title">ཁ་རྒག་པ</string>
 
     <!--Generic 'error' alert prompt title-->
-    <string name="psicash_webview_error_alert_title">Error</string>
+    <string name="psicash_webview_error_alert_title">དོར་བ</string>
 
     <!--Generic 'close' button label -->
-    <string name="label_close">Close</string>
+    <string name="label_close">ཁ་རྒག་པ</string>
 
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">མཐུད་མཚམས་བཞག</string>
@@ -50,5 +50,88 @@
 
     <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
     <string name="subscribe_card_title">མངགས་པ།</string>
+
+    <!-- Missing translations needed for Tibetan -->
+    <!-- New option title in the 'More options' dialog -->
+    <string name="custom_proxy_headers_title">HTTP མགོ་བར་ར་རང་མིང</string>
+    
+    <!-- Summary text for 'Custom HTTP header' option -->
+    <string name="custom_proxy_headers_summary">པྦོད་སི་བསྐཏ་སྒོལ་ཥོང་གི་ HTTP མགོ་བར་་རང་མིང་བགོ་བབིག་པ།</string>
+    
+    <!-- Checkbox that toggles adding custom headers feature-->
+    <string name="custom_proxy_headers_checkbox_title">རང་མིང་རེགས་པགང་བགོ་ གི་ HTTP མགོ་བར་ རང་མིང</string>
+    
+    <!-- Summary text for 'Add custom HTTP headers' checkbox -->
+    <string name="custom_proxy_headers_checkbox_description">ཕཱར་བསྐཏ་པྦོད་སི་ཨ་ཐོང་ཅན་་རང་མིང་རེགས་པགང་གི་ HTTP མགོ་བར་ རང་མིང་བཆུགས་པ།</string>
+    
+    <string name="custom_proxy_header_group_1">མགོ་བར་་དང་པོ།</string>
+    <string name="custom_proxy_header_group_2">མགོ་བར་ གཉིས་པ།</string>
+    <string name="custom_proxy_header_group_3">མགོ་བར་ གསུམ་པ།</string>
+    <string name="custom_proxy_header_group_4">མགོ་བར་ བཞི་པ།</string>
+    <string name="custom_proxy_header_group_5">མགོ་བར་ ལང་པ།</string>
+    <string name="custom_proxy_header_group_6">མགོ་བར་ ཐྲུག་པ།</string>
+    <string name="custom_proxy_header_name">མགོ་བར་གི་མིང་འབི་རོགས།</string>
+    <string name="custom_proxy_header_value">མགོ་བར་གི་རིན་བ་འབི་རོགས།</string>
+    <string name="custom_proxy_header_ignored_values">སྐཏ་བུང། མིང་སྟོང་མེད་པགི་མགོ་བར་དེ་བུད་མི་བདས་པི་ཡིན།</string>
+    <string name="custom_proxy_header_invalid_name">དོར་བ། མགོ་བར་གི་མིང་ལའ་ཆ་བ་ཕགལ་བལ་བསྐཏ་མེད།</string>
+    
+    <!-- Speed limit related strings -->
+    <string name="rate_limit_text_title">Psiphon མཨོ་བགི་མཚཽ་ཁུག།</string>
+    <string name="rate_with_unit_template">%1$s %2$s</string>
+    <string name="rate_unit_bps_bits">bps</string>
+    <string name="rate_unit_kbps_bits">Kbps</string>
+    <string name="rate_unit_mbps_bits">Mbps</string>
+    <string name="rate_unit_gbps_bits">Gbps</string>
+    <string name="rate_unit_tbps_bits">Tbps</string>
+    <string name="rate_unit_pbps_bits">Pbps</string>
+    <string name="speed_rate_limit_not_available">ནོ་མེད</string>
+    <string name="speed_rate_limit_no_limit">མཚཽ་ཁུག་མེད</string>
+    <string name="rate_limit_text_subscribe_button">དའ་བུང་ཀའད་མམ་སྒོན་བ།</string>
+    
+    <!-- Speed Boost related strings -->
+    <string name="speed_boost_active_label">མཨོ་བ་བསྐཏ་རྒོམ་བོ་ནའི་བསྐཏ་རྒོམ་བོ</string>
+    <string name="speed_boost_button_caption">མཨོ་བ་བསྐཏ་རྒོམ</string>
+    <string name="speed_boost_tab_title">མཨོ་བ་བསྐཏ་རྒོམ</string>
+    <string name="btn_get_speed_boost">མཨོ་བ་བསྐཏ་རྒོམ</string>
+    <string name="speed_boost_card_title">མཨོ་བ་བསྐཏ་རྒོམ</string>
+    
+    <!-- Plurals for time remaining -->
+    <plurals name="speed_boost_left_days">
+        <item quantity="other">%d ཉ</item>
+    </plurals>
+    
+    <plurals name="speed_boost_left_hours">
+        <item quantity="other">%d ཆ</item>
+    </plurals>
+    
+    <string name="speed_boost_left_day_hour_ordered">%1$s %2$s</string>
+    <string name="psicash_price_format">%s PsiCash</string>
+    
+    <!-- Icon descriptions -->
+    <string name="conduit_icon_description">Conduit ཉུག་བར་མཚོན་རྟིས</string>
+    <string name="google_play_icon_description">Google Play མཚོན་རྟིས</string>
+    
+    <!-- Conduit related strings -->
+    <string name="conduit_install_title">Conduit སྦུགས་པ</string>
+    <string name="conduit_card_description">Conduit ཉུག་བར་ མོ་བཡིལ་ ཉུག་བར་ སྒོན་ རོགས་ དའིང་ རིན་ལང་ Psiphon དང་ འབར་བོ</string>
+    <string name="launch_conduit_action">Conduit འགོད་པ</string>
+    <string name="conduit_update_title">Conduit འགསར་བསྐཏ</string>
+    <string name="conduit_update_description">ཕེ་ལ་ཅ་ཤོལ་སྒོལ་ མབོད་པའདུག་ Conduit གི་ ཕར་སར་མབྷི་བ་ལའ་ འགསར་བསྐཏ་བོས།</string>
+    
+    <!-- Update related strings -->
+    <string name="update_psiphon_pro_title">Psiphon Pro འགསར་བསྐཏ</string>
+    <string name="update_psiphon_pro_action_title">Psiphon Pro འགསར་བསྐཏ</string>
+    <string name="update_psiphon_pro_action_description">ཕེ་ལ་ཅ་ཤོལ་སྒོལ་མབོད་པའདུག་ Psiphon Pro གི་ ཕར་སར་མབྷི་བ་ལའ་ འགསར་བསྐཏ་བོས།</string>
+    
+    <!-- Card descriptions -->
+    <string name="subscribe_card_description">Psiphon ལའ་ མི་ གྟར་མེད་བར་ ཞུག་ལམ་ མེད་པགི་ མངགས་ཞིང་ ཉུག་ལཨོབ་ ཉལོ་</string>
+    <string name="speed_boost_card_description">Psiphon ལའ་ དུས་ཙོད་ ཞུག་ལམ་ མེད་པགི་ ཆེད་རང་ PsiCash སྒོལ་ མཨོ་བ་བསྐཏ་རྒོམ་ ཉལོ་</string>
+    
+    <!-- Access status labels -->
+    <string name="subscription_limited">མངགས་ཞིང། མཚཽ་ཁུག་སུ་འབི</string>
+    <string name="subscription_unlimited">མངགས་ཞིང། མཚཽ་ཁུག་མེད་པ</string>
+    <string name="time_pass_active">དུས་ཙོད་ཕོགས་ཥིག། ལས་བོ་བོས</string>
+    <string name="subscription_none">རིན་ལང་ ཞུག་ལམ</string>
+    <string name="conduit_active">Conduit། ལས་བོ་བོས</string>
 
     </resources>
