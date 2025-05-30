@@ -577,4 +577,20 @@
     <!-- Description for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
     <string name="update_psiphon_pro_action_description">Actualizar a la versión más reciente de Psiphon Pro para acceder a esta función</string>
 
-    </resources>
+    <!-- Access status label shown on the home tab when the user has a limited subscription plan -->
+    <string name="subscription_limited">Suscripción: Limitada</string>
+
+    <!-- Access status label shown on the home tab when the user has an unlimited subscription plan -->
+    <string name="subscription_unlimited">Suscripción: Ilimitada</string>
+
+    <!-- Access status label shown on the home tab when the user has time pass plan. A time pass is a single use license that is valid for a certain
+    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="time_pass_active">Pase de Tiempo: Activo</string>
+
+    <!-- Access status label shown on the home tab when the user has no subscription or time pass plan -->
+    <string name="subscription_none">Acceso Gratuito</string>
+
+    <!-- Access status label shown on the home tab when the user is running the Conduit app on the same device which may provide enhanced access to Psiphon.
+     Do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_active">Conduit: Activo</string>
+</resources>

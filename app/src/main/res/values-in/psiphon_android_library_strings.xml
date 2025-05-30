@@ -171,5 +171,7 @@
   <string name="unsafeTrafficAlertsOptInPreferenceSummary">Dapatkan pemberitahuan saat Psiphon mendeteksi lalu lintas malware yang berasal dari perangkat Anda.</string>
   <string name="aboutMalAware">Tentang MalAware</string>
   <!--Preference title for Psiphon Bump (NFC based connection data exchange), do not transliterate or translate 'Psiphon Bump'-->
+  <string name="nfcBumpPreferenceTitle">Aktifkan Psiphon Bump</string>
   <!--Summary for Psiphon Bump preference-->
+  <string name="nfcBumpPreferenceSummary">Gunakan NFC untuk berbagi data koneksi Psiphon dengan perangkat lain.</string>
 </resources>

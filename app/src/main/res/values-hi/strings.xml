@@ -67,16 +67,27 @@
   <!--Data collection disclosure prompt title-->
   <!--First sentence of the data collection disclosure prompt body. The format qualifier %s will be replaced by the app name, either 'Psiphon' or 'Psiphon Pro' and should be placed according to the rules of the translation language.-->
   <!--Data collection disclosure list item-->
+  <string name="vpn_data_collection_disclosure_bp1">आपका शहर, देश, ISP और वैकल्पिक रूप से अनुमानित स्थान। शहर, देश और ISP आपके द्वारा हमारे सर्वर से जुड़ने वाले IP पते से प्राप्त होते हैं, और IP पता स्वयं कभी लॉग नहीं किया जाता। यह डेटा उपयोग और प्रदर्शन आंकड़े और सेवा स्वास्थ्य उद्देश्यों के लिए एकत्र किया जाता है।</string>
   <!--Data collection disclosure list item-->
+  <string name="vpn_data_collection_disclosure_bp2">आपका ईमेल, जब आप हमें डायग्नोस्टिक या क्रैश लॉग फीडबैक भेजते हैं। फीडबैक में ईमेल प्रदान करना वैकल्पिक है।</string>
   <!--Data collection disclosure list item-->
+  <string name="vpn_data_collection_disclosure_bp3">आपका PsiCash खाता उपयोगकर्ता नाम, पासवर्ड और वैकल्पिक रूप से ईमेल।</string>
   <!--Notifications permission rationale alert title. The format qualifier %s will be replaced by the app name, either 'Psiphon' or 'Psiphon Pro' and should be placed according to the rules of the translation language.-->
+  <string name="notifications_permission_rationale_title">%s सूचनाएं</string>
   <!--First sentence of the notifications permission rationale message. The format qualifier %s will be replaced by the app name, either 'Psiphon' or 'Psiphon Pro' and should be placed according to the rules of the translation language.-->
+  <string name="notifications_permission_rationale_intro">%s ऐप बैकग्राउंड में होने पर आपको महत्वपूर्ण जानकारी प्रदान करने के लिए सूचनाओं का उपयोग करता है। इसमें शामिल है:</string>
   <!--Notifications permission rationale list item-->
+  <string name="notifications_permission_rationale_vpn_state_bp">आपकी VPN कनेक्शन स्थिति में परिवर्तन।</string>
   <!--Notifications permission rationale list item-->
+  <string name="notifications_permission_rationale_connection_problems_bp">आपके कनेक्शन में समस्याएं।</string>
   <!--Notifications permission rationale list item-->
+  <string name="notifications_permission_rationale_crash_reports_bp">क्रैश रिपोर्ट।</string>
   <!--Notifications permission rationale list item, do not translate or transliterate "MalAware"-->
+  <string name="notifications_permission_rationale_malaware_alerts_bp">MalAware अलर्ट।</string>
   <!--Notifications permission rationale list item-->
+  <string name="notifications_permission_rationale_upgrade_available_bp">नए ऐप संस्करण उपलब्ध हैं।</string>
   <!--Notifications permission rationale last sentence-->
+  <string name="notifications_permission_rationale_disable_any_time">आप किसी भी समय ऐप सेटिंग्स में सूचनाओं को अक्षम कर सकते हैं।</string>
   <!--A message shown on the blocking overlay of the PXE experiment screen while Psiphon is connecting to the server.
     Note: 'Psiphon' should not be translated or transliterated.-->
   <string name="pxe_web_wait_tunnel_connecting">Please wait while Psiphon is connecting</string>

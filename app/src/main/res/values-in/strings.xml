@@ -75,16 +75,27 @@
   <!--Data collection disclosure prompt title-->
   <!--First sentence of the data collection disclosure prompt body. The format qualifier %s will be replaced by the app name, either 'Psiphon' or 'Psiphon Pro' and should be placed according to the rules of the translation language.-->
   <!--Data collection disclosure list item-->
+  <string name="vpn_data_collection_disclosure_bp1">Kota, negara, ISP Anda dan secara opsional, lokasi perkiraan. Kota, negara, dan ISP diperoleh dari alamat IP yang Anda gunakan untuk terhubung ke server kami, dan alamat IP itu sendiri tidak pernah dicatat. Data ini dikumpulkan untuk statistik penggunaan dan kinerja serta tujuan kesehatan layanan.</string>
   <!--Data collection disclosure list item-->
+  <string name="vpn_data_collection_disclosure_bp2">Email Anda, ketika Anda mengirimkan umpan balik diagnostik atau laporan crash kepada kami. Memberikan email dalam umpan balik bersifat opsional.</string>
   <!--Data collection disclosure list item-->
+  <string name="vpn_data_collection_disclosure_bp3">Nama pengguna akun PsiCash, kata sandi, dan secara opsional, email Anda.</string>
   <!--Notifications permission rationale alert title. The format qualifier %s will be replaced by the app name, either 'Psiphon' or 'Psiphon Pro' and should be placed according to the rules of the translation language.-->
+  <string name="notifications_permission_rationale_title">Notifikasi %s</string>
   <!--First sentence of the notifications permission rationale message. The format qualifier %s will be replaced by the app name, either 'Psiphon' or 'Psiphon Pro' and should be placed according to the rules of the translation language.-->
+  <string name="notifications_permission_rationale_intro">%s menggunakan notifikasi untuk memberikan informasi penting saat aplikasi berjalan di latar belakang. Ini termasuk:</string>
   <!--Notifications permission rationale list item-->
+  <string name="notifications_permission_rationale_vpn_state_bp">Perubahan status koneksi VPN Anda.</string>
   <!--Notifications permission rationale list item-->
+  <string name="notifications_permission_rationale_connection_problems_bp">Masalah dengan koneksi Anda.</string>
   <!--Notifications permission rationale list item-->
+  <string name="notifications_permission_rationale_crash_reports_bp">Laporan crash.</string>
   <!--Notifications permission rationale list item, do not translate or transliterate "MalAware"-->
+  <string name="notifications_permission_rationale_malaware_alerts_bp">Peringatan MalAware.</string>
   <!--Notifications permission rationale list item-->
+  <string name="notifications_permission_rationale_upgrade_available_bp">Versi aplikasi baru tersedia.</string>
   <!--Notifications permission rationale last sentence-->
+  <string name="notifications_permission_rationale_disable_any_time">Anda dapat menonaktifkan notifikasi di pengaturan aplikasi kapan saja.</string>
   <!--A message shown on the blocking overlay of the PXE experiment screen while Psiphon is connecting to the server.
     Note: 'Psiphon' should not be translated or transliterated.-->
   <string name="pxe_web_wait_tunnel_connecting">Harap tunggu selagi Psiphon terhubung</string>

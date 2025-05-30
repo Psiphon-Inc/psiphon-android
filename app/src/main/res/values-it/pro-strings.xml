@@ -101,4 +101,47 @@
     <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
     <string name="subscribe_card_title">Sottoscrivi</string>
 
-    </resources>
+    <!-- Description text under the Subscribe clickable item -->
+    <string name="subscribe_card_description">Acquista un piano di abbonamento per l\'accesso ininterrotto a Psiphon</string>
+
+    <!-- Clickable text label, clicking this opens a dialog with various speed boost options available for purchase.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit.
+    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
+    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
+    <string name="speed_boost_card_title">Potenziamento velocità</string>
+
+    <!-- Description text under the Speed Boost clickable item -->
+    <string name="speed_boost_card_description">Acquista un potenziamento velocità con i tuoi PsiCash per l\'accesso a tempo a Psiphon</string>
+
+    <!-- Clickable text label to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_title">Aggiorna Psiphon Pro</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_update_title">Aggiorna Conduit</string>
+
+    <!-- Description for the 'Update' Action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_update_description">Aggiorna all\'ultima versione di Conduit per accedere a questa funzione</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_action_title">Aggiorna Psiphon Pro</string>
+
+    <!-- Description for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_action_description">Aggiorna all\'ultima versione di Psiphon Pro per accedere a questa funzione</string>
+
+    <!-- Access status label shown on the home tab when the user has a limited subscription plan -->
+    <string name="subscription_limited">Abbonamento: Limitato</string>
+
+    <!-- Access status label shown on the home tab when the user has an unlimited subscription plan -->
+    <string name="subscription_unlimited">Abbonamento: Illimitato</string>
+
+    <!-- Access status label shown on the home tab when the user has time pass plan. A time pass is a single use license that is valid for a certain
+    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="time_pass_active">Pass temporale: Attivo</string>
+
+    <!-- Access status label shown on the home tab when the user has no subscription or time pass plan -->
+    <string name="subscription_none">Accesso gratuito</string>
+
+    <!-- Access status label shown on the home tab when the user is running the Conduit app on the same device which may provide enhanced access to Psiphon.
+     Do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_active">Conduit: Attivo</string>
+</resources>
