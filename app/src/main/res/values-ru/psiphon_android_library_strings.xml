@@ -174,7 +174,7 @@
   <string name="upstream_proxy_error">Ошибка внешнего прокси: %s</string>
 
   <string name="start_tunnel_failed">Запуск туннеля не удался: %s</string>
-  <string name="vpn_exclusions_conflict">В ваших текущих исключениях VPN есть одно или несколько конфликтующих приложений. Пожалуйста, перейдите в настройки VPN и переключитесь в режим 'Туннелировать все приложения' для подключения.</string>
+  <string name="vpn_exclusions_conflict">В ваших текущих исключениях VPN есть одно или несколько конфликтующих приложений. Пожалуйста, перейдите в настройки VPN и переключитесь в режим \'Туннелировать все приложения\' для подключения.</string>
   <string name="tunnel_connecting">Подключение туннеля…</string>
   <string name="tunnel_connected">Туннель подключен</string>
   <string name="waiting">Ожидание…</string>

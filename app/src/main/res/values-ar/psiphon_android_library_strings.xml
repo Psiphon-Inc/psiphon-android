@@ -183,7 +183,7 @@
     <string name="upstream_proxy_error">خطأ في الأبستريم بروكسي: %s</string>
 
     <string name="start_tunnel_failed">فشل في تشغيل النفق: %s</string>
-    <string name="vpn_exclusions_conflict">هناك تداخل بين التطبيقات المستثناة في لائحة استثناءات شبكتك الخاصة الافتراضية، يُرجى الذهاب إلى إعدادات الشبكة الخاصة الافتراضية ثم تبديل نحو وضع 'مرّر كل التطبيقات نفَقيا' للاتصال.</string>
+    <string name="vpn_exclusions_conflict">هناك تداخل بين التطبيقات المستثناة في لائحة استثناءات شبكتك الخاصة الافتراضية، يُرجى الذهاب إلى إعدادات الشبكة الخاصة الافتراضية ثم تبديل نحو وضع "مرّر كل التطبيقات نفَقيا" للاتصال.</string>
     <string name="tunnel_connecting">النفق يحاول الإتصال... </string>
     <string name="tunnel_connected">النفق متصل </string>
     <string name="waiting">جاري الإنتظار ...</string>
