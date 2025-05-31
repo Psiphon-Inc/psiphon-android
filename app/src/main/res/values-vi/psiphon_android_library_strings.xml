@@ -173,6 +173,8 @@
   <string name="aboutMalAware">Về MalAware</string>
   <!--Preference title for Psiphon Bump (NFC based connection data exchange), do not transliterate or translate 'Psiphon Bump'-->
   <string name="nfcBumpPreferenceTitle">Bật mở Psiphon Bump</string>
+  <!--Text shown in the footer of the VPN settings screen notifying the user that certain Psiphon apps are automatically excluded from VPN routing, do not translate or transliterate "Psiphon"-->
+  <string name="vpn_preferences_default_exclusions_footer_text">Một số ứng dụng Psiphon nhất định được tự động loại trừ khỏi định tuyến VPN để đảm bảo chức năng hoạt động đúng. Các loại trừ này không thể được sửa đổi.</string>
   <!--Summary for Psiphon Bump preference-->
   <string name="nfcBumpPreferenceSummary">Dùng NFC để chia sẻ dữ liệu kết nối Psiphon với thiết bị khác.</string>
 </resources>

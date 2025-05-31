@@ -557,4 +557,58 @@
     <!-- Access status label shown on the home tab when the user is running the Conduit app on the same device which may provide enhanced access to Psiphon.
      Do not translate or transliterate 'Conduit'. -->
     <string name="conduit_active">Conduit：激活</string>
+
+    <!-- Unit labels used with 'rate_with_unit_template' for bit-per-second speeds. These represent: bits, kilobits, megabits, etc. per second. -->
+    <string name="rate_unit_bps_bits">bps</string>
+    <string name="rate_unit_kbps_bits">Kbps</string>
+    <string name="rate_unit_mbps_bits">Mbps</string>
+    <string name="rate_unit_gbps_bits">Gbps</string>
+    <string name="rate_unit_tbps_bits">Tbps</string>
+    <string name="rate_unit_pbps_bits">Pbps</string>
+
+    <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
+    <string name="speed_rate_limit_not_available">不可用</string>
+
+    <!-- Text shown on the home tab under Psiphon speed limit label when the there is no speed limit, like when the user has an unlimited subscription, for example -->
+    <string name="speed_rate_limit_no_limit">无限制</string>
+
+    <!-- An updated alert message seen by the user when they try to use one of Speed Boost options but their PsiCash balance is insufficient. -->
+    <string name="speed_boost_insufficient_balance_alert_update">您没有足够的 PsiCash 来启用此加速选项。</string>
+
+    <!-- Icon description for the Conduit app icon, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_icon_description">Conduit 应用程序图标</string>
+
+    <!-- Icon description for the Google Play app icon, do not translate or transliterate 'Google Play'. -->
+    <string name="google_play_icon_description">Google Play 图标</string>
+
+    <!-- Title for the Install Conduit action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_install_title">安装 Conduit</string>
+
+    <!-- Description text for the clickable Conduit app card, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_card_description">运行 Conduit 移动应用程序，免费保持连接到 Psiphon</string>
+
+    <!-- Clickable text label to open the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="launch_conduit_action">启动 Conduit</string>
+
+    <!-- Description text under the Subscribe clickable item -->
+    <string name="subscribe_card_description">购买订阅方案以不间断地访问 Psiphon</string>
+
+    <!-- Short (collapsed) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_short">Psiphon 访问被阻止。点击了解更多</string>
+
+    <!-- Long (expanded) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_long">您地区的 Psiphon 免费访问已不再可用。点击查看解锁选项</string>
+
+    <!-- Generic 'Dismiss' button label for dialogs and alerts -->
+    <string name="label_dismiss">关闭</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app. -->
+    <string name="purchase_required_prompt_title">如何在您的地区访问 Psiphon。</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app. -->
+    <string name="unlock_required_prompt_body">在您的地区访问 Psiphon 现在需要您的支持。通过选择可用的选项继续，来帮助让最需要的人能够访问 Psiphon。</string>
+
+    <!-- Explanation text that appears below "Create account" button on the PsiCash sign in screen. -->
+    <string name="psicash_create_account_explanation_text_updated">创建 PsiCash 账户有助于在您重新安装应用程序或在其他设备上使用 Psiphon 时保留您的 PsiCash。请访问 %s#psicash-account 以获取更多信息。</string>
+
 </resources>

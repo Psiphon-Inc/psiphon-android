@@ -567,4 +567,48 @@
     <!-- Description for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
     <string name="update_psiphon_pro_action_description">Nâng cấp lên phiên bản mới nhất của Psiphon Pro để truy cập tính năng này</string>
 
+    <!-- Unit labels used with 'rate_with_unit_template' for bit-per-second speeds. These represent: bits, kilobits, megabits, etc. per second. -->
+    <string name="rate_unit_bps_bits">bps</string>
+    <string name="rate_unit_kbps_bits">Kbps</string>
+    <string name="rate_unit_mbps_bits">Mbps</string>
+    <string name="rate_unit_gbps_bits">Gbps</string>
+    <string name="rate_unit_tbps_bits">Tbps</string>
+    <string name="rate_unit_pbps_bits">Pbps</string>
+
+    <!-- Text shown on the home tab under Psiphon speed limit label when the there is no speed limit, like when the user has an unlimited subscription, for example -->
+    <string name="speed_rate_limit_no_limit">Không giới hạn</string>
+
+    <!-- An updated alert message seen by the user when they try to use one of Speed Boost options but their PsiCash balance is insufficient. -->
+    <string name="speed_boost_insufficient_balance_alert_update">Bạn không có đủ PsiCash để kích hoạt tùy chọn Tăng tốc này.</string>
+
+    <!-- Access status label shown on the home tab when the user has a limited subscription plan -->
+    <string name="subscription_limited">Đăng ký: Có giới hạn</string>
+
+    <!-- Access status label shown on the home tab when the user has an unlimited subscription plan -->
+    <string name="subscription_unlimited">Đăng ký: Không giới hạn</string>
+
+    <!-- Access status label shown on the home tab when the user has time pass plan. -->
+    <string name="time_pass_active">Vé thời gian: Hoạt động</string>
+
+    <!-- Access status label shown on the home tab when the user has no subscription or time pass plan -->
+    <string name="subscription_none">Truy cập miễn phí</string>
+
+    <!-- Access status label shown on the home tab when the user is running the Conduit app on the same device, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_active">Conduit: Hoạt động</string>
+
+    <!-- Short (collapsed) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_short">Truy cập Psiphon bị chặn. Nhấn để tìm hiểu thêm</string>
+
+    <!-- Long (expanded) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_long">Truy cập miễn phí đến Psiphon không còn khả dụng trong khu vực của bạn. Nhấn để xem các tùy chọn mở khóa</string>
+
+    <!-- Generic 'Dismiss' button label for dialogs and alerts -->
+    <string name="label_dismiss">Bỏ qua</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app. -->
+    <string name="purchase_required_prompt_title">Cách truy cập Psiphon trong khu vực của bạn.</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app. -->
+    <string name="unlock_required_prompt_body">Truy cập Psiphon trong khu vực của bạn giờ đây yêu cầu sự hỗ trợ của bạn. Hãy giúp giữ cho Psiphon có thể truy cập được cho những người cần nhất bằng cách chọn một tùy chọn có sẵn để tiếp tục.</string>
+
     </resources>
