@@ -22,14 +22,12 @@ package com.psiphon3.psiphonlibrary;
 import android.content.Context;
 
 import com.jakewharton.rxrelay2.BehaviorRelay;
-import com.psiphon3.Location;
 import com.psiphon3.log.MyLog;
 import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -46,6 +44,11 @@ public class TunnelConfigManager {
         NONE,
         LIMITED,
         UNLIMITED
+    }
+
+    public enum RestartType {
+        FULL_RESTART,    // Triggers stopRouteThroughTunnel() and full UI updates
+        QUIET_RESTART    // Just restarts tunnel
     }
 
     private static class BaseConfig {
@@ -136,12 +139,14 @@ public class TunnelConfigManager {
         private final boolean disableTimeouts;
         private final String deviceLocation;
         private final SponsorshipState sponsorshipState;
+        private final RestartType restartType;
 
         private TunnelConfig(Builder builder) {
             this.egressRegion = builder.egressRegion;
             this.disableTimeouts = builder.disableTimeouts;
             this.deviceLocation = builder.deviceLocation;
             this.sponsorshipState = builder.sponsorshipState;
+            this.restartType = builder.restartType != null ? builder.restartType : RestartType.FULL_RESTART;
         }
 
         public static class Builder {
@@ -149,6 +154,7 @@ public class TunnelConfigManager {
             private boolean disableTimeouts;
             private String deviceLocation;
             private SponsorshipState sponsorshipState;
+            private RestartType restartType;
 
             Builder egressRegion(String region) {
                 this.egressRegion = region;
@@ -170,6 +176,11 @@ public class TunnelConfigManager {
                 return this;
             }
 
+            Builder restartType(RestartType restartType) {
+                this.restartType = restartType;
+                return this;
+            }
+
             TunnelConfig build() {
                 return new TunnelConfig(this);
             }
@@ -177,6 +188,10 @@ public class TunnelConfigManager {
 
         public String getSponsorId() {
             return sponsorshipState.getSponsorId();
+        }
+
+        public RestartType getRestartType() {
+            return restartType;
         }
     }
 
@@ -225,27 +240,30 @@ public class TunnelConfigManager {
     }
 
     public void updateSubscriptionState(SubscriptionState subscriptionState) {
-        updateConfig(currentState -> new SponsorshipState.Builder()
+        updateConfigWithRestartType(currentState -> new SponsorshipState.Builder()
                 .withSubscriptionState(subscriptionState)
                 .withSpeedBoost(currentState.hasSpeedBoostAuth)
                 .withConduit(currentState.isConduitRunning)
-                .build());
+                .build(), RestartType.FULL_RESTART);
     }
 
     public void updateSpeedBoostState(boolean isAuthorized) {
-        updateConfig(currentState -> new SponsorshipState.Builder()
+        updateConfigWithRestartType(currentState -> new SponsorshipState.Builder()
                 .withSubscriptionState(currentState.subscriptionState)
                 .withSpeedBoost(isAuthorized)
                 .withConduit(currentState.isConduitRunning)
-                .build());
+                .build(), RestartType.FULL_RESTART);
     }
 
-    public void updateConduitState(boolean isRunning) {
-        updateConfig(currentState -> new SponsorshipState.Builder()
+    // Conduit-specific update method that chooses restart type based on enforcement
+    public void updateConduitStateConditional(boolean isRunning, boolean hasConduitEnforcement) {
+        RestartType restartType = hasConduitEnforcement ? RestartType.FULL_RESTART : RestartType.QUIET_RESTART;
+
+        updateConfigWithRestartType(currentState -> new SponsorshipState.Builder()
                 .withSubscriptionState(currentState.subscriptionState)
                 .withSpeedBoost(currentState.hasSpeedBoostAuth)
                 .withConduit(isRunning)
-                .build());
+                .build(), restartType);
     }
 
     // Initializes the tunnel configuration with externally provided states.
@@ -272,6 +290,7 @@ public class TunnelConfigManager {
                             .disableTimeouts(baseConfig.disableTimeouts)
                             .deviceLocation(deviceLocation)
                             .sponsorshipState(sponsorshipState)
+                            .restartType(RestartType.FULL_RESTART)
                             .build();
                 }
         ).doOnSuccess(tunnelConfigBehaviorRelay::accept);
@@ -291,7 +310,8 @@ public class TunnelConfigManager {
         return !currentState.getSponsorId().equals(newState.getSponsorId());
     }
 
-    private void updateConfig(Function<SponsorshipState, SponsorshipState> updateFunction) {
+    private void updateConfigWithRestartType(Function<SponsorshipState, SponsorshipState> updateFunction,
+                                             RestartType restartType) {
         TunnelConfig currentConfig = getCurrentConfig();
         if (currentConfig == null) {
             return;
@@ -304,6 +324,7 @@ public class TunnelConfigManager {
                     .disableTimeouts(currentConfig.disableTimeouts)
                     .deviceLocation(currentConfig.deviceLocation)
                     .sponsorshipState(newState)
+                    .restartType(restartType)
                     .build();
 
             tunnelConfigBehaviorRelay.accept(newConfig);
