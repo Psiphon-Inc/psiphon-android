@@ -446,11 +446,11 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                                 })
                                 .subscribe()
                 ))
+                // Run the rest of onResume logic after the dialog is dismissed
+                .setDismissListener(this::handleDisruptiveOnResumeActions)
                 .setSubscribeClickListener(v -> {
                     MainActivity.unlockWithSubscription(MainActivity.this);
                     unlockRequiredDialog.dismiss();
-                    // Run remaining onResume logic after user action
-                    handleDisruptiveOnResumeActions();
                 })
                 .show();
 

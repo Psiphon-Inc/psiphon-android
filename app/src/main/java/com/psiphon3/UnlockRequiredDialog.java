@@ -62,6 +62,7 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
     private final View dividerView;
 
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
+    private Runnable dismissListener;
     private Runnable disconnectTunnelRunnable;
     private Disposable updateStateDisposable;
     private Map<String, Boolean> unlockOptionsMap;
@@ -99,6 +100,11 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
         dialog.setCancelable(false);
         dialog.setContentView(contentView);
         dialog.setOnShowListener(dialogInterface -> subscribeToConduitState());
+        dialog.setOnDismissListener(dialogInterface -> {
+            if (dismissListener != null) {
+                dismissListener.run();
+            }
+        });
     }
 
     private void registerLifecycleOwner(LifecycleOwner owner) {
@@ -112,7 +118,10 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
     private void setDisconnectTunnelRunnable(Runnable runnable) {
         this.disconnectTunnelRunnable = runnable;
     }
-    
+
+    private void setDismissListener(Runnable dismissListener) {
+        this.dismissListener = dismissListener;
+    }
 
     private void setUnlockOptionsMap(Map<String, Boolean> unlockOptionsMap) {
         this.unlockOptionsMap = unlockOptionsMap;
@@ -341,6 +350,11 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
 
         public Builder setDisconnectTunnelRunnable(Runnable runnable) {
             dialog.setDisconnectTunnelRunnable(runnable);
+            return this;
+        }
+
+        public Builder setDismissListener(Runnable dismissListener) {
+            dialog.setDismissListener(dismissListener);
             return this;
         }
         
