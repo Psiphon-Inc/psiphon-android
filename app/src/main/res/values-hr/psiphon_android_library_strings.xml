@@ -171,7 +171,7 @@
   <string name="region_selector">Odabir regije</string>
   <string name="unsafeTrafficAlertsOptInPreferenceSummary">Budite obaviješteni kada Psiphon otkrije zlonamjerni promet s vašeg uređaja.</string>
   <string name="unsafeTrafficAlertsOptInPreferenceTitle">Prikaži MalAware upozorenja</string>
-  <string name="vpn_exclusions_conflict">Postoji jedna ili više sukobnih aplikacija u vašim trenutnim VPN izuzecima. Idite u VPN postavke i prebacite na način 'Tuneliranje svih aplikacija' za povezivanje.</string>
+  <string name="vpn_exclusions_conflict">Postoji jedna ili više sukobnih aplikacija u vašim trenutnim VPN izuzecima. Idite u VPN postavke i prebacite na način \'Tuneliranje svih aplikacija\' za povezivanje.</string>
   <!--Text shown in the footer of the VPN settings screen notifying the user that certain Psiphon apps are automatically excluded from VPN routing, do not translate or transliterate "Psiphon"-->
   <string name="vpn_preferences_default_exclusions_footer_text">Određene Psiphon aplikacije automatski su isključene iz VPN usmjeravanja kako bi se osigurala ispravna funkcionalnost. Ova izuzeća se ne mogu modificirati.</string>
   <!--Summary for Psiphon Bump preference-->

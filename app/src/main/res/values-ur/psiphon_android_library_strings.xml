@@ -178,7 +178,7 @@
   <string name="unsafeTrafficAlertsOptInPreferenceSummary">جب Psiphon آپ کے ڈیوائس سے آنے والے میلویئر ٹریفک کا پتہ لگاتا ہے تو اطلاع حاصل کریں۔</string>
   <string name="aboutMalAware">MalAware کے بارے میں</string>
 
-  <string name="vpn_exclusions_conflict">آپ کے موجودہ VPN اخراجات میں ایک یا زیادہ متضاد ایپلیکیشنز ہیں۔ براہ کرم VPN سیٹنگز میں جائیں اور کنکٹ کرنے کے لیے 'تمام ایپس کو ٹنل کریں' موڈ پر سوئچ کریں۔</string>
+  <string name="vpn_exclusions_conflict">آپ کے موجودہ VPN اخراجات میں ایک یا زیادہ متضاد ایپلیکیشنز ہیں۔ براہ کرم VPN سیٹنگز میں جائیں اور کنکٹ کرنے کے لیے \'تمام ایپس کو ٹنل کریں\' موڈ پر سوئچ کریں۔</string>
   <!--Preference title for Psiphon Bump (NFC based connection data exchange), do not transliterate or translate 'Psiphon Bump'-->
   <string name="nfcBumpPreferenceTitle">Psiphon Bump کو فعال کریں</string>
   <!--Summary for Psiphon Bump preference-->
