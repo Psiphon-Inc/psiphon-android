@@ -535,4 +535,39 @@
     'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
     <string name="speed_boost_card_title">Турбоскорость</string>
 
+    <!-- Description text under the Speed Boost clickable item -->
+    <string name="speed_boost_card_description">Купите Турбоскорость за PsiCash, чтобы получить неограниченный доступ к Psiphon на определенное время</string>
+
+    <!-- Clickable text label to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_title">Обновить Psiphon Pro</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_update_title">Обновить Conduit</string>
+
+    <!-- Description for the 'Update' Action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_update_description">Обновите до последней версии Conduit, чтобы получить доступ к этой функции</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_action_title">Обновить Psiphon Pro</string>
+
+    <!-- Description for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_action_description">Обновите до последней версии Psiphon Pro, чтобы получить доступ к этой функции</string>
+
+    <!-- Access status label shown on the home tab when the user has a limited subscription plan -->
+    <string name="subscription_limited">Подписка: ограниченная</string>
+
+    <!-- Access status label shown on the home tab when the user has an unlimited subscription plan -->
+    <string name="subscription_unlimited">Подписка: безлимитная</string>
+
+    <!-- Access status label shown on the home tab when the user has time pass plan. A time pass is a single use license that is valid for a certain
+    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="time_pass_active">Пропуск: активен</string>
+
+    <!-- Access status label shown on the home tab when the user has no subscription or time pass plan -->
+    <string name="subscription_none">Бесплатный доступ</string>
+
+    <!-- Access status label shown on the home tab when the user is running the Conduit app on the same device which may provide enhanced access to Psiphon.
+     Do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_active">Conduit: активен</string>
+
     </resources>

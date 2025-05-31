@@ -569,4 +569,58 @@
     <!-- Description for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
     <string name="update_psiphon_pro_action_description">Pata toleo jipya zaidi la Psiphon Pro ili kufikia kipengele hiki</string>
 
-    </resources>
+    <!-- Unit labels used with 'rate_with_unit_template' for bit-per-second speeds. These represent: bits, kilobits, megabits, etc. per second. -->
+    <string name="rate_unit_bps_bits">bps</string>
+    <string name="rate_unit_kbps_bits">Kbps</string>
+    <string name="rate_unit_mbps_bits">Mbps</string>
+    <string name="rate_unit_gbps_bits">Gbps</string>
+    <string name="rate_unit_tbps_bits">Tbps</string>
+    <string name="rate_unit_pbps_bits">Pbps</string>
+
+    <!-- Text shown on the home tab under Psiphon speed limit label when the there is no speed limit, like when the user has an unlimited subscription, for example -->
+    <string name="speed_rate_limit_no_limit">Hakuna kikomo</string>
+
+    <!-- Access status label shown on the home tab when the user has a limited subscription plan -->
+    <string name="subscription_limited">Usajili: Umepunguzwa</string>
+
+    <!-- Access status label shown on the home tab when the user has an unlimited subscription plan -->
+    <string name="subscription_unlimited">Usajili: Haujakatazwa</string>
+
+    <!-- Access status label shown on the home tab when the user has time pass plan. A time pass is a single use license that is valid for a certain
+    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="time_pass_active">Leseni ya Muda: Inatumika</string>
+
+    <!-- Access status label shown on the home tab when the user has no subscription or time pass plan -->
+    <string name="subscription_none">Upatikanaji wa Bure</string>
+
+    <!-- Access status label shown on the home tab when the user is running the Conduit app on the same device which may provide enhanced access to Psiphon.
+     Do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_active">Conduit: Inatumika</string>
+
+    <!-- Short (collapsed) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_short">Upatikanaji wa Psiphon umezuiliwa. Gusa ili ujue zaidi</string>
+
+    <!-- Long (expanded) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_long">Upatikanaji wa bure wa Psiphon haupatikani tena katika eneo lako. Gusa ili kuona chaguo za kufungua</string>
+
+    <!-- Generic 'Dismiss' button label for dialogs and alerts -->
+    <string name="label_dismiss">Kataa</string>
+
+    <!-- A generic prompt title. Do not translate -->
+    <string name="psicash_generic_title" translatable="false">PsiCash</string>
+
+    <!-- An updated alert message seen by the user when they try to use one of Speed Boost options but their PsiCash balance is insufficient.
+    Note that since we are phasing out the PsiCash system, this message is no longer offering the user to buy more PsiCash, and is just informing
+    them that they do not have enough PsiCash to activate the Speed Boost option.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed.-->
+    <string name="speed_boost_insufficient_balance_alert_update">Huna PsiCash ya kutosha kuamilisha chaguo hili la kiongeza kasi.</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="purchase_required_prompt_title">Jinsi ya kufikia Psiphon katika eneo lako.</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="unlock_required_prompt_body">Upatikanaji wa Psiphon katika eneo lako unahitaji msaada wako sasa. Saidia kuweka Psiphon inapatikana kwa watu wanaohitaji zaidi kwa kuchagua chaguo linalpatikana ili kuendelea.</string>
+
+</resources>

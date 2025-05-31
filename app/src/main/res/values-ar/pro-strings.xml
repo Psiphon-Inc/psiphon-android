@@ -619,4 +619,12 @@
     <!-- Access status label shown on the home tab when the user is running the Conduit app on the same device which may provide enhanced access to Psiphon.
      Do not translate or transliterate 'Conduit'. -->
     <string name="conduit_active">Conduit: مُفَعَّل</string>
+    <!-- Short (collapsed) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_short">تم حظر الوصول إلى Psiphon. اضغط لمعرفة المزيد</string>
+
+    <!-- Long (expanded) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_long">الوصول المجاني إلى Psiphon لم يعد متاحًا في منطقتك. اضغط لرؤية خيارات الإلغاء</string>
+
+    <!-- Generic 'Dismiss' button label for dialogs and alerts -->
+    <string name="label_dismiss">إغلاق</string>
 </resources>

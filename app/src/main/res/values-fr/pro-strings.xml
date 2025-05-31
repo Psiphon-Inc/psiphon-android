@@ -36,11 +36,20 @@
     -->
     <string name="rate_with_unit_template">%1$s %2$s</string>
 
+    <!-- Unit labels used with 'rate_with_unit_template' for bit-per-second speeds. These represent: bits, kilobits, megabits, etc. per second. -->
+    <string name="rate_unit_bps_bits">bit/s</string>
     <string name="rate_unit_kbps_bits">Kbit/s</string>
     <string name="rate_unit_mbps_bits">Mbit/s</string>
     <string name="rate_unit_gbps_bits">Gbps</string>
+    <string name="rate_unit_tbps_bits">Tbit/s</string>
+    <string name="rate_unit_pbps_bits">Pbit/s</string>
+
+
     <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
     <string name="speed_rate_limit_not_available">Non disponible</string>
+
+    <!-- Text shown on the home tab under Psiphon speed limit label when the there is no speed limit, like when the user has an unlimited subscription, for example -->
+    <string name="speed_rate_limit_no_limit">Aucune limite</string>
 
     <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
          the workflow to subscribe for premium access. -->
@@ -604,4 +613,16 @@
     <!-- Access status label shown on the home tab when the user is running the Conduit app on the same device which may provide enhanced access to Psiphon.
      Do not translate or transliterate 'Conduit'. -->
     <string name="conduit_active">Conduit : Actif</string>
+
+    <!-- Short (collapsed) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_short">Accès Psiphon bloqué. Touchez pour en savoir plus</string>
+
+    <!-- Long (expanded) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_long">L'accès gratuit à Psiphon n'est plus disponible dans votre région. Touchez pour voir les options de déblocage</string>
+
+    <!-- Generic 'Dismiss' button label for dialogs and alerts -->
+    <string name="label_dismiss">Ignorer</string>
+
+    <!-- A generic prompt title. Do not translate -->
+    <string name="psicash_generic_title" translatable="false">PsiCash</string>
 </resources>
