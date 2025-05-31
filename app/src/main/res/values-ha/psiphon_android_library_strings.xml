@@ -152,6 +152,17 @@
   <string name="aboutMalAware">Bayani akan kutse mai hatsari </string>
   <!--Preference title for Psiphon Bump (NFC based connection data exchange), do not transliterate or translate 'Psiphon Bump'-->
   <string name="nfcBumpPreferenceTitle">Ƙarfafa Bump na Psiphon </string>
+  <string name="region_name_co">Colombia</string>
+  <string name="region_name_gr">Girka</string>
+  <string name="region_name_hr">Croatia</string>
+  <string name="region_name_id">Indonesia</string>
+  <string name="region_name_lt">Lithuania</string>
+  <string name="region_name_my">Malaysia</string>
+  <string name="region_name_nz">New Zealand</string>
+  <string name="region_name_pt">Portugal</string>
+  <string name="region_name_ua">Ukraine</string>
+  <!--Text shown in the footer of the VPN settings screen notifying the user that certain Psiphon apps are automatically excluded from VPN routing, do not translate or transliterate "Psiphon"-->
+  <string name="vpn_preferences_default_exclusions_footer_text">Wasu aikace-aikacen Psiphon ana keɓe su ne ta atomatik daga hanyoyin VPN domin tabbatar da aiki mai kyau. Ba za a iya canza waɗannan keɓewar ba.</string>
   <!--Summary for Psiphon Bump preference-->
   <string name="nfcBumpPreferenceSummary">Yi amfani da NFC domin baiwa wasu na\'urorin damar amfani da Psiphon din ka</string>
 </resources>

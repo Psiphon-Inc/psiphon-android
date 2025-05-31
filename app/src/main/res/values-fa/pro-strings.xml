@@ -566,4 +566,51 @@
      Do not translate or transliterate 'Conduit'. -->
     <string name="conduit_active">Conduit: فعال</string>
 
+    <!-- Unit labels used with 'rate_with_unit_template' for bit-per-second speeds. These represent: bits, kilobits, megabits, etc. per second. -->
+    <string name="rate_unit_bps_bits">bps</string>
+    <string name="rate_unit_tbps_bits">Tbps</string>
+    <string name="rate_unit_pbps_bits">Pbps</string>
+
+    <!-- Text shown on the home tab under Psiphon speed limit label when the there is no speed limit, like when the user has an unlimited subscription, for example -->
+    <string name="speed_rate_limit_no_limit">بدون محدودیت</string>
+
+    <!-- An updated alert message seen by the user when they try to use one of Speed Boost options but their PsiCash balance is insufficient. -->
+    <string name="speed_boost_insufficient_balance_alert_update">PsiCash کافی برای فعال کردن این گزینه تسریع ندارید.</string>
+
+    <!-- Icon description for the Conduit app icon, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_icon_description">نماد اپلیکیشن Conduit</string>
+
+    <!-- Icon description for the Google Play app icon, do not translate or transliterate 'Google Play'. -->
+    <string name="google_play_icon_description">نماد Google Play</string>
+
+    <!-- Title for the Install Conduit action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_install_title">نصب Conduit</string>
+
+    <!-- Description text for the clickable Conduit app card, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_card_description">اپلیکیشن موبایل Conduit را اجرا کنید و رایگان به Psiphon متصل بمانید</string>
+
+    <!-- Clickable text label to open the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="launch_conduit_action">راه‌اندازی Conduit</string>
+
+    <!-- Description text under the Subscribe clickable item -->
+    <string name="subscribe_card_description">طرح اشتراک خریداری کنید تا بدون وقفه به Psiphon دسترسی داشته باشید</string>
+
+    <!-- Short (collapsed) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_short">دسترسی Psiphon مسدود شده. برای اطلاعات بیشتر ضربه بزنید</string>
+
+    <!-- Long (expanded) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_long">دسترسی رایگان به Psiphon در منطقه شما دیگر در دسترس نیست. برای مشاهده گزینه‌های باز کردن قفل ضربه بزنید</string>
+
+    <!-- Generic 'Dismiss' button label for dialogs and alerts -->
+    <string name="label_dismiss">نادیده گرفتن</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app. -->
+    <string name="purchase_required_prompt_title">نحوه دسترسی به Psiphon در منطقه شما.</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app. -->
+    <string name="unlock_required_prompt_body">دسترسی به Psiphon در منطقه شما اکنون نیاز به حمایت شما دارد. با انتخاب یک گزینه موجود برای ادامه، کمک کنید تا Psiphon برای کسانی که بیشتر به آن نیاز دارند قابل دسترس باشد.</string>
+
+    <!-- Explanation text that appears below "Create account" button on the PsiCash sign in screen. -->
+    <string name="psicash_create_account_explanation_text_updated">ایجاد حساب PsiCash کمک می‌کند تا PsiCash شما هنگام نصب مجدد اپلیکیشن یا استفاده از Psiphon در دستگاه دیگر حفظ شود. لطفاً برای اطلاعات بیشتر به %s#psicash-account مراجعه کنید.</string>
+
     </resources>

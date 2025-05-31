@@ -158,6 +158,22 @@
   <string name="disableTimeoutsPreferenceTitle">Onemogući pauze</string>
   <!--Preference title for Psiphon Bump (NFC based connection data exchange), do not transliterate or translate 'Psiphon Bump'-->
   <string name="nfcBumpPreferenceTitle">Omogući Psiphon Bump</string>
+  <string name="aboutMalAware">O MalAware</string>
+  <string name="downloadWiFiOnlyPreferenceTitle">Samo Wi-Fi</string>
+  <string name="label_vpn_settings">VPN postavke</string>
+  <string name="preference_summary_custom_proxy">Prilagođeni proxy</string>
+  <string name="preference_summary_system_proxy">Sistemski proxy</string>
+  <!--Name of the notification channel for 'Psiphon crashed' notifications, note that 'Crashes' is a plural noun.-->
+  <string name="psiphon_native_crash_notification_channel_name">Psiphon rušenja</string>
+  <string name="psiphon_server_alert_notification_channel_name">Psiphon upozorenja poslužitelja</string>
+  <string name="psiphon_service_notification_message_vpn_all_apps">Tuneliranje svih aplikacija</string>
+  <string name="region_name_kr">Koreja</string>
+  <string name="region_selector">Odabir regije</string>
+  <string name="unsafeTrafficAlertsOptInPreferenceSummary">Budite obaviješteni kada Psiphon otkrije zlonamjerni promet s vašeg uređaja.</string>
+  <string name="unsafeTrafficAlertsOptInPreferenceTitle">Prikaži MalAware upozorenja</string>
+  <string name="vpn_exclusions_conflict">Postoji jedna ili više sukobnih aplikacija u vašim trenutnim VPN izuzecima. Idite u VPN postavke i prebacite na način 'Tuneliranje svih aplikacija' za povezivanje.</string>
+  <!--Text shown in the footer of the VPN settings screen notifying the user that certain Psiphon apps are automatically excluded from VPN routing, do not translate or transliterate "Psiphon"-->
+  <string name="vpn_preferences_default_exclusions_footer_text">Određene Psiphon aplikacije automatski su isključene iz VPN usmjeravanja kako bi se osigurala ispravna funkcionalnost. Ova izuzeća se ne mogu modificirati.</string>
   <!--Summary for Psiphon Bump preference-->
   <string name="nfcBumpPreferenceSummary">Koristite NFC za dijeljenje Psiphon podataka o vezi s drugim uređajima.</string>
 </resources>
