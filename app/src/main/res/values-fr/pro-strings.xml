@@ -618,7 +618,7 @@
     <string name="notification_text_unlock_required_short">Accès Psiphon bloqué. Touchez pour en savoir plus</string>
 
     <!-- Long (expanded) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
-    <string name="notification_text_unlock_required_long">L'accès gratuit à Psiphon n'est plus disponible dans votre région. Touchez pour voir les options de déblocage</string>
+    <string name="notification_text_unlock_required_long">L\'accès gratuit à Psiphon n\'est plus disponible dans votre région. Touchez pour voir les options de déblocage</string>
 
     <!-- Generic 'Dismiss' button label for dialogs and alerts -->
     <string name="label_dismiss">Ignorer</string>
