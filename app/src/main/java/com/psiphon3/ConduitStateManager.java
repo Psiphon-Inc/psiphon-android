@@ -26,7 +26,10 @@ import android.os.DeadObjectException;
 import android.os.IBinder;
 import android.os.RemoteException;
 
+import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.psiphon3.log.MyLog;
+
+import org.reactivestreams.Subscriber;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -34,12 +37,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import ca.psiphon.conduit.state.IConduitStateCallback;
 import ca.psiphon.conduit.state.IConduitStateService;
+import io.reactivex.BackpressureStrategy;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.processors.BehaviorProcessor;
-import io.reactivex.Observable;
-import io.reactivex.schedulers.Schedulers;
 
 public class ConduitStateManager {
     private static final String CONDUIT_PACKAGE = "ca.psiphon.conduit";
@@ -49,23 +50,22 @@ public class ConduitStateManager {
 
     private final Context applicationContext;
     private final AtomicBoolean isShutdown = new AtomicBoolean(false);
-    private final BehaviorProcessor<ConduitState> stateProcessor;
+    private final BehaviorRelay<ConduitState> stateRelay;
 
     private final AtomicInteger retryCount = new AtomicInteger(0);
     private IConduitStateService stateService;
     private boolean isServiceBound = false;
     private final CompositeDisposable reconnectDisposable = new CompositeDisposable();
-    private final CompositeDisposable emitAndCompleteDisposables = new CompositeDisposable();
     private final Object lock = new Object();
 
     private final IConduitStateCallback stateCallback = new IConduitStateCallback.Stub() {
         @Override
         public void onStateUpdate(String state) {
             try {
-                stateProcessor.onNext(ConduitState.fromJson(state));
+                stateRelay.accept(ConduitState.fromJson(state));
             } catch (IllegalArgumentException e) {
                 MyLog.e("ConduitStateManager: failed to parse ConduitState: " + e);
-                stateProcessor.onError(e);
+                stateRelay.accept(ConduitState.error("Failed to parse ConduitState: " + e.getMessage()));
             }
         }
     };
@@ -74,7 +74,7 @@ public class ConduitStateManager {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             synchronized (lock) {
-                if (isShutdown()) {
+                if (isShutdown.get()) {
                     return;
                 }
                 MyLog.i("ConduitStateManager: connected to ConduitStateService");
@@ -99,7 +99,7 @@ public class ConduitStateManager {
         @Override
         public void onServiceDisconnected(ComponentName name) {
             synchronized (lock) {
-                if (isShutdown()) {
+                if (isShutdown.get()) {
                     return;
                 }
                 MyLog.w("ConduitStateManager: disconnected from ConduitStateService");
@@ -137,7 +137,7 @@ public class ConduitStateManager {
 
     private ConduitStateManager(Context applicationContext) {
         this.applicationContext = applicationContext;
-        this.stateProcessor = BehaviorProcessor.createDefault(ConduitState.unknown());
+        this.stateRelay = BehaviorRelay.createDefault(ConduitState.unknown());
     }
 
     public static ConduitStateManager newManager(Context context) {
@@ -145,21 +145,6 @@ public class ConduitStateManager {
             throw new IllegalArgumentException("Context cannot be null");
         }
         return new ConduitStateManager(context.getApplicationContext());
-    }
-
-    // Helper method to emit a state and complete with guaranteed ordering of events
-    private void emitStateAndComplete(ConduitState state) {
-        emitAndCompleteDisposables.add(Observable.defer(() -> {
-                    stateProcessor.onNext(state);
-                    return Observable.empty();
-                })
-                .subscribeOn(Schedulers.single())
-                .observeOn(Schedulers.single())
-                .subscribe(
-                        value -> {}, // no-op
-                        stateProcessor::onError,
-                        stateProcessor::onComplete
-                ));
     }
 
     private void handleServiceError(ConduitServiceException error) {
@@ -186,12 +171,12 @@ public class ConduitStateManager {
                 case PACKAGE_TRUST_ERROR:
                 case SERVICE_NOT_FOUND_ERROR:
                     retryCount.set(MAX_RETRY_ATTEMPTS);
-                    emitStateAndComplete(ConduitState.incompatibleVersion(error.getMessage()));
+                    stateRelay.accept(ConduitState.incompatibleVersion(error.getMessage()));
                     break;
 
                 case PACKAGE_NOT_FOUND_ERROR:
                     retryCount.set(MAX_RETRY_ATTEMPTS);
-                    emitStateAndComplete(ConduitState.builder()
+                    stateRelay.accept(ConduitState.builder()
                             .setStatus(ConduitState.Status.NOT_INSTALLED)
                             .setMessage(error.getMessage())
                             .build());
@@ -200,7 +185,7 @@ public class ConduitStateManager {
                 case SECURITY_ERROR:
                 case MAX_RETRIES_EXCEEDED:
                     retryCount.set(MAX_RETRY_ATTEMPTS);
-                    stateProcessor.onError(error);
+                    stateRelay.accept(ConduitState.error(error.getMessage()));
                     break;
 
                 case BINDING_ERROR:
@@ -216,7 +201,7 @@ public class ConduitStateManager {
     // Schedule a reconnect attempt after a delay until the maximum retry attempts are reached
     private void scheduleReconnect() {
         synchronized (lock) {
-            if (isShutdown()) {
+            if (isShutdown.get()) {
                 return;
             }
 
@@ -245,7 +230,7 @@ public class ConduitStateManager {
     // Perform checks on the Conduit package and bind to the ConduitStateService
     private void checkConduitAndBind() {
         synchronized (lock) {
-            if (isShutdown()) {
+            if (isShutdown.get()) {
                 return;
             }
 
@@ -305,7 +290,7 @@ public class ConduitStateManager {
         return applicationContext.getPackageManager().resolveService(intent, 0) != null;
     }
 
-    public void shutdown() {
+    private void shutdown() {
         if (!isShutdown.compareAndSet(false, true)) {
             throw new IllegalStateException("ConduitStateManager is already shutdown");
         }
@@ -314,9 +299,6 @@ public class ConduitStateManager {
 
             // Clear any existing scheduled reconnects
             reconnectDisposable.clear();
-
-            // Clear any existing emit and complete disposables
-            emitAndCompleteDisposables.clear();
 
             if (stateService != null) {
                 try {
@@ -338,23 +320,21 @@ public class ConduitStateManager {
             }
 
             stateService = null;
-            stateProcessor.onComplete();
         }
-    }
-
-    public boolean isShutdown() {
-        return isShutdown.get();
     }
 
     // ConduitState flowable for observing Conduit state changes
     // Note that subscription to this flowable will automatically bind to the ConduitStateService if not already bound
     public Flowable<ConduitState> stateFlowable() {
-        if (isShutdown()) {
-            throw new IllegalStateException("ConduitStateManager is shutdown");
+        if (isShutdown.get()) {
+            return Flowable.just(ConduitState.error("ConduitStateManager is shutdown"));
         }
 
-        return stateProcessor
+        return stateRelay
+                .toFlowable(BackpressureStrategy.LATEST)
                 .distinctUntilChanged()
+                // Complete the stream after emitting a terminal state
+                .takeUntil(ConduitStateManager::isTerminalState)
                 .doOnSubscribe(subscription -> {
                     synchronized (lock) {
                         if (!isServiceBound) {
@@ -364,10 +344,25 @@ public class ConduitStateManager {
                 })
                 .doFinally(() -> {
                     // stop the ConduitStateManager if there are no subscribers
-                    if (!stateProcessor.hasSubscribers()) {
+                    if (!stateRelay.hasObservers()) {
                         MyLog.i("ConduitStateManager: no subscribers, will shutdown");
                         shutdown();
                     }
                 });
+    }
+
+    private static boolean isTerminalState(ConduitState state) {
+        switch (state.status()) {
+            case NOT_INSTALLED:        // User needs to install Conduit
+            case INCOMPATIBLE_VERSION: // User needs to update Conduit
+            case UNSUPPORTED_SCHEMA:   // User needs to update Psiphon Pro
+            case ERROR:                // Something went wrong
+                return true;
+            case UNKNOWN:
+            case RUNNING:
+            case STOPPED:
+            default:
+                return false;
+        }
     }
 }

@@ -155,9 +155,14 @@ public class HomeTabFragment extends Fragment {
                         // If tunnel is not running, check if Conduit is running directly
                         return ConduitStateManager.newManager(requireContext()).stateFlowable()
                                 .filter(state -> state.status() != ConduitState.Status.UNKNOWN)
+                                .doOnNext(state -> {
+                                            if (state.status() == ConduitState.Status.ERROR) {
+                                                // Log the error state
+                                                MyLog.e("HomeTabFragment: error getting Conduit state: " + state.message());
+                                            }
+                                        })
                                 .map(state -> state.status() == ConduitState.Status.RUNNING)
-                                .doOnError(throwable -> MyLog.e("HomeTabFragment: error getting conduit state", throwable))
-                                .onErrorReturnItem(false);
+                                .onErrorReturnItem(false); // Should never happen, but just in case
                     }
                 })
                 .distinctUntilChanged();

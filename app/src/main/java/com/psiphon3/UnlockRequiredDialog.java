@@ -217,7 +217,11 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
                                 this::updateConduitUI,
-                                throwable -> hideConduitUI()
+                                throwable ->
+                                {
+                                    MyLog.e("UnlockRequiredDialog: unexpected error while observing Conduit state" + throwable);
+                                    hideConduitUI();
+                                }
                         );
         compositeDisposable.add(updateStateDisposable);
     }
@@ -245,6 +249,12 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
                 installConduitView.setVisibility(View.GONE);
                 openConduitView.setVisibility(View.GONE);
                 updatePsiphonProView.setVisibility(View.GONE);
+                break;
+            case ERROR:
+                // Error state, hide all Conduit views
+                MyLog.e("UnlockRequiredDialog: Conduit error: " +
+                        (state.message() != null ? state.message() : "unknown error"));
+                hideConduitUI();
                 break;
             case RUNNING:
                 // Conduit is running, close the dialog
