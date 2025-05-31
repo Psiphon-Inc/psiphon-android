@@ -170,6 +170,14 @@
   <string name="preference_summary_system_proxy">सिस्टम प्रॉक्सी</string>
   <string name="disableTimeoutsPreferenceTitle">टाइमआउट अक्षम करें</string>
   <string name="downloadWiFiOnlyPreferenceTitle">सिर्फ Wi-Fi</string>
+  <!--Text shown in the footer of the VPN settings screen notifying the user that certain Psiphon apps are automatically excluded from VPN routing, do not translate or transliterate "Psiphon"-->
+  <string name="vpn_preferences_default_exclusions_footer_text">उचित कार्यक्षमता सुनिश्चित करने के लिए कुछ Psiphon ऐप्स स्वचालित रूप से VPN रूटिंग से बाहर रखे गए हैं। इन बहिष्करणों को संशोधित नहीं किया जा सकता।</string>
+  <string name="unsafeTrafficAlertsOptInPreferenceTitle">MalAware अलर्ट दिखाएं</string>
+  <string name="unsafeTrafficAlertsOptInPreferenceSummary">जब Psiphon आपके डिवाइस से मैलवेयर ट्रैफिक का पता लगाए तो सूचित हों।</string>
+  <string name="aboutMalAware">MalAware के बारे में</string>
+  <!--Name of the notification channel for 'Psiphon crashed' notifications, note that 'Crashes' is a plural noun.-->
+  <string name="psiphon_native_crash_notification_channel_name">Psiphon क्रैश</string>
+  <string name="region_name_kr">कोरिया</string>
   <!--Preference title for Psiphon Bump (NFC based connection data exchange), do not transliterate or translate 'Psiphon Bump'-->
   <string name="nfcBumpPreferenceTitle">Psiphon Bump सक्षम करें</string>
   <!--Summary for Psiphon Bump preference-->

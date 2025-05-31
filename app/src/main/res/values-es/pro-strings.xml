@@ -43,8 +43,6 @@
     <string name="rate_unit_gbps_bits">Gbps</string>
     <string name="rate_unit_tbps_bits">Tbps</string>
     <string name="rate_unit_pbps_bits">Pbps</string>
-
-
     <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
     <string name="speed_rate_limit_not_available">No disponible</string>
 
@@ -209,10 +207,6 @@
     <!-- A message to the user seen when the users are trying to navigate to PsiCash store screen while Psiphon has not finished connecting to the server
     Do not translate or transliterate words Psiphon -->
     <string name="wait_for_psiphon_to_finish_connect_to_use_psicash_store">Espera a que Psiphon termine de conectarse para usar la tienda de PsiCash</string>
-
-    <!-- A generic prompt title. Do not translate -->
-    <string name="psicash_generic_title" translatable="false">PsiCash</string>
-
     <!-- A message to the user indicating that their PsiCash balance is most likely out of date and needs to be refreshed by connecting to Psiphon.
     Do not translate or transliterate words PsiCash or Psiphon -->
     <string name="psicash_out_of_date_dialog_message">Tu balance PsiCash está desactualizado. Conéctate a Psiphon para actualizarlo.</string>

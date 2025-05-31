@@ -43,8 +43,6 @@
     <string name="rate_unit_gbps_bits">Gbps</string>
     <string name="rate_unit_tbps_bits">Tbit/s</string>
     <string name="rate_unit_pbps_bits">Pbit/s</string>
-
-
     <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
     <string name="speed_rate_limit_not_available">Non disponible</string>
 
@@ -623,6 +621,4 @@
     <!-- Generic 'Dismiss' button label for dialogs and alerts -->
     <string name="label_dismiss">Ignorer</string>
 
-    <!-- A generic prompt title. Do not translate -->
-    <string name="psicash_generic_title" translatable="false">PsiCash</string>
 </resources>

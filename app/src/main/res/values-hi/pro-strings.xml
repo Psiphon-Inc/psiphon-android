@@ -595,10 +595,6 @@
 
     <!-- Text shown on the home tab under Psiphon speed limit label when the there is no speed limit, like when the user has an unlimited subscription, for example -->
     <string name="speed_rate_limit_no_limit">कोई सीमा नहीं</string>
-
-    <!-- A generic prompt title. Do not translate -->
-    <string name="psicash_generic_title" translatable="false">PsiCash</string>
-
     <!-- An updated alert message seen by the user when they try to use one of Speed Boost options but their PsiCash balance is insufficient.
     Note that since we are phasing out the PsiCash system, this message is no longer offering the user to buy more PsiCash, and is just informing
     them that they do not have enough PsiCash to activate the Speed Boost option.

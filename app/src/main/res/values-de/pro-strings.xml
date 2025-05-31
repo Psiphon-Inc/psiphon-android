@@ -207,10 +207,6 @@
     Do not translate or transliterate words Psiphon -->
     <string name="wait_for_psiphon_to_finish_connect_to_use_psicash_store">Bitte warten Sie, bis Psiphon die Verbindung hergestellt hat, um den PsiCash-Store zu nutzen</string>
 
-    <!-- A title for PsiCash related screens and dialogs.
-        Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_generic_title">PsiCash</string>
-
     <!-- A message to the user indicating that their PsiCash balance is most likely out of date and needs to be refreshed by connecting to Psiphon.
     Do not translate or transliterate words PsiCash or Psiphon -->
     <string name="psicash_out_of_date_dialog_message">Ihr PsiCash-Guthaben ist veraltet. Stellen Sie zum Aktualisieren eine Verbindung zu Psiphon her.</string>
