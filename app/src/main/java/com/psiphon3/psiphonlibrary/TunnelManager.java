@@ -322,10 +322,16 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                             .doOnNext(config -> {
                                 // Perform a tunnel restart when a new tunnel config is received and we are not in the process of stopping
                                 if (!m_isStopping.get()) {
-                                    m_networkConnectionStatePublishRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
-                                    m_vpnManager.stopRouteThroughTunnel();
-                                    m_isRoutingThroughTunnelPublishRelay.accept(Boolean.FALSE);
-                                    MyLog.i("TunnelManager: tunnel config observer: restarting tunnel due to new tunnel config");
+                                    TunnelConfigManager.RestartType restartType = config.getRestartType();
+                                    if (restartType == TunnelConfigManager.RestartType.FULL_RESTART) {
+                                        m_networkConnectionStatePublishRelay.accept(
+                                                TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
+                                        m_vpnManager.stopRouteThroughTunnel();
+                                        m_isRoutingThroughTunnelPublishRelay.accept(Boolean.FALSE);
+                                        MyLog.i("TunnelManager: tunnel config observer: full tunnel restart due to new tunnel config");
+                                    } else {
+                                        MyLog.i("TunnelManager: tunnel config observer: quiet tunnel restart due to new tunnel config");
+                                    }
                                     onRestartTunnel();
                                 }
                             })
@@ -352,28 +358,22 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 PackageHelper.readTrustedSignaturesFromFile(getContext().getApplicationContext())
         );
 
-        // Observe the unlock options entries for changes and if Conduit unlock entry is present
-        // start observing the conduit state and update the tunnel config manager accordingly
-        conduitStateObserver = unlockOptions.getEntriesSetFlowable()
-                .map(ignored -> unlockOptions.hasConduitEntry())
-                .doOnNext(hasConduit -> MyLog.i(
-                        "TunnelManager: Conduit unlock entry present: " + hasConduit))
-                .switchMap(hasConduit -> {
-                    if (!hasConduit) {
-                        return Flowable.empty();
-                    } else {
-                        // Only update the tunnel config manager if the conduit unlock option is present
-                        return ConduitStateManager.newManager(getContext()).stateFlowable()
-                                .doOnNext(state -> MyLog.i("TunnelManager: Conduit state: " + state))
-                                .filter(state -> state.status() != ConduitState.Status.UNKNOWN)
-                                .map(state -> state.status() == ConduitState.Status.RUNNING)
-                                .onErrorReturnItem(false) // Should not ever happen but just in case
-                                .doOnNext(isRunning -> {
-                                    MyLog.i("TunnelManager: updating tunnel config manager with Conduit state: " + isRunning);
-                                    tunnelConfigManager.updateConduitState(isRunning);
-                                });
-                    }
-                })
+        // Observe conduit state changes, then check unlock options for each change
+        conduitStateObserver = ConduitStateManager.newManager(getContext()).stateFlowable()
+                .doOnNext(state -> MyLog.i("TunnelManager: Conduit state: " + state))
+                .filter(state -> state.status() != ConduitState.Status.UNKNOWN)
+                .map(state -> state.status() == ConduitState.Status.RUNNING)
+                .onErrorReturnItem(false) // Should not ever happen but just in case
+                .switchMap(isRunning ->
+                        unlockOptions.getEntriesSetFlowable()
+                                .map(ignored -> unlockOptions.hasConduitEntry())
+                                .distinctUntilChanged()
+                                .doOnNext(hasConduitUnlockOption -> {
+                                    MyLog.i("TunnelManager: Conduit is running: " + isRunning +
+                                            ", has conduit unlock option: " + hasConduitUnlockOption +
+                                            ", updating tunnel config manager");
+                                    tunnelConfigManager.updateConduitStateConditional(isRunning, hasConduitUnlockOption);
+                                }))
                 .subscribe();
 
         m_compositeDisposable.add(conduitStateObserver);
