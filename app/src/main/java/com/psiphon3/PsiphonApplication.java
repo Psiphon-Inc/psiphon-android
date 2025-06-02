@@ -63,22 +63,6 @@ public class PsiphonApplication extends Application {
     }
 
     @Override
-    public void onTrimMemory(int level) {
-        super.onTrimMemory(level);
-        if (level == TRIM_MEMORY_UI_HIDDEN && isMainProcess(this)) {
-            TunnelServiceInteractor tunnelServiceInteractor = new TunnelServiceInteractor(getApplicationContext(), false);
-            // bind to the tunnel service
-            tunnelServiceInteractor.onStart(this);
-            // send TRIM_MEMORY_UI_HIDDEN msg to the tunnel service
-            tunnelServiceInteractor.messageTrimMemoryUiHidden();
-            // send UNREGISTER msg to the tunnel service and unbind
-            tunnelServiceInteractor.onStop(this);
-            // Unregister SERVICE_STARTING_BROADCAST_INTENT receiver
-            tunnelServiceInteractor.onDestroy(this);
-        }
-    }
-
-    @Override
     protected void attachBaseContext(Context base) {
         // We need to make all classes available prior to calling LocaleManager by installing all
         // dexes first. There's a bit of a chicken-egg problem with calling MiltiDex.install() before
