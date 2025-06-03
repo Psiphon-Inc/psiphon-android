@@ -134,4 +134,18 @@
     <string name="subscription_none">རིན་ལང་ ཞུག་ལམ</string>
     <string name="conduit_active">Conduit། ལས་བོ་བོས</string>
 
-    </resources>
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="purchase_required_prompt_title">ཁྱེད་ཀྱི་ས་ཁུལ་ནང་ Psiphon ལ་འཛུལ་སྤྱོད་བྱེད་པའི་ཐབས།</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="unlock_required_prompt_body">ཁྱེད་ཀྱི་ས་ཁུལ་ནང་ Psiphon ལ་འཛུལ་སྤྱོད་བྱེད་པ་ད་ལྟ་ཁྱེད་ཀྱི་རྒྱབ་སྐྱོར་དགོས་ཡོད། དགོས་མཁོ་ཆེ་བའི་མི་ཚུལ་ལ་དངོས་སུ་འཛུལ་སྤྱོད་བྱེད་པའི་ཐབས་འདེམས།</string>
+
+    <!-- Short (collapsed) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_short">Psiphon ལ་འཛུལ་སྤྱོད་བྱེད་པ་བཀག་འགོག་བྱས་ཡོད། ཧེང་བཀོད་བྱས་ན་ཧེང་བརྡ་དོན་ཤེས་ཐུབ།</string>
+
+    <!-- Long (expanded) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_long">ཁྱེད་ཀྱི་ས་ཁུལ་ནང་ Psiphon ལ་སྤྱོད་མི་འདི་ད་ལྟ་རང་རེད་མི་འདུག ཧེང་བཀོད་བྱས་ན་སྒོ་ཕྱེ་ཐབས་ཚུལ་ལ་ལེན་ཐུབ།</string>
+
+    <!-- Generic 'Dismiss' button label for dialogs and alerts -->
+    <string name="label_dismiss">རྩིས་བཏོན།</string>
+</resources>

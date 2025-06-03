@@ -124,4 +124,18 @@
     <string name="subscription_none">Pulsuz Gələcuk</string>
     <string name="conduit_active">Conduit: Aktiv</string>
 
-    </resources>
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="purchase_required_prompt_title">Sizin bölgənizdə Psiphon-a necə daxil olmaq olar.</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="unlock_required_prompt_body">Sizin bölgənizdə Psiphon-a giriş indi sizin dəstəyinizi tələb edir. Ən çox ehtiyacı olanlar üçün Psiphon-un əlçatan qalmasına kömək etmək üçün davam etmək üçün mövcud variantlardan birini seçin.</string>
+
+    <!-- Short (collapsed) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_short">Psiphon-a giriş bloklanıb. Ətraflı öyrənmək üçün toxunun</string>
+
+    <!-- Long (expanded) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_long">Sizin bölgənizdə Psiphon-a pulsuz giriş artıq mövcud deyil. Açmaq üçün variantlara baxmaq üçün toxunun</string>
+
+    <!-- Generic 'Dismiss' button label for dialogs and alerts -->
+    <string name="label_dismiss">Bağla</string>
+</resources>

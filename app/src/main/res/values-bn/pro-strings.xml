@@ -158,4 +158,18 @@
     <string name="subscription_none">বিনামূল্যে অ্যাক্সেস</string>
     <string name="conduit_active">Conduit: সক্রিয়</string>
 
-    </resources>
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="purchase_required_prompt_title">আপনার অঞ্চলে Psiphon-এ কীভাবে প্রবেশ করবেন।</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="unlock_required_prompt_body">আপনার অঞ্চলে Psiphon-এ প্রবেশ এখন আপনার সহায়তা প্রয়োজন। সবচেয়ে বেশি প্রয়োজন এমন মানুষের জন্য Psiphon-কে প্রবেশযোগ্য রাখতে সাহায্য করুন, চালিয়ে যেতে একটি উপলব্ধ বিকল্প নির্বাচন করুন।</string>
+
+    <!-- Short (collapsed) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_short">Psiphon প্রবেশ বন্ধ। আরও জানতে ট্যাপ করুন</string>
+
+    <!-- Long (expanded) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_long">আপনার অঞ্চলে Psiphon-এ বিনামূল্যে প্রবেশ আর উপলব্ধ নেই। আনলক বিকল্প দেখতে ট্যাপ করুন</string>
+
+    <!-- Generic 'Dismiss' button label for dialogs and alerts -->
+    <string name="label_dismiss">বন্ধ করুন</string>
+</resources>
