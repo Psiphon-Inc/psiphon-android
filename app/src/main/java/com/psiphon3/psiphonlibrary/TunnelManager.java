@@ -415,7 +415,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                         if (unlockOptions.unlockRequired()) {
                             // If there is an unlock required, deliver the intent to the client Activity
                             // either by sending it directly or showing a notification
-                            if (!unlockUIDeliveredThisSession ) {
+                            if (!unlockUIDeliveredThisSession) {
                                 unlockUIDeliveredThisSession = true;
                                 deliverUnlockRequiredUI();
                             }
