@@ -157,4 +157,18 @@
     <string name="subscription_none">Бесплатны доступ</string>
     <string name="conduit_active">Conduit: Актыўны</string>
 
-    </resources>
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="purchase_required_prompt_title">Як атрымаць доступ да Psiphon у вашым рэгіёне.</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="unlock_required_prompt_body">Доступ да Psiphon у вашым рэгіёне цяпер патрабуе вашай падтрымкі. Дапамажыце захаваць Psiphon даступным для тых, хто мае найбольшую патрэбу, выбраўшы адзін з даступных варыянтаў для працягу.</string>
+
+    <!-- Short (collapsed) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_short">Доступ да Psiphon заблакаваны. Націсніце, каб даведацца больш</string>
+
+    <!-- Long (expanded) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_long">Бясплатны доступ да Psiphon у вашым рэгіёне больш недаступны. Націсніце, каб убачыць варыянты разблакіроўкі</string>
+
+    <!-- Generic 'Dismiss' button label for dialogs and alerts -->
+    <string name="label_dismiss">Закрыць</string>
+</resources>
