@@ -325,7 +325,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                                     TunnelConfigManager.RestartType restartType = config.getRestartType();
                                     if (restartType == TunnelConfigManager.RestartType.FULL_RESTART) {
                                         // On full restart reset unlock options and all unlock flags
-                                        unlockOptions.setEntries(new ConcurrentHashMap<>());
+                                        unlockOptions.reset();
                                         unlockOptionsProcessed = false;
                                         unlockUIDeliveredThisSession = false;
 

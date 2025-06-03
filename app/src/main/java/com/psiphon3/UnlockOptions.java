@@ -90,6 +90,10 @@ public class UnlockOptions {
         entriesSetRelay.accept(entryMap.keySet());
     }
 
+    public synchronized void reset() {
+        entries.clear();
+    }
+
     // Convert current entries to JSON format for persistence
     public String toJsonString() {
         try {
