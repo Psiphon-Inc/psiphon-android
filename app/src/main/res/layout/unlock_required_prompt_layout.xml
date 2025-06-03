@@ -311,7 +311,7 @@
                 android:paddingHorizontal="48dp">
 
                 <androidx.cardview.widget.CardView
-                    android:id="@+id/disconnectCardView"
+                    android:id="@+id/disconnectAndDismissCardView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:clickable="true"
