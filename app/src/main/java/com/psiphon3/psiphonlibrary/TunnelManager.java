@@ -2060,10 +2060,22 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         // Expected format:
         // {
         //     "UnlockOptions": {
-        //         "Subscription": {}, // Empty or missing "display" field is defaulted to true
-        //         "Conduit": { "display": false }
+        //         "Subscription": {"priority": 30}, // Empty or missing "display" field is defaulted to true
+        //         "Conduit": {"display": false, "priority": 10},
+        //         "AppInstall.YouTube": {
+        //             "priority": 20, // Empty or missing priority is defaulted according to type, see UnlockOptions.java
+        //             "display": true,
+        //             "appId": "com.google.android.youtube",
+        //             "appName": "YouTube",
+        //             "playStoreUrl": "https://play.google.com/store/apps/details?id=com.google.android.youtube"
+        //         }
         //     }
         // }
+        //
+        // PRIORITY SETTING: If using priorities, set them for ALL unlock entries to avoid
+        // mixing explicit priorities with defaults. For example, don't do:
+        // "Subscription": {"priority": 5}, "Conduit": {} <- Conduit will get default priority 10
+        // This creates confusing ordering. Either use priorities everywhere or not at all.
 
         Map<String, UnlockOptions.UnlockEntry> entries = new ConcurrentHashMap<>();
 
@@ -2074,41 +2086,19 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 // Process each key in the JSON
                 Iterator<String> keys = unlockOptionsJson.keys();
                 while (keys.hasNext()) {
-                    String checkerType = keys.next();
-                    JSONObject entryObject = unlockOptionsJson.optJSONObject(checkerType);
+                    String entryKey = keys.next();
+                    JSONObject entryObject = unlockOptionsJson.optJSONObject(entryKey);
                     Boolean display = entryObject != null && entryObject.has("display")
                             ? entryObject.optBoolean("display")
                             : null;
-
-                    switch (checkerType) {
-                        // Subscription checker
-                        // NOTE: During PsiCash phase-out transition, we're treating both subscription and speed boost
-                        // as valid subscription methods. After transition, this should be simplified to:
-                        // unlockOptions.addChecker(UnlockOptions.CHECKER_SUBSCRIPTION, tunnelConfigManager::isSubscriptionActive);
-                        case UnlockOptions.UNLOCK_ENTRY_SUBSCRIPTION:
-                            entries.put(
-                                    UnlockOptions.UNLOCK_ENTRY_SUBSCRIPTION,
-                                    new UnlockOptions.UnlockEntry(
-                                            () -> tunnelConfigManager.isSubscriptionActive() || tunnelConfigManager.isSpeedBoostActive(),
-                                            display
-                                    )
-                            );
-                            break;
-
-                        // Conduit checker
-                        case UnlockOptions.UNLOCK_ENTRY_CONDUIT:
-                            entries.put(
-                                    UnlockOptions.UNLOCK_ENTRY_CONDUIT,
-                                    new UnlockOptions.UnlockEntry(
-                                            tunnelConfigManager::isConduitRunningActive,
-                                            display
-                                    )
-                            );
-                            break;
-
-                        default:
-                            MyLog.w("TunnelManager: unknown unlock option checker type: " + checkerType);
-                            break;
+                    // Parse priority if present, otherwise use default values
+                    Integer priority = (entryObject != null && entryObject.has("priority"))
+                            ? entryObject.optInt("priority")
+                            : null;
+                    if (entryKey.startsWith(UnlockOptions.APP_INSTALL_PREFIX)) {
+                        processAppInstallUnlockEntry(entryKey, entryObject, entries, display, priority);
+                    } else {
+                        processStandardUnlockEntry(entryKey, entries, display, priority);
                     }
                 }
             }
@@ -2121,6 +2111,73 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 deliverUnlockRequiredUI();
             }
         }
+    }
+
+    private void processStandardUnlockEntry(String entryKey,
+                                            Map<String, UnlockOptions.UnlockEntry> entries,
+                                            Boolean display,
+                                            Integer priority) {
+        switch (entryKey) {
+            // Subscription checker
+            // NOTE: During PsiCash phase-out transition, we're treating both subscription and speed boost
+            // as valid subscription methods. After transition, this should be simplified to:
+            // unlockOptions.addChecker(UnlockOptions.CHECKER_SUBSCRIPTION, tunnelConfigManager::isSubscriptionActive);
+            case UnlockOptions.UNLOCK_ENTRY_SUBSCRIPTION:
+                entries.put(
+                        entryKey,
+                        new UnlockOptions.UnlockEntry(
+                                () -> tunnelConfigManager.isSubscriptionActive() || tunnelConfigManager.isSpeedBoostActive(),
+                                display,
+                                priority == null ? UnlockOptions.DEFAULT_SUBSCRIPTION_PRIORITY : priority
+                        )
+                );
+                break;
+            // Conduit checker
+            case UnlockOptions.UNLOCK_ENTRY_CONDUIT:
+                entries.put(
+                        entryKey,
+                        new UnlockOptions.UnlockEntry(
+                                tunnelConfigManager::isConduitRunningActive,
+                                display,
+                                priority == null ? UnlockOptions.DEFAULT_CONDUIT_PRIORITY : priority
+                        )
+                );
+                break;
+            default:
+                MyLog.w("TunnelManager:processStandardUnlockEntry: unknown unlock option checker type: " + entryKey);
+                break;
+        }
+    }
+
+    private void processAppInstallUnlockEntry(String entryKey,
+                                              JSONObject entryObject,
+                                              Map<String, UnlockOptions.UnlockEntry> entries,
+                                              Boolean display,
+                                              Integer priority) {
+        if (entryObject == null) {
+            MyLog.w("TunnelManager: No config object for app install entry: " + entryKey);
+            return;
+        }
+        String appId = entryObject.optString("appId", "");
+        String appName = entryObject.optString("appName", "");
+        String playStoreUrl = entryObject.optString("playStoreUrl", "");
+        if (appId.isEmpty() || appName.isEmpty() || playStoreUrl.isEmpty()) {
+            MyLog.w("TunnelManager: Missing required fields for app install entry: " + entryKey);
+            return;
+        }
+        // Capture the appId to avoid potential issues with lambda capture
+        final String finalAppId = appId;
+        entries.put(
+                entryKey,
+                new UnlockOptions.AppInstallUnlockEntry(
+                        () -> PackageHelper.isPackageInstalled(m_parentService.getPackageManager(), finalAppId),
+                        display,
+                        priority == null ? UnlockOptions.DEFAULT_APP_INSTALL_PRIORITY : priority,
+                        appId,
+                        appName,
+                        playStoreUrl
+                )
+        );
     }
 
     private void processTrustedApps(JSONObject params) {

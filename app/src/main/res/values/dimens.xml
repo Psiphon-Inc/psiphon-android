@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="padding_small">8dp</dimen>
+    <dimen name="unlock_option_padding">12dp</dimen>
 </resources>
