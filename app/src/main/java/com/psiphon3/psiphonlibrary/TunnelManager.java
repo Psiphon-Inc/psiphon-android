@@ -110,7 +110,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         CHANGED_LOCALE,
         NFC_CONNECTION_INFO_EXCHANGE_IMPORT,
         NFC_CONNECTION_INFO_EXCHANGE_EXPORT,
-        TRIM_MEMORY_UI_HIDDEN,
     }
 
     // Service -> Client
@@ -216,9 +215,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     private boolean disallowedTrafficNotificationAlreadyShown = false;
 
     private final CountDownLatch tunnelThreadStartedLock = new CountDownLatch(1);
-    private Disposable trimMemoryUiHiddenDisposable;
     private TunnelConfigManager tunnelConfigManager;
     private final UnlockOptions unlockOptions = new UnlockOptions();
+    private boolean unlockOptionsProcessed = false;
+    private boolean unlockUIDeliveredThisSession = false;
 
 
     TunnelManager(Service parentService) {
@@ -324,6 +324,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                                 if (!m_isStopping.get()) {
                                     TunnelConfigManager.RestartType restartType = config.getRestartType();
                                     if (restartType == TunnelConfigManager.RestartType.FULL_RESTART) {
+                                        // On full restart reset unlock options and all unlock flags
+                                        unlockOptions.reset();
+                                        unlockOptionsProcessed = false;
+                                        unlockUIDeliveredThisSession = false;
+
                                         m_networkConnectionStatePublishRelay.accept(
                                                 TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
                                         m_vpnManager.stopRouteThroughTunnel();
@@ -410,7 +415,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                         if (unlockOptions.unlockRequired()) {
                             // If there is an unlock required, deliver the intent to the client Activity
                             // either by sending it directly or showing a notification
-                            deliverUnlockRequiredUI();
+                            if (!unlockUIDeliveredThisSession) {
+                                unlockUIDeliveredThisSession = true;
+                                deliverUnlockRequiredUI();
+                            }
                             // Command the service to stop immediately if unlock is required.
                             signalStopService();
                             // Do not emit downstream
@@ -945,14 +953,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     }
                     break;
 
-                case TRIM_MEMORY_UI_HIDDEN:
-                    if (manager != null) {
-                        // Ignore the message if the sender is not registered
-                        if (manager.mClients.get(msg.replyTo.hashCode()) == null) {
-                            return;
-                        }
-                        manager.onTrimMemoryUiHidden();
-                    }
                 default:
                     super.handleMessage(msg);
             }
@@ -1585,29 +1585,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         tunnel.setClientPlatformAffixes(prefix, suffix);
     }
 
-    private void onTrimMemoryUiHidden() {
-        if (trimMemoryUiHiddenDisposable != null && !trimMemoryUiHiddenDisposable.isDisposed()) {
-            // Already in progress, do nothing.
-            return;
-        }
-        // Wait up to 5 seconds for the tunnel thread to start before checking if we should enforce
-        // showing purchase required UI.
-        // We are using a completable on Schedulers.computation() thread here in order not to block
-        // the communication thread.
-        trimMemoryUiHiddenDisposable = Completable.fromAction(() -> {
-                    boolean tunnelHasStarted = tunnelThreadStartedLock.await(5, TimeUnit.SECONDS);
-                    if (tunnelHasStarted && unlockOptions.unlockRequired()) {
-                        m_vpnManager.stopRouteThroughTunnel();
-                        m_isRoutingThroughTunnelPublishRelay.accept(Boolean.FALSE);
-                    }
-                })
-                .subscribeOn(Schedulers.computation())
-                // Ignore if CountDownLatch.await() throws.
-                .onErrorComplete()
-                .subscribe();
-        m_compositeDisposable.add(trimMemoryUiHiddenDisposable);
-    }
-
     @Override
     public String getPsiphonConfig() {
         setPlatformAffixes(m_tunnel, null);
@@ -2093,6 +2070,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         //         "Conduit": { "display": false }
         //     }
         // }
+        if (unlockOptionsProcessed) {
+            MyLog.w("TunnelManager: UnlockOptions already processed, skipping");
+            return;
+        }
+
         Map<String, UnlockOptions.UnlockEntry> entries = new ConcurrentHashMap<>();
 
         try {
@@ -2144,6 +2126,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             MyLog.e("TunnelManager: failed to parse UnlockOptions: " + e);
         } finally {
             unlockOptions.setEntries(entries);
+            unlockOptionsProcessed = true;
+            if (unlockOptions.unlockRequired() && !unlockUIDeliveredThisSession) {
+                unlockUIDeliveredThisSession = true;
+                deliverUnlockRequiredUI();
+            }
         }
     }
 

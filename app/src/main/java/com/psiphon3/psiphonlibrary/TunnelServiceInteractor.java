@@ -243,11 +243,6 @@ public class TunnelServiceInteractor {
                 );
     }
 
-    public void messageTrimMemoryUiHidden() {
-        sendServiceMessageCompletable(TunnelManager.ClientToServiceMessage.TRIM_MEMORY_UI_HIDDEN.ordinal(), null)
-                .subscribe();
-    }
-
     public void bindTunnelService(Context context) {
         final Intent intent = new Intent(context, TunnelVpnService.class);
         serviceBindingFactory = new Rx2ServiceBindingFactory(context, intent);
