@@ -366,7 +366,7 @@
 
     <!-- An alert message to the user shown when a PsiCash login succeeds. There is a fixed number of times that a user can merge a pre-account balance into a PsiCash account. This message indicates that the user has hit that limit and the merge that occurred is the last one allowed.
         Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_last_tracker_merge_notification">Вы ўвайшлі ў свой уліковы запіс PsiCash. Ранейшы баланс з гэтай прылады быў перанесены ў ваш уліковы запіс, але гэта апошняе аб'яднанне балансаў.</string>
+    <string name="psicash_last_tracker_merge_notification">Вы ўвайшлі ў свой уліковы запіс PsiCash. Ранейшы баланс з гэтай прылады быў перанесены ў ваш уліковы запіс, але гэта апошняе аб’яднанне балансаў.</string>
 
     <!-- Title of the PsiCash account log out alert confirmation dialog -->
     <string name="psicash_logout_alert_title">Выхад</string>
