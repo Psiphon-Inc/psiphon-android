@@ -628,4 +628,13 @@
 
     <!-- Generic 'Dismiss' button label for dialogs and alerts -->
     <string name="label_dismiss">إغلاق</string>
+
+    <!-- Title of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon Pro UI features. -->
+    <string name="install_app_to_unlock_title">ثبّت %s</string>
+
+    <!-- Description of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon Pro UI features. -->
+    <string name="install_app_to_unlock_description">ثبّت %s من متجر Play للبقاء متصلاً بـ Psiphon مجانًا</string>
+
+    <!-- Header text above "Update Psiphon Pro" action in the unlock required dialog. -->
+    <string name="update_psiphon_pro_action_header">أولاً، حدّث Psiphon Pro</string>
 </resources>
