@@ -44,14 +44,29 @@
     <string name="rate_unit_tbps_bits">Tbps</string>
     <string name="rate_unit_pbps_bits">Pbps</string>
 
+
+    <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
+    <string name="speed_rate_limit_not_available">የለም</string>
+
     <!-- Text shown on the home tab under Psiphon speed limit label when the there is no speed limit, like when the user has an unlimited subscription, for example -->
     <string name="speed_rate_limit_no_limit">ገደብ የለም</string>
 
     <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
          the workflow to subscribe for premium access. -->
     <string name="rate_limit_text_subscribe_button">አሁንኑ አስተካክል!</string>
-    <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
-    <string name="speed_rate_limit_not_available">የለም</string>
+
+    <!-- Alert error message informing user that their Speed Boost purchase request failed because of
+    an unknown error. Note: 'PsiCash' should not be translated or transliterated. -->
+    <string name="psicash_transaction_invalid_message">ከPsiCash አገልጋይ ልክ ያልሆነ ምላሽ።</string>
+
+    <!-- Internal message not seen by the users, indicates successful Speed Boost purchase. -->
+    <string name="psicash_transaction_success_message">በሥዬት ተላቅቻል።</string>
+
+    <!-- Alert error message informing user that their Speed Boost purchase request failed because they have an insufficient balance.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through Psiphon.
+    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
+    anything that indicates a fast or unrestricted speed. -->
+    <string name="psicash_transaction_insufficient_balance_message">ለፍጥነት ጭማሬ ግራ አልታዋቅው ባላንስ።</string>
 
     <!-- Text which appears in the Speed Boost meter when the user has activated Speed Boost accompanied with a countdown timer showing how much time
     of the Speed Boost mode has left, like following 'Speed Boost Active - 16:49'. Please keep this text concise as the width of the text box
@@ -131,6 +146,12 @@
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">ግንኙነት አቋርጥ</string>
 
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="purchase_required_prompt_title">እንዴት በአካባቢዎ ውስጥ Psiphon ማግኘት ይቻላል።</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="unlock_required_prompt_body">በአካባቢዎ ውስጥ Psiphon ማግኘት አሁን የእርስዎን ድጋፍ ይፈልጋል። Psiphon ለበጎ አሳሳቢዎች እንዲቀጥል በሚችሉበት መንገድ ይምረጡ።</string>
+
     <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_hr">1 ሰዓት</string>
 
@@ -143,41 +164,23 @@
     <!-- Label on a button. Clicking this button will buy 1 months (31days) of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_month">1 ወር</string>
 
-    <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
-    <string name="subscribe_card_title">ይመዝገቡ </string>
-
-    <!-- Clickable text label, clicking this opens a dialog with various speed boost options available for purchase.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit.
-    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
-    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_card_title">ፍጥነት ጭማሬ</string>
-
-    <!-- Missing strings that need to be added -->
-    <!-- Alert error message informing user that their Speed Boost purchase request failed because of an unknown error. Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_transaction_invalid_message">ከPsiCash አገልጋይ ልክ ያልሆነ ምላሽ።</string>
-
-    <!-- Internal message not seen by the users, indicates successful Speed Boost purchase. -->
-    <string name="psicash_transaction_success_message">በሥዬት ተላቅቻል።</string>
-
-    <!-- Alert error message informing user that their Speed Boost purchase request failed because they have an insufficient balance. -->
-    <string name="psicash_transaction_insufficient_balance_message">ለፍጥነት ጭማሬ ግራ አልታዋቅው ባላንስ።</string>
-
-    <!-- The 'days' part in a date interval string as in "10 d 13 hr". -->
+    <!-- The 'days' part in a date interval string as in "10 d 13 hr". Reorder the format specifier '%d' if in the translated language ordering of time unit and amount is different from English. -->
     <plurals name="speed_boost_left_days">
         <item quantity="one">%d ቀ</item>
         <item quantity="other">%d ቀ</item>
     </plurals>
 
-    <!-- The 'hours' part in a date interval string as in "9 d 11 hr". -->
+    <!-- The 'hours' part in a date interval string as in "9 d 11 hr". Reorder the format specifier '%d' if in the translated language ordering of time unit and amount is different from English. -->
     <plurals name="speed_boost_left_hours">
         <item quantity="one">%d ሰ</item>
         <item quantity="other">%d ሰ</item>
     </plurals>
 
-    <!-- This format string specifies the order of 'days' and 'hours' in the date interval string -->
+    <!-- This format string specifies the order of 'days' and 'hours' in the date interval string where the first argument is 'days' and the seconds is 'hours'. Examples: "20 d 11 hr", "1 d 2 hr", etc.
+     Reorder the format specifiers '%1$s' and '%2$s' if in the translated language ordering 'days' and 'hours' in date interval string is different from English. -->
     <string name="speed_boost_left_day_hour_ordered">%1$s %2$s</string>
 
-    <!-- Do not translate or transliterate 'PsiCash'. PsiCash is a unit of currency here. -->
+    <!-- Do not translate or transliterate 'PsiCash'. PsiCash is a unit of currency here. Reorder the format specifier '%s' if in the translated language ordering of unit and amount is different from English. -->
     <string name="psicash_price_format">%s PsiCash</string>
 
     <!-- Icon description for the Conduit app icon, do not translate or transliterate 'Conduit'. -->
@@ -195,8 +198,17 @@
     <!-- Clickable text label to open the Conduit app, do not translate or transliterate 'Conduit'. -->
     <string name="launch_conduit_action">Conduitን ክፈት</string>
 
+    <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
+    <string name="subscribe_card_title">ይመዝገቡ </string>
+
     <!-- Description text under the Subscribe clickable item -->
     <string name="subscribe_card_description">ያላቋረጠ የPsiphon መዳረሻ ለማግኘት ምዝገባ እቅድ ይግዙ</string>
+
+    <!-- Clickable text label, clicking this opens a dialog with various speed boost options available for purchase.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit.
+    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
+    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
+    <string name="speed_boost_card_title">ፍጥነት ጭማሬ</string>
 
     <!-- Description text under the Speed Boost clickable item -->
     <string name="speed_boost_card_description">ሰዓት ተኮር የPsiphon መዳረሻ ለማግኘት በPsiCash ፍጥነት ጭማሬ ይግዙ</string>
@@ -222,20 +234,16 @@
     <!-- Access status label shown on the home tab when the user has an unlimited subscription plan -->
     <string name="subscription_unlimited">ምዝገባ፦ ያላገደበ</string>
 
-    <!-- Access status label shown on the home tab when the user has time pass plan. -->
+    <!-- Access status label shown on the home tab when the user has time pass plan. A time pass is a single use license that is valid for a certain
+    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
     <string name="time_pass_active">የጊዜ ፈቃድ፦ ሰራተኛ</string>
 
     <!-- Access status label shown on the home tab when the user has no subscription or time pass plan -->
     <string name="subscription_none">ነጻ መዳረሻ</string>
 
-    <!-- Access status label shown on the home tab when the user is running the Conduit app on the same device which may provide enhanced access to Psiphon. Do not translate or transliterate 'Conduit'. -->
+    <!-- Access status label shown on the home tab when the user is running the Conduit app on the same device which may provide enhanced access to Psiphon.
+     Do not translate or transliterate 'Conduit'. -->
     <string name="conduit_active">Conduit፦ ሰራተኛ</string>
-
-    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
-    <string name="purchase_required_prompt_title">እንዴት በአካባቢዎ ውስጥ Psiphon ማግኘት ይቻላል።</string>
-
-    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
-    <string name="unlock_required_prompt_body">በአካባቢዎ ውስጥ Psiphon ማግኘት አሁን የእርስዎን ድጋፍ ይፈልጋል። Psiphon ለበጎ አሳሳቢዎች እንዲቀጥል በሚችሉበት መንገድ ይምረጡ።</string>
 
     <!-- Short (collapsed) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
     <string name="notification_text_unlock_required_short">የPsiphon መዳረሻ ታግዷል። ለተጨማሪ መረጃ ይንኩ</string>
@@ -244,5 +252,5 @@
     <string name="notification_text_unlock_required_long">በአካባቢዎ ውስጥ ነጻ የPsiphon መዳረሻ አልተገኘም። የመክፈቻ አማራጮችን ለማየት ይንኩ</string>
 
     <!-- Generic 'Dismiss' button label for dialogs and alerts -->
-    <string name="label_dismiss">ዝጋ</string>
+    <string name="label_dismiss">አሰናብት</string>
 </resources>

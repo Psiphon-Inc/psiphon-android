@@ -615,6 +615,7 @@
     <!-- Access status label shown on the home tab when the user is running the Conduit app on the same device which may provide enhanced access to Psiphon.
      Do not translate or transliterate 'Conduit'. -->
     <string name="conduit_active">Conduit: Активний</string>
+
     <!-- Short (collapsed) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
     <string name="notification_text_unlock_required_short">Доступ до Psiphon заблоковано. Торкніться, щоб дізнатися більше</string>
 

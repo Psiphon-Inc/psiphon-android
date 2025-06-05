@@ -64,4 +64,6 @@
     <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
     <string name="subscribe_card_title">구독</string>
 
-    </resources>
+    <!-- Generic 'Dismiss' button label for dialogs and alerts -->
+    <string name="label_dismiss">그만 보기</string>
+</resources>

@@ -67,7 +67,6 @@
   <!--Data collection disclosure prompt title-->
   <!--First sentence of the data collection disclosure prompt body. The format qualifier %s will be replaced by the app name, either 'Psiphon' or 'Psiphon Pro' and should be placed according to the rules of the translation language.-->
   <!--Data collection disclosure list item-->
-  <!--Data collection disclosure list item-->
   <string name="vpn_data_collection_disclosure_bp1">Şəhəriniz, ölkəniz, İSP və istəyə bağlı olaraq təxmini məkanınız. Şəhər, ölkə və İSP bizim serverlərimizə qoşulduğunuz IP ünvanından alınır və IP ünvanının özü heç vaxt qeydə alınmır. Bu məlumatlar istifadə və performans statistikaları və xidmət sağlamlığı məqsədləri üçün toplanır.</string>
   <!--Data collection disclosure list item-->
   <string name="vpn_data_collection_disclosure_bp2">Bizə diaqnostik və ya çökən məlumat rəyi göndərdiyiniz zaman e-poçtunuz. Rəydə e-poçt vermək istəyə bağlıdır.</string>

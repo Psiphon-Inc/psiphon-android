@@ -10,6 +10,7 @@
   <string name="StatusActivity.VpnPromptCancelledTitle">Psiphon VPN འགོ་རྩོམ་མི་ཐུབ།</string>
   <string name="StatusActivity.VpnPromptCancelledMessage">Psiphon གིས་VPN འགོ་རྩོམ་མི་ཐུབ། VPN གོ་རིམ་མང་པོ་དུས་མཚུངས་སུ་འཁོར་ཐུབ་མི་འདུག། VPN གོ་རིམ་གཞན་ཞིག་སྦྱོར་ཡོད་མེད་དང་ཧ་གོང་ནས་ཁ་ཕྱེ་ཡོད་མེད་ཞིབ་བཤེར་གནང་།</string>
   <string name="selected_region_currently_not_available">བདམས་པའི་ས་ཁུལ་ད་ལྟ་མེད། ས་ཁུལ་གཞན་ཞིག་གདམ་རོགས།</string>
+  <string name="ads_consent_preference_dialog_title">བསྐྱར་སྒྲིག་བྱ།</string>
   <string name="preference_language_selection_summary">སྐད་ཡིག་གདམ་རོགས།</string>
   <string name="preference_language_selection_title">སྐད་ཡིག</string>
   <string name="preference_language_title">སྐད་ཡིག་གདམ་ཁ</string>
@@ -84,8 +85,6 @@
   <string name="vpn_data_collection_disclosure_bp2">ང་ཚོར་ཞིབ་འཇུག་གམ་བཤིག་པའི་ཐོ་འགོད་ལན་འདེབས་གནང་སྐབས་ཁྱེད་ཀྱི་གློག་འཕྲིན། ལན་འདེབས་ནང་གློག་འཕྲིན་འབྲི་བ་གདམ་ཁ་ཁོ་ན།</string>
   <!--Data collection disclosure list item-->
   <string name="vpn_data_collection_disclosure_bp3">ཁྱེད་ཀྱི་PsiCash རུས་ཐོའི་སྤྱོད་མཁན་མིང་། གསང་ཨང་དང་གདམ་ཁར་གློག་འཕྲིན།</string>
-  <!--Generic 'close' button label-->
-  <string name="close_btn_label">སྒོ་རྒྱག</string>
   <!--Notifications permission rationale alert title. The format qualifier %s will be replaced by the app name, either 'Psiphon' or 'Psiphon Pro' and should be placed according to the rules of the translation language.-->
   <string name="notifications_permission_rationale_title">%s བརྡ་ལན།</string>
   <!--First sentence of the notifications permission rationale message. The format qualifier %s will be replaced by the app name, either 'Psiphon' or 'Psiphon Pro' and should be placed according to the rules of the translation language.-->
@@ -102,6 +101,14 @@
   <string name="notifications_permission_rationale_upgrade_available_bp">གོ་རིམ་པར་གཞི་གསར་བ་ཐོབ་ཐུབ།</string>
   <!--Notifications permission rationale last sentence-->
   <string name="notifications_permission_rationale_disable_any_time">ཁྱེད་ཀྱིས་དུས་ནམ་རུང་གོ་རིམ་སྒྲིག་བཀོད་ནང་བརྡ་ལན་མི་སྤྱོད་པར་བཟོ་ཐུབ།</string>
+  <!--A message shown on the blocking overlay of the PXE experiment screen while Psiphon is connecting to the server.
+    Note: 'Psiphon' should not be translated or transliterated.-->
+  <!--Generic 'close' button label-->
+  <string name="close_btn_label">སྒོ་རྒྱག</string>
+  <!--Generic 'close' alert title-->
+  <string name="close_alert_title">སྒོ་རྒྱག</string>
+  <!--Generic 'close' alert prompt message-->
+  <!--Toast message shown briefly after user completes PXE experiment tests-->
   <!--Message telling users to enable NFC in system settings in order to use NFC connection data exchange feature-->
   <string name="enable_nfc_in_settings">སྒྲིག་བཀོད་ནང་NFC སྤྱོད་པར་གནང་།</string>
   <!--NFC connection data exchange error message-->

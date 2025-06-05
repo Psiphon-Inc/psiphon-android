@@ -82,4 +82,6 @@
     'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
     <string name="speed_boost_card_title">വേഗത കൂട്ടല്‍</string>
 
-    </resources>
+    <!-- Generic 'Dismiss' button label for dialogs and alerts -->
+    <string name="label_dismiss">നിരാകരിക്കുക</string>
+</resources>

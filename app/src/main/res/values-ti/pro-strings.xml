@@ -37,4 +37,6 @@
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">ኣይተራኽብ</string>
 
-    </resources>
+    <!-- Generic 'Dismiss' button label for dialogs and alerts -->
+    <string name="label_dismiss">ምብራር</string>
+</resources>

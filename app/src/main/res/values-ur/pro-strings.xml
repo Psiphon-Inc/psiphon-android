@@ -36,8 +36,20 @@
     -->
     <string name="rate_with_unit_template">%1$s %2$s</string>
 
+    <!-- Unit labels used with 'rate_with_unit_template' for bit-per-second speeds. These represent: bits, kilobits, megabits, etc. per second. -->
+    <string name="rate_unit_bps_bits">bps</string>
+    <string name="rate_unit_kbps_bits">Kbps</string>
+    <string name="rate_unit_mbps_bits">Mbps</string>
+    <string name="rate_unit_gbps_bits">Gbps</string>
+    <string name="rate_unit_tbps_bits">Tbps</string>
+    <string name="rate_unit_pbps_bits">Pbps</string>
+
+
     <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
     <string name="speed_rate_limit_not_available">دستیاب نہیں</string>
+
+    <!-- Text shown on the home tab under Psiphon speed limit label when the there is no speed limit, like when the user has an unlimited subscription, for example -->
+    <string name="speed_rate_limit_no_limit">کوئی حد نہیں</string>
 
     <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
          the workflow to subscribe for premium access. -->
@@ -230,6 +242,14 @@
 
     <!-- Generic billing error message seen by user if there is a billing problem with the PsiCash purchase. Do not translate or transliterate word PsiCash -->
     <string name="psicash_purchase_not_available_error_message">PsiCash خریداری فی الحال دستیاب نہیں ہے، براہ کرم بعد میں دوبارہ کوشش کریں</string>
+
+    <!-- An updated alert message seen by the user when they try to use one of Speed Boost options but their PsiCash balance is insufficient.
+    Note that since we are phasing out the PsiCash system, this message is no longer offering the user to buy more PsiCash, and is just informing
+    them that they do not have enough PsiCash to activate the Speed Boost option.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed.-->
+    <string name="speed_boost_insufficient_balance_alert_update">آپ کے پاس اس اسپیڈ بوسٹ آپشن کو فعال کرنے کے لیے کافی PsiCash نہیں ہے۔</string>
 
     <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_notification_title">Psiphon Pro کو اپ گریڈ کریں</string>
@@ -494,6 +514,12 @@
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">منقطع کریں</string>
 
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="purchase_required_prompt_title">آپ کے علاقے میں Psiphon تک رسائی کا طریقہ۔</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="unlock_required_prompt_body">آپ کے علاقے میں Psiphon تک رسائی اب آپ کی مدد کی ضرورت ہے۔ جاری رکھنے کے لیے کوئی دستیاب آپشن منتخب کر کے Psiphon کو ان لوگوں کے لیے قابل رسائی رکھنے میں مدد کریں جنہیں اس کی سب سے زیادہ ضرورت ہے۔</string>
+
     <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_hr">1 گھنٹہ</string>
 
@@ -505,6 +531,18 @@
 
     <!-- Label on a button. Clicking this button will buy 1 months (31days) of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_month">1 مہینہ</string>
+
+    <!-- The 'days' part in a date interval string as in "10 d 13 hr". Reorder the format specifier '%d' if in the translated language ordering of time unit and amount is different from English. -->
+    <plurals name="speed_boost_left_days">
+        <item quantity="one">%d دن</item>
+        <item quantity="other">%d دن</item>
+    </plurals>
+
+    <!-- The 'hours' part in a date interval string as in "9 d 11 hr". Reorder the format specifier '%d' if in the translated language ordering of time unit and amount is different from English. -->
+    <plurals name="speed_boost_left_hours">
+        <item quantity="one">%d گھنٹہ</item>
+        <item quantity="other">%d گھنٹے</item>
+    </plurals>
 
     <!-- This format string specifies the order of 'days' and 'hours' in the date interval string where the first argument is 'days' and the seconds is 'hours'. Examples: "20 d 11 hr", "1 d 2 hr", etc.
      Reorder the format specifiers '%1$s' and '%2$s' if in the translated language ordering 'days' and 'hours' in date interval string is different from English. -->
@@ -558,29 +596,6 @@
     <!-- Description for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
     <string name="update_psiphon_pro_action_description">اس خصوصیت تک رسائی کے لیے Psiphon Pro کے تازہ ترین ورژن میں اپ ڈیٹ کریں</string>
 
-    <!-- Unit labels used with 'rate_with_unit_template' for bit-per-second speeds. These represent: bits, kilobits, megabits, etc. per second. -->
-    <string name="rate_unit_bps_bits">bps</string>
-    <string name="rate_unit_kbps_bits">Kbps</string>
-    <string name="rate_unit_mbps_bits">Mbps</string>
-    <string name="rate_unit_gbps_bits">Gbps</string>
-    <string name="rate_unit_tbps_bits">Tbps</string>
-    <string name="rate_unit_pbps_bits">Pbps</string>
-
-    <!-- Text shown on the home tab under Psiphon speed limit label when the there is no speed limit, like when the user has an unlimited subscription, for example -->
-    <string name="speed_rate_limit_no_limit">کوئی حد نہیں</string>
-
-    <!-- The 'days' part in a date interval string as in "10 d 13 hr". Reorder the format specifier '%d' if in the translated language ordering of time unit and amount is different from English. -->
-    <plurals name="speed_boost_left_days">
-        <item quantity="one">%d دن</item>
-        <item quantity="other">%d دن</item>
-    </plurals>
-
-    <!-- The 'hours' part in a date interval string as in "9 d 11 hr". Reorder the format specifier '%d' if in the translated language ordering of time unit and amount is different from English. -->
-    <plurals name="speed_boost_left_hours">
-        <item quantity="one">%d گھنٹہ</item>
-        <item quantity="other">%d گھنٹے</item>
-    </plurals>
-
     <!-- Access status label shown on the home tab when the user has a limited subscription plan -->
     <string name="subscription_limited">سبسکرپشن: محدود</string>
 
@@ -606,18 +621,4 @@
 
     <!-- Generic 'Dismiss' button label for dialogs and alerts -->
     <string name="label_dismiss">برخاست کریں</string>
-    <!-- An updated alert message seen by the user when they try to use one of Speed Boost options but their PsiCash balance is insufficient.
-    Note that since we are phasing out the PsiCash system, this message is no longer offering the user to buy more PsiCash, and is just informing
-    them that they do not have enough PsiCash to activate the Speed Boost option.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
-    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
-    indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_insufficient_balance_alert_update">آپ کے پاس اس اسپیڈ بوسٹ آپشن کو فعال کرنے کے لیے کافی PsiCash نہیں ہے۔</string>
-
-    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
-    <string name="purchase_required_prompt_title">آپ کے علاقے میں Psiphon تک رسائی کا طریقہ۔</string>
-
-    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
-    <string name="unlock_required_prompt_body">آپ کے علاقے میں Psiphon تک رسائی اب آپ کی مدد کی ضرورت ہے۔ جاری رکھنے کے لیے کوئی دستیاب آپشن منتخب کر کے Psiphon کو ان لوگوں کے لیے قابل رسائی رکھنے میں مدد کریں جنہیں اس کی سب سے زیادہ ضرورت ہے۔</string>
-
 </resources>

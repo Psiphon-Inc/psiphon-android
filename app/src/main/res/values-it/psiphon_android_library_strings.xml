@@ -116,11 +116,13 @@
   <!--Description of option to select apps to exclusively tunnel-->
   <plurals name="preference_routing_select_apps_to_include_summary">
     <item quantity="one">%d app sarà instradata tramite VPN</item>
+    <item quantity="many">%d app saranno instradata tramite VPN</item>
     <item quantity="other">%d app saranno instradata tramite VPN</item>
   </plurals>
   <!--Description of option to select apps to not tunnel-->
   <plurals name="preference_routing_select_apps_to_exclude_summary">
     <item quantity="one">%d app sarà esclusa dalla VPN</item>
+    <item quantity="many">%d app saranno escluse dalla VPN</item>
     <item quantity="other">%d app saranno escluse dalla VPN</item>
   </plurals>
   <!--Vpn service notification text shown in the toolbar when tunneling all apps-->
@@ -128,11 +130,13 @@
   <!--Vpn service notification text shown in the toolbar when tunneling only selected apps-->
   <plurals name="psiphon_service_notification_message_vpn_include_apps">
     <item quantity="one">Tunneling %d app</item>
+    <item quantity="many">Tunneling %d app</item>
     <item quantity="other">Tunneling %d app</item>
   </plurals>
   <!--Vpn service notification text shown in the toolbar when not tunneling selected apps-->
   <plurals name="psiphon_service_notification_message_vpn_exclude_apps">
     <item quantity="one">%d app esclusa dal tunnel</item>
+    <item quantity="many">%d app escluse dal tunnel</item>
     <item quantity="other">%d app escluse dal tunnel</item>
   </plurals>
   <!--Text shown in the footer of the VPN settings screen notifying the user that certain Psiphon apps are automatically excluded from VPN routing, do not translate or transliterate "Psiphon"-->
@@ -162,11 +166,10 @@
   <!--The log message is shown to the user if an upstream proxy error occurs. The '%s' is the detail of the error.-->
   <string name="upstream_proxy_error">Errore proxy di transito: %s</string>
   <string name="start_tunnel_failed">Avvio Tunnel fallito: %s</string>
+  <string name="vpn_exclusions_conflict">Ci sono una o più applicazioni in conflitto nelle tue esclusioni VPN attuali. Vai alle impostazioni VPN e passa alla modalità \'Tunnel tutte le app\' per connetterti.</string>
   <string name="tunnel_connecting">Connessione Tunnel in corso...</string>
   <string name="tunnel_connected">Tunnel connesso</string>
   <string name="waiting">In attesa...</string>
-  <string name="vpn_exclusions_conflict">Ci sono una o più applicazioni in conflitto nelle tue esclusioni VPN attuali. Vai alle impostazioni VPN e passa alla modalità \'Tunnel tutte le app\' per connetterti.</string>
-
   <string name="label_vpn_settings">Impostazioni VPN</string>
   <string name="label_proxy_settings">Impostazioni proxy</string>
   <string name="preference_summary_no_proxy">Nessun proxy</string>
@@ -174,7 +177,6 @@
   <string name="preference_summary_system_proxy">Proxy di sistema</string>
   <string name="disableTimeoutsPreferenceTitle">Disattiva timeout</string>
   <string name="downloadWiFiOnlyPreferenceTitle">Solo Wi-Fi</string>
-
   <string name="unsafeTrafficAlertsOptInPreferenceTitle">Mostra avvisi MalAware</string>
   <string name="unsafeTrafficAlertsOptInPreferenceSummary">Ricevi notifiche quando Psiphon rileva traffico malware proveniente dal tuo dispositivo.</string>
   <string name="aboutMalAware">Informazioni su MalAware</string>

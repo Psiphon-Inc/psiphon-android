@@ -58,4 +58,6 @@
      Reorder the format specifiers '%1$s' and '%2$s' if in the translated language ordering 'days' and 'hours' in date interval string is different from English. -->
     <string name="speed_boost_left_day_hour_ordered">%1$s %2$s</string>
 
-    </resources>
+    <!-- Generic 'Dismiss' button label for dialogs and alerts -->
+    <string name="label_dismiss">เลิกทำ</string>
+</resources>

@@ -43,6 +43,8 @@
     <string name="rate_unit_gbps_bits">Gbps</string>
     <string name="rate_unit_tbps_bits">Tbit/s</string>
     <string name="rate_unit_pbps_bits">Pbit/s</string>
+
+
     <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
     <string name="speed_rate_limit_not_available">Non disponible</string>
 
@@ -619,6 +621,5 @@
     <string name="notification_text_unlock_required_long">L\'accès gratuit à Psiphon n\'est plus disponible dans votre région. Touchez pour voir les options de déblocage</string>
 
     <!-- Generic 'Dismiss' button label for dialogs and alerts -->
-    <string name="label_dismiss">Ignorer</string>
-
+    <string name="label_dismiss">Fermer</string>
 </resources>

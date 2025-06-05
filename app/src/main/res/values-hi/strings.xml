@@ -50,45 +50,6 @@
   <string name="vpn_always_on_preference_not_available_summary">Android 7.0 या अधिक की आवश्यकता है</string>
   <string name="vpn_exclusions_tip_summary">क्लासिक ब्राउज़र-ओनली मोड के लिए केवल एक ब्राउज़र का चयन करें</string>
   <!--Title of the toolbar notification which is shown to the user when Psiphon server detects an unsafe Internet traffic-->
-  <!--Content of the toolbar notification which is shown to the user when Psiphon server detects an unsafe Internet traffic-->
-  <!--Title of the alert dialog which is shown to the user when they click toolbar notification of unsafe Internet traffic-->
-  <!--Content of the alert dialog which is shown to the user when they click toolbar notification of unsafe Internet traffic-->
-  <!--Title of the alert dialog which prompts the user to enable or disable unsafe Internet traffic alerts-->
-  <!--Content of the alert dialog which prompts the user to enable or disable unsafe Internet traffic alerts-->
-  <!--More info with a URL link in the contents of the alert dialog which prompts the user to enable or disable unsafe Internet traffic alerts-->
-  <!--"Upstream proxy error" notification title-->
-  <!--"Upstream proxy error" notification text-->
-  <!--"Upstream proxy error" alert dialog title-->
-  <!--"Upstream proxy error" alert dialog message-->
-  <!--Notification title for the 'Psiphon crash detected' notification-->
-  <!--Notification short message for the 'Psiphon crash detected' notification-->
-  <!--Notification longer message for the 'Psiphon crash detected' notification-->
-  <!--Data collection disclosure prompt button text-->
-  <!--Data collection disclosure prompt title-->
-  <!--First sentence of the data collection disclosure prompt body. The format qualifier %s will be replaced by the app name, either 'Psiphon' or 'Psiphon Pro' and should be placed according to the rules of the translation language.-->
-  <!--Data collection disclosure list item-->
-  <string name="vpn_data_collection_disclosure_bp1">आपका शहर, देश, ISP और वैकल्पिक रूप से अनुमानित स्थान। शहर, देश और ISP आपके द्वारा हमारे सर्वर से जुड़ने वाले IP पते से प्राप्त होते हैं, और IP पता स्वयं कभी लॉग नहीं किया जाता। यह डेटा उपयोग और प्रदर्शन आंकड़े और सेवा स्वास्थ्य उद्देश्यों के लिए एकत्र किया जाता है।</string>
-  <!--Data collection disclosure list item-->
-  <string name="vpn_data_collection_disclosure_bp2">आपका ईमेल, जब आप हमें डायग्नोस्टिक या क्रैश लॉग फीडबैक भेजते हैं। फीडबैक में ईमेल प्रदान करना वैकल्पिक है।</string>
-  <!--Data collection disclosure list item-->
-  <string name="vpn_data_collection_disclosure_bp3">आपका PsiCash खाता उपयोगकर्ता नाम, पासवर्ड और वैकल्पिक रूप से ईमेल।</string>
-  <!--Notifications permission rationale alert title. The format qualifier %s will be replaced by the app name, either 'Psiphon' or 'Psiphon Pro' and should be placed according to the rules of the translation language.-->
-  <string name="notifications_permission_rationale_title">%s सूचनाएं</string>
-  <!--First sentence of the notifications permission rationale message. The format qualifier %s will be replaced by the app name, either 'Psiphon' or 'Psiphon Pro' and should be placed according to the rules of the translation language.-->
-  <string name="notifications_permission_rationale_intro">%s ऐप बैकग्राउंड में होने पर आपको महत्वपूर्ण जानकारी प्रदान करने के लिए सूचनाओं का उपयोग करता है। इसमें शामिल है:</string>
-  <!--Notifications permission rationale list item-->
-  <string name="notifications_permission_rationale_vpn_state_bp">आपकी VPN कनेक्शन स्थिति में परिवर्तन।</string>
-  <!--Notifications permission rationale list item-->
-  <string name="notifications_permission_rationale_connection_problems_bp">आपके कनेक्शन में समस्याएं।</string>
-  <!--Notifications permission rationale list item-->
-  <string name="notifications_permission_rationale_crash_reports_bp">क्रैश रिपोर्ट।</string>
-  <!--Notifications permission rationale list item, do not translate or transliterate "MalAware"-->
-  <string name="notifications_permission_rationale_malaware_alerts_bp">MalAware अलर्ट।</string>
-  <!--Notifications permission rationale list item-->
-  <string name="notifications_permission_rationale_upgrade_available_bp">नए ऐप संस्करण उपलब्ध हैं।</string>
-  <!--Notifications permission rationale last sentence-->
-  <string name="notifications_permission_rationale_disable_any_time">आप किसी भी समय ऐप सेटिंग्स में सूचनाओं को अक्षम कर सकते हैं।</string>
-  <!--Title of the toolbar notification which is shown to the user when Psiphon server detects an unsafe Internet traffic-->
   <string name="unsafe_traffic_alert_notification_title">Psiphon MalAware</string>
   <!--Content of the toolbar notification which is shown to the user when Psiphon server detects an unsafe Internet traffic-->
   <string name="unsafe_traffic_alert_notification_message">मैलवेयर ट्रैफिक का पता चला! अधिक जानने के लिए क्लिक करें।</string>
@@ -122,6 +83,28 @@
   <string name="vpn_data_collection_disclosure_prompt_title">डेटा संग्रह प्रकटीकरण</string>
   <!--First sentence of the data collection disclosure prompt body. The format qualifier %s will be replaced by the app name, either 'Psiphon' or 'Psiphon Pro' and should be placed according to the rules of the translation language.-->
   <string name="vpn_data_collection_disclosure_top">%s आपको इंटरनेट सामग्री तक बिना सेंसर पहुंच प्रदान करने के लिए Android VPN सेवा का उपयोग करता है। हम निम्नलिखित जानकारी एकत्र, संकलित और संग्रहीत करते हैं:</string>
+  <!--Data collection disclosure list item-->
+  <string name="vpn_data_collection_disclosure_bp1">आपका शहर, देश, ISP और वैकल्पिक रूप से अनुमानित स्थान। शहर, देश और ISP आपके द्वारा हमारे सर्वर से जुड़ने वाले IP पते से प्राप्त होते हैं, और IP पता स्वयं कभी लॉग नहीं किया जाता। यह डेटा उपयोग और प्रदर्शन आंकड़े और सेवा स्वास्थ्य उद्देश्यों के लिए एकत्र किया जाता है।</string>
+  <!--Data collection disclosure list item-->
+  <string name="vpn_data_collection_disclosure_bp2">आपका ईमेल, जब आप हमें डायग्नोस्टिक या क्रैश लॉग फीडबैक भेजते हैं। फीडबैक में ईमेल प्रदान करना वैकल्पिक है।</string>
+  <!--Data collection disclosure list item-->
+  <string name="vpn_data_collection_disclosure_bp3">आपका PsiCash खाता उपयोगकर्ता नाम, पासवर्ड और वैकल्पिक रूप से ईमेल।</string>
+  <!--Notifications permission rationale alert title. The format qualifier %s will be replaced by the app name, either 'Psiphon' or 'Psiphon Pro' and should be placed according to the rules of the translation language.-->
+  <string name="notifications_permission_rationale_title">%s सूचनाएं</string>
+  <!--First sentence of the notifications permission rationale message. The format qualifier %s will be replaced by the app name, either 'Psiphon' or 'Psiphon Pro' and should be placed according to the rules of the translation language.-->
+  <string name="notifications_permission_rationale_intro">%s ऐप बैकग्राउंड में होने पर आपको महत्वपूर्ण जानकारी प्रदान करने के लिए सूचनाओं का उपयोग करता है। इसमें शामिल है:</string>
+  <!--Notifications permission rationale list item-->
+  <string name="notifications_permission_rationale_vpn_state_bp">आपकी VPN कनेक्शन स्थिति में परिवर्तन।</string>
+  <!--Notifications permission rationale list item-->
+  <string name="notifications_permission_rationale_connection_problems_bp">आपके कनेक्शन में समस्याएं।</string>
+  <!--Notifications permission rationale list item-->
+  <string name="notifications_permission_rationale_crash_reports_bp">क्रैश रिपोर्ट।</string>
+  <!--Notifications permission rationale list item, do not translate or transliterate "MalAware"-->
+  <string name="notifications_permission_rationale_malaware_alerts_bp">MalAware अलर्ट।</string>
+  <!--Notifications permission rationale list item-->
+  <string name="notifications_permission_rationale_upgrade_available_bp">नए ऐप संस्करण उपलब्ध हैं।</string>
+  <!--Notifications permission rationale last sentence-->
+  <string name="notifications_permission_rationale_disable_any_time">आप किसी भी समय ऐप सेटिंग्स में सूचनाओं को अक्षम कर सकते हैं।</string>
   <!--A message shown on the blocking overlay of the PXE experiment screen while Psiphon is connecting to the server.
     Note: 'Psiphon' should not be translated or transliterated.-->
   <string name="pxe_web_wait_tunnel_connecting">कृपया Psiphon के कनेक्ट होने तक प्रतीक्षा करें</string>
@@ -131,6 +114,7 @@
   <string name="close_alert_title">बंद  करें </string>
   <!--Generic 'close' alert prompt message-->
   <string name="close_alert_message">क्या आप अब यह विंडो बंद करना चाहेंगे/चाहेंगी?</string>
+  <!--Toast message shown briefly after user completes PXE experiment tests-->
   <!--Message telling users to enable NFC in system settings in order to use NFC connection data exchange feature-->
   <string name="enable_nfc_in_settings">कृपया सेटिंग्स में NFC सक्षम करें</string>
   <!--NFC connection data exchange error message-->

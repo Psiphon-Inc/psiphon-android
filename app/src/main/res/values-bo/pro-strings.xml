@@ -1,10 +1,93 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- New option title in the 'More options' dialog. It appears in the Proxy Setting category.
+        When clicked a new screen opens where users can specify additional HTTP headers to be added to
+        to HTTP proxy requests. Users may specify up to 3 custom headers -->
+    <string name="custom_proxy_headers_title">HTTP མགོ་བར་ར་རང་མིང</string>
+
+    <!--  Summary text for 'Custom HTTP header' option, appears underneath the option title -->
+    <string name="custom_proxy_headers_summary">པྦོད་སི་བསྐཏ་སྒོལ་ཥོང་གི་ HTTP མགོ་བར་་རང་མིང་བགོ་བབིག་པ།</string>
+
+    <!-- Checkbox that toggles adding custom headers feature-->
+    <string name="custom_proxy_headers_checkbox_title">རང་མིང་རེགས་པགང་བགོ་ གི་ HTTP མགོ་བར་ རང་མིང</string>
+
+    <!--  Summary text for 'Add custom HTTP headers' checkbox, appears underneath the checkbox title -->
+    <string name="custom_proxy_headers_checkbox_description">ཕཱར་བསྐཏ་པྦོད་སི་ཨ་ཐོང་ཅན་་རང་མིང་རེགས་པགང་གི་ HTTP མགོ་བར་ རང་མིང་བཆུགས་པ།</string>
+    <string name="custom_proxy_header_group_1">མགོ་བར་་དང་པོ།</string>
+    <string name="custom_proxy_header_group_2">མགོ་བར་ གཉིས་པ།</string>
+    <string name="custom_proxy_header_group_3">མགོ་བར་ གསུམ་པ།</string>
+    <string name="custom_proxy_header_group_4">མགོ་བར་ བཞི་པ།</string>
+    <string name="custom_proxy_header_group_5">མགོ་བར་ ལང་པ།</string>
+    <string name="custom_proxy_header_group_6">མགོ་བར་ ཐྲུག་པ།</string>
+    <string name="custom_proxy_header_name">མགོ་བར་གི་མིང་འབི་རོགས།</string>
+    <string name="custom_proxy_header_value">མགོ་བར་གི་རིན་བ་འབི་རོགས།</string>
+    <string name="custom_proxy_header_ignored_values">སྐཏ་བུང། མིང་སྟོང་མེད་པགི་མགོ་བར་དེ་བུད་མི་བདས་པི་ཡིན།</string>
+    <string name="custom_proxy_header_invalid_name">དོར་བ། མགོ་བར་གི་མིང་ལའ་ཆ་བ་ཕགལ་བལ་བསྐཏ་མེད།</string>
+    <!-- Title for other text showing what the user's current speed limit is. Users have limited
+         speed if they have not paid for premium service. -->
+    <string name="rate_limit_text_title">Psiphon མཨོ་བགི་མཚཽ་ཁུག།</string>
+
+    <!--
+        Template for rendering a rate value and its unit label.
+        %1$s = numeric value (e.g., "5.3"), %2$s = unit label (e.g., "MB/s").
+        Reorder the format specifiers if in your language the unit appears before the value.
+        Example output: "5.3 MB/s", "1.2 Kbps".
+        Reorder the format specifiers '%1$s' and '%2$s' if in the translated language ordering numeric value and rate unit in speed rate string is different from English.
+    -->
+    <string name="rate_with_unit_template">%1$s %2$s</string>
+
+    <!-- Unit labels used with 'rate_with_unit_template' for bit-per-second speeds. These represent: bits, kilobits, megabits, etc. per second. -->
+    <string name="rate_unit_bps_bits">bps</string>
+    <string name="rate_unit_kbps_bits">Kbps</string>
+    <string name="rate_unit_mbps_bits">Mbps</string>
+    <string name="rate_unit_gbps_bits">Gbps</string>
+    <string name="rate_unit_tbps_bits">Tbps</string>
+    <string name="rate_unit_pbps_bits">Pbps</string>
+
+
+    <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
+    <string name="speed_rate_limit_not_available">ནོ་མེད</string>
+
+    <!-- Text shown on the home tab under Psiphon speed limit label when the there is no speed limit, like when the user has an unlimited subscription, for example -->
+    <string name="speed_rate_limit_no_limit">མཚཽ་ཁུག་མེད</string>
+
+    <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
+         the workflow to subscribe for premium access. -->
+    <string name="rate_limit_text_subscribe_button">དའ་བུང་ཀའད་མམ་སྒོན་བ།</string>
+
+    <!-- Text which appears in the Speed Boost meter when the user has activated Speed Boost accompanied with a countdown timer showing how much time
+    of the Speed Boost mode has left, like following 'Speed Boost Active - 16:49'. Please keep this text concise as the width of the text box
+    is restricted in size. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed. -->
+    <string name="speed_boost_active_label">མཨོ་བ་བསྐཏ་རྒོམ་བོ་ནའི་བསྐཏ་རྒོམ་བོ</string>
+
     <!-- Alert dialog action button caption. Clicking this button dismisses the alert dialog, keep concise -->
     <string name="psicash_snackbar_action_ok">འགྲིག་འདུག</string>
 
+    <!-- Speed Boost button that opens a dialog with various speed boost options available for purchase.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit.
+    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
+    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
+    <string name="speed_boost_button_caption">མཨོ་བ་བསྐཏ་རྒོམ</string>
+
+    <!-- SpeedBoost tab title where users may redeem their PsiCash for Speed Boost
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed. -->
+    <string name="speed_boost_tab_title">མཨོ་བ་བསྐཏ་རྒོམ</string>
+
     <!-- Text on the button which takes user to subscription screen -->
     <string name="btn_get_subscription">མངགས་པ།</string>
+
+    <!-- Text on the button which takes user to Speed Boost screen.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed.-->
+    <string name="btn_get_speed_boost">མཨོ་བ་བསྐཏ་རྒོམ</string>
+
+    <!-- Title of the button that dismisses PsiCash account login error alert dialog-->
+    <string name="psicash_login_error_alert_dismiss">རྩིས་བཏོན།</string>
 
     <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Dismisses the log out dialog without any further action when clicked. -->
     <string name="psicash_cancel_lbl">བརྩི་མེད།</string>
@@ -36,6 +119,12 @@
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">མཐུད་མཚམས་བཞག</string>
 
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="purchase_required_prompt_title">ཁྱེད་ཀྱི་ས་ཁུལ་ནང་ Psiphon ལ་འཛུལ་སྤྱོད་བྱེད་པའི་ཐབས།</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="unlock_required_prompt_body">ཁྱེད་ཀྱི་ས་ཁུལ་ནང་ Psiphon ལ་འཛུལ་སྤྱོད་བྱེད་པ་ད་ལྟ་ཁྱེད་ཀྱི་རྒྱབ་སྐྱོར་དགོས་ཡོད། དགོས་མཁོ་ཆེ་བའི་མི་ཚུལ་ལ་དངོས་སུ་འཛུལ་སྤྱོད་བྱེད་པའི་ཐབས་འདེམས།</string>
+
     <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_hr">ཆུ་ཚོད་༡</string>
 
@@ -48,97 +137,84 @@
     <!-- Label on a button. Clicking this button will buy 1 months (31days) of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_month">ཟླ་བ་གཅིག</string>
 
-    <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
-    <string name="subscribe_card_title">མངགས་པ།</string>
-
-    <!-- Missing translations needed for Tibetan -->
-    <!-- New option title in the 'More options' dialog -->
-    <string name="custom_proxy_headers_title">HTTP མགོ་བར་ར་རང་མིང</string>
-    
-    <!-- Summary text for 'Custom HTTP header' option -->
-    <string name="custom_proxy_headers_summary">པྦོད་སི་བསྐཏ་སྒོལ་ཥོང་གི་ HTTP མགོ་བར་་རང་མིང་བགོ་བབིག་པ།</string>
-    
-    <!-- Checkbox that toggles adding custom headers feature-->
-    <string name="custom_proxy_headers_checkbox_title">རང་མིང་རེགས་པགང་བགོ་ གི་ HTTP མགོ་བར་ རང་མིང</string>
-    
-    <!-- Summary text for 'Add custom HTTP headers' checkbox -->
-    <string name="custom_proxy_headers_checkbox_description">ཕཱར་བསྐཏ་པྦོད་སི་ཨ་ཐོང་ཅན་་རང་མིང་རེགས་པགང་གི་ HTTP མགོ་བར་ རང་མིང་བཆུགས་པ།</string>
-    
-    <string name="custom_proxy_header_group_1">མགོ་བར་་དང་པོ།</string>
-    <string name="custom_proxy_header_group_2">མགོ་བར་ གཉིས་པ།</string>
-    <string name="custom_proxy_header_group_3">མགོ་བར་ གསུམ་པ།</string>
-    <string name="custom_proxy_header_group_4">མགོ་བར་ བཞི་པ།</string>
-    <string name="custom_proxy_header_group_5">མགོ་བར་ ལང་པ།</string>
-    <string name="custom_proxy_header_group_6">མགོ་བར་ ཐྲུག་པ།</string>
-    <string name="custom_proxy_header_name">མགོ་བར་གི་མིང་འབི་རོགས།</string>
-    <string name="custom_proxy_header_value">མགོ་བར་གི་རིན་བ་འབི་རོགས།</string>
-    <string name="custom_proxy_header_ignored_values">སྐཏ་བུང། མིང་སྟོང་མེད་པགི་མགོ་བར་དེ་བུད་མི་བདས་པི་ཡིན།</string>
-    <string name="custom_proxy_header_invalid_name">དོར་བ། མགོ་བར་གི་མིང་ལའ་ཆ་བ་ཕགལ་བལ་བསྐཏ་མེད།</string>
-    
-    <!-- Speed limit related strings -->
-    <string name="rate_limit_text_title">Psiphon མཨོ་བགི་མཚཽ་ཁུག།</string>
-    <string name="rate_with_unit_template">%1$s %2$s</string>
-    <string name="rate_unit_bps_bits">bps</string>
-    <string name="rate_unit_kbps_bits">Kbps</string>
-    <string name="rate_unit_mbps_bits">Mbps</string>
-    <string name="rate_unit_gbps_bits">Gbps</string>
-    <string name="rate_unit_tbps_bits">Tbps</string>
-    <string name="rate_unit_pbps_bits">Pbps</string>
-    <string name="speed_rate_limit_not_available">ནོ་མེད</string>
-    <string name="speed_rate_limit_no_limit">མཚཽ་ཁུག་མེད</string>
-    <string name="rate_limit_text_subscribe_button">དའ་བུང་ཀའད་མམ་སྒོན་བ།</string>
-    
-    <!-- Speed Boost related strings -->
-    <string name="speed_boost_active_label">མཨོ་བ་བསྐཏ་རྒོམ་བོ་ནའི་བསྐཏ་རྒོམ་བོ</string>
-    <string name="speed_boost_button_caption">མཨོ་བ་བསྐཏ་རྒོམ</string>
-    <string name="speed_boost_tab_title">མཨོ་བ་བསྐཏ་རྒོམ</string>
-    <string name="btn_get_speed_boost">མཨོ་བ་བསྐཏ་རྒོམ</string>
-    <string name="speed_boost_card_title">མཨོ་བ་བསྐཏ་རྒོམ</string>
-    
-    <!-- Plurals for time remaining -->
+    <!-- The 'days' part in a date interval string as in "10 d 13 hr". Reorder the format specifier '%d' if in the translated language ordering of time unit and amount is different from English. -->
     <plurals name="speed_boost_left_days">
         <item quantity="other">%d ཉ</item>
     </plurals>
-    
+
+    <!-- The 'hours' part in a date interval string as in "9 d 11 hr". Reorder the format specifier '%d' if in the translated language ordering of time unit and amount is different from English. -->
     <plurals name="speed_boost_left_hours">
         <item quantity="other">%d ཆ</item>
     </plurals>
-    
+
+    <!-- This format string specifies the order of 'days' and 'hours' in the date interval string where the first argument is 'days' and the seconds is 'hours'. Examples: "20 d 11 hr", "1 d 2 hr", etc.
+     Reorder the format specifiers '%1$s' and '%2$s' if in the translated language ordering 'days' and 'hours' in date interval string is different from English. -->
     <string name="speed_boost_left_day_hour_ordered">%1$s %2$s</string>
+
+    <!-- Do not translate or transliterate 'PsiCash'. PsiCash is a unit of currency here. Reorder the format specifier '%s' if in the translated language ordering of unit and amount is different from English. -->
     <string name="psicash_price_format">%s PsiCash</string>
-    
-    <!-- Icon descriptions -->
+
+    <!-- Icon description for the Conduit app icon, do not translate or transliterate 'Conduit'. -->
     <string name="conduit_icon_description">Conduit ཉུག་བར་མཚོན་རྟིས</string>
+
+    <!-- Icon description for the Google Play app icon, do not translate or transliterate 'Google Play'. -->
     <string name="google_play_icon_description">Google Play མཚོན་རྟིས</string>
-    
-    <!-- Conduit related strings -->
+
+    <!-- Title for the Install Conduit action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
     <string name="conduit_install_title">Conduit སྦུགས་པ</string>
+
+    <!-- Description text for the clickable Conduit app card, do not translate or transliterate 'Conduit'. -->
     <string name="conduit_card_description">Conduit ཉུག་བར་ མོ་བཡིལ་ ཉུག་བར་ སྒོན་ རོགས་ དའིང་ རིན་ལང་ Psiphon དང་ འབར་བོ</string>
+
+    <!-- Clickable text label to open the Conduit app, do not translate or transliterate 'Conduit'. -->
     <string name="launch_conduit_action">Conduit འགོད་པ</string>
-    <string name="conduit_update_title">Conduit འགསར་བསྐཏ</string>
-    <string name="conduit_update_description">ཕེ་ལ་ཅ་ཤོལ་སྒོལ་ མབོད་པའདུག་ Conduit གི་ ཕར་སར་མབྷི་བ་ལའ་ འགསར་བསྐཏ་བོས།</string>
-    
-    <!-- Update related strings -->
-    <string name="update_psiphon_pro_title">Psiphon Pro འགསར་བསྐཏ</string>
-    <string name="update_psiphon_pro_action_title">Psiphon Pro འགསར་བསྐཏ</string>
-    <string name="update_psiphon_pro_action_description">ཕེ་ལ་ཅ་ཤོལ་སྒོལ་མབོད་པའདུག་ Psiphon Pro གི་ ཕར་སར་མབྷི་བ་ལའ་ འགསར་བསྐཏ་བོས།</string>
-    
-    <!-- Card descriptions -->
+
+    <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
+    <string name="subscribe_card_title">མངགས་པ།</string>
+
+    <!-- Description text under the Subscribe clickable item -->
     <string name="subscribe_card_description">Psiphon ལའ་ མི་ གྟར་མེད་བར་ ཞུག་ལམ་ མེད་པགི་ མངགས་ཞིང་ ཉུག་ལཨོབ་ ཉལོ་</string>
+
+    <!-- Clickable text label, clicking this opens a dialog with various speed boost options available for purchase.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit.
+    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
+    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
+    <string name="speed_boost_card_title">མཨོ་བ་བསྐཏ་རྒོམ</string>
+
+    <!-- Description text under the Speed Boost clickable item -->
     <string name="speed_boost_card_description">Psiphon ལའ་ དུས་ཙོད་ ཞུག་ལམ་ མེད་པགི་ ཆེད་རང་ PsiCash སྒོལ་ མཨོ་བ་བསྐཏ་རྒོམ་ ཉལོ་</string>
-    
-    <!-- Access status labels -->
+
+    <!-- Clickable text label to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_title">Psiphon Pro འགསར་བསྐཏ</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_update_title">Conduit འགསར་བསྐཏ</string>
+
+    <!-- Description for the 'Update' Action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_update_description">ཕེ་ལ་ཅ་ཤོལ་སྒོལ་ མབོད་པའདུག་ Conduit གི་ ཕར་སར་མབྷི་བ་ལའ་ འགསར་བསྐཏ་བོས།</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_action_title">Psiphon Pro འགསར་བསྐཏ</string>
+
+    <!-- Description for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_action_description">ཕེ་ལ་ཅ་ཤོལ་སྒོལ་མབོད་པའདུག་ Psiphon Pro གི་ ཕར་སར་མབྷི་བ་ལའ་ འགསར་བསྐཏ་བོས།</string>
+
+    <!-- Access status label shown on the home tab when the user has a limited subscription plan -->
     <string name="subscription_limited">མངགས་ཞིང། མཚཽ་ཁུག་སུ་འབི</string>
+
+    <!-- Access status label shown on the home tab when the user has an unlimited subscription plan -->
     <string name="subscription_unlimited">མངགས་ཞིང། མཚཽ་ཁུག་མེད་པ</string>
+
+    <!-- Access status label shown on the home tab when the user has time pass plan. A time pass is a single use license that is valid for a certain
+    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
     <string name="time_pass_active">དུས་ཙོད་ཕོགས་ཥིག། ལས་བོ་བོས</string>
+
+    <!-- Access status label shown on the home tab when the user has no subscription or time pass plan -->
     <string name="subscription_none">རིན་ལང་ ཞུག་ལམ</string>
+
+    <!-- Access status label shown on the home tab when the user is running the Conduit app on the same device which may provide enhanced access to Psiphon.
+     Do not translate or transliterate 'Conduit'. -->
     <string name="conduit_active">Conduit། ལས་བོ་བོས</string>
-
-    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
-    <string name="purchase_required_prompt_title">ཁྱེད་ཀྱི་ས་ཁུལ་ནང་ Psiphon ལ་འཛུལ་སྤྱོད་བྱེད་པའི་ཐབས།</string>
-
-    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
-    <string name="unlock_required_prompt_body">ཁྱེད་ཀྱི་ས་ཁུལ་ནང་ Psiphon ལ་འཛུལ་སྤྱོད་བྱེད་པ་ད་ལྟ་ཁྱེད་ཀྱི་རྒྱབ་སྐྱོར་དགོས་ཡོད། དགོས་མཁོ་ཆེ་བའི་མི་ཚུལ་ལ་དངོས་སུ་འཛུལ་སྤྱོད་བྱེད་པའི་ཐབས་འདེམས།</string>
 
     <!-- Short (collapsed) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
     <string name="notification_text_unlock_required_short">Psiphon ལ་འཛུལ་སྤྱོད་བྱེད་པ་བཀག་འགོག་བྱས་ཡོད། ཧེང་བཀོད་བྱས་ན་ཧེང་བརྡ་དོན་ཤེས་ཐུབ།</string>

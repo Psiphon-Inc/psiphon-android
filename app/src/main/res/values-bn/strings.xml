@@ -46,7 +46,6 @@
   <!--Data collection disclosure prompt title-->
   <!--First sentence of the data collection disclosure prompt body. The format qualifier %s will be replaced by the app name, either 'Psiphon' or 'Psiphon Pro' and should be placed according to the rules of the translation language.-->
   <!--Data collection disclosure list item-->
-  <!--Data collection disclosure list item-->
   <string name="vpn_data_collection_disclosure_bp1">আপনার শহর, দেশ, ISP এবং ঐচ্ছিকভাবে আনুমানিক অবস্থান। শহর, দেশ এবং ISP আপনি আমাদের সার্ভারে যে IP ঠিকানা থেকে সংযোগ করেন তা থেকে প্রাপ্ত, এবং IP ঠিকানা নিজেই কখনও লগ করা হয় না। এই ডেটা ব্যবহার এবং কর্মক্ষমতা পরিসংখ্যান এবং সেবা স্বাস্থ্যের উদ্দেশ্যে সংগ্রহ করা হয়।</string>
   <!--Data collection disclosure list item-->
   <string name="vpn_data_collection_disclosure_bp2">আপনার ইমেইল, যখন আপনি আমাদের ডায়াগনস্টিক বা ক্র্যাশ লগ ফিডব্যাক পাঠান। ফিডব্যাকে ইমেইল প্রদান ঐচ্ছিক।</string>

@@ -10,6 +10,11 @@
   <string name="StatusActivity.VpnPromptCancelledTitle">Psiphon ምናባዊ የግል አውታረ መረብ (ቪፒኤን) መጀመር አልቻለም።</string>
   <string name="StatusActivity.VpnPromptCancelledMessage">Psiphon ምናባዊ የግል አውታረ መረብ (ቪፒኤን)ኡን ማስጀመር አልቻለም። ከአንድ በላይ ምናባዊ የግል አውታረ መረብ (ቪፒኤን) በአንድ ግዜ መሄድ አይችልም። ሌላ ምናባዊ የግል አውታረ መረብ (ቪፒኤን) የተጫነ እና ሁሌም የበራ ሁነታ ወስጥ መሆን አለመሆኑን ያረጋግጡ።</string>
   <string name="selected_region_currently_not_available">የተመረጠው ቀጠና ለጊዜው አይገኝም ፣  እባክዎትን ሌላ ቀጠና ይምረጡ።</string>
+  <string name="ads_consent_preference_category_title">ማስታወቂያን ግላዊነት ማላበስ</string>
+  <string name="ads_consent_preference_dialog_preference_message">የማስታወቂያ ግላዊነት ማላበስ ምርጫዎን ዳግም ማቀናበር እውን ይፈልጋሉ?</string>
+  <string name="ads_consent_preference_title">የማስታወቂያ ግላዊነት ማላበስ ምርጫን ዳግም አቀናብር</string>
+  <string name="ads_consent_preference_dialog_title">ዳግም አስጀምሩ </string>
+  <string name="ads_consent_preference_summary">የማስታወቂያ አውታረመረቦች ኩኪሶችን እና የግል ውሂቦትን እንዲጠቀሙ ምርጫዎትን ዳግም ያቀናብሩ</string>
   <string name="preference_language_selection_summary">ቋንቋውን ይምረጡ</string>
   <string name="preference_language_selection_title">ቋንቋ</string>
   <string name="preference_language_title">የቋንቋ መረጣ</string>
@@ -84,8 +89,6 @@
   <string name="vpn_data_collection_disclosure_bp2">የእርስዎ ኢሜይል፣ የሳይካሎጂክ ወይም የመበላሸት ምዝገባ ግብረመልስ ሲልኩልን። በግብረመልስ ውስጥ ኢሜይል መስጠት በምርጫ ነው።</string>
   <!--Data collection disclosure list item-->
   <string name="vpn_data_collection_disclosure_bp3">የPsiCash መለያዎ የተጠቃሚ ስም፣ የመተላለፊያ ቃል፣ እና በምርጫ ኢሜይል።</string>
-  <!--Generic 'close' button label-->
-  <string name="close_btn_label">ዝጋ</string>
   <!--Notifications permission rationale alert title. The format qualifier %s will be replaced by the app name, either 'Psiphon' or 'Psiphon Pro' and should be placed according to the rules of the translation language.-->
   <string name="notifications_permission_rationale_title">%s ማሳወቂያዎች</string>
   <!--First sentence of the notifications permission rationale message. The format qualifier %s will be replaced by the app name, either 'Psiphon' or 'Psiphon Pro' and should be placed according to the rules of the translation language.-->
@@ -102,6 +105,14 @@
   <string name="notifications_permission_rationale_upgrade_available_bp">አዲስ የመተግበሪያ ዝርጋታዎች አሉ።</string>
   <!--Notifications permission rationale last sentence-->
   <string name="notifications_permission_rationale_disable_any_time">በማንኛውም ጊዜ በመተግበሪያ ቅንብሮች ማሳወቂያዎችን ማሰናከል ይችላሉ።</string>
+  <!--A message shown on the blocking overlay of the PXE experiment screen while Psiphon is connecting to the server.
+    Note: 'Psiphon' should not be translated or transliterated.-->
+  <!--Generic 'close' button label-->
+  <string name="close_btn_label">ዝጋ</string>
+  <!--Generic 'close' alert title-->
+  <string name="close_alert_title">ዝጋ</string>
+  <!--Generic 'close' alert prompt message-->
+  <!--Toast message shown briefly after user completes PXE experiment tests-->
   <!--Message telling users to enable NFC in system settings in order to use NFC connection data exchange feature-->
   <string name="enable_nfc_in_settings">እባክዎን በቅንብሮች ውስጥ NFCን ያንቁ</string>
   <!--NFC connection data exchange error message-->

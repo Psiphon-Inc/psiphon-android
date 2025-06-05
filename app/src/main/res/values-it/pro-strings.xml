@@ -43,6 +43,8 @@
     <string name="rate_unit_gbps_bits">Gbps</string>
     <string name="rate_unit_tbps_bits">Tbps</string>
     <string name="rate_unit_pbps_bits">Pbps</string>
+
+
     <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
     <string name="speed_rate_limit_not_available">Non disponibile</string>
 
@@ -180,7 +182,7 @@
 
     <!-- PsiCash in-app purchase disclaimer that appears on the bottom of the screen where users can buy different amounts of PsiCash from the PlayStore.
     Do not translate or transliterate terms PsiCash or Psiphon Pro, preserve the HTML <b/> tag in <b>Creating a PsiCash account</b> if possible -->
-    <string name="psicash_store_disclaimer">IMPORTANTE: <b>Creare un account PsiCash</b> aiuterà a preservare i suoi PsiCash se disinstalla Psiphon Pro, cancella l\'archiviazione dell\'app, o usa Psiphon su un altro dispositivo.</string>
+    <string name="psicash_store_disclaimer">IMPORTANTE: Creare un account PsiCash aiuterà a preservare i suoi PsiCash se disinstalla Psiphon Pro, cancella l\'archiviazione dell\'app, o usa Psiphon su un altro dispositivo.</string>
 
     <!-- A message to the user indicating that they need to be connected to Psiphon in order to use Speed Boost.
     'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
@@ -207,6 +209,7 @@
     <!-- A message to the user seen when the users are trying to navigate to PsiCash store screen while Psiphon has not finished connecting to the server
     Do not translate or transliterate words Psiphon -->
     <string name="wait_for_psiphon_to_finish_connect_to_use_psicash_store">La preghiamo di attendere che Psiphon finisca di connettersi per utilizzare il negozio PsiCash</string>
+
     <!-- A message to the user indicating that their PsiCash balance is most likely out of date and needs to be refreshed by connecting to Psiphon.
     Do not translate or transliterate words PsiCash or Psiphon -->
     <string name="psicash_out_of_date_dialog_message">Il suo saldo PsiCash non è aggiornato. Si connetta a Psiphon per aggiornarlo.</string>
@@ -266,7 +269,7 @@
     <string name="btn_get_speed_boost">Potenziamento velocità</string>
 
     <!-- Header text appearing on the subscriptions screen when the user has a limited subscription plan. Note the use of a non-breaking space in '5 Mb/s' -->
-    <string name="PaymentChooserActivity.UsingLimitedPlan">Sta utilizzando il piano basic con velocità limitata a 5&#160;Mb/s. Desidera aggiornare al piano illimitato?</string>
+    <string name="PaymentChooserActivity.UsingLimitedPlan">Sta utilizzando il piano basic con velocità limitata a 5 Mb/s. Desidera aggiornare al piano illimitato?</string>
 
     <!-- Header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
     <string name="PaymentChooserActivity.UsingFreePlan">Sta utilizzando il piano gratuito, supportato da pubblicità, con velocità limitata e porte ristrette. Può continuare a usare questo piano o aggiornare a uno dei nostri piani premium</string>
@@ -299,7 +302,7 @@
 
     <!-- Description text on the button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
          Appears below 'Basic - CA$5.99 monthly' label in smaller font. Note the use of a non-breaking space in '5 Mb/s' -->
-    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">Senza interruzioni, alta velocità fino a 5&#160;Mb/s con porte non ristrette</string>
+    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">Senza interruzioni, alta velocità fino a 5 Mb/s con porte non ristrette</string>
 
     <!-- Label for button that user will click in order to buy an unlimited subscription for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., 'Unlimited - CA$11.99 monthly' -->
@@ -450,7 +453,7 @@
     <string name="psicash_account_separator_text">o</string>
 
     <!-- Label text for 'Create Account' button on the PsiCash account sign in screen. The button opens 'Create account' dialog when clicked -->
-    <string name="psicash_account_create_account_btn_lbl">Crea account</string>
+    <string name="psicash_account_create_account_btn_lbl">Crea account </string>
 
     <!-- Clickable text on the PsiCash store screen encouraging users to create a PsiCash account. The text is only visible when it is detected the user doesn't have a PsiCash account. Clicking the text opens 'Sign In / Create account' dialog.
         Note: 'PsiCash' should not be translated or transliterated. -->
@@ -531,12 +534,14 @@
     <!-- The 'days' part in a date interval string as in "10 d 13 hr". Reorder the format specifier '%d' if in the translated language ordering of time unit and amount is different from English. -->
     <plurals name="speed_boost_left_days">
         <item quantity="one">%d g</item>
+        <item quantity="many">%d g</item>
         <item quantity="other">%d g</item>
     </plurals>
 
     <!-- The 'hours' part in a date interval string as in "9 d 11 hr". Reorder the format specifier '%d' if in the translated language ordering of time unit and amount is different from English. -->
     <plurals name="speed_boost_left_hours">
         <item quantity="one">%d h</item>
+        <item quantity="many">%d h</item>
         <item quantity="other">%d h</item>
     </plurals>
 

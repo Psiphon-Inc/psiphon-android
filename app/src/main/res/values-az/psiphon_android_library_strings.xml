@@ -60,9 +60,9 @@
   <string name="about">Psiphon haqda</string>
   <string name="feedback">Şərhiniz</string>
   <string name="disableTimeoutsPreferenceSummary">Aşağı sürətli şəbəkələr üçün dayanmaları söndürün</string>
+  <string name="region_selector">Server regionunu seçin</string>
   <string name="network_proxy_connect_invalid_values">HTTP proksi seçimləri səhvdir</string>
   <string name="tunnel_whole_device_exception">VpnService API-sinin olmaması səbəbindən sizin cihazınız bütün cihaz tunel seçimini dəstəkləmir.</string>
-  <string name="region_selector">Server regionunu seçin</string>
   <string name="preference_notifications_title">Bildirişlər</string>
   <string name="preference_vpn_title">VPN</string>
   <!--Description of option to tunnel everything-->
@@ -85,26 +85,26 @@
   <string name="preference_routing_select_apps_title">Tətbiqləri seç</string>
   <!--Description of option to select apps to exclusively tunnel-->
   <plurals name="preference_routing_select_apps_to_include_summary">
-        <item quantity="one">%d tətbiq VPN vasitəsilə yönləndiriləcək</item>
-        <item quantity="other">%d tətbiq VPN vasitəsilə yönləndiriləcək</item>
-    </plurals>
+    <item quantity="one">%d tətbiq VPN vasitəsilə yönləndiriləcək</item>
+    <item quantity="other">%d tətbiq VPN vasitəsilə yönləndiriləcək</item>
+  </plurals>
   <!--Description of option to select apps to not tunnel-->
   <plurals name="preference_routing_select_apps_to_exclude_summary">
-        <item quantity="one">%d tətbiq VPN-dən çıxarılacaq</item>
-        <item quantity="other">%d tətbiq VPN-dən çıxarılacaq</item>
-    </plurals>
+    <item quantity="one">%d tətbiq VPN-dən çıxarılacaq</item>
+    <item quantity="other">%d tətbiq VPN-dən çıxarılacaq</item>
+  </plurals>
   <!--Vpn service notification text shown in the toolbar when tunneling all apps-->
   <string name="psiphon_service_notification_message_vpn_all_apps">Bütün tətbiqlər tunel vasitəsilə yönləndirilir</string>
   <!--Vpn service notification text shown in the toolbar when tunneling only selected apps-->
   <plurals name="psiphon_service_notification_message_vpn_include_apps">
-        <item quantity="one">%d tətbiq tunel vasitəsilə yönləndirilir</item>
-        <item quantity="other">%d tətbiq tunel vasitəsilə yönləndirilir</item>
-    </plurals>
+    <item quantity="one">%d tətbiq tunel vasitəsilə yönləndirilir</item>
+    <item quantity="other">%d tətbiq tunel vasitəsilə yönləndirilir</item>
+  </plurals>
   <!--Vpn service notification text shown in the toolbar when not tunneling selected apps-->
   <plurals name="psiphon_service_notification_message_vpn_exclude_apps">
-        <item quantity="one">%d tətbiq tuneldən çıxarılıb</item>
-        <item quantity="other">%d tətbiq tuneldən çıxarılıb</item>
-    </plurals>
+    <item quantity="one">%d tətbiq tuneldən çıxarılıb</item>
+    <item quantity="other">%d tətbiq tuneldən çıxarılıb</item>
+  </plurals>
   <!--Text shown in the footer of the VPN settings screen notifying the user that certain Psiphon apps are automatically excluded from VPN routing, do not translate or transliterate "Psiphon"-->
   <string name="vpn_preferences_default_exclusions_footer_text">Düzgün işləməyi təmin etmək üçün müəyyən Psiphon tətbiqləri avtomatik olaraq VPN yönləndirməsindən çıxarılır. Bu istisnalar dəyişdirilə bilməz.</string>
   <string name="preference_notifications_with_sound_title">Səs</string>

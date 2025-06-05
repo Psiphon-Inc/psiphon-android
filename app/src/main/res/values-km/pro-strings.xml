@@ -134,4 +134,6 @@
     'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
     <string name="speed_boost_card_title">បន្ថែមល្បឿន</string>
 
-    </resources>
+    <!-- Generic 'Dismiss' button label for dialogs and alerts -->
+    <string name="label_dismiss">ច្រានចោល</string>
+</resources>

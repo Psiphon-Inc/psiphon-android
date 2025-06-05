@@ -36,9 +36,21 @@
     -->
     <string name="rate_with_unit_template">%1$s %2$s</string>
 
+    <!-- Unit labels used with 'rate_with_unit_template' for bit-per-second speeds. These represent: bits, kilobits, megabits, etc. per second. -->
+    <string name="rate_unit_bps_bits">bps</string>
     <string name="rate_unit_kbps_bits">Kbps</string>
     <string name="rate_unit_mbps_bits">एमबीपीएस</string>
     <string name="rate_unit_gbps_bits">Gbps</string>
+    <string name="rate_unit_tbps_bits">Tbps</string>
+    <string name="rate_unit_pbps_bits">Pbps</string>
+
+
+    <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
+    <string name="speed_rate_limit_not_available">उपलब्ध नहीं</string>
+
+    <!-- Text shown on the home tab under Psiphon speed limit label when the there is no speed limit, like when the user has an unlimited subscription, for example -->
+    <string name="speed_rate_limit_no_limit">कोई सीमा नहीं</string>
+
     <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
          the workflow to subscribe for premium access. -->
     <string name="rate_limit_text_subscribe_button">अभी अपग्रेड करें!</string>
@@ -229,6 +241,14 @@
 
     <!-- Generic billing error message seen by user if there is a billing problem with the PsiCash purchase. Do not translate or transliterate word PsiCash -->
     <string name="psicash_purchase_not_available_error_message">PsiCash खरीदारी फिलहाल उपलब्ध नहीं है, कृपया बाद में पुनःप्रयास करें</string>
+
+    <!-- An updated alert message seen by the user when they try to use one of Speed Boost options but their PsiCash balance is insufficient.
+    Note that since we are phasing out the PsiCash system, this message is no longer offering the user to buy more PsiCash, and is just informing
+    them that they do not have enough PsiCash to activate the Speed Boost option.
+    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
+    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
+    indicates a fast or unrestricted speed.-->
+    <string name="speed_boost_insufficient_balance_alert_update">इस Speed Boost विकल्प को सक्रिय करने के लिए आपके पास पर्याप्त PsiCash नहीं है।</string>
 
     <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_notification_title">Psiphon Pro को अपग्रेड करें</string>
@@ -493,6 +513,12 @@
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">डिस्कनेक्ट करें</string>
 
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="purchase_required_prompt_title">आपके क्षेत्र में Psiphon तक कैसे पहुंचें।</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="unlock_required_prompt_body">आपके क्षेत्र में Psiphon तक पहुंच अब आपके समर्थन की आवश्यकता है। उन लोगों के लिए Psiphon को सुलभ बनाए रखने में मदद करें जिन्हें इसकी सबसे अधिक आवश्यकता है, जारी रखने के लिए एक उपलब्ध विकल्प का चयन करके।</string>
+
     <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
     <string name="speed_boost_product_1_hr">1 घंटा</string>
 
@@ -585,29 +611,6 @@
     <!-- Access status label shown on the home tab when the user is running the Conduit app on the same device which may provide enhanced access to Psiphon.
      Do not translate or transliterate 'Conduit'. -->
     <string name="conduit_active">Conduit: सक्रिय</string>
-    <!-- Unit labels used with 'rate_with_unit_template' for bit-per-second speeds. These represent: bits, kilobits, megabits, etc. per second. -->
-    <string name="rate_unit_bps_bits">bps</string>
-    <string name="rate_unit_tbps_bits">Tbps</string>
-    <string name="rate_unit_pbps_bits">Pbps</string>
-
-    <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
-    <string name="speed_rate_limit_not_available">उपलब्ध नहीं</string>
-
-    <!-- Text shown on the home tab under Psiphon speed limit label when the there is no speed limit, like when the user has an unlimited subscription, for example -->
-    <string name="speed_rate_limit_no_limit">कोई सीमा नहीं</string>
-    <!-- An updated alert message seen by the user when they try to use one of Speed Boost options but their PsiCash balance is insufficient.
-    Note that since we are phasing out the PsiCash system, this message is no longer offering the user to buy more PsiCash, and is just informing
-    them that they do not have enough PsiCash to activate the Speed Boost option.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
-    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
-    indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_insufficient_balance_alert_update">इस Speed Boost विकल्प को सक्रिय करने के लिए आपके पास पर्याप्त PsiCash नहीं है।</string>
-
-    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
-    <string name="purchase_required_prompt_title">आपके क्षेत्र में Psiphon तक कैसे पहुंचें।</string>
-
-    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
-    <string name="unlock_required_prompt_body">आपके क्षेत्र में Psiphon तक पहुंच अब आपके समर्थन की आवश्यकता है। उन लोगों के लिए Psiphon को सुलभ बनाए रखने में मदद करें जिन्हें इसकी सबसे अधिक आवश्यकता है, जारी रखने के लिए एक उपलब्ध विकल्प का चयन करके।</string>
 
     <!-- Short (collapsed) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
     <string name="notification_text_unlock_required_short">Psiphon पहुंच अवरुद्ध। अधिक जानने के लिए टैप करें</string>
@@ -616,5 +619,5 @@
     <string name="notification_text_unlock_required_long">आपके क्षेत्र में Psiphon तक मुफ्त पहुंच अब उपलब्ध नहीं है। अनलॉक विकल्प देखने के लिए टैप करें</string>
 
     <!-- Generic 'Dismiss' button label for dialogs and alerts -->
-    <string name="label_dismiss">खारिज करें</string>
+    <string name="label_dismiss">खारिज करना</string>
 </resources>

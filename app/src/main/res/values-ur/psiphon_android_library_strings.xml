@@ -162,10 +162,10 @@
   <!--The log message is shown to the user if an upstream proxy error occurs. The '%s' is the detail of the error.-->
   <string name="upstream_proxy_error">اپ سٹریم پراکسی ایرر: %s</string>
   <string name="start_tunnel_failed">Tunnel (ٹنل) کی ابتدا میں ناکامی: %s</string>
+  <string name="vpn_exclusions_conflict">آپ کے موجودہ VPN اخراجات میں ایک یا زیادہ متضاد ایپلیکیشنز ہیں۔ براہ کرم VPN سیٹنگز میں جائیں اور کنکٹ کرنے کے لیے \'تمام ایپس کو ٹنل کریں\' موڈ پر سوئچ کریں۔</string>
   <string name="tunnel_connecting">Tunnel (ٹنل) رابطہ ہو رہا ہے۔۔۔</string>
   <string name="tunnel_connected">Tunnel (ٹنل) رابطہ ہو گیا ہے</string>
   <string name="waiting">انتظار کیجئے۔۔۔</string>
-
   <string name="label_vpn_settings">VPN سیٹنگز</string>
   <string name="label_proxy_settings">پراکسی سیٹنگز</string>
   <string name="preference_summary_no_proxy">کوئی پراکسی نہیں</string>
@@ -173,12 +173,9 @@
   <string name="preference_summary_system_proxy">سسٹم پراکسی</string>
   <string name="disableTimeoutsPreferenceTitle">ٹائم آؤٹس کو غیر فعال کریں</string>
   <string name="downloadWiFiOnlyPreferenceTitle">صرف Wi-Fi</string>
-
   <string name="unsafeTrafficAlertsOptInPreferenceTitle">MalAware الرٹس دکھائیں</string>
   <string name="unsafeTrafficAlertsOptInPreferenceSummary">جب Psiphon آپ کے ڈیوائس سے آنے والے میلویئر ٹریفک کا پتہ لگاتا ہے تو اطلاع حاصل کریں۔</string>
   <string name="aboutMalAware">MalAware کے بارے میں</string>
-
-  <string name="vpn_exclusions_conflict">آپ کے موجودہ VPN اخراجات میں ایک یا زیادہ متضاد ایپلیکیشنز ہیں۔ براہ کرم VPN سیٹنگز میں جائیں اور کنکٹ کرنے کے لیے \'تمام ایپس کو ٹنل کریں\' موڈ پر سوئچ کریں۔</string>
   <!--Preference title for Psiphon Bump (NFC based connection data exchange), do not transliterate or translate 'Psiphon Bump'-->
   <string name="nfcBumpPreferenceTitle">Psiphon Bump کو فعال کریں</string>
   <!--Summary for Psiphon Bump preference-->
