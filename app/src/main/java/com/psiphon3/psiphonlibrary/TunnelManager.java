@@ -217,7 +217,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     private final CountDownLatch tunnelThreadStartedLock = new CountDownLatch(1);
     private TunnelConfigManager tunnelConfigManager;
     private final UnlockOptions unlockOptions = new UnlockOptions();
-    private boolean unlockOptionsProcessed = false;
     private boolean unlockUIDeliveredThisSession = false;
 
 
@@ -324,9 +323,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                                 if (!m_isStopping.get()) {
                                     TunnelConfigManager.RestartType restartType = config.getRestartType();
                                     if (restartType == TunnelConfigManager.RestartType.FULL_RESTART) {
-                                        // On full restart reset unlock options and all unlock flags
+                                        // On full restart reset unlock options and "unlock UI delivered this session" flag
                                         unlockOptions.reset();
-                                        unlockOptionsProcessed = false;
                                         unlockUIDeliveredThisSession = false;
 
                                         m_networkConnectionStatePublishRelay.accept(
@@ -398,6 +396,19 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     TunnelState.ConnectionData.NetworkConnectionState networkConnectionState = pair.first;
                     boolean isRoutingThroughTunnel = pair.second;
 
+                    if (networkConnectionState == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED) {
+                        if (unlockOptions.unlockRequired()) {
+                            // Command the service to stop immediately if unlock is required.
+                            signalStopService();
+                            // Do not emit downstream, we are stopping the service.
+                            return Observable.empty();
+                        } else {
+                            // If there is no unlock required, we should cancel the unlock required notification
+                            // and continue
+                            cancelUnlockRequiredNotification();
+                        }
+                    }
+
                     // The tunnel is connected but we are not routing traffic through the tunnel yet,
                     // check in the following order if:
                     // a) we have a pending Speed Boost purchase,
@@ -410,23 +421,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                             m_isRoutingThroughTunnelPublishRelay.accept(Boolean.TRUE);
                             // Do not emit downstream if we just started routing.
                             return Observable.empty();
-                        }
-                        // Handle unlock required case
-                        if (unlockOptions.unlockRequired()) {
-                            // If there is an unlock required, deliver the intent to the client Activity
-                            // either by sending it directly or showing a notification
-                            if (!unlockUIDeliveredThisSession) {
-                                unlockUIDeliveredThisSession = true;
-                                deliverUnlockRequiredUI();
-                            }
-                            // Command the service to stop immediately if unlock is required.
-                            signalStopService();
-                            // Do not emit downstream
-                            return Observable.empty();
-                        } else {
-                            // If there is no unlock required, we should cancel the unlock required notification
-                            // and continue to handling landing pages.
-                            cancelUnlockRequiredNotification();
                         }
 
                         if (m_tunnelState.homePages != null && m_tunnelState.homePages.size() != 0) {
@@ -2070,10 +2064,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         //         "Conduit": { "display": false }
         //     }
         // }
-        if (unlockOptionsProcessed) {
-            MyLog.w("TunnelManager: UnlockOptions already processed, skipping");
-            return;
-        }
 
         Map<String, UnlockOptions.UnlockEntry> entries = new ConcurrentHashMap<>();
 
@@ -2126,7 +2116,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             MyLog.e("TunnelManager: failed to parse UnlockOptions: " + e);
         } finally {
             unlockOptions.setEntries(entries);
-            unlockOptionsProcessed = true;
             if (unlockOptions.unlockRequired() && !unlockUIDeliveredThisSession) {
                 unlockUIDeliveredThisSession = true;
                 deliverUnlockRequiredUI();
