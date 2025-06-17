@@ -618,4 +618,15 @@
 
     <!-- Generic 'Dismiss' button label for dialogs and alerts -->
     <string name="label_dismiss">忽略</string>
+
+    <!-- Title of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon Pro UI features.
+    The %s will be replaced with the app name passed to the string resource. -->
+    <string name="install_app_to_unlock_title">安装 %s</string>
+
+    <!-- Description of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon Pro UI features.
+    The %s will be replaced with the app name passed to the string resource. -->
+    <string name="install_app_to_unlock_description">从 Play 商店安装 %s，保持免费连接 Psiphon</string>
+
+    <!-- Header text above "Update Psiphon Pro" action in the unlock required dialog. -->
+    <string name="update_psiphon_pro_action_header">首先更新 Psiphon Pro</string>
 </resources>
