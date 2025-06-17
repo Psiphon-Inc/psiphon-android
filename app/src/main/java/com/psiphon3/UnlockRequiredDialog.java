@@ -143,8 +143,13 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
             return new SubscriptionUnlockHandler(entry, this::dismiss);
 
         } else if (key.equals(UnlockOptions.UNLOCK_ENTRY_CONDUIT)) {
-            return new ConduitUnlockHandler(entry, disconnectTunnelRunnable, this::dismiss);
-
+            if (entry instanceof UnlockOptions.ConduitUnlockEntry) {
+                return new ConduitUnlockHandler((UnlockOptions.ConduitUnlockEntry) entry,
+                        disconnectTunnelRunnable, this::dismiss);
+            } else {
+                MyLog.w("UnlockRequiredDialog: entry for key " + key + " is not a ConduitUnlockEntry");
+                return null;
+            }
         } else if (key.startsWith(UnlockOptions.APP_INSTALL_PREFIX)) {
             if (entry instanceof UnlockOptions.AppInstallUnlockEntry) {
                 return new AppInstallUnlockHandler(key, (UnlockOptions.AppInstallUnlockEntry) entry,

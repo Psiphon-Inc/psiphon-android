@@ -74,6 +74,23 @@ public class UnlockOptions {
         }
     }
 
+    public static class ConduitUnlockEntry extends UnlockEntry {
+        public final String referrer;
+
+        // Service-side constructor (with checker)
+        public ConduitUnlockEntry(@NonNull Supplier<Boolean> checker, @Nullable Boolean display, int priority,
+                                     String referrer) {
+            super(checker, display, priority);
+            this.referrer = referrer;
+        }
+
+        // Client-side constructor (without checker)
+        private ConduitUnlockEntry(boolean display, int priority, String referrer) {
+            super(display, priority);
+            this.referrer = referrer;
+        }
+    }
+
     public static class AppInstallUnlockEntry extends UnlockEntry {
         public final String appId;
         public final String appName;
@@ -148,6 +165,13 @@ public class UnlockOptions {
                     entryJson.put("appId", appEntry.appId);
                     entryJson.put("appName", appEntry.appName);
                     entryJson.put("playStoreUrl", appEntry.playStoreUrl);
+                }
+                // Add additional fields for ConduitUnlockEntry
+                if (entry.getValue() instanceof ConduitUnlockEntry) {
+                    ConduitUnlockEntry conduitEntry = (ConduitUnlockEntry) entry.getValue();
+                    if (conduitEntry.referrer != null) {
+                        entryJson.put("referrer", conduitEntry.referrer);
+                    }
                 }
 
                 jsonObject.put(entry.getKey(), entryJson);
@@ -295,6 +319,9 @@ public class UnlockOptions {
                                 continue;
                             }
                             entriesMap.put(key, new AppInstallUnlockEntry(display, priority, appId, appName, playStoreUrl));
+                        } else if (UNLOCK_ENTRY_CONDUIT.equals(key)) {
+                            String referrer = entryJson.optString("referrer", "");
+                            entriesMap.put(key, new ConduitUnlockEntry(display, priority, referrer));
                         } else {
                             entriesMap.put(key, new UnlockEntry(display, priority));
                         }

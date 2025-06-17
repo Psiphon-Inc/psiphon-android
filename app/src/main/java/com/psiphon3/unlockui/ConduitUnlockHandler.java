@@ -44,6 +44,7 @@ public class ConduitUnlockHandler extends UnlockOptionHandler {
     private static final String PLAYSTORE_PSIPHON_PRO_URL =
             "https://play.google.com/store/apps/details?id=com.psiphon3.subscription";
 
+    private final UnlockOptions.ConduitUnlockEntry conduitEntry;
     private final Runnable disconnectTunnelRunnable;
     private Disposable conduitStateDisposable;
 
@@ -53,9 +54,10 @@ public class ConduitUnlockHandler extends UnlockOptionHandler {
     private View updateConduitView;
     private View openConduitView;
 
-    public ConduitUnlockHandler(UnlockOptions.UnlockEntry entry, Runnable disconnectTunnelRunnable,
+    public ConduitUnlockHandler(UnlockOptions.ConduitUnlockEntry conduitEntry, Runnable disconnectTunnelRunnable,
                                 Runnable dismissDialogRunnable) {
-        super(UnlockOptions.UNLOCK_ENTRY_CONDUIT, entry, dismissDialogRunnable);
+        super(UnlockOptions.UNLOCK_ENTRY_CONDUIT, conduitEntry, dismissDialogRunnable);
+        this.conduitEntry = conduitEntry;
         this.disconnectTunnelRunnable = disconnectTunnelRunnable;
     }
 
@@ -188,8 +190,15 @@ public class ConduitUnlockHandler extends UnlockOptionHandler {
     }
 
     private void openPlayStoreConduit(android.content.Context context) {
+        String playStoreUrl = PLAYSTORE_CONDUIT_URL;
+
+        // Add referrer parameter if present
+        if (conduitEntry.referrer != null && !conduitEntry.referrer.isEmpty()) {
+            playStoreUrl += "&referrer=" + conduitEntry.referrer;
+        }
+
         Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setData(Uri.parse(PLAYSTORE_CONDUIT_URL));
+        intent.setData(Uri.parse(playStoreUrl));
         intent.setPackage("com.android.vending");
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
         try {
@@ -200,7 +209,7 @@ public class ConduitUnlockHandler extends UnlockOptionHandler {
             context.startActivity(intent);
             dismissDialogRunnable.run();
         } catch (ActivityNotFoundException e) {
-            MyLog.w("ConduitUnlockHandler: Play Store not found for: " + PLAYSTORE_CONDUIT_URL);
+            MyLog.w("ConduitUnlockHandler: Play Store not found for: " + playStoreUrl);
         }
     }
 

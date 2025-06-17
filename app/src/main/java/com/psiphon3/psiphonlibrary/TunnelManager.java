@@ -2061,7 +2061,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         // {
         //     "UnlockOptions": {
         //         "Subscription": {"priority": 30}, // Empty or missing "display" field is defaulted to true
-        //         "Conduit": {"display": false, "priority": 10},
+        //         "Conduit": {"display": false, "priority": 10, "referrer": "utm_source%3Dpsiphon_pro%26utm_campaign%3Dpro_reg"},  // The "referrer" field is optional
         //         "AppInstall.YouTube": {
         //             "priority": 20, // Empty or missing priority is defaulted according to type, see UnlockOptions.java
         //             "display": true,
@@ -2076,7 +2076,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         // mixing explicit priorities with defaults. For example, don't do:
         // "Subscription": {"priority": 5}, "Conduit": {} <- Conduit will get default priority 10
         // This creates confusing ordering. Either use priorities everywhere or not at all.
-
+        //
+        // REFERRER PARAMETER: The optional "referrer" field for Conduit should be pre-URL-encoded.
+        // This parameter will be appended to the Play Store URL for tracking app install attribution.
         Map<String, UnlockOptions.UnlockEntry> entries = new ConcurrentHashMap<>();
 
         try {
@@ -2097,6 +2099,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                             : null;
                     if (entryKey.startsWith(UnlockOptions.APP_INSTALL_PREFIX)) {
                         processAppInstallUnlockEntry(entryKey, entryObject, entries, display, priority);
+                    } else if (entryKey.equals(UnlockOptions.UNLOCK_ENTRY_CONDUIT)) {
+                        processConduitUnlockEntry(entryKey, entryObject, entries, display, priority);
                     } else {
                         processStandardUnlockEntry(entryKey, entries, display, priority);
                     }
@@ -2111,6 +2115,27 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 deliverUnlockRequiredUI();
             }
         }
+    }
+
+    private void processConduitUnlockEntry(String entryKey,
+                                           JSONObject entryObject,
+                                           Map<String, UnlockOptions.UnlockEntry> entries,
+                                           Boolean display,
+                                           Integer priority) {
+        // Extract referrer from JSON object (optional field)
+        String referrer = (entryObject != null && entryObject.has("referrer"))
+                ? entryObject.optString("referrer")
+                : "";
+
+        entries.put(
+                entryKey,
+                new UnlockOptions.ConduitUnlockEntry(
+                        tunnelConfigManager::isConduitRunningActive,
+                        display,
+                        priority == null ? UnlockOptions.DEFAULT_CONDUIT_PRIORITY : priority,
+                        referrer
+                )
+        );
     }
 
     private void processStandardUnlockEntry(String entryKey,
@@ -2129,17 +2154,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                                 () -> tunnelConfigManager.isSubscriptionActive() || tunnelConfigManager.isSpeedBoostActive(),
                                 display,
                                 priority == null ? UnlockOptions.DEFAULT_SUBSCRIPTION_PRIORITY : priority
-                        )
-                );
-                break;
-            // Conduit checker
-            case UnlockOptions.UNLOCK_ENTRY_CONDUIT:
-                entries.put(
-                        entryKey,
-                        new UnlockOptions.UnlockEntry(
-                                tunnelConfigManager::isConduitRunningActive,
-                                display,
-                                priority == null ? UnlockOptions.DEFAULT_CONDUIT_PRIORITY : priority
                         )
                 );
                 break;
