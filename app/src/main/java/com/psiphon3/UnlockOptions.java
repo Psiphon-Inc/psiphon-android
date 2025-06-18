@@ -1,7 +1,6 @@
 package com.psiphon3;
 
 import android.content.Context;
-import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -35,6 +34,13 @@ import io.reactivex.Flowable;
 public class UnlockOptions {
     public static final String UNLOCK_ENTRY_SUBSCRIPTION = "Subscription";
     public static final String UNLOCK_ENTRY_CONDUIT = "Conduit";
+    public static final String APP_INSTALL_PREFIX = "AppInstall.";
+
+    // Default priorities when not specified in JSON (the lower the number, the higher the priority)
+    public static final int DEFAULT_CONDUIT_PRIORITY = 10;
+    public static final int DEFAULT_SUBSCRIPTION_PRIORITY = 50;
+    public static final int DEFAULT_APP_INSTALL_PRIORITY = 80;
+
     // File persistence constants
     private static final String UNLOCK_OPTIONS_FILE = "unlock_options.json";
     private static final String UNLOCK_OPTIONS_TEMP_FILE = "unlock_options_temp.json";
@@ -44,12 +50,22 @@ public class UnlockOptions {
     private final BehaviorRelay<Set<String>> entriesSetRelay = BehaviorRelay.create();
 
     public static class UnlockEntry {
-        public final Supplier<Boolean> checker;
+        public final @Nullable Supplier<Boolean> checker;
         public final Boolean display;
+        public final int priority;
 
-        public UnlockEntry(@NonNull Supplier<Boolean> checker, @Nullable Boolean display) {
+        // Service-side constructor (with checker)
+        public UnlockEntry(@NonNull Supplier<Boolean> checker, @Nullable Boolean display, int priority) {
             this.checker = checker;
             this.display = display;
+            this.priority = priority;
+        }
+
+        // Client-side constructor (without checker) used to render the unlock dialog
+        protected UnlockEntry(boolean display, int priority) {
+            this.checker = null;
+            this.display = display;
+            this.priority = priority;
         }
 
         public boolean isDisplayable() {
@@ -58,7 +74,47 @@ public class UnlockOptions {
         }
     }
 
-    // Check if we need to show the unlock dialog
+    public static class ConduitUnlockEntry extends UnlockEntry {
+        public final String referrer;
+
+        // Service-side constructor (with checker)
+        public ConduitUnlockEntry(@NonNull Supplier<Boolean> checker, @Nullable Boolean display, int priority,
+                                     String referrer) {
+            super(checker, display, priority);
+            this.referrer = referrer;
+        }
+
+        // Client-side constructor (without checker)
+        private ConduitUnlockEntry(boolean display, int priority, String referrer) {
+            super(display, priority);
+            this.referrer = referrer;
+        }
+    }
+
+    public static class AppInstallUnlockEntry extends UnlockEntry {
+        public final String appId;
+        public final String appName;
+        public final String playStoreUrl;
+
+        // Service-side constructor (with checker)
+        public AppInstallUnlockEntry(@NonNull Supplier<Boolean> checker, @Nullable Boolean display, int priority,
+                                     String appId, String appName, String playStoreUrl) {
+            super(checker, display, priority);
+            this.appId = appId;
+            this.appName = appName;
+            this.playStoreUrl = playStoreUrl;
+        }
+
+        // Client-side constructor (without checker)
+        private AppInstallUnlockEntry(boolean display, int priority, String appId, String appName, String playStoreUrl) {
+            super(display, priority);
+            this.appId = appId;
+            this.appName = appName;
+            this.playStoreUrl = playStoreUrl;
+        }
+    }
+
+    // Check if we need to show the unlock dialog (service-side only)
     public boolean unlockRequired() {
         if (entries.isEmpty()) {
             // No checkers available, no need to show the unlock dialog
@@ -66,11 +122,12 @@ public class UnlockOptions {
         }
 
         boolean hasAtLeasOneDisplayableEntry = false;
-
         for (UnlockEntry entry : entries.values()) {
             if (entry.isDisplayable()) {
                 hasAtLeasOneDisplayableEntry = true;
             }
+            // This will crash if the checker is null, which is expected, since we only call this method
+            // on the service side where all entries should have a checker.
             if (entry.checker.get()) {
                 // If any checker passed, we don't need to show the unlock dialog
                 return false;
@@ -82,10 +139,9 @@ public class UnlockOptions {
         return hasAtLeasOneDisplayableEntry;
     }
 
-    public synchronized void setEntries(@NonNull  Map<String, UnlockEntry> entryMap) {
+    public synchronized void setEntries(@NonNull Map<String, UnlockEntry> entryMap) {
         entries.clear();
         entries.putAll(entryMap);
-
         // Update the relay with the current set of checkers
         entriesSetRelay.accept(entryMap.keySet());
     }
@@ -101,6 +157,23 @@ public class UnlockOptions {
             for (Map.Entry<String, UnlockEntry> entry : entries.entrySet()) {
                 JSONObject entryJson = new JSONObject();
                 entryJson.put("display", entry.getValue().isDisplayable());
+                entryJson.put("priority", entry.getValue().priority);
+
+                // Add additional fields for AppInstallUnlockEntry
+                if (entry.getValue() instanceof AppInstallUnlockEntry) {
+                    AppInstallUnlockEntry appEntry = (AppInstallUnlockEntry) entry.getValue();
+                    entryJson.put("appId", appEntry.appId);
+                    entryJson.put("appName", appEntry.appName);
+                    entryJson.put("playStoreUrl", appEntry.playStoreUrl);
+                }
+                // Add additional fields for ConduitUnlockEntry
+                if (entry.getValue() instanceof ConduitUnlockEntry) {
+                    ConduitUnlockEntry conduitEntry = (ConduitUnlockEntry) entry.getValue();
+                    if (conduitEntry.referrer != null) {
+                        entryJson.put("referrer", conduitEntry.referrer);
+                    }
+                }
+
                 jsonObject.put(entry.getKey(), entryJson);
             }
             return jsonObject.toString();
@@ -120,6 +193,7 @@ public class UnlockOptions {
         File tempFile = new File(context.getFilesDir(), UNLOCK_OPTIONS_TEMP_FILE);
         File finalFile = new File(context.getFilesDir(), UNLOCK_OPTIONS_FILE);
         File lockFile = new File(context.getFilesDir(), UNLOCK_OPTIONS_LOCK_FILE);
+
         RandomAccessFile randomAccessFile = null;
         FileChannel channel = null;
         FileLock lock = null;
@@ -127,7 +201,6 @@ public class UnlockOptions {
         try {
             randomAccessFile = new RandomAccessFile(lockFile, "rw");
             channel = randomAccessFile.getChannel();
-
             try {
                 lock = channel.lock();
             } catch (OverlappingFileLockException e) {
@@ -139,7 +212,6 @@ public class UnlockOptions {
                 // Write to temporary file first to ensure atomic update
                 try (FileOutputStream fos = new FileOutputStream(tempFile);
                      OutputStreamWriter writer = new OutputStreamWriter(fos, "UTF-8")) {
-
                     writer.write(jsonString);
                     writer.flush();
                     fos.getFD().sync();
@@ -181,12 +253,13 @@ public class UnlockOptions {
         }
     }
 
-    // Read unlock options from file - returns Map<String, Boolean> for display flags
+    // Read unlock options from file - returns UnlockOptions instance
     @SuppressWarnings("resource")
-    public static Map<String, Boolean> fromFile(Context context) {
+    public static UnlockOptions fromFile(Context context) {
         File file = new File(context.getFilesDir(), UNLOCK_OPTIONS_FILE);
         File lockFile = new File(context.getFilesDir(), UNLOCK_OPTIONS_LOCK_FILE);
-        Map<String, Boolean> unlockOptionsMap = new HashMap<>();
+        Map<String, UnlockEntry> entriesMap = new HashMap<>();
+
         RandomAccessFile randomAccessFile = null;
         FileChannel channel = null;
         FileLock lock = null;
@@ -194,12 +267,13 @@ public class UnlockOptions {
         try {
             randomAccessFile = new RandomAccessFile(lockFile, "rw");
             channel = randomAccessFile.getChannel();
-
             try {
                 lock = channel.lock(0L, Long.MAX_VALUE, true); // shared lock
             } catch (OverlappingFileLockException e) {
                 MyLog.e("UnlockOptions: Read lock already held by this JVM: " + e);
-                return unlockOptionsMap;
+                UnlockOptions unlockOptions = new UnlockOptions();
+                unlockOptions.entries.putAll(entriesMap);
+                return unlockOptions;
             }
 
             if (file.exists()) {
@@ -217,7 +291,40 @@ public class UnlockOptions {
                         String key = keys.next();
                         JSONObject entryJson = jsonObject.getJSONObject(key);
                         boolean display = entryJson.optBoolean("display", true);
-                        unlockOptionsMap.put(key, display);
+
+                        // Get priority with appropriate defaults
+                        int priority;
+                        if (entryJson.has("priority")) {
+                            priority = entryJson.getInt("priority");
+                        } else {
+                            // Set default priority based on entry type
+                            if (UNLOCK_ENTRY_CONDUIT.equals(key)) {
+                                priority = DEFAULT_CONDUIT_PRIORITY;
+                            } else if (UNLOCK_ENTRY_SUBSCRIPTION.equals(key)) {
+                                priority = DEFAULT_SUBSCRIPTION_PRIORITY;
+                            } else if (key.startsWith(APP_INSTALL_PREFIX)) {
+                                priority = DEFAULT_APP_INSTALL_PRIORITY;
+                            } else {
+                                priority = Integer.MAX_VALUE; // Lowest priority for unknown types
+                            }
+                        }
+
+                        // Create appropriate entry type
+                        if (key.startsWith(APP_INSTALL_PREFIX)) {
+                            String appId = entryJson.optString("appId", "");
+                            String appName = entryJson.optString("appName", "");
+                            String playStoreUrl = entryJson.optString("playStoreUrl", "");
+                            if (appId.isEmpty() || appName.isEmpty() || playStoreUrl.isEmpty()) {
+                                MyLog.w("UnlockOptions: Skipping app install entry with empty fields: " + key);
+                                continue;
+                            }
+                            entriesMap.put(key, new AppInstallUnlockEntry(display, priority, appId, appName, playStoreUrl));
+                        } else if (UNLOCK_ENTRY_CONDUIT.equals(key)) {
+                            String referrer = entryJson.optString("referrer", "");
+                            entriesMap.put(key, new ConduitUnlockEntry(display, priority, referrer));
+                        } else {
+                            entriesMap.put(key, new UnlockEntry(display, priority));
+                        }
                     }
                 }
             }
@@ -247,7 +354,9 @@ public class UnlockOptions {
             }
         }
 
-        return unlockOptionsMap;
+        UnlockOptions unlockOptions = new UnlockOptions();
+        unlockOptions.entries.putAll(entriesMap);
+        return unlockOptions;
     }
 
     // Clear persisted unlock options
@@ -279,6 +388,23 @@ public class UnlockOptions {
 
     public boolean hasSubscriptionEntry() {
         return entries.containsKey(UNLOCK_ENTRY_SUBSCRIPTION);
+    }
+
+    public boolean hasAppInstallEntries() {
+        return entries.keySet().stream().anyMatch(key -> key.startsWith(APP_INSTALL_PREFIX));
+    }
+
+    public boolean isEntryDisplayable(String key) {
+        UnlockEntry entry = entries.get(key);
+        return entry != null && entry.isDisplayable();
+    }
+
+    public boolean hasDisplayableEntries() {
+        return entries.values().stream().anyMatch(UnlockEntry::isDisplayable);
+    }
+
+    public Map<String, UnlockEntry> getAllEntries() {
+        return new HashMap<>(entries);
     }
 
     public Flowable<Set<String>> getEntriesSetFlowable() {

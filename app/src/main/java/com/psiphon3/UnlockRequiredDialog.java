@@ -20,12 +20,10 @@ package com.psiphon3;
 
 import android.app.Dialog;
 import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.ImageButton;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
@@ -34,72 +32,46 @@ import androidx.lifecycle.LifecycleOwner;
 
 import com.psiphon3.log.MyLog;
 import com.psiphon3.subscription.R;
+import com.psiphon3.unlockui.AppInstallUnlockHandler;
+import com.psiphon3.unlockui.ConduitUnlockHandler;
+import com.psiphon3.unlockui.SubscriptionUnlockHandler;
+import com.psiphon3.unlockui.UnlockOptionHandler;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.disposables.Disposable;
-
 public class UnlockRequiredDialog implements DefaultLifecycleObserver {
+    boolean isDismissed = false;
     private final Dialog dialog;
-    // Always shown
-    private final CardView subscribeCard;
-
-
-    private final CardView openConduitCardView;
-    private final ImageButton installConduitBtn;
-    private final ImageButton updateConduitBtn;
-    private final CardView updatePsiphonProCardView;
+    private final LinearLayout unlockOptionsContainer;
     private final CardView disconnectAndDismissCardView;
 
-    private final View conduitContainerView;
-    private final View subscriptionContainerView;
-    private final View openConduitView;
-    private final View installConduitView;
-    private final View updateConduitView;
-    private final View updatePsiphonProView;
-    private final View dividerView;
-
-    private final CompositeDisposable compositeDisposable = new CompositeDisposable();
+    private UnlockOptions unlockOptions;
+    private final List<UnlockOptionHandler> handlers = new ArrayList<>();
     private Runnable dismissListener;
     private Runnable disconnectTunnelRunnable;
-    private Disposable updateStateDisposable;
-    private Map<String, Boolean> unlockOptionsMap;
 
     private UnlockRequiredDialog(Context context) {
-        View contentView = LayoutInflater.from(context).inflate(R.layout.unlock_required_prompt_layout, null);
+        View contentView = LayoutInflater.from(context).inflate(R.layout.unlock_required_dialog_layout, null);
 
-        // Initialize all final fields
-        conduitContainerView = contentView.findViewById(R.id.conduitContainerView);
-        subscriptionContainerView = contentView.findViewById(R.id.subscriptionContainerView);
-        subscribeCard = contentView.findViewById(R.id.subscribeCardView);
-        openConduitCardView = contentView.findViewById(R.id.openConduitCardView);
-        updatePsiphonProCardView = contentView.findViewById(R.id.updatePsiphonProCardView);
+        // Initialize container and disconnect button
+        unlockOptionsContainer = contentView.findViewById(R.id.unlockOptionsContainer);
         disconnectAndDismissCardView = contentView.findViewById(R.id.disconnectAndDismissCardView);
 
-        // Initialize the container views
-        openConduitView = contentView.findViewById(R.id.openConduitView);
-        installConduitView = contentView.findViewById(R.id.installConduitView);
-        updateConduitView = contentView.findViewById(R.id.updateConduitView);
-        updatePsiphonProView = contentView.findViewById(R.id.updatePsiphonProView);
-        dividerView = contentView.findViewById(R.id.divider);
-
-        // Initialize the buttons
-        installConduitBtn = contentView.findViewById(R.id.installConduitBtn);
-        updateConduitBtn = contentView.findViewById(R.id.updateConduitBtn);
-
         // Set click listeners
-        openConduitCardView.setOnClickListener(v -> launchConduit());
-        installConduitBtn.setOnClickListener(v -> openPlayStoreConduit());
-        updateConduitBtn.setOnClickListener(v -> openPlayStoreConduit());
-        updatePsiphonProCardView.setOnClickListener(v -> openPlayStorePsiphonPro());
         disconnectAndDismissCardView.setOnClickListener(v -> disconnectAndDismiss());
 
         dialog = new Dialog(context, R.style.Theme_NoTitleDialog);
         dialog.setCancelable(false);
         dialog.setContentView(contentView);
-        dialog.setOnShowListener(dialogInterface -> subscribeToConduitState());
+        dialog.setOnShowListener(dialogInterface -> {
+            // Notify all handlers dialog is shown
+            for (UnlockOptionHandler handler : handlers) {
+                handler.onShowDialog();
+            }
+        });
         dialog.setOnDismissListener(dialogInterface -> {
             if (dismissListener != null) {
                 dismissListener.run();
@@ -111,10 +83,6 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
         owner.getLifecycle().addObserver(this);
     }
 
-    private void setSubscribeOnClickListener(View.OnClickListener listener) {
-        subscribeCard.setOnClickListener(listener);
-    }
-
     private void setDisconnectTunnelRunnable(Runnable runnable) {
         this.disconnectTunnelRunnable = runnable;
     }
@@ -123,31 +91,12 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
         this.dismissListener = dismissListener;
     }
 
-    private void setUnlockOptionsMap(Map<String, Boolean> unlockOptionsMap) {
-        this.unlockOptionsMap = unlockOptionsMap;
+    private void setUnlockOptions(UnlockOptions unlockOptions) {
+        this.unlockOptions = unlockOptions;
     }
 
-    boolean hasConduitUnlockEntry() {
-        return unlockOptionsMap != null && unlockOptionsMap.containsKey(UnlockOptions.UNLOCK_ENTRY_CONDUIT);
-    }
-
-    boolean isConduitEntryDisplayable() {
-        return unlockOptionsMap != null && Boolean.TRUE.equals(unlockOptionsMap.get(UnlockOptions.UNLOCK_ENTRY_CONDUIT));
-    }
-
-    boolean isSubscriptionEntryDisplayable() {
-        return unlockOptionsMap != null && Boolean.TRUE.equals(unlockOptionsMap.get(UnlockOptions.UNLOCK_ENTRY_SUBSCRIPTION));
-    }
-
-    boolean hasDisplayableEntries() {
-        if (unlockOptionsMap == null) {
-            return false;
-        }
-
-        for (Boolean display : unlockOptionsMap.values()) {
-            if (display != null && display) return true;
-        }
-        return false;
+    private boolean hasDisplayableEntries() {
+        return unlockOptions != null && unlockOptions.hasDisplayableEntries();
     }
 
     private void show() {
@@ -156,15 +105,8 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
             return;
         }
 
-        // Set visibility of the subscription and Conduit containers based on the unlock entries
-        subscriptionContainerView.setVisibility(isSubscriptionEntryDisplayable() ? View.VISIBLE : View.GONE);
-        conduitContainerView.setVisibility(isConduitEntryDisplayable() ? View.VISIBLE : View.GONE);
-        // Show the divider only if both subscription and Conduit are displayable
-        // NOTE: INVISIBLE is used to maintain the spacing
-        dividerView.findViewById(R.id.divider).setVisibility(
-                (isSubscriptionEntryDisplayable() && isConduitEntryDisplayable()) ? View.VISIBLE : View.INVISIBLE
-        );
-
+        createHandlers();
+        populateContainer();
 
         dialog.show();
         // Full screen resize
@@ -175,12 +117,80 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
         dialog.getWindow().setAttributes(lp);
     }
 
+    private void createHandlers() {
+        handlers.clear();
+
+        if (unlockOptions == null) return;
+
+        Map<String, UnlockOptions.UnlockEntry> entries = unlockOptions.getAllEntries();
+
+        for (Map.Entry<String, UnlockOptions.UnlockEntry> entry : entries.entrySet()) {
+            String key = entry.getKey();
+            UnlockOptions.UnlockEntry unlockEntry = entry.getValue();
+
+            UnlockOptionHandler handler = createHandler(key, unlockEntry);
+            if (handler != null) {
+                handlers.add(handler);
+            }
+        }
+
+        // Sort by priority (lower number = higher priority = shown first)
+        handlers.sort(Comparator.comparingInt(UnlockOptionHandler::getPriority));
+    }
+
+    private UnlockOptionHandler createHandler(String key, UnlockOptions.UnlockEntry entry) {
+        if (key.equals(UnlockOptions.UNLOCK_ENTRY_SUBSCRIPTION)) {
+            return new SubscriptionUnlockHandler(entry, this::dismiss);
+
+        } else if (key.equals(UnlockOptions.UNLOCK_ENTRY_CONDUIT)) {
+            if (entry instanceof UnlockOptions.ConduitUnlockEntry) {
+                return new ConduitUnlockHandler((UnlockOptions.ConduitUnlockEntry) entry,
+                        disconnectTunnelRunnable, this::dismiss);
+            } else {
+                MyLog.w("UnlockRequiredDialog: entry for key " + key + " is not a ConduitUnlockEntry");
+                return null;
+            }
+        } else if (key.startsWith(UnlockOptions.APP_INSTALL_PREFIX)) {
+            if (entry instanceof UnlockOptions.AppInstallUnlockEntry) {
+                return new AppInstallUnlockHandler(key, (UnlockOptions.AppInstallUnlockEntry) entry,
+                        disconnectTunnelRunnable, this::dismiss);
+            } else {
+                MyLog.w("UnlockRequiredDialog: entry for key " + key + " is not an AppInstallUnlockEntry");
+                return null;
+            }
+        }
+
+        MyLog.w("UnlockRequiredDialog: unknown unlock option type: " + key);
+        return null;
+    }
+
+    private void populateContainer() {
+        unlockOptionsContainer.removeAllViews();
+
+        for (int i = 0; i < handlers.size(); i++) {
+            UnlockOptionHandler handler = handlers.get(i);
+            View view = handler.getView(unlockOptionsContainer);
+            unlockOptionsContainer.addView(view);
+        }
+    }
+
     public boolean isShowing() {
         return dialog.isShowing();
     }
 
     public void dismiss() {
-        compositeDisposable.clear();
+        synchronized (this) {
+            if (isDismissed) {
+                MyLog.w("UnlockRequiredDialog: already dismissed, ignoring further dismiss calls");
+                return;
+            }
+            isDismissed = true;
+        }
+        // Notify handlers dialog is being dismissed
+        for (UnlockOptionHandler handler : handlers) {
+            handler.onDismissDialog();
+        }
+
         if (dialog.getContext() instanceof LifecycleOwner) {
             ((LifecycleOwner) dialog.getContext()).getLifecycle().removeObserver(this);
         }
@@ -189,141 +199,26 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
 
     @Override
     public void onResume(@NonNull LifecycleOwner owner) {
-        if (dialog.isShowing()) {
-            subscribeToConduitState();
+        // Forward lifecycle events to all handlers
+        List<UnlockOptionHandler> handlersCopy = new ArrayList<>(handlers);
+        for (UnlockOptionHandler handler : handlersCopy) {
+            handler.onResume();
         }
     }
 
     @Override
     public void onPause(@NonNull LifecycleOwner owner) {
-        compositeDisposable.clear();
+        // Forward lifecycle events to all handlers
+        List<UnlockOptionHandler> handlersCopy = new ArrayList<>(handlers);
+        for (UnlockOptionHandler handler : handlersCopy) {
+            handler.onPause();
+        }
     }
 
     @Override
     public void onDestroy(@NonNull LifecycleOwner owner) {
         if (dialog.isShowing()) {
             dismiss();
-        }
-    }
-
-    private void subscribeToConduitState() {
-        if (!hasConduitUnlockEntry()) {
-            MyLog.i("UnlockRequiredDialog: Conduit unlock entry not present, skipping Conduit state subscription");
-            return;
-        }
-        // If already subscribed, do nothing
-        if (updateStateDisposable != null && !updateStateDisposable.isDisposed()) {
-            return;
-        }
-        // Load trusted signatures from file
-        PackageHelper.configureRuntimeTrustedSignatures(PackageHelper.readTrustedSignaturesFromFile(dialog.getContext()));
-
-        updateStateDisposable =
-                ConduitStateManager.newManager(dialog.getContext()).stateFlowable()
-                        // Filter out unknown states
-                        .filter(state -> state.status() != ConduitState.Status.UNKNOWN)
-                        // Always observe on main thread to update UI
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(
-                                this::updateConduitUI,
-                                throwable ->
-                                {
-                                    MyLog.e("UnlockRequiredDialog: unexpected error while observing Conduit state" + throwable);
-                                    hideConduitUI();
-                                }
-                        );
-        compositeDisposable.add(updateStateDisposable);
-    }
-
-    private void hideConduitUI() {
-        // Hide all Conduit related containers
-        openConduitView.setVisibility(View.GONE);
-        installConduitView.setVisibility(View.GONE);
-        updateConduitView.setVisibility(View.GONE);
-        updatePsiphonProView.setVisibility(View.GONE);
-    }
-
-    private void updateConduitUI(ConduitState state) {
-        switch (state.status()) {
-            case NOT_INSTALLED:
-                // Conduit is not installed, show install Conduit view, hide all others
-                installConduitView.setVisibility(View.VISIBLE);
-                updateConduitView.setVisibility(View.GONE);
-                openConduitView.setVisibility(View.GONE);
-                updatePsiphonProView.setVisibility(View.GONE);
-                break;
-            case INCOMPATIBLE_VERSION:
-                // Incompatible version, show update Conduit view, hide all others
-                updateConduitView.setVisibility(View.VISIBLE);
-                installConduitView.setVisibility(View.GONE);
-                openConduitView.setVisibility(View.GONE);
-                updatePsiphonProView.setVisibility(View.GONE);
-                break;
-            case ERROR:
-                // Error state, hide all Conduit views
-                MyLog.e("UnlockRequiredDialog: Conduit error: " +
-                        (state.message() != null ? state.message() : "unknown error"));
-                hideConduitUI();
-                break;
-            case RUNNING:
-                // Conduit is running, close the dialog
-                dialog.dismiss();
-                break;
-            case STOPPED:
-                // Conduit is stopped, show open Conduit view, hide all others
-                openConduitView.setVisibility(View.VISIBLE);
-                updatePsiphonProView.setVisibility(View.GONE);
-                installConduitView.setVisibility(View.GONE);
-                updateConduitView.setVisibility(View.GONE);
-                break;
-            case UNSUPPORTED_SCHEMA:
-                // Unsupported schema, show update Psiphon Pro view, hide all others
-                updatePsiphonProView.setVisibility(View.VISIBLE);
-                installConduitView.setVisibility(View.GONE);
-                updateConduitView.setVisibility(View.GONE);
-                openConduitView.setVisibility(View.GONE);
-                break;
-            default:
-                MyLog.w("PurchaseRequiredDialog: unhandled Conduit state: " + state.status());
-                hideConduitUI();
-                break;
-        }
-    }
-
-    private void openPlayStoreConduit() {
-        // Disconnect tunnel before opening Play Store
-        if (disconnectTunnelRunnable != null) {
-            disconnectTunnelRunnable.run();
-        }
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setData(Uri.parse("https://play.google.com/store/apps/details?id=ca.psiphon.conduit"));
-        intent.setPackage("com.android.vending");
-        dialog.getContext().startActivity(intent);
-        dialog.dismiss();
-    }
-
-    private void openPlayStorePsiphonPro() {
-        // Disconnect tunnel before opening Play Store
-        if (disconnectTunnelRunnable != null) {
-            disconnectTunnelRunnable.run();
-        }
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setData(Uri.parse("https://play.google.com/store/apps/details?id=com.psiphon3.subscription"));
-        intent.setPackage("com.android.vending");
-        dialog.getContext().startActivity(intent);
-        dialog.dismiss();
-    }
-
-    private void launchConduit() {
-        // Disconnect tunnel before launching Conduit
-        if (disconnectTunnelRunnable != null) {
-            disconnectTunnelRunnable.run();
-        }
-        Intent launchIntent = dialog.getContext().getPackageManager()
-                .getLaunchIntentForPackage("ca.psiphon.conduit");
-        if (launchIntent != null) {
-            dialog.getContext().startActivity(launchIntent);
-            dialog.dismiss();
         }
     }
 
@@ -343,11 +238,6 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
             this.lifecycleOwner = lifecycleOwner;
         }
 
-        public Builder setSubscribeClickListener(View.OnClickListener listener) {
-            dialog.setSubscribeOnClickListener(listener);
-            return this;
-        }
-
         public Builder setDisconnectTunnelRunnable(Runnable runnable) {
             dialog.setDisconnectTunnelRunnable(runnable);
             return this;
@@ -357,9 +247,9 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
             dialog.setDismissListener(dismissListener);
             return this;
         }
-        
-        public Builder setUnlockOptionsMap(Map<String, Boolean> unlockOptionsMap) {
-            dialog.setUnlockOptionsMap(unlockOptionsMap);
+
+        public Builder setUnlockOptions(UnlockOptions unlockOptions) {
+            dialog.setUnlockOptions(unlockOptions);
             return this;
         }
 
