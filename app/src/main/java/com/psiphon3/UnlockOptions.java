@@ -49,6 +49,22 @@ public class UnlockOptions {
     private final Map<String, UnlockEntry> entries = new ConcurrentHashMap<>();
     private final BehaviorRelay<Set<String>> entriesSetRelay = BehaviorRelay.create();
 
+    public void setEnforce(boolean enforce) {
+        this.enforce = enforce;
+    }
+
+    public boolean isEnforce() {
+        return enforce;
+    }
+
+    private boolean enforce = true; // Default to enforced unlock
+
+    public enum UnlockType {
+        ENFORCED,
+        NOT_ENFORCED,
+        NOT_REQUIRED
+    }
+
     public static class UnlockEntry {
         public final @Nullable Supplier<Boolean> checker;
         public final Boolean display;
@@ -79,7 +95,7 @@ public class UnlockOptions {
 
         // Service-side constructor (with checker)
         public ConduitUnlockEntry(@NonNull Supplier<Boolean> checker, @Nullable Boolean display, int priority,
-                                     String referrer) {
+                                  String referrer) {
             super(checker, display, priority);
             this.referrer = referrer;
         }
@@ -115,10 +131,10 @@ public class UnlockOptions {
     }
 
     // Check if we need to show the unlock dialog (service-side only)
-    public boolean unlockRequired() {
+    public UnlockType unlockRequired() {
         if (entries.isEmpty()) {
             // No checkers available, no need to show the unlock dialog
-            return false;
+            return UnlockType.NOT_REQUIRED;
         }
 
         boolean hasAtLeasOneDisplayableEntry = false;
@@ -130,13 +146,17 @@ public class UnlockOptions {
             // on the service side where all entries should have a checker.
             if (entry.checker.get()) {
                 // If any checker passed, we don't need to show the unlock dialog
-                return false;
+                return UnlockType.NOT_REQUIRED;
             }
         }
 
         // If no checkers passed and we have at least one displayable entry,
         // we need to show the unlock dialog
-        return hasAtLeasOneDisplayableEntry;
+        if (hasAtLeasOneDisplayableEntry) {
+            return enforce ? UnlockType.ENFORCED : UnlockType.NOT_ENFORCED;
+        }
+
+        return UnlockType.NOT_REQUIRED;
     }
 
     public synchronized void setEntries(@NonNull Map<String, UnlockEntry> entryMap) {
@@ -150,10 +170,12 @@ public class UnlockOptions {
         entries.clear();
     }
 
-    // Convert current entries to JSON format for persistence
-    public String toJsonString() {
+    // Save unlock options to file
+    public void toFile(Context context) {
+        String jsonString;
         try {
             JSONObject jsonObject = new JSONObject();
+            jsonObject.put("enforce", enforce);
             for (Map.Entry<String, UnlockEntry> entry : entries.entrySet()) {
                 JSONObject entryJson = new JSONObject();
                 entryJson.put("display", entry.getValue().isDisplayable());
@@ -176,80 +198,75 @@ public class UnlockOptions {
 
                 jsonObject.put(entry.getKey(), entryJson);
             }
-            return jsonObject.toString();
+            jsonString = jsonObject.toString();
         } catch (JSONException e) {
             MyLog.e("UnlockOptions: failed to convert to JSON: " + e);
-            return null;
+            jsonString = null;
         }
-    }
+        if (jsonString != null) {
+            File tempFile = new File(context.getFilesDir(), UNLOCK_OPTIONS_TEMP_FILE);
+            File finalFile = new File(context.getFilesDir(), UNLOCK_OPTIONS_FILE);
+            File lockFile = new File(context.getFilesDir(), UNLOCK_OPTIONS_LOCK_FILE);
 
-    // Save unlock options to file
-    public static void toFile(Context context, String jsonString) {
-        if (jsonString == null) {
-            MyLog.w("UnlockOptions: Cannot save null JSON string");
-            return;
-        }
-
-        File tempFile = new File(context.getFilesDir(), UNLOCK_OPTIONS_TEMP_FILE);
-        File finalFile = new File(context.getFilesDir(), UNLOCK_OPTIONS_FILE);
-        File lockFile = new File(context.getFilesDir(), UNLOCK_OPTIONS_LOCK_FILE);
-
-        RandomAccessFile randomAccessFile = null;
-        FileChannel channel = null;
-        FileLock lock = null;
-
-        try {
-            randomAccessFile = new RandomAccessFile(lockFile, "rw");
-            channel = randomAccessFile.getChannel();
-            try {
-                lock = channel.lock();
-            } catch (OverlappingFileLockException e) {
-                MyLog.e("UnlockOptions: Lock already held by this JVM: " + e);
-                return;
-            }
+            RandomAccessFile randomAccessFile = null;
+            FileChannel channel = null;
+            FileLock lock = null;
 
             try {
-                // Write to temporary file first to ensure atomic update
-                try (FileOutputStream fos = new FileOutputStream(tempFile);
-                     OutputStreamWriter writer = new OutputStreamWriter(fos, "UTF-8")) {
-                    writer.write(jsonString);
-                    writer.flush();
-                    fos.getFD().sync();
+                randomAccessFile = new RandomAccessFile(lockFile, "rw");
+                channel = randomAccessFile.getChannel();
+                try {
+                    lock = channel.lock();
+                } catch (OverlappingFileLockException e) {
+                    MyLog.e("UnlockOptions: Lock already held by this JVM: " + e);
+                    return;
                 }
 
-                // Atomic rename operation
-                if (!tempFile.renameTo(finalFile)) {
-                    MyLog.e("UnlockOptions: Failed to rename temp file to final file.");
+                try {
+                    // Write to temporary file first to ensure atomic update
+                    try (FileOutputStream fos = new FileOutputStream(tempFile);
+                         OutputStreamWriter writer = new OutputStreamWriter(fos, "UTF-8")) {
+                        writer.write(jsonString);
+                        writer.flush();
+                        fos.getFD().sync();
+                    }
+
+                    // Atomic rename operation
+                    if (!tempFile.renameTo(finalFile)) {
+                        MyLog.e("UnlockOptions: Failed to rename temp file to final file.");
+                    }
+                } finally {
+                    if (tempFile.exists()) {
+                        tempFile.delete();
+                    }
                 }
+            } catch (IOException e) {
+                MyLog.e("UnlockOptions: failed to save unlock options: " + e);
             } finally {
-                if (tempFile.exists()) {
-                    tempFile.delete();
+                if (lock != null) {
+                    try {
+                        lock.release();
+                    } catch (IOException e) {
+                        MyLog.e("UnlockOptions: failed to release lock: " + e);
+                    }
+                }
+                if (channel != null) {
+                    try {
+                        channel.close();
+                    } catch (IOException e) {
+                        MyLog.e("UnlockOptions: failed to close channel: " + e);
+                    }
+                }
+                if (randomAccessFile != null) {
+                    try {
+                        randomAccessFile.close();
+                    } catch (IOException e) {
+                        MyLog.e("UnlockOptions: failed to close random access file: " + e);
+                    }
                 }
             }
-        } catch (IOException e) {
-            MyLog.e("UnlockOptions: failed to save unlock options: " + e);
-        } finally {
-            if (lock != null) {
-                try {
-                    lock.release();
-                } catch (IOException e) {
-                    MyLog.e("UnlockOptions: failed to release lock: " + e);
-                }
-            }
-            if (channel != null) {
-                try {
-                    channel.close();
-                } catch (IOException e) {
-                    MyLog.e("UnlockOptions: failed to close channel: " + e);
-                }
-            }
-            if (randomAccessFile != null) {
-                try {
-                    randomAccessFile.close();
-                } catch (IOException e) {
-                    MyLog.e("UnlockOptions: failed to close random access file: " + e);
-                }
-            }
+        } else {
+            MyLog.w("UnlockOptions: Cannot save unlock options, JSON conversion failed");
         }
     }
 
@@ -263,6 +280,8 @@ public class UnlockOptions {
         RandomAccessFile randomAccessFile = null;
         FileChannel channel = null;
         FileLock lock = null;
+
+        boolean enforce = true; // Default to enforced unlock
 
         try {
             randomAccessFile = new RandomAccessFile(lockFile, "rw");
@@ -286,9 +305,15 @@ public class UnlockOptions {
 
                     // Parse JSON and convert to Map
                     JSONObject jsonObject = new JSONObject(builder.toString());
+                    enforce = jsonObject.optBoolean("enforce", true);
+
                     Iterator<String> keys = jsonObject.keys();
                     while (keys.hasNext()) {
                         String key = keys.next();
+                        // Skip the "enforce" field as it's not an unlock entry
+                        if ("enforce".equals(key)) {
+                            continue;
+                        }
                         JSONObject entryJson = jsonObject.getJSONObject(key);
                         boolean display = entryJson.optBoolean("display", true);
 
@@ -356,6 +381,7 @@ public class UnlockOptions {
 
         UnlockOptions unlockOptions = new UnlockOptions();
         unlockOptions.entries.putAll(entriesMap);
+        unlockOptions.enforce = enforce;
         return unlockOptions;
     }
 
