@@ -217,8 +217,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     private final CountDownLatch tunnelThreadStartedLock = new CountDownLatch(1);
     private TunnelConfigManager tunnelConfigManager;
     private final UnlockOptions unlockOptions = new UnlockOptions();
-    private boolean unlockUIDeliveredThisSession = false;
-
 
     TunnelManager(Service parentService) {
         m_parentService = parentService;
@@ -323,9 +321,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                                 if (!m_isStopping.get()) {
                                     TunnelConfigManager.RestartType restartType = config.getRestartType();
                                     if (restartType == TunnelConfigManager.RestartType.FULL_RESTART) {
-                                        // On full restart reset unlock options and "unlock UI delivered this session" flag
+                                        // On full restart reset unlock options and "unlock UI delivery" state
                                         unlockOptions.reset();
-                                        unlockUIDeliveredThisSession = false;
+                                        cachedUnlockUIDelivery = null;
 
                                         m_networkConnectionStatePublishRelay.accept(
                                                 TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
@@ -397,14 +395,14 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     boolean isRoutingThroughTunnel = pair.second;
 
                     if (networkConnectionState == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED) {
-                        if (unlockOptions.unlockRequired()) {
-                            // Command the service to stop immediately if unlock is required.
+                        if (unlockOptions.unlockRequired() == UnlockOptions.UnlockType.ENFORCED) {
+                            // Command the service to stop immediately if enforced unlock is required.
                             signalStopService();
                             // Do not emit downstream, we are stopping the service.
                             return Observable.empty();
-                        } else {
+                        } else if (unlockOptions.unlockRequired() == UnlockOptions.UnlockType.NOT_REQUIRED) {
                             // If there is no unlock required, we should cancel the unlock required notification
-                            // and continue
+                            // if it showing and continue
                             cancelUnlockRequiredNotification();
                         }
                     }
@@ -412,7 +410,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     // The tunnel is connected but we are not routing traffic through the tunnel yet,
                     // check in the following order if:
                     // a) we have a pending Speed Boost purchase,
-                    // b) or we need to send a "Purchase Required" intent,
+                    // b) or we need to send a "Unlock Required" intent if we are not enforcing unlock,
                     // c) or we need to send a landing page intent.
                     if (networkConnectionState == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED && !isRoutingThroughTunnel) {
                         if (multiProcessPreferences.getBoolean(getContext().getString(R.string.preferencePendingSpeedBoostPurchase), false)) {
@@ -421,6 +419,15 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                             m_isRoutingThroughTunnelPublishRelay.accept(Boolean.TRUE);
                             // Do not emit downstream if we just started routing.
                             return Observable.empty();
+                        }
+
+                        if (unlockOptions.unlockRequired() == UnlockOptions.UnlockType.NOT_ENFORCED) {
+                            return ensureUnlockUIDelivered()
+                                    .doOnComplete(() -> {
+                                        m_vpnManager.routeThroughTunnel(m_tunnel.getLocalSocksProxyPort());
+                                        m_isRoutingThroughTunnelPublishRelay.accept(Boolean.TRUE);
+                                    })
+                                    .andThen(Observable.empty());
                         }
 
                         if (m_tunnelState.homePages != null && m_tunnelState.homePages.size() != 0) {
@@ -518,22 +525,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 .setContentIntent(m_notificationPendingIntent);
 
         mNotificationManager.notify(R.id.notification_id_open_app_to_keep_connecting, notificationBuilder.build());
-    }
-
-    private void deliverUnlockRequiredUI() {
-        // persist the unlock options
-        String jsonString = unlockOptions.toJsonString();
-        UnlockOptions.toFile(getContext(), jsonString);
-
-        if (canSendIntentToActivity()) {
-            try {
-                m_notificationPendingIntent.send();
-            } catch (PendingIntent.CanceledException e) {
-                showUnlockRequiredNotification();
-            }
-        } else {
-            showUnlockRequiredNotification();
-        }
     }
 
     private void showUnlockRequiredNotification() {
@@ -1960,7 +1951,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             }
 
             // Also do not show the alert if we are showing or going to show the Unlock Required UI
-            if(unlockOptions.unlockRequired()) {
+            if(unlockOptions.unlockRequired() != UnlockOptions.UnlockType.NOT_REQUIRED) {
                 return;
             }
 
@@ -2060,6 +2051,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         // Expected format:
         // {
         //     "UnlockOptions": {
+        //         "enforce": true, // Optional flag controlling unlock enforcement (defaults to true if not present)
         //         "Subscription": {"priority": 30}, // Empty or missing "display" field is defaulted to true
         //         "Conduit": {"display": false, "priority": 10, "referrer": "utm_source%3Dpsiphon_pro%26utm_campaign%3Dpro_reg"},  // The "referrer" field is optional
         //         "AppInstall.YouTube": {
@@ -2072,6 +2064,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         //     }
         // }
         //
+        // ENFORCE FLAG: Controls whether unlock requirements are enforced or just tracked.
+        // - true (default): unlock requirements are enforced (ENFORCED state) - will stop the tunnel once connected
+        // - false: unlock requirements are tracked but not enforced (NOT_ENFORCED state) - tunnel will not stop
+        //
         // PRIORITY SETTING: If using priorities, set them for ALL unlock entries to avoid
         // mixing explicit priorities with defaults. For example, don't do:
         // "Subscription": {"priority": 5}, "Conduit": {} <- Conduit will get default priority 10
@@ -2080,15 +2076,21 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         // REFERRER PARAMETER: The optional "referrer" field for Conduit should be pre-URL-encoded.
         // This parameter will be appended to the Play Store URL for tracking app install attribution.
         Map<String, UnlockOptions.UnlockEntry> entries = new ConcurrentHashMap<>();
+        boolean enforce = true; // Default to true
 
         try {
             JSONObject unlockOptionsJson = params.optJSONObject("UnlockOptions");
+            enforce = unlockOptionsJson == null || unlockOptionsJson.optBoolean("enforce", true);
 
             if (unlockOptionsJson != null) {
                 // Process each key in the JSON
                 Iterator<String> keys = unlockOptionsJson.keys();
                 while (keys.hasNext()) {
                     String entryKey = keys.next();
+                    // Skip the "enforce" field as it's not an unlock entry
+                    if ("enforce".equals(entryKey)) {
+                        continue;
+                    }
                     JSONObject entryObject = unlockOptionsJson.optJSONObject(entryKey);
                     Boolean display = entryObject != null && entryObject.has("display")
                             ? entryObject.optBoolean("display")
@@ -2110,11 +2112,52 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             MyLog.e("TunnelManager: failed to parse UnlockOptions: " + e);
         } finally {
             unlockOptions.setEntries(entries);
-            if (unlockOptions.unlockRequired() && !unlockUIDeliveredThisSession) {
-                unlockUIDeliveredThisSession = true;
-                deliverUnlockRequiredUI();
+            unlockOptions.setEnforce(enforce);
+            // try to deliver the unlock UI ASAP if required
+            m_compositeDisposable.add(ensureUnlockUIDelivered().subscribe());
+        }
+    }
+
+    // Ensures that the unlock UI is delivered to the client if required.
+    // If the unlock options are not required, it completes immediately.
+    // The completable is cached to avoid multiple deliveries and can be called multiple times,
+    // like, for example, when the tunnel is fully connected.
+    private Completable cachedUnlockUIDelivery = null;
+    Completable ensureUnlockUIDelivered() {
+        if (cachedUnlockUIDelivery == null) {
+            if (unlockOptions.unlockRequired() == UnlockOptions.UnlockType.NOT_REQUIRED) {
+                cachedUnlockUIDelivery = Completable.complete();
+            } else {
+                cachedUnlockUIDelivery = Completable.defer(() -> {
+                    // persist the unlock options
+                    unlockOptions.toFile(getContext());
+
+                    if (canSendIntentToActivity()) {
+                        try {
+                            m_notificationPendingIntent.send();
+                            return Completable.complete();
+                        } catch (PendingIntent.CanceledException e) {
+                            // Fall through to waiting case
+                        }
+                    }
+
+                    // Cannot send immediately - wait for client
+                    return m_newClientPublishRelay
+                            .filter(__ -> pingForActivity())
+                            .take(1)
+                            .ignoreElements()
+                            .doOnSubscribe(__ -> showUnlockRequiredNotification())
+                            .doOnComplete(() -> {
+                                try {
+                                    m_notificationPendingIntent.send();
+                                } catch (PendingIntent.CanceledException e) {
+                                    // Intent was cancelled, but we still complete
+                                }
+                            });
+                }).cache();
             }
         }
+        return cachedUnlockUIDelivery;
     }
 
     private void processConduitUnlockEntry(String entryKey,

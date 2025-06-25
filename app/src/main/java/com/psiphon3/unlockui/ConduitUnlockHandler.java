@@ -35,7 +35,6 @@ import com.psiphon3.log.MyLog;
 import com.psiphon3.subscription.R;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 
 public class ConduitUnlockHandler extends UnlockOptionHandler {
@@ -45,7 +44,7 @@ public class ConduitUnlockHandler extends UnlockOptionHandler {
             "https://play.google.com/store/apps/details?id=com.psiphon3.subscription";
 
     private final UnlockOptions.ConduitUnlockEntry conduitEntry;
-    private final Runnable disconnectTunnelRunnable;
+    private final Runnable actionRunnable;
     private Disposable conduitStateDisposable;
 
     // Views for different conduit states
@@ -54,11 +53,11 @@ public class ConduitUnlockHandler extends UnlockOptionHandler {
     private View updateConduitView;
     private View openConduitView;
 
-    public ConduitUnlockHandler(UnlockOptions.ConduitUnlockEntry conduitEntry, Runnable disconnectTunnelRunnable,
+    public ConduitUnlockHandler(UnlockOptions.ConduitUnlockEntry conduitEntry, Runnable actionRunnable,
                                 Runnable dismissDialogRunnable) {
         super(UnlockOptions.UNLOCK_ENTRY_CONDUIT, conduitEntry, dismissDialogRunnable);
         this.conduitEntry = conduitEntry;
-        this.disconnectTunnelRunnable = disconnectTunnelRunnable;
+        this.actionRunnable = actionRunnable;
     }
 
     @Override
@@ -202,8 +201,8 @@ public class ConduitUnlockHandler extends UnlockOptionHandler {
         intent.setPackage("com.android.vending");
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
         try {
-            if (disconnectTunnelRunnable != null) {
-                disconnectTunnelRunnable.run();
+            if (actionRunnable != null) {
+                actionRunnable.run();
             }
             MyLog.i("ConduitUnlockHandler: opening Play Store for Conduit");
             context.startActivity(intent);
@@ -219,8 +218,8 @@ public class ConduitUnlockHandler extends UnlockOptionHandler {
         intent.setPackage("com.android.vending");
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
         try {
-            if (disconnectTunnelRunnable != null) {
-                disconnectTunnelRunnable.run();
+            if (actionRunnable != null) {
+                actionRunnable.run();
             }
             MyLog.i("ConduitUnlockHandler: opening Play Store for Psiphon Pro");
             context.startActivity(intent);
@@ -231,9 +230,6 @@ public class ConduitUnlockHandler extends UnlockOptionHandler {
     }
 
     private void launchConduit(android.content.Context context) {
-        if (disconnectTunnelRunnable != null) {
-            disconnectTunnelRunnable.run();
-        }
         Intent launchIntent = context.getPackageManager()
                 .getLaunchIntentForPackage("ca.psiphon.conduit");
         if (launchIntent != null) {
