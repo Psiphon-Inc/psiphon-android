@@ -82,7 +82,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -321,9 +320,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                                 if (!m_isStopping.get()) {
                                     TunnelConfigManager.RestartType restartType = config.getRestartType();
                                     if (restartType == TunnelConfigManager.RestartType.FULL_RESTART) {
-                                        // On full restart reset unlock options and "unlock UI delivery" state
+                                        // On full restart reset unlock options and "unlock UI delivery" completable
                                         unlockOptions.reset();
-                                        cachedUnlockUIDelivery = null;
+                                        cachedUnlockUiDeliveryCompletable = null;
 
                                         m_networkConnectionStatePublishRelay.accept(
                                                 TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
@@ -370,10 +369,16 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                                 .map(ignored -> unlockOptions.hasConduitEntry())
                                 .distinctUntilChanged()
                                 .doOnNext(hasConduitUnlockOption -> {
+                                    // Update the tunnel config manager with the conduit state.
+                                    // For the hasConduitEnforcement parameter, we check pass the following condition:
+                                    // if the unlock required is ENFORCED, and conduit entry is present ? true : false
+                                    boolean shouldFullRestart = unlockOptions.unlockRequired() ==
+                                            UnlockOptions.UnlockType.ENFORCED && hasConduitUnlockOption;
                                     MyLog.i("TunnelManager: Conduit is running: " + isRunning +
+                                            ", unlock required: " + unlockOptions.unlockRequired() +
                                             ", has conduit unlock option: " + hasConduitUnlockOption +
-                                            ", updating tunnel config manager");
-                                    tunnelConfigManager.updateConduitStateConditional(isRunning, hasConduitUnlockOption);
+                                            ", updating tunnel config manager with full restart: " + shouldFullRestart);
+                                    tunnelConfigManager.updateConduitStateConditional(isRunning, shouldFullRestart);
                                 }))
                 .subscribe();
 
@@ -2122,42 +2127,53 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     // If the unlock options are not required, it completes immediately.
     // The completable is cached to avoid multiple deliveries and can be called multiple times,
     // like, for example, when the tunnel is fully connected.
-    private Completable cachedUnlockUIDelivery = null;
-    Completable ensureUnlockUIDelivered() {
-        if (cachedUnlockUIDelivery == null) {
-            if (unlockOptions.unlockRequired() == UnlockOptions.UnlockType.NOT_REQUIRED) {
-                cachedUnlockUIDelivery = Completable.complete();
-            } else {
-                cachedUnlockUIDelivery = Completable.defer(() -> {
-                    // persist the unlock options
-                    unlockOptions.toFile(getContext());
+    private Completable cachedUnlockUiDeliveryCompletable = null;
 
-                    if (canSendIntentToActivity()) {
+    Completable ensureUnlockUIDelivered() {
+        return Completable.defer(() -> {
+            // Always check current unlock requirements (fresh every time)
+            if (unlockOptions.unlockRequired() == UnlockOptions.UnlockType.NOT_REQUIRED) {
+                return Completable.complete();
+            }
+
+            // Return cached delivery execution (created once per session)
+            if (cachedUnlockUiDeliveryCompletable == null) {
+                cachedUnlockUiDeliveryCompletable = createDeliveryCompletable().cache();
+            }
+            return cachedUnlockUiDeliveryCompletable;
+        });
+    }
+
+    private Completable createDeliveryCompletable() {
+        return Completable.defer(() -> {
+            // persist the unlock options
+            unlockOptions.toFile(getContext());
+
+            if (canSendIntentToActivity()) {
+                try {
+                    m_notificationPendingIntent.send();
+                    return Completable.complete();
+                } catch (PendingIntent.CanceledException e) {
+                    MyLog.w("TunnelManager: createDeliveryCompletable: pending intent send failed: " + e);
+                    // Intent was cancelled, but we still complete
+                    return Completable.complete();
+                }
+            }
+
+            // Cannot send immediately - wait for client
+            return m_newClientPublishRelay
+                    .filter(__ -> pingForActivity())
+                    .take(1)
+                    .ignoreElements()
+                    .doOnSubscribe(__ -> showUnlockRequiredNotification())
+                    .doOnComplete(() -> {
                         try {
                             m_notificationPendingIntent.send();
-                            return Completable.complete();
                         } catch (PendingIntent.CanceledException e) {
-                            // Fall through to waiting case
+                            MyLog.w("TunnelManager: createDeliveryCompletable: pending intent send failed: " + e);
                         }
-                    }
-
-                    // Cannot send immediately - wait for client
-                    return m_newClientPublishRelay
-                            .filter(__ -> pingForActivity())
-                            .take(1)
-                            .ignoreElements()
-                            .doOnSubscribe(__ -> showUnlockRequiredNotification())
-                            .doOnComplete(() -> {
-                                try {
-                                    m_notificationPendingIntent.send();
-                                } catch (PendingIntent.CanceledException e) {
-                                    // Intent was cancelled, but we still complete
-                                }
-                            });
-                }).cache();
-            }
-        }
-        return cachedUnlockUIDelivery;
+                    });
+        });
     }
 
     private void processConduitUnlockEntry(String entryKey,
