@@ -246,9 +246,7 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
                         .firstOrError()
                         .doOnSuccess(tunnelState -> {
                             if (tunnelState.isRunning()) {
-                                if (unlockOptions.isEnforce() || !tunnelState.connectionData().isConnected()) {
-                                    tunnelServiceInteractor.stopTunnelService();
-                                }
+                                tunnelServiceInteractor.stopTunnelService();
                             }
                         }).subscribe();
             }
