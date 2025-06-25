@@ -622,7 +622,6 @@
 
     <!-- Generic 'Dismiss' button label for dialogs and alerts -->
     <string name="label_dismiss">Fermer</string>
-
     <!-- Title of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon Pro UI features.
     The %s will be replaced with the app name passed to the string resource. -->
     <string name="install_app_to_unlock_title">Installer %s</string>
@@ -633,5 +632,4 @@
 
     <!-- Header text above "Update Psiphon Pro" action in the unlock required dialog. -->
     <string name="update_psiphon_pro_action_header">Commencez par mettre à jour Psiphon Pro</string>
-
 </resources>

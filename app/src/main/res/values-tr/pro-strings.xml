@@ -620,15 +620,14 @@
 
     <!-- Generic 'Dismiss' button label for dialogs and alerts -->
     <string name="label_dismiss">Yok say</string>
-
     <!-- Title of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon Pro UI features.
     The %s will be replaced with the app name passed to the string resource. -->
-    <string name="install_app_to_unlock_title">%s uygulamasını yükle</string>
+    <string name="install_app_to_unlock_title">%s uygulamasını kur</string>
 
     <!-- Description of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon Pro UI features.
     The %s will be replaced with the app name passed to the string resource. -->
-    <string name="install_app_to_unlock_description">Psiphon’a ücretsiz bağlı kalmak için %s uygulamasını Play Store’dan yükle</string>
+    <string name="install_app_to_unlock_description">Ücretsiz Psiphon bağlantısı kurmak için %s uygulamasını Play Store üzerinden kurun</string>
 
     <!-- Header text above "Update Psiphon Pro" action in the unlock required dialog. -->
-    <string name="update_psiphon_pro_action_header">Önce Psiphon Pro’yu güncelleyin</string>
+    <string name="update_psiphon_pro_action_header">Önce Psiphon Pro uygulamasını güncelleyin</string>
 </resources>

@@ -125,7 +125,7 @@
     PsiCash account Create,Forgot Password, or Manage Account web page loaded internally while
     Psiphon is connecting to the server.
     Note: 'Psiphon' should not be translated or transliterated. -->
-    <string name="psicash_web_wait_tunnel_connecting">a dan tsahirta, Psiphon na shirin buÉ—ewa</string>
+    <string name="psicash_web_wait_tunnel_connecting">a dan tsahirta, Psiphon na shirin buɗewa</string>
 
     <!--Generic 'close' button label -->
     <string name="label_close">Rufe</string>
@@ -153,7 +153,6 @@
 
     <!-- Generic 'Dismiss' button label for dialogs and alerts -->
     <string name="label_dismiss">Rufe</string>
-
     <!-- Title of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon Pro UI features.
     The %s will be replaced with the app name passed to the string resource. -->
     <string name="install_app_to_unlock_title">Saka %s</string>

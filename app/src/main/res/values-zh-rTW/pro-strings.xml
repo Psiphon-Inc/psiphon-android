@@ -620,4 +620,4 @@
 
     <!-- Generic 'Dismiss' button label for dialogs and alerts -->
     <string name="label_dismiss">退訂</string>
-</resources>
+    </resources>
