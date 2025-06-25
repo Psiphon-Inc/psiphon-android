@@ -527,21 +527,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         mNotificationManager.notify(R.id.notification_id_open_app_to_keep_connecting, notificationBuilder.build());
     }
 
-    private void deliverUnlockRequiredUI() {
-        // persist the unlock options
-        unlockOptions.toFile(getContext());
-
-        if (canSendIntentToActivity()) {
-            try {
-                m_notificationPendingIntent.send();
-            } catch (PendingIntent.CanceledException e) {
-                showUnlockRequiredNotification();
-            }
-        } else {
-            showUnlockRequiredNotification();
-        }
-    }
-
     private void showUnlockRequiredNotification() {
         if (mNotificationManager == null) {
             return;
