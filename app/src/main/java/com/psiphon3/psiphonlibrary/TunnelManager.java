@@ -426,8 +426,17 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                             return Observable.empty();
                         }
 
-                        if (unlockOptions.unlockRequired() == UnlockOptions.UnlockType.NOT_ENFORCED) {
+                        // Handle any unlock requirement by delivering UI first, then starting routing.
+                        // Strategy: Cut tunnel initially to get user attention, then restore after UI delivery.
+                        //
+                        // Cases handled:
+                        // - NOT_ENFORCED: Normal flow - show UI, wait for delivery, then route
+                        // - ENFORCED: Safety net case - this shouldn't normally be reached since we stop
+                        //   the service earlier for enforced unlock, but if somehow we get here,
+                        //   deliver UI and route (better than leaving user in broken state)
+                        if (unlockOptions.unlockRequired() != UnlockOptions.UnlockType.NOT_REQUIRED) {
                             return ensureUnlockUIDelivered()
+                                    // Start routing once the unlock UI delivery flow is complete
                                     .doOnComplete(() -> {
                                         m_vpnManager.routeThroughTunnel(m_tunnel.getLocalSocksProxyPort());
                                         m_isRoutingThroughTunnelPublishRelay.accept(Boolean.TRUE);
@@ -2165,7 +2174,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     .filter(__ -> pingForActivity())
                     .take(1)
                     .ignoreElements()
-                    .doOnSubscribe(__ -> showUnlockRequiredNotification())
+                    .doOnSubscribe(__ -> {
+                        m_vpnManager.stopRouteThroughTunnel();
+                        m_isRoutingThroughTunnelPublishRelay.accept(Boolean.FALSE);
+                        showUnlockRequiredNotification();
+                    })
                     .doOnComplete(() -> {
                         try {
                             m_notificationPendingIntent.send();
