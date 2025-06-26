@@ -216,6 +216,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     private final CountDownLatch tunnelThreadStartedLock = new CountDownLatch(1);
     private TunnelConfigManager tunnelConfigManager;
     private final UnlockOptions unlockOptions = new UnlockOptions();
+    // Flag to pin unlock options for the current session if they are valid
+    private boolean unlockOptionsPinnedForSession = false;
 
     TunnelManager(Service parentService) {
         m_parentService = parentService;
@@ -320,9 +322,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                                 if (!m_isStopping.get()) {
                                     TunnelConfigManager.RestartType restartType = config.getRestartType();
                                     if (restartType == TunnelConfigManager.RestartType.FULL_RESTART) {
-                                        // On full restart reset unlock options and "unlock UI delivery" completable
+                                        // On full restart reset unlock options, "unlock UI delivery" state,
+                                        // and "pin options for the session" flag.
                                         unlockOptions.reset();
                                         cachedUnlockUiDeliveryCompletable = null;
+                                        unlockOptionsPinnedForSession = false;
+
 
                                         m_networkConnectionStatePublishRelay.accept(
                                                 TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
@@ -2089,6 +2094,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         //
         // REFERRER PARAMETER: The optional "referrer" field for Conduit should be pre-URL-encoded.
         // This parameter will be appended to the Play Store URL for tracking app install attribution.
+
+        if (unlockOptionsPinnedForSession) {
+            MyLog.i("TunnelManager: unlock options already pinned for this session, skipping");
+            return;
+        }
+
         Map<String, UnlockOptions.UnlockEntry> entries = new ConcurrentHashMap<>();
         boolean enforce = true; // Default to true
 
@@ -2127,7 +2138,14 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         } finally {
             unlockOptions.setEntries(entries);
             unlockOptions.setEnforce(enforce);
-            // try to deliver the unlock UI ASAP if required
+
+            // Pin unlock options if we have any displayable entries
+            if (unlockOptions.hasDisplayableEntries()) {
+                unlockOptionsPinnedForSession = true;
+                MyLog.i("TunnelManager: pinning unlock options for session with displayable entries");
+            }
+
+            // Try to deliver the unlock UI ASAP if required
             m_compositeDisposable.add(ensureUnlockUIDelivered().subscribe());
         }
     }
