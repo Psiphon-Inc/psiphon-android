@@ -440,7 +440,17 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
         unlockRequiredDialog = new UnlockRequiredDialog.Builder(this, this)
                 .setUnlockOptions(unlockOptions)
-                .setTunnelServiceInteractor(getTunnelServiceInteractor())
+                .setDisconnectTunnelRunnable(() -> compositeDisposable.add(
+                        getTunnelServiceInteractor().tunnelStateFlowable()
+                                .filter(state -> !state.isUnknown())
+                                .firstOrError()
+                                .doOnSuccess(state -> {
+                                    if (state.isRunning()) {
+                                        getTunnelServiceInteractor().stopTunnelService();
+                                    }
+                                })
+                                .subscribe()
+                ))
                 // Run the rest of onResume logic after the dialog is dismissed
                 .setDismissListener(this::handleDisruptiveOnResumeActions)
                 .show();

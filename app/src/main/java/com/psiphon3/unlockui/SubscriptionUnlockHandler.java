@@ -37,11 +37,9 @@ import io.reactivex.disposables.Disposable;
 
 public class SubscriptionUnlockHandler extends UnlockOptionHandler {
     private Disposable subscriptionDisposable;
-    private final Runnable actionRunnable;
 
-    public SubscriptionUnlockHandler(UnlockOptions.UnlockEntry entry, Runnable actionRunnable, Runnable dismissDialogRunnable) {
+    public SubscriptionUnlockHandler(UnlockOptions.UnlockEntry entry, Runnable dismissDialogRunnable) {
         super(UnlockOptions.UNLOCK_ENTRY_SUBSCRIPTION, entry, dismissDialogRunnable);
-        this.actionRunnable = actionRunnable;
     }
 
     @Override
@@ -121,10 +119,6 @@ public class SubscriptionUnlockHandler extends UnlockOptionHandler {
     }
 
     private void startSubscriptionActivity(Context context) {
-        if (actionRunnable != null) {
-            // Run the action before starting the activity
-            actionRunnable.run();
-        }
         try {
             Intent intent = new Intent(context, PaymentChooserActivity.class);
             intent.putExtra(PaymentChooserActivity.INTENT_EXTRA_UNLOCK_REQUIRED, true);
