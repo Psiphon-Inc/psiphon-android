@@ -233,10 +233,18 @@ public class ConduitUnlockHandler extends UnlockOptionHandler {
         Intent launchIntent = context.getPackageManager()
                 .getLaunchIntentForPackage("ca.psiphon.conduit");
         if (launchIntent != null) {
-            launchIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-            MyLog.i("ConduitUnlockHandler: launching Conduit app");
-            context.startActivity(launchIntent);
-            dismissDialogRunnable.run();
+            launchIntent.addFlags(
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            try {
+                MyLog.i("ConduitUnlockHandler: launching Conduit app");
+                if (actionRunnable != null) {
+                    actionRunnable.run();
+                }
+                context.startActivity(launchIntent);
+            } catch (ActivityNotFoundException | SecurityException e) {
+                MyLog.w("ConduitUnlockHandler: error launching Conduit app: " + e);
+            }
         }
+        dismissDialogRunnable.run();
     }
 }
