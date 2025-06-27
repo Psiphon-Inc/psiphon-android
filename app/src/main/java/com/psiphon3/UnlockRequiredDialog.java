@@ -149,7 +149,7 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
 
     private UnlockOptionHandler createHandler(String key, UnlockOptions.UnlockEntry entry) {
         if (key.equals(UnlockOptions.UNLOCK_ENTRY_SUBSCRIPTION)) {
-            return new SubscriptionUnlockHandler(entry, this::dismiss);
+            return new SubscriptionUnlockHandler(entry, disconnectTunnelRunnable, this::dismiss);
 
         } else if (key.equals(UnlockOptions.UNLOCK_ENTRY_CONDUIT)) {
             if (entry instanceof UnlockOptions.ConduitUnlockEntry) {
