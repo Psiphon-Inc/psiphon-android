@@ -63,12 +63,10 @@ public class TunnelConfigManager {
 
     private static class SponsorshipState {
         private final SubscriptionState subscriptionState;
-        private final boolean hasSpeedBoostAuth;
         private final boolean isConduitRunning;
 
         private SponsorshipState(Builder builder) {
             this.subscriptionState = builder.subscriptionState;
-            this.hasSpeedBoostAuth = builder.hasSpeedBoostAuth;
             this.isConduitRunning = builder.isConduitRunning;
         }
 
@@ -76,17 +74,13 @@ public class TunnelConfigManager {
             // Evaluate the sponsor ID based on the current state of the sponsorship
             // 1. If the user has an unlimited subscription, use the subscription sponsor ID
             // 2. If the user has a limited subscription, use the subscription sponsor ID
-            // 3. If the user has speed boost authorization, use the speed boost sponsor ID
-            // 4. If the user is running conduit, use the conduit sponsor ID
-            // 5. Otherwise, use the embedded sponsor ID (fallback and default)
+            // 3. If the user is running conduit, use the conduit sponsor ID
+            // 4. Otherwise, use the embedded sponsor ID (fallback and default)
             if (subscriptionState == SubscriptionState.UNLIMITED) {
                 return BuildConfig.SUBSCRIPTION_SPONSOR_ID;
             }
             if (subscriptionState == SubscriptionState.LIMITED) {
                 return BuildConfig.SUBSCRIPTION_SPONSOR_ID;
-            }
-            if (hasSpeedBoostAuth) {
-                return BuildConfig.SPEED_BOOST_SPONSOR_ID;
             }
             if (isConduitRunning) {
                 return BuildConfig.CONDUIT_RUNNING_SPONSOR_ID;
@@ -96,18 +90,12 @@ public class TunnelConfigManager {
 
         public static class Builder {
             private SubscriptionState subscriptionState;
-            private boolean hasSpeedBoostAuth;
             private boolean isConduitRunning;
 
             public Builder withSubscriptionState(SubscriptionState state) {
                 this.subscriptionState = state;
                 return this;
             }
-            public Builder withSpeedBoost(boolean hasAuth) {
-                this.hasSpeedBoostAuth = hasAuth;
-                return this;
-            }
-
             public Builder withConduit(boolean isRunning) {
                 this.isConduitRunning = isRunning;
                 return this;
@@ -124,13 +112,12 @@ public class TunnelConfigManager {
             if (o == null || getClass() != o.getClass()) return false;
             SponsorshipState that = (SponsorshipState) o;
             return subscriptionState == that.subscriptionState &&
-                    hasSpeedBoostAuth == that.hasSpeedBoostAuth &&
                     isConduitRunning == that.isConduitRunning;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(subscriptionState, hasSpeedBoostAuth, isConduitRunning);
+            return Objects.hash(subscriptionState, isConduitRunning);
         }
     }
 
@@ -219,11 +206,6 @@ public class TunnelConfigManager {
         return config != null ? config.deviceLocation : "";
     }
 
-    public boolean isSpeedBoostActive() {
-        TunnelConfig config = getCurrentConfig();
-        return config != null && config.sponsorshipState.hasSpeedBoostAuth;
-    }
-
     public boolean isSubscriptionActive() {
         TunnelConfig config = getCurrentConfig();
         return config != null && config.sponsorshipState.subscriptionState != SubscriptionState.NONE;
@@ -242,15 +224,6 @@ public class TunnelConfigManager {
     public void updateSubscriptionState(SubscriptionState subscriptionState) {
         updateConfigWithRestartType(currentState -> new SponsorshipState.Builder()
                 .withSubscriptionState(subscriptionState)
-                .withSpeedBoost(currentState.hasSpeedBoostAuth)
-                .withConduit(currentState.isConduitRunning)
-                .build(), RestartType.FULL_RESTART);
-    }
-
-    public void updateSpeedBoostState(boolean isAuthorized) {
-        updateConfigWithRestartType(currentState -> new SponsorshipState.Builder()
-                .withSubscriptionState(currentState.subscriptionState)
-                .withSpeedBoost(isAuthorized)
                 .withConduit(currentState.isConduitRunning)
                 .build(), RestartType.FULL_RESTART);
     }
@@ -261,27 +234,23 @@ public class TunnelConfigManager {
 
         updateConfigWithRestartType(currentState -> new SponsorshipState.Builder()
                 .withSubscriptionState(currentState.subscriptionState)
-                .withSpeedBoost(currentState.hasSpeedBoostAuth)
                 .withConduit(isRunning)
                 .build(), restartType);
     }
 
     // Initializes the tunnel configuration with externally provided states.
     public Single<TunnelConfig> initConfiguration(
-            Single<Boolean> speedBoostStateSingle,
             Single<Boolean> conduitStateSingle,
             Single<String> deviceLocationSingle,
             Single<SubscriptionState> subscriptionStateSingle) {
         return Single.zip(
                 getBaseConfig(), // Keep this internal
-                speedBoostStateSingle,
                 conduitStateSingle,
                 deviceLocationSingle,
                 subscriptionStateSingle,
-                (baseConfig, hasSpeedBoost, isConduitRunning, deviceLocation, subscriptionState) -> {
+                (baseConfig, isConduitRunning, deviceLocation, subscriptionState) -> {
                     SponsorshipState sponsorshipState = new SponsorshipState.Builder()
                             .withSubscriptionState(subscriptionState)
-                            .withSpeedBoost(hasSpeedBoost)
                             .withConduit(isConduitRunning)
                             .build();
 

@@ -46,7 +46,6 @@ import androidx.lifecycle.ViewModelProvider;
 import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.billing.SubscriptionState;
 import com.psiphon3.log.MyLog;
-import com.psiphon3.psicash.details.PsiCashFragment;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.subscription.BuildConfig;
@@ -68,7 +67,6 @@ public class HomeTabFragment extends Fragment {
     private Drawable conduitAppIcon;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private View tunnelStateContainer;
-    private View psicashContainer;
     private ImageView tunnelStateImageView;
     private TextView lastLogEntryTv;
 
@@ -96,37 +94,13 @@ public class HomeTabFragment extends Fragment {
         tunnelStateContainer = view.findViewById(R.id.tunnelStateContainer);
         tunnelStateImageView = view.findViewById(R.id.tunnelStateImageView);
         lastLogEntryTv = view.findViewById(R.id.lastLogEntryTv);
-        psicashContainer = view.findViewById(R.id.psicashContainer);
 
         upgradeButton.setOnClickListener(v ->
                 MainActivity.openPaymentChooserActivity(requireActivity(),
                         getResources().getInteger(R.integer.subscriptionTabIndex)));
 
-
-        if (savedInstanceState == null) {
-            PsiCashFragment psiCashFragment = new PsiCashFragment();
-            psiCashFragment.setVisibilityChangeListener(this::onPsiCashVisibilityChanged);
-            getChildFragmentManager()
-                    .beginTransaction()
-                    .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
-                    .add(R.id.psicash_fragment_container, psiCashFragment)
-                    .commit();
-        }
-
         // Render initial state to avoid incomplete UI
         render(UiState.initial(requireContext()));
-    }
-
-    // This method is called by the PsiCashFragment's visibility change listener.
-    // It toggles visibility between the tunnel status container and the PsiCash container:
-    // when PsiCash is visible, the tunnel status is hidden, and vice versa.
-    // This is part of a soft phase-out of PsiCash; once PsiCash is fully removed,
-    // the tunnel status UI will always be visible by default.
-    private void onPsiCashVisibilityChanged(Boolean isPsiCashVisible) {
-        if (psicashContainer != null && tunnelStateContainer != null) {
-            psicashContainer.setVisibility(isPsiCashVisible ? View.VISIBLE : View.GONE);
-            tunnelStateContainer.setVisibility(isPsiCashVisible ? View.GONE : View.VISIBLE);
-        }
     }
 
     @Override

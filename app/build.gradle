@@ -46,8 +46,6 @@ android {
                 buildConfigField "String", "STATIC_LANDING_PAGE_URL", "null"
                 // Specify purchase verification environment, default is production
                 buildConfigField "Boolean", "PURCHASE_VERIFIER_DEV_ENVIRONMENT", "false"
-                // Specify PsiCash environment, default is production
-                buildConfigField "Boolean", "PSICASH_DEV_ENVIRONMENT", "false"
             }
         } else {
             throw new GradleException('version.properties found but entries are missing')
@@ -135,7 +133,6 @@ android {
 
     buildTypes.each {
         it.buildConfigField 'String', 'SUBSCRIPTION_SPONSOR_ID', getBuildProperty('SUBSCRIPTION_SPONSOR_ID')
-        it.buildConfigField 'String', 'SPEED_BOOST_SPONSOR_ID', getBuildProperty('SPEED_BOOST_SPONSOR_ID')
         it.buildConfigField 'String', "CONDUIT_RUNNING_SPONSOR_ID", getBuildProperty('CONDUIT_RUNNING_SPONSOR_ID')
         it.buildConfigField 'String', 'IAB_PUBLIC_KEY', getBuildProperty('IAB_PUBLIC_KEY')
     }
@@ -170,8 +167,6 @@ dependencies {
     implementation files('libs/jndcrash-release.aar')
 
     implementation project(':tray')
-
-    implementation files('libs/psicashlib-release.aar')
 
     implementation "androidx.multidex:multidex:$rootProject.ext.multidexVersion"
     implementation "androidx.appcompat:appcompat:$rootProject.ext.appcompatVersion"
