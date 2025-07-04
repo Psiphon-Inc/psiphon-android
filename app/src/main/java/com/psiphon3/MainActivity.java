@@ -73,8 +73,6 @@ import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.billing.SubscriptionState;
 import com.psiphon3.log.LogsMaintenanceWorker;
 import com.psiphon3.log.MyLog;
-import com.psiphon3.psicash.PsiCashClient;
-import com.psiphon3.psicash.PsiCashException;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.psiphonlibrary.TunnelManager;
@@ -407,10 +405,9 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 .subscribe());
 
         // Observe link clicks in the modal web view to open in the external browser
-        // NOTE: do not PsiCash modify links clicked from the view
         compositeDisposable.add(viewModel.externalBrowserUrlFlowable()
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext(url -> displayBrowser(this, url, false))
+                .doOnNext(url -> displayBrowser(this, url))
                 .subscribe());
 
         // Check if user data collection disclosure needs to be shown followed by the unsafe traffic
@@ -578,9 +575,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             bp.setSpan(new BulletSpan(15), 0, bp.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             spannableStringBuilder.append(bp);
             spannableStringBuilder.append("\n\n");
-            bp = new SpannableString(getString(R.string.vpn_data_collection_disclosure_bp3));
-            bp.setSpan(new BulletSpan(15), 0, bp.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            spannableStringBuilder.append(bp);
             ((TextView)dialogView.findViewById(R.id.textView)).setText(spannableStringBuilder);
 
             final AlertDialog alertDialog = new AlertDialog.Builder(this)
@@ -739,20 +733,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     }
 
     private void displayBrowser(Context context, String urlString) {
-        // Override landing page URL if there is a static landing page URL in the build config
-        if (BuildConfig.STATIC_LANDING_PAGE_URL != null) {
-            urlString  = BuildConfig.STATIC_LANDING_PAGE_URL;
-        }
-        // PsiCash modify URLs by default
-        displayBrowser(context, urlString, true);
-    }
-
-    private void displayBrowser(Context context, String urlString, boolean shouldPsiCashModifyUrls) {
-        if (shouldPsiCashModifyUrls) {
-            // Add PsiCash parameters
-            urlString = PsiCashModifyUrl(urlString);
-        }
-
         // TODO: support multiple home pages in whole device mode. This is
         // disabled due to the case where users haven't set a default browser
         // and will get the prompt once per home page.
@@ -1095,20 +1075,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         toast.setGravity(Gravity.CENTER, 0, 0);
         toast.show();
     }
-
-    private String PsiCashModifyUrl(String originalUrlString) {
-        if (TextUtils.isEmpty(originalUrlString)) {
-            return originalUrlString;
-        }
-
-        try {
-            return PsiCashClient.getInstance(getApplicationContext()).modifiedHomePageURL(originalUrlString);
-        } catch (PsiCashException e) {
-            MyLog.e("PsiCash: error modifying home page: " + e);
-        }
-        return originalUrlString;
-    }
-
     public void selectTabByTag(@NonNull Object tag) {
         viewPager.post(() -> {
             for (int i = 0; i < tabLayout.getTabCount(); i++) {
@@ -1155,10 +1121,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
             sponsorHomePage.setOnTitleChangedListener(alertDialog::setTitle);
 
-            // Add PsiCash parameters to the original URL.
-            final String psiCashModifyUrl = PsiCashModifyUrl(url);
-
-            sponsorHomePage.load(psiCashModifyUrl);
+            sponsorHomePage.load(url);
         } catch (RuntimeException ignored) {
         }
     }

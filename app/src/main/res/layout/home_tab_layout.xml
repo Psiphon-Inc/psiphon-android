@@ -5,30 +5,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- PsiCash container scroll view -->
-    <ScrollView
-        android:id="@+id/psicashContainer"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:fillViewport="true"
-        app:layout_constraintBottom_toTopOf="@+id/speedDisplay"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-        <FrameLayout
-            android:id="@+id/psicash_fragment_container"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="16dp" />
-    </ScrollView>
-
     <!-- Tunnel State container scroll view, initially hidden -->
     <ScrollView
         android:id="@+id/tunnelStateContainer"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:fillViewport="true"
-        android:visibility="gone"
         android:scrollbarAlwaysDrawVerticalTrack="false"
         app:layout_constraintBottom_toTopOf="@+id/speedDisplay"
         app:layout_constraintEnd_toEndOf="parent"

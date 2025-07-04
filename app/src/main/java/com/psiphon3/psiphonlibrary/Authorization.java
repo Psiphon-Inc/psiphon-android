@@ -47,14 +47,11 @@ import java.util.List;
 
 @AutoValue
 public abstract class Authorization {
-    public static final String ACCESS_TYPE_SPEED_BOOST;
     public static final String ACCESS_TYPE_GOOGLE_SUBSCRIPTION;
     public static final String ACCESS_TYPE_GOOGLE_SUBSCRIPTION_LIMITED;
     private static final String PREFERENCE_AUTHORIZATIONS_LIST = "preferenceAuthorizations";
 
     static {
-        ACCESS_TYPE_SPEED_BOOST = BuildConfig.PSICASH_DEV_ENVIRONMENT ?
-                "speed-boost-test" : "speed-boost";
         ACCESS_TYPE_GOOGLE_SUBSCRIPTION = BuildConfig.PURCHASE_VERIFIER_DEV_ENVIRONMENT ?
                 "google-subscription-test" : "google-subscription";
         ACCESS_TYPE_GOOGLE_SUBSCRIPTION_LIMITED = BuildConfig.PURCHASE_VERIFIER_DEV_ENVIRONMENT ?
