@@ -66,7 +66,6 @@ public class HomeTabFragment extends Fragment {
     private Button upgradeButton;
     private Drawable conduitAppIcon;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
-    private View tunnelStateContainer;
     private ImageView tunnelStateImageView;
     private TextView lastLogEntryTv;
 
@@ -91,7 +90,6 @@ public class HomeTabFragment extends Fragment {
         combinedRateLimitTextView = view.findViewById(R.id.combinedRateLimitTextView);
         accessStatusLabel = view.findViewById(R.id.accessStatusLabel);
         upgradeButton = view.findViewById(R.id.upgradeButton);
-        tunnelStateContainer = view.findViewById(R.id.tunnelStateContainer);
         tunnelStateImageView = view.findViewById(R.id.tunnelStateImageView);
         lastLogEntryTv = view.findViewById(R.id.lastLogEntryTv);
 
