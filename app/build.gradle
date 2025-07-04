@@ -25,8 +25,8 @@ android {
                 applicationId "com.psiphon3.subscription"
                 resValue "string", "tray__authority", "${applicationId}.tray"
                 minSdkVersion 21 // Google Play Billing Library 7+ requires API level 21
-                compileSdk 34
-                targetSdkVersion 34
+                compileSdk 35
+                targetSdkVersion 35
                 versionCode verCode
                 versionName verName
                 testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"

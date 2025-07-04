@@ -31,7 +31,7 @@
 
     <application
         android:name="com.psiphon3.PsiphonApplication"
-        android:theme="@style/Theme.AppCompat"
+        android:theme="@style/Theme.Psiphon"
         android:hardwareAccelerated="true"
         android:allowBackup="false"
         android:fullBackupContent="false"
