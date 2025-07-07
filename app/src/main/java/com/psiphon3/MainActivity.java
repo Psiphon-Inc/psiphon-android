@@ -470,13 +470,13 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                                         createAdLoadingCallback()
                                 ))
                                 .doOnError(error -> MyLog.e("MainActivity: cold start ads flow error: " + error))
+                                .onErrorComplete()
                                 .doFinally(this::hideAdsOverlay);
                     } else {
                         return Completable.complete();
                     }
                 })
                 .andThen(Completable.fromAction(this::handleDisruptiveOnResumeActions))
-                .onErrorComplete()
                 .subscribe();
     }
 
