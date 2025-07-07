@@ -231,4 +231,13 @@
 
     <!-- Header text above "Update Psiphon Pro" action in the unlock required dialog. -->
     <string name="update_psiphon_pro_action_header">First, update Psiphon Pro</string>
+
+    <!-- Preference category title for managing advertising privacy settings -->
+    <string name="pref_category_advertising_privacy">Advertising Privacy</string>
+
+    <!-- Preference title for managing ads consent -->
+    <string name="adsConsentManagementTitle">Manage Ad Preferences</string>
+
+    <!-- Preference summary for managing ads consent -->
+    <string name="adsConsentManagementSummary">Control how your data is used for personalized advertising</string>
 </resources>

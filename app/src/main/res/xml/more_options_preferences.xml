@@ -78,4 +78,13 @@
             android:key="@string/preferenceAbout"
             android:title="@string/about" />
     </PreferenceCategory>
+    <PreferenceCategory
+        android:key="@string/adsPrivacyPreferenceCategory"
+        android:title="@string/pref_category_advertising_privacy">
+        <Preference
+            android:icon="@drawable/ads_click_24px"
+            android:key="@string/adsConsentPreference"
+            android:title="@string/adsConsentManagementTitle"
+            android:summary="@string/adsConsentManagementSummary"/>
+    </PreferenceCategory>
 </PreferenceScreen>

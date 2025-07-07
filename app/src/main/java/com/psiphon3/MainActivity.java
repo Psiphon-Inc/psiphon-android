@@ -25,6 +25,7 @@ import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.AnimationDrawable;
@@ -49,6 +50,7 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.webkit.WebView;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -69,6 +71,8 @@ import androidx.viewpager.widget.ViewPager;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
+import com.psiphon3.ads.AdManager;
+import com.psiphon3.ads.ColdStartFlowHelper;
 import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.billing.SubscriptionState;
 import com.psiphon3.log.LogsMaintenanceWorker;
@@ -78,7 +82,6 @@ import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.VpnAppsUtils;
-import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
@@ -89,11 +92,11 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 
 import io.reactivex.Completable;
 import io.reactivex.Maybe;
+import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
@@ -140,6 +143,70 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         DISABLED,
         NEED_SYSTEM_NFC,
         ENABLED
+    }
+
+    // Ads related fields
+    private boolean adsHandledThisSession = false;
+    private boolean isFirstAppStartEver;
+    private Disposable coldStartDisposable;
+    private FrameLayout overlayContainer;
+    private ProgressBar overlayProgress;
+    private final AdManager adManager = new AdManager();
+
+    private AdManager.AdLoadingCallback createAdLoadingCallback() {
+        return new AdManager.AdLoadingCallback() {
+            @Override
+            public void startedLoading(int timeoutSeconds) {
+                runOnUiThread(() -> {
+                    if (overlayProgress != null) {
+                        overlayProgress.setIndeterminate(false);
+                        overlayProgress.setMax(timeoutSeconds * 10); // Max = 100 (tenths)
+                        overlayProgress.setProgress(0);
+                    }
+                });
+            }
+
+            @Override
+            public void updateLoadingProgress(float remainingSeconds) {
+                runOnUiThread(() -> {
+                    if (overlayProgress != null) {
+                        // Update progress bar with remaining seconds (in tenths)
+                        // Convert seconds to tenths of a second
+                        int tenths = (int) (remainingSeconds * 10);
+                        overlayProgress.setProgress(tenths);
+                    }
+                });
+            }
+
+            @Override
+            public void done() {
+                hideAdsOverlay();
+            }
+        };
+    }
+
+    private void showAdsOverlay() {
+        if (isFinishing() || isDestroyed()) {
+            return;
+        }
+
+        if (overlayContainer == null) {
+            overlayContainer = findViewById(R.id.overlay_container);
+            overlayProgress = findViewById(R.id.overlay_progress);
+        }
+
+        overlayContainer.setVisibility(View.VISIBLE);
+        overlayProgress.setIndeterminate(true);
+    }
+
+    private void hideAdsOverlay() {
+        if (isFinishing() || isDestroyed()) {
+            return;
+        }
+
+        if (overlayContainer != null) {
+            overlayContainer.setVisibility(View.GONE);
+        }
     }
 
     @Override
@@ -216,6 +283,13 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         setContentView(R.layout.main_activity);
 
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+
+        // record first app start for ads purposes
+        SharedPreferences prefs = this.getSharedPreferences("main_activity", MODE_PRIVATE);
+        isFirstAppStartEver = prefs.getBoolean("is_first_start", true);
+        if (isFirstAppStartEver) {
+            prefs.edit().putBoolean("is_first_start", false).apply();
+        }
 
         helpConnectFab = findViewById(R.id.help_connect_fab);
 
@@ -312,6 +386,9 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         if (unlockDialogDismissDisposable != null && !unlockDialogDismissDisposable.isDisposed()) {
             unlockDialogDismissDisposable.dispose();
         }
+        if (coldStartDisposable != null) {
+            coldStartDisposable.dispose();
+        }
         super.onDestroy();
     }
 
@@ -370,7 +447,62 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             return;
         }
 
-        handleDisruptiveOnResumeActions();
+        // Ads flow is only started if we are not showing the Unlock Required dialog
+        handleAdsOrDisruptiveActions();
+    }
+
+    private void handleAdsOrDisruptiveActions() {
+        if (coldStartDisposable != null && !coldStartDisposable.isDisposed()) {
+            return;
+        }
+
+        coldStartDisposable = shouldShowAdsSingle()
+                .flatMapCompletable(shouldShow -> {
+                    adsHandledThisSession = true;
+                    if (shouldShow) {
+                        MyLog.i("MainActivity: starting cold start ads flow");
+                        return Completable.fromAction(this::showAdsOverlay)
+                                .andThen(ColdStartFlowHelper.executeColdStartFlow(
+                                        this,
+                                        googlePlayBillingHelper,
+                                        adManager,
+                                        getTunnelServiceInteractor().tunnelStateFlowable(),
+                                        createAdLoadingCallback()
+                                ))
+                                .doOnError(error -> MyLog.e("MainActivity: cold start ads flow error: " + error))
+                                .doFinally(this::hideAdsOverlay);
+                    } else {
+                        return Completable.complete();
+                    }
+                })
+                .andThen(Completable.fromAction(this::handleDisruptiveOnResumeActions))
+                .onErrorComplete()
+                .subscribe();
+    }
+
+    private Single<Boolean> shouldShowAdsSingle() {
+        return Single.fromCallable(() ->
+                // Need SDK 23+ to show ads
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                        !adsHandledThisSession &&
+                        !isFirstAppStartEver &&
+                        startPromptsHandled()
+        );
+    }
+
+    private boolean startPromptsHandled() {
+        // Check if VPN service data collection disclosure has been accepted
+        if (!multiProcessPreferences.getBoolean(getString(R.string.vpnServiceDataCollectionDisclosureAccepted), false)) {
+            return false;
+        }
+
+        // Check if unsafe traffic alerts preference has been set
+        try {
+            multiProcessPreferences.getBoolean(getString(R.string.unsafeTrafficAlertsPreference));
+            return true; // Both prompts handled
+        } catch (ItemNotFoundException ex) {
+            return false;
+        }
     }
 
     private boolean handleUnlockRequiredUi() {

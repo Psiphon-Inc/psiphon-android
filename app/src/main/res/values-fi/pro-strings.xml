@@ -185,4 +185,13 @@
 
     <!-- Header text above "Update Psiphon Pro" action in the unlock required dialog. -->
     <string name="update_psiphon_pro_action_header">Päivitä ensin Psiphon Pro</string>
+
+    <!-- Preference category title for managing advertising privacy settings -->
+    <string name="pref_category_advertising_privacy">Mainosten yksityisyys</string>
+
+    <!-- Preference title for managing ads consent -->
+    <string name="adsConsentManagementTitle">Hallinnoi mainosasetuksia</string>
+
+    <!-- Preference summary for managing ads consent -->
+    <string name="adsConsentManagementSummary">Ohjaa, miten tietojasi käytetään personoituun mainontaan</string>
 </resources>

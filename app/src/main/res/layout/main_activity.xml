@@ -19,105 +19,144 @@
  *
  -->
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@android:color/transparent">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-        <ImageView
-            android:id="@+id/banner"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:src="@drawable/top_banner" />
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent">
 
+            <ImageView
+                android:id="@+id/banner"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:src="@drawable/top_banner" />
+
+        </LinearLayout>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1.0">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+                <com.psiphon3.PsiphonTabLayout
+                    android:id="@+id/main_activity_tablayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+                <androidx.viewpager.widget.ViewPager
+                    android:id="@+id/tabs_view_pager"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/help_connect_fab"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end|bottom"
+                android:layout_margin="16dp"
+                android:tint="@android:color/black"
+                android:tooltipText="@string/help_connect_fab_tooltip"
+                android:visibility="gone"
+                app:backgroundTint="@android:color/white"
+                app:fabSize="normal"
+                app:maxImageSize="48dp"
+                app:srcCompat="@drawable/ic_nfc_help" />
+        </FrameLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:id="@+id/buttonPanel"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:weightSum="2.0">
+
+                <Button
+                    android:id="@+id/toggleButton"
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:layout_weight="1.0"
+                    android:text="@string/start"
+                    android:textAppearance="?android:attr/textAppearanceSmall" />
+
+                <Button
+                    android:id="@+id/openBrowserButton"
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:layout_weight="1.0"
+                    android:text="@string/open_browser"
+                    android:textAppearance="?android:attr/textAppearanceSmall" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/connectionWaitingNetworkIndicator"
+                android:layout_width="match_parent"
+                android:layout_height="8dp"
+                android:layout_alignTop="@+id/buttonPanel"
+                android:background="@drawable/connection_waiting_network_animation_drawable"
+                android:orientation="horizontal"
+                android:visibility="invisible" />
+
+            <ProgressBar
+                android:id="@+id/connectionProgressBar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="8dp"
+                android:layout_alignTop="@+id/buttonPanel"
+                android:indeterminate="true"
+                android:visibility="invisible" />
+
+        </RelativeLayout>
     </LinearLayout>
-
+    <!-- Ad overlay on top of everything -->
     <FrameLayout
+        android:id="@+id/overlay_container"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1.0">
+        android:layout_height="match_parent"
+        android:background="@color/overlay_background"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
+        <!-- App logo centered like default splash -->
+        <ImageView
+            android:id="@+id/overlay_logo"
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="48dp"
+            android:src="@mipmap/ic_launcher"
+            android:contentDescription="@string/app_name" />
 
-            <com.psiphon3.PsiphonTabLayout
-                android:id="@+id/main_activity_tablayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
-            <androidx.viewpager.widget.ViewPager
-                android:id="@+id/tabs_view_pager"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-        </LinearLayout>
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/help_connect_fab"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end|bottom"
-            android:layout_margin="16dp"
-            app:srcCompat="@drawable/ic_nfc_help"
-            app:backgroundTint="@android:color/white"
-            android:tint="@android:color/black"
-            app:maxImageSize="48dp"
-            android:visibility="gone"
-            android:tooltipText="@string/help_connect_fab_tooltip"
-            app:fabSize="normal" />
-    </FrameLayout>
-
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <LinearLayout
-            android:id="@+id/buttonPanel"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:weightSum="2.0">
-
-            <Button
-                android:id="@+id/toggleButton"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
-                android:layout_weight="1.0"
-                android:text="@string/start"
-                android:textAppearance="?android:attr/textAppearanceSmall" />
-
-            <Button
-                android:id="@+id/openBrowserButton"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
-                android:layout_weight="1.0"
-                android:text="@string/open_browser"
-                android:textAppearance="?android:attr/textAppearanceSmall" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/connectionWaitingNetworkIndicator"
-            android:layout_width="match_parent"
-            android:layout_height="8dp"
-            android:layout_alignTop="@+id/buttonPanel"
-            android:background="@drawable/connection_waiting_network_animation_drawable"
-            android:orientation="horizontal"
-            android:visibility="invisible" />
+        <!-- Progress bar below logo -->
         <ProgressBar
-            android:id="@+id/connectionProgressBar"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="8dp"
-            android:layout_alignTop="@+id/buttonPanel"
-            android:visibility="invisible"
-            android:indeterminate="true" />
+            android:id="@+id/overlay_progress"
+            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+            android:layout_width="200dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center"
+            android:layout_marginTop="48dp"
+            android:indeterminate="true"
+            android:indeterminateTint="@color/progress_color"
+            android:progressTint="@color/progress_color" />
 
-    </RelativeLayout>
-</LinearLayout>
+    </FrameLayout>
+</FrameLayout>

@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.android'
 
 android {
     namespace 'com.psiphon3.subscription'
@@ -135,12 +136,21 @@ android {
         it.buildConfigField 'String', 'SUBSCRIPTION_SPONSOR_ID', getBuildProperty('SUBSCRIPTION_SPONSOR_ID')
         it.buildConfigField 'String', "CONDUIT_RUNNING_SPONSOR_ID", getBuildProperty('CONDUIT_RUNNING_SPONSOR_ID')
         it.buildConfigField 'String', 'IAB_PUBLIC_KEY', getBuildProperty('IAB_PUBLIC_KEY')
+
+        // Set AdMob app ID and App Open ad unit ID for disconnected mode.
+        it.buildConfigField 'String', 'APP_OPEN_DISCONNECTED_ID', getBuildProperty('APP_OPEN_DISCONNECTED_ID')
+        it.manifestPlaceholders = [
+                ADMOB_APP_ID: getBuildProperty('ADMOB_APP_ID').replaceAll("\"", "")
+        ]
     }
 
     // Fix `More than one file found with OS dependent path' compilation error, see
     // https://issuetracker.google.com/issues/152898926 for more info.
     packagingOptions {
         exclude 'META-INF/*.kotlin_module'
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
     }
 }
 
@@ -190,6 +200,7 @@ dependencies {
 
     implementation "androidx.work:work-runtime:$rootProject.ext.workManagerVersion"
     implementation "androidx.work:work-rxjava2:$rootProject.ext.workManagerVersion"
+    implementation 'androidx.core:core-ktx:1.16.0'
 
     compileOnly "com.google.auto.value:auto-value:$rootProject.ext.autoValueVersion"
     annotationProcessor "com.google.auto.value:auto-value:$rootProject.ext.autoValueVersion"
@@ -207,6 +218,14 @@ dependencies {
 
     implementation "com.google.android.gms:play-services-location:$rootProject.ext.locationServicesVersion"
     implementation "com.github.drfonfon:android-geohash:$rootProject.ext.geoHashVersion"
+
+    // Ads and consent management
+    implementation "com.google.android.gms:play-services-ads:$rootProject.ext.playServicesAdsVersion"
+    implementation "com.google.android.ump:user-messaging-platform:$rootProject.ext.userMessagingPlatformVersion"
+
+    // Need Guava because adding Google Play Services Ads dependency messes up the ListenableFuture, see
+    // https://github.com/google/ExoPlayer/issues/7993 for more info.
+    implementation 'com.google.guava:guava:31.1-android'
 
     coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:$rootProject.ext.coreLibraryDesugaringVersion"
 }
