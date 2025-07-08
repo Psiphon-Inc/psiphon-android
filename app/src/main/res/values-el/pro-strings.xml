@@ -93,4 +93,12 @@
     The %s will be replaced with the app name passed to the string resource. -->
     <string name="install_app_to_unlock_description">Εγκαταστήστε το %s από το Play Store για να παραμείνετε συνδεδεμένοι στο Psiphon δωρεάν</string>
 
+    <!-- Preference category title for managing advertising privacy settings -->
+    <string name="pref_category_advertising_privacy">Απόρρητο διαφημίσεων</string>
+
+    <!-- Preference title for managing ads consent -->
+    <string name="adsConsentManagementTitle">Διαχείριση προτιμήσεων διαφημίσεων</string>
+
+    <!-- Preference summary for managing ads consent -->
+    <string name="adsConsentManagementSummary">Ελέγξτε πώς χρησιμοποιούνται τα δεδομένα σας για εξατομικευμένες διαφημίσεις</string>
     </resources>

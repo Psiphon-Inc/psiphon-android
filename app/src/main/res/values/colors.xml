@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="rate_limit_glow">#AAFFFFFF</color>
+    <color name="overlay_background">#212121</color>
+    <color name="progress_color">#00BCD4</color>
 </resources>

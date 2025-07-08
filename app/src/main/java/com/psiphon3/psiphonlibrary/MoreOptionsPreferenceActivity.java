@@ -40,6 +40,7 @@ import androidx.preference.PreferenceScreen;
 
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.TunnelState;
+import com.psiphon3.ads.ConsentManager;
 import com.psiphon3.subscription.R;
 
 import io.reactivex.Flowable;
@@ -134,6 +135,7 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
 
             setupLanguageSelector(preferences);
             setupAbouts(preferences);
+            setupConsentManagement(preferences);
         }
 
         @Override
@@ -141,6 +143,17 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
             super.onResume();
             // Set up a listener whenever a key changes
             getPreferenceScreen().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
+
+            // Check if consent category should be shown/hidden
+            updateConsentCategoryVisibility();
+        }
+
+        private void updateConsentCategoryVisibility() {
+            ConsentManager consentManager = ConsentManager.getInstance(requireContext());
+            Preference category = findPreference(getString(R.string.adsPrivacyPreferenceCategory));
+            if (category != null) {
+                category.setVisible(consentManager.isPrivacyOptionsRequired());
+            }
         }
 
         @Override
@@ -253,6 +266,36 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
                 }
                 return true;
             });
+        }
+
+        private void setupConsentManagement(PreferenceScreen preferences) {
+            ConsentManager consentManager = ConsentManager.getInstance(requireContext());
+
+            // Check if privacy options are required
+            if (!consentManager.isPrivacyOptionsRequired()) {
+                // Remove the entire "Advertising Privacy" category if not needed
+                preferences.removePreference(findPreference(getString(R.string.adsPrivacyPreferenceCategory)));
+                return;
+            }
+
+            // If we get here, privacy options are required - set up the preference
+            Preference consentPref = preferences.findPreference(getString(R.string.adsConsentPreference));
+            if (consentPref != null) {
+                consentPref.setOnPreferenceClickListener(preference -> {
+                    Disposable disposable = consentManager.showPrivacyOptionsForm(requireActivity())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe(
+                                    () -> {
+                                        // Form dismissed - no action needed
+                                    },
+                                    error -> {
+                                        // Handle error if needed
+                                    }
+                            );
+                    compositeDisposable.add(disposable);
+                    return true;
+                });
+            }
         }
     }
 }

@@ -2,7 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:installLocation="auto">
-    <uses-sdk tools:overrideLibrary="ca.psiphon"/>
+
+    <uses-sdk tools:overrideLibrary="ca.psiphon,com.google.android.gms.ads.impl,com.google.android.gms.ads"/>
     <supports-screens
                   android:smallScreens="true"
                   android:normalScreens="true"
@@ -31,7 +32,7 @@
 
     <application
         android:name="com.psiphon3.PsiphonApplication"
-        android:theme="@style/Theme.AppCompat"
+        android:theme="@style/Theme.Psiphon"
         android:hardwareAccelerated="true"
         android:allowBackup="false"
         android:fullBackupContent="false"
@@ -42,6 +43,11 @@
         android:usesCleartextTraffic="false"
         tools:ignore="GoogleAppIndexingWarning"
         tools:replace="android:label,android:fullBackupContent">
+
+        <!-- AdMob App ID, set via build.properties, see the build.properties.stub -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="${ADMOB_APP_ID}"/>
 
         <activity
             android:name="com.psiphon3.MainActivity"
@@ -158,7 +164,7 @@
         android:name="com.psiphon3.log.LoggingContentProvider"
         android:exported="false"
         android:process=":LoggingContentProvider"
-        android:authorities="com.psiphon3.subscription.LoggingContentProvider" />
+        android:authorities="${applicationId}.LoggingContentProvider" />
         <!-- PsiphonUpdateReceiver receives intents that trigger upgrade checking. -->
         <receiver android:name="com.psiphon3.PsiphonUpdateReceiver"
             android:exported="false">

@@ -129,4 +129,13 @@
 
     <!-- Header text above "Update Psiphon Pro" action in the unlock required dialog. -->
     <string name="update_psiphon_pro_action_header">Prvo ažurirajte Psiphon Pro</string>
+
+    <!-- Preference category title for managing advertising privacy settings -->
+    <string name="pref_category_advertising_privacy">Privatnost oglasa</string>
+
+    <!-- Preference title for managing ads consent -->
+    <string name="adsConsentManagementTitle">Upravljanje postavkama oglasa</string>
+
+    <!-- Preference summary for managing ads consent -->
+    <string name="adsConsentManagementSummary">Kontrolirajte kako se vaši podaci koriste za personalizirane oglase</string>
 </resources>
