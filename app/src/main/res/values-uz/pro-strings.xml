@@ -47,5 +47,5 @@
     <string name="adsConsentManagementTitle">Reklama sozlamalarini boshqarish</string>
 
     <!-- Preference summary for managing ads consent -->
-    <string name="adsConsentManagementSummary">Shaxsiy reklama uchun ma'lumotlaringiz qanday ishlatilishini nazorat qiling</string>
+    <string name="adsConsentManagementSummary">Shaxsiy reklama uchun ma‘lumotlaringiz qanday ishlatilishini nazorat qiling</string>
 </resources>
