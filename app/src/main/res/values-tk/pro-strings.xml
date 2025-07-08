@@ -40,12 +40,12 @@
     <string name="subscribe_card_title">Abuna ýazyl</string>
 
 
-    <\!-- Preference category title for managing advertising privacy settings -->
+    <!-- Preference category title for managing advertising privacy settings -->
     <string name="pref_category_advertising_privacy">Mahabat gizlinligi</string>
 
-    <\!-- Preference title for managing ads consent -->
+    <!-- Preference title for managing ads consent -->
     <string name="adsConsentManagementTitle">Mahabat saýlawlaryny dolandyrmak</string>
 
-    <\!-- Preference summary for managing ads consent -->
+    <!-- Preference summary for managing ads consent -->
     <string name="adsConsentManagementSummary">Şahsy mahabat üçin maglumatlaryňyzyň nähili ulanylýandygyny gözegçilik</string>
 </resources>

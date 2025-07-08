@@ -50,12 +50,12 @@
     <!-- Header text above "Update Psiphon Pro" action in the unlock required dialog. -->
     <string name="update_psiphon_pro_action_header">ኣብ መጀመርታ ኣዘምን Psiphon Pro</string>
 
-    <\!-- Preference category title for managing advertising privacy settings -->
+    <!-- Preference category title for managing advertising privacy settings -->
     <string name="pref_category_advertising_privacy">ናይ መወዓዚ ብሕታዊነት</string>
 
-    <\!-- Preference title for managing ads consent -->
+    <!-- Preference title for managing ads consent -->
     <string name="adsConsentManagementTitle">ናይ መወዓዚ ምርጫታት ኣመሓድር</string>
 
-    <\!-- Preference summary for managing ads consent -->
+    <!-- Preference summary for managing ads consent -->
     <string name="adsConsentManagementSummary">ናይ ውልቃዊ መወዓዚ ዳታኻ ብኸመይ ከም እትጥቀመሉ ቆጻጻር</string>
 </resources>

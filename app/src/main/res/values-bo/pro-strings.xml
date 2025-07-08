@@ -235,12 +235,12 @@
     <!-- Header text above "Update Psiphon Pro" action in the unlock required dialog. -->
     <string name="update_psiphon_pro_action_header">དང་པོར་ Psiphon Pro གསར་སྒྱུར་འབད།</string>
 
-    <\!-- Preference category title for managing advertising privacy settings -->
+    <!-- Preference category title for managing advertising privacy settings -->
     <string name="pref_category_advertising_privacy">སྒྲུང་རྒྱུད་གསང་བ།</string>
 
-    <\!-- Preference title for managing ads consent -->
+    <!-- Preference title for managing ads consent -->
     <string name="adsConsentManagementTitle">སྒྲུང་རྒྱུད་འདེམས་ཐོ་བཀོད་སྒྲིག</string>
 
-    <\!-- Preference summary for managing ads consent -->
+    <!-- Preference summary for managing ads consent -->
     <string name="adsConsentManagementSummary">ཁྱེད་ཀྱི་གནད་སྡུད་མི་སྒེར་སྒྲུང་རྒྱུད་ལ་འདེམས་ཐོ་བཀོད་སྒྲིག་ཇི་ལྟར་བེད་སྤྱོད་བྱེད་སྐོར།</string>
 </resources>

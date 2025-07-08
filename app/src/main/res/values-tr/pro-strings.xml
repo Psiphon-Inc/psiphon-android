@@ -631,12 +631,12 @@
     <!-- Header text above "Update Psiphon Pro" action in the unlock required dialog. -->
     <string name="update_psiphon_pro_action_header">Önce Psiphon Pro uygulamasını güncelleyin</string>
 
-    <\!-- Preference category title for managing advertising privacy settings -->
+    <!-- Preference category title for managing advertising privacy settings -->
     <string name="pref_category_advertising_privacy">Reklam Gizliliği</string>
 
-    <\!-- Preference title for managing ads consent -->
+    <!-- Preference title for managing ads consent -->
     <string name="adsConsentManagementTitle">Reklam Tercihlerini Yönet</string>
 
-    <\!-- Preference summary for managing ads consent -->
+    <!-- Preference summary for managing ads consent -->
     <string name="adsConsentManagementSummary">Kişiselleştirilmiş reklamlar için verilerinizin nasıl kullanıldığını kontrol edin</string>
 </resources>

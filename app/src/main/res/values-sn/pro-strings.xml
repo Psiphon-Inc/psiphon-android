@@ -25,12 +25,12 @@
     <string name="label_close">Vhara</string>
 
 
-    <\!-- Preference category title for managing advertising privacy settings -->
+    <!-- Preference category title for managing advertising privacy settings -->
     <string name="pref_category_advertising_privacy">Chakafukidza Chekushambadza</string>
 
-    <\!-- Preference title for managing ads consent -->
+    <!-- Preference title for managing ads consent -->
     <string name="adsConsentManagementTitle">Tongera Zvinodiwa Zvekushambadza</string>
 
-    <\!-- Preference summary for managing ads consent -->
+    <!-- Preference summary for managing ads consent -->
     <string name="adsConsentManagementSummary">Kudzora kubatsirwa kweiyo data yako kushambadza kwakasarudzwa</string>
 </resources>

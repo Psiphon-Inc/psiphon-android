@@ -43,12 +43,12 @@
     <string name="subscribe_card_title">اشتراک</string>
 
 
-    <\!-- Preference category title for managing advertising privacy settings -->
+    <!-- Preference category title for managing advertising privacy settings -->
     <string name="pref_category_advertising_privacy">حریم خصوصی تبلیغات</string>
 
-    <\!-- Preference title for managing ads consent -->
+    <!-- Preference title for managing ads consent -->
     <string name="adsConsentManagementTitle">مدیریت ترجیحات تبلیغات</string>
 
-    <\!-- Preference summary for managing ads consent -->
+    <!-- Preference summary for managing ads consent -->
     <string name="adsConsentManagementSummary">کنترل کنید که چگونه از داده‌های شما برای تبلیغات شخصی‌سازی شده استفاده می‌شود</string>
 </resources>

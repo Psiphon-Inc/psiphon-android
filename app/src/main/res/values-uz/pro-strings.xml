@@ -40,12 +40,12 @@
     <string name="subscribe_card_title">Obuna bo‘lish</string>
 
 
-    <\!-- Preference category title for managing advertising privacy settings -->
+    <!-- Preference category title for managing advertising privacy settings -->
     <string name="pref_category_advertising_privacy">Reklama maxfiyligi</string>
 
-    <\!-- Preference title for managing ads consent -->
+    <!-- Preference title for managing ads consent -->
     <string name="adsConsentManagementTitle">Reklama sozlamalarini boshqarish</string>
 
-    <\!-- Preference summary for managing ads consent -->
+    <!-- Preference summary for managing ads consent -->
     <string name="adsConsentManagementSummary">Shaxsiy reklama uchun ma'lumotlaringiz qanday ishlatilishini nazorat qiling</string>
 </resources>

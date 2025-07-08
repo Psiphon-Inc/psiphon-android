@@ -34,12 +34,12 @@
     <string name="subscribe_card_title">Langgan</string>
 
 
-    <\!-- Preference category title for managing advertising privacy settings -->
+    <!-- Preference category title for managing advertising privacy settings -->
     <string name="pref_category_advertising_privacy">Privasi Iklan</string>
 
-    <\!-- Preference title for managing ads consent -->
+    <!-- Preference title for managing ads consent -->
     <string name="adsConsentManagementTitle">Urus Keutamaan Iklan</string>
 
-    <\!-- Preference summary for managing ads consent -->
+    <!-- Preference summary for managing ads consent -->
     <string name="adsConsentManagementSummary">Kawal cara data anda digunakan untuk iklan yang diperibadikan</string>
 </resources>

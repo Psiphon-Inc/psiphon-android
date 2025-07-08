@@ -629,12 +629,12 @@
     <!-- Header text above "Update Psiphon Pro" action in the unlock required dialog. -->
     <string name="update_psiphon_pro_action_header">Trước tiên, hãy cập nhật Psiphon Pro</string>
 
-    <\!-- Preference category title for managing advertising privacy settings -->
+    <!-- Preference category title for managing advertising privacy settings -->
     <string name="pref_category_advertising_privacy">Quyền riêng tư quảng cáo</string>
 
-    <\!-- Preference title for managing ads consent -->
+    <!-- Preference title for managing ads consent -->
     <string name="adsConsentManagementTitle">Quản lý tùy chọn quảng cáo</string>
 
-    <\!-- Preference summary for managing ads consent -->
+    <!-- Preference summary for managing ads consent -->
     <string name="adsConsentManagementSummary">Kiểm soát cách dữ liệu của bạn được sử dụng cho quảng cáo được cá nhân hóa</string>
 </resources>

@@ -147,12 +147,12 @@
     <!-- Header text above "Update Psiphon Pro" action in the unlock required dialog. -->
     <string name="update_psiphon_pro_action_header">ជាមុនសិន សូមធ្វើបច្ចុប្បន្នភាព Psiphon Pro</string>
 
-    <\!-- Preference category title for managing advertising privacy settings -->
+    <!-- Preference category title for managing advertising privacy settings -->
     <string name="pref_category_advertising_privacy">ឯកជនភាពផ្សាយពាណិជ្ជកម្ម</string>
 
-    <\!-- Preference title for managing ads consent -->
+    <!-- Preference title for managing ads consent -->
     <string name="adsConsentManagementTitle">គ្រប់គ្រងការកំណត់ផ្សាយពាណិជ្ជកម្ម</string>
 
-    <\!-- Preference summary for managing ads consent -->
+    <!-- Preference summary for managing ads consent -->
     <string name="adsConsentManagementSummary">ត្រួតពិនិត្យរបៀបដែលទិន្នន័យរបស់អ្នកត្រូវបានប្រើសម្រាប់ផ្សាយពាណិជ្ជកម្មផ្ទាល់ខ្លួន</string>
 </resources>
