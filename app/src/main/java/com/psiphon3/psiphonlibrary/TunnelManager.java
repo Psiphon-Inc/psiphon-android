@@ -302,7 +302,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             m_firstStart = false;
             m_tunnelThreadStopSignal = new CountDownLatch(1);
             m_compositeDisposable.add(
-                    tunnelConfigManager.initConfiguration(speedBoostStateSingle(), conduitStateSingle(), deviceLocationSingle(), purchaseVerifier.subscriptionStateSingle())
+                    tunnelConfigManager.initConfiguration(conduitStateSingle(), deviceLocationSingle(), purchaseVerifier.subscriptionStateSingle())
                             .doOnSuccess(config -> {
                                 MyLog.i("TunnelManager: tunnel config initialized");
                                 m_tunnelThread = new Thread(this::runTunnel);
@@ -399,7 +399,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     private Disposable connectionStatusUpdaterDisposable() {
         final AppPreferences multiProcessPreferences = new AppPreferences(getContext());
         return connectionObservable()
-                // Combine with latest state of hasPendingPsiCashPurchaseObservable
                 .switchMap(pair -> {
                     TunnelState.ConnectionData.NetworkConnectionState networkConnectionState = pair.first;
                     boolean isRoutingThroughTunnel = pair.second;
@@ -419,18 +418,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
                     // The tunnel is connected but we are not routing traffic through the tunnel yet,
                     // check in the following order if:
-                    // a) we have a pending Speed Boost purchase,
-                    // b) or we need to send a "Unlock Required" intent if we are not enforcing unlock,
-                    // c) or we need to send a landing page intent.
+                    // a) or we need to send a "Unlock Required" intent if we are not enforcing unlock,
+                    // b) or we need to send a landing page intent.
                     if (networkConnectionState == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED && !isRoutingThroughTunnel) {
-                        if (multiProcessPreferences.getBoolean(getContext().getString(R.string.preferencePendingSpeedBoostPurchase), false)) {
-                            // If there is a pending Speed Boost purchase start routing immediately
-                            m_vpnManager.routeThroughTunnel(m_tunnel.getLocalSocksProxyPort());
-                            m_isRoutingThroughTunnelPublishRelay.accept(Boolean.TRUE);
-                            // Do not emit downstream if we just started routing.
-                            return Observable.empty();
-                        }
-
                         // Handle any unlock requirement by delivering UI first, then starting routing.
                         // Strategy: Cut tunnel initially to get user attention, then restore after UI delivery.
                         //
@@ -913,8 +903,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                         // This emission automatically triggers a tunnel restart through the Rx subscription in the onStartCommand() method.
                         MyLog.i("TunnelManager: received restart tunnel message");
                         manager.m_compositeDisposable.add(
-                                manager.tunnelConfigManager.initConfiguration(manager.speedBoostStateSingle(),
-                                                manager.conduitStateSingle(),
+                                manager.tunnelConfigManager.initConfiguration(manager.conduitStateSingle(),
                                                 manager.deviceLocationSingle(),
                                                 manager.purchaseVerifier.subscriptionStateSingle())
                                         .subscribe());
@@ -982,17 +971,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     MyLog.e("TurnelManager: error getting initial Conduit state: " + e);
                     return Boolean.FALSE;
                 });
-    }
-
-    // Get the initial speed boost by checking if there are any persisted authorizations with
-    // the access type SPEED_BOOST
-    private Single<Boolean> speedBoostStateSingle() {
-        return Single.fromCallable(() -> {
-                    List<Authorization> authorizations = Authorization.geAllPersistedAuthorizations(getContext());
-                    return authorizations.stream()
-                            .anyMatch(auth -> Authorization.ACCESS_TYPE_SPEED_BOOST.equals(auth.accessType()));
-                })
-                .subscribeOn(Schedulers.io());
     }
 
     // Get persisted device location precision and return a GeoHash string for the device location
@@ -1893,28 +1871,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     .map(Authorization::accessType)
                     .collect(Collectors.toSet());
 
-            // Update tunnel config manager with speed boost authorization status.
-            // If this update results in a change to the config, the tunnel config manager will emit the updated config
-            // through Rx subscription to tunnelConfigManager.observeTunnelConfig(). This will automatically trigger a tunnel
-            // restart with the new config.
-            //
-            // Note: Subscription state updates are handled separately by the purchase verifier above.
-            boolean hasSpeedBoost = acceptedAuthorizations.stream()
-                    .map(Authorization::accessType)
-                    .anyMatch(accessType -> accessType.equals(Authorization.ACCESS_TYPE_SPEED_BOOST));
-
-            MyLog.i("TunnelManager::onActiveAuthorizationIDs: user " +
-                    (hasSpeedBoost ? "has" : "has no") + " speed boost auth, update speed boost state");
-
-            tunnelConfigManager.updateSpeedBoostState(hasSpeedBoost);
-
             // Handle notifications based on current authorization states
-            boolean hasSpeedBoostOrSubscription = accessTypes.contains(Authorization.ACCESS_TYPE_SPEED_BOOST) ||
+            boolean hasSubscription =
                     accessTypes.contains(Authorization.ACCESS_TYPE_GOOGLE_SUBSCRIPTION) ||
                     accessTypes.contains(Authorization.ACCESS_TYPE_GOOGLE_SUBSCRIPTION_LIMITED);
 
-            // If the user has a speed boost or subscription auth, cancel the unlock required notification and disallowed traffic alert
-            if (hasSpeedBoostOrSubscription) {
+            // If the user has a subscription auth, cancel the unlock required notification and disallowed traffic alert
+            if (hasSubscription) {
                 cancelUnlockRequiredNotification();
                 cancelDisallowedTrafficAlertNotification();
             }
@@ -1962,10 +1925,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     public void onServerAlert(String reason, String subject, List<String> actionURLs) {
         MyLog.i("Server alert", "reason", reason, "subject", subject);
         if ("disallowed-traffic".equals(reason)) {
-            // Do not show alerts when user has Speed Boost or a subscription.
+            // Do not show alerts when user has a subscription.
             // Note that this is an extra measure preventing accidental server alerts since
             // the user with this auth type should not be receiving any from the server
-            if (tunnelConfigManager.isSpeedBoostActive() || tunnelConfigManager.isSubscriptionActive()) {
+            if (tunnelConfigManager.isSubscriptionActive()) {
                 return;
             }
 
@@ -2234,14 +2197,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                                             Integer priority) {
         switch (entryKey) {
             // Subscription checker
-            // NOTE: During PsiCash phase-out transition, we're treating both subscription and speed boost
-            // as valid subscription methods. After transition, this should be simplified to:
-            // unlockOptions.addChecker(UnlockOptions.CHECKER_SUBSCRIPTION, tunnelConfigManager::isSubscriptionActive);
             case UnlockOptions.UNLOCK_ENTRY_SUBSCRIPTION:
                 entries.put(
                         entryKey,
                         new UnlockOptions.UnlockEntry(
-                                () -> tunnelConfigManager.isSubscriptionActive() || tunnelConfigManager.isSpeedBoostActive(),
+                                () -> tunnelConfigManager.isSubscriptionActive(),
                                 display,
                                 priority == null ? UnlockOptions.DEFAULT_SUBSCRIPTION_PRIORITY : priority
                         )

@@ -528,8 +528,7 @@ public class GooglePlayBillingHelper {
 
         // Wrap the main logic with BillingUtils.withRetry
         // Note that consume operation is important and we will retry it up to 5 times because failing
-        // to consume a purchase will result in "Unfinished purchase" UI state for PsiCash purchases or
-        // prevent the user from purchasing a new time pass after the old one expires.
+        // to consume a purchase will prevent the user from purchasing a new time pass after the old one expires.
         return BillingUtils.withRetry(
                         connectionCompletable.andThen(Single.create((SingleEmitter<String> emitter) -> {
                             BillingClient client = billingClientManager.getBillingClient();

@@ -91,9 +91,6 @@
     <!-- Data collection disclosure list item -->
     <string name="vpn_data_collection_disclosure_bp2">Your email, when you send us a diagnostics or crash log feedback. Providing email in the feedback is optional.</string>
 
-    <!-- Data collection disclosure list item -->
-    <string name="vpn_data_collection_disclosure_bp3">Your PsiCash account username, password, and optionally, email.</string>
-
     <!--Generic 'close' button label -->
     <string name="close_btn_label">Close</string>
 

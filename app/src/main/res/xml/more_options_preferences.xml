@@ -78,29 +78,4 @@
             android:key="@string/preferenceAbout"
             android:title="@string/about" />
     </PreferenceCategory>
-    <PreferenceCategory
-        android:key="@string/psicashAccountPreferenceCategory"
-        android:title="@string/psicash_account_generic_title"
-        app:isPreferenceVisible="false">
-        <Preference
-            android:icon="@drawable/psicash_account_settings_icon"
-            android:key="@string/psicashPreferenceKey"
-            android:title="@string/psicashSettingsPrefTitle" />
-        <Preference
-            android:icon="@drawable/baseline_logout_white_24"
-            android:key="@string/psicashAccountLogoutPreferenceKey"
-            android:title="@string/psicash_account_logout_pref_title" />
-        <Preference
-            android:enabled="false"
-            android:icon="@drawable/baseline_login_white_24"
-            android:key="@string/psicashAccountLoginPreferenceKey"
-            android:shouldDisableView="true"
-            android:title="@string/psicash_account_login_pref_title" />
-        <Preference
-            android:enabled="false"
-            android:icon="@drawable/baseline_manage_accounts_white_24"
-            android:key="@string/psicashAccountManagePreferenceKey"
-            android:shouldDisableView="true"
-            android:title="@string/psicash_account_manage_pref_title" />
-    </PreferenceCategory>
 </PreferenceScreen>
