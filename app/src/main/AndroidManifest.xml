@@ -39,7 +39,7 @@
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:label="@string/app_name_psiphon_pro"
+        android:label="@string/app_name"
         android:usesCleartextTraffic="false"
         tools:ignore="GoogleAppIndexingWarning"
         tools:replace="android:label,android:fullBackupContent">
@@ -51,7 +51,7 @@
 
         <activity
             android:name="com.psiphon3.MainActivity"
-            android:label="@string/app_name_psiphon_pro"
+            android:label="@string/app_name"
             android:exported="true"
             android:launchMode="singleTask">
             <intent-filter>
@@ -80,7 +80,7 @@
             android:name="com.psiphon3.FeedbackActivity"
             android:parentActivityName="com.psiphon3.MainActivity"
             android:exported="true"
-            android:label="@string/app_name_psiphon_pro">
+            android:label="@string/app_name">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.psiphon3.MainActivity" />
@@ -97,7 +97,7 @@
         <activity
             android:name="com.psiphon3.psiphonlibrary.MoreOptionsPreferenceActivity"
             android:parentActivityName="com.psiphon3.MainActivity"
-            android:label="@string/app_name_psiphon_pro">
+            android:label="@string/app_name">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.psiphon3.MainActivity" />
@@ -105,7 +105,7 @@
         <activity
             android:name="com.psiphon3.psiphonlibrary.VpnOptionsPreferenceActivity"
             android:parentActivityName="com.psiphon3.MainActivity"
-            android:label="@string/app_name_psiphon_pro">
+            android:label="@string/app_name">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.psiphon3.MainActivity" />
@@ -113,7 +113,7 @@
         <activity
             android:name="com.psiphon3.psiphonlibrary.ProxyOptionsPreferenceActivity"
             android:parentActivityName="com.psiphon3.MainActivity"
-            android:label="@string/app_name_psiphon_pro">
+            android:label="@string/app_name">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.psiphon3.MainActivity" />
@@ -136,7 +136,7 @@
         <service
             android:name="com.psiphon3.psiphonlibrary.TunnelVpnService"
             android:foregroundServiceType="specialUse"
-            android:label="@string/app_name_psiphon_pro"
+            android:label="@string/app_name"
             android:permission="android.permission.BIND_VPN_SERVICE"
             android:exported="false"
             android:process=":TunnelVpnService" >
@@ -176,7 +176,7 @@
         <activity
             android:name="com.psiphon3.PaymentChooserActivity"
             android:parentActivityName="com.psiphon3.MainActivity"
-            android:label="@string/app_name_psiphon_pro">
+            android:label="@string/app_name">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.psiphon3.MainActivity" />

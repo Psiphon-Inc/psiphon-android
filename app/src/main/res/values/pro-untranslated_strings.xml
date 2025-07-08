@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name_psiphon_pro" translatable="false">Psiphon Pro</string>
     <string name="adsConsentPreference" translatable="false">adsConsentPreference</string>
     <string name="adsPrivacyPreferenceCategory" translatable="false">adsPrivacyPreferenceCategory</string>
 </resources>
