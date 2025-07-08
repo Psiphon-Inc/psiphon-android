@@ -13,4 +13,7 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
     </style>
+    <style name="Theme.Psiphon" parent="Theme.AppCompat">
+        <!-- workaround for opting out of edge-to-edge enforcement, see v35+ specific styles -->
+    </style>
 </resources>
