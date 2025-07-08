@@ -630,4 +630,13 @@
 
     <!-- Header text above "Update Psiphon Pro" action in the unlock required dialog. -->
     <string name="update_psiphon_pro_action_header">सबसे पहले Psiphon Pro को अपडेट करें</string>
+
+    <!-- Preference category title for managing advertising privacy settings -->
+    <string name="pref_category_advertising_privacy">विज्ञापन गोपनीयता</string>
+
+    <!-- Preference title for managing ads consent -->
+    <string name="adsConsentManagementTitle">विज्ञापन प्राथमिकताएं प्रबंधित करें</string>
+
+    <!-- Preference summary for managing ads consent -->
+    <string name="adsConsentManagementSummary">नियंत्रित करें कि व्यक्तिगत विज्ञापन के लिए आपके डेटा का उपयोग कैसे किया जाता है</string>
 </resources>

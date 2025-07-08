@@ -331,4 +331,13 @@
 
     <!-- Header text above "Update Psiphon Pro" action in the unlock required dialog. -->
     <string name="update_psiphon_pro_action_header">ရှေ့ဆုံး Psiphon Pro ကို စောင့်ကြည့်ပြီး ပြင်ဆင်ပါ</string>
+
+    <\!-- Preference category title for managing advertising privacy settings -->
+    <string name="pref_category_advertising_privacy">ကြော်ငြာကိုယ်ရေးကိုယ်တာ</string>
+
+    <\!-- Preference title for managing ads consent -->
+    <string name="adsConsentManagementTitle">ကြော်ငြာဦးစားပေးမှုများကိုစီမံပါ</string>
+
+    <\!-- Preference summary for managing ads consent -->
+    <string name="adsConsentManagementSummary">တစ်ကိုယ်ရေကြော်ငြာများအတွက်သင့်ဒေတာကိုမည်သို့အသုံးပြုသည်ကိုထိန်းချုပ်ပါ</string>
 </resources>

@@ -70,4 +70,13 @@
 
     <!-- Header text above "Update Psiphon Pro" action in the unlock required dialog. -->
     <string name="update_psiphon_pro_action_header">ก่อนอื่น อัปเดต Psiphon Pro</string>
+
+    <\!-- Preference category title for managing advertising privacy settings -->
+    <string name="pref_category_advertising_privacy">ความเป็นส่วนตัวของโฆษณา</string>
+
+    <\!-- Preference title for managing ads consent -->
+    <string name="adsConsentManagementTitle">จัดการการตั้งค่าโฆษณา</string>
+
+    <\!-- Preference summary for managing ads consent -->
+    <string name="adsConsentManagementSummary">ควบคุมวิธีการใช้ข้อมูลของคุณสำหรับโฆษณาที่เป็นส่วนตัว</string>
 </resources>

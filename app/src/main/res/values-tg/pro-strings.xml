@@ -52,4 +52,13 @@
     <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
     <string name="subscribe_card_title">Обуна шудан</string>
 
-    </resources>
+
+    <\!-- Preference category title for managing advertising privacy settings -->
+    <string name="pref_category_advertising_privacy">Махфиёти реклама</string>
+
+    <\!-- Preference title for managing ads consent -->
+    <string name="adsConsentManagementTitle">Идораи интихоботи реклама</string>
+
+    <\!-- Preference summary for managing ads consent -->
+    <string name="adsConsentManagementSummary">Назорат кунед, ки маълумоти шумо барои рекламаи фардӣ чӣ гуна истифода мешавад</string>
+</resources>

@@ -33,4 +33,13 @@
     <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
     <string name="subscribe_card_title">Langgan</string>
 
-    </resources>
+
+    <\!-- Preference category title for managing advertising privacy settings -->
+    <string name="pref_category_advertising_privacy">Privasi Iklan</string>
+
+    <\!-- Preference title for managing ads consent -->
+    <string name="adsConsentManagementTitle">Urus Keutamaan Iklan</string>
+
+    <\!-- Preference summary for managing ads consent -->
+    <string name="adsConsentManagementSummary">Kawal cara data anda digunakan untuk iklan yang diperibadikan</string>
+</resources>

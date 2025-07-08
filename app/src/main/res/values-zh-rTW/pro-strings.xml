@@ -620,4 +620,13 @@
 
     <!-- Generic 'Dismiss' button label for dialogs and alerts -->
     <string name="label_dismiss">退訂</string>
-    </resources>
+
+    <\!-- Preference category title for managing advertising privacy settings -->
+    <string name="pref_category_advertising_privacy">廣告隱私</string>
+
+    <\!-- Preference title for managing ads consent -->
+    <string name="adsConsentManagementTitle">管理廣告偏好</string>
+
+    <\!-- Preference summary for managing ads consent -->
+    <string name="adsConsentManagementSummary">控制您的資料如何用於個人化廣告</string>
+</resources>

@@ -94,4 +94,13 @@
 
     <!-- Header text above "Update Psiphon Pro" action in the unlock required dialog. -->
     <string name="update_psiphon_pro_action_header">ആദ്യമായി Psiphon Pro അപ്ഡേറ്റ് ചെയ്യുക</string>
+
+    <\!-- Preference category title for managing advertising privacy settings -->
+    <string name="pref_category_advertising_privacy">പരസ്യ സ്വകാര്യത</string>
+
+    <\!-- Preference title for managing ads consent -->
+    <string name="adsConsentManagementTitle">പരസ്യ മുൻഗണനകൾ നിയന്ത്രിക്കുക</string>
+
+    <\!-- Preference summary for managing ads consent -->
+    <string name="adsConsentManagementSummary">വ്യക്തിഗത പരസ്യത്തിനായി നിങ്ങളുടെ ഡാറ്റ എങ്ങനെ ഉപയോഗിക്കുന്നുവെന്ന് നിയന്ത്രിക്കുക</string>
 </resources>

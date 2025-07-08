@@ -630,4 +630,13 @@
 
     <!-- Header text above "Update Psiphon Pro" action in the unlock required dialog. -->
     <string name="update_psiphon_pro_action_header">Kwanza, sasisha Psiphon Pro</string>
+
+    <\!-- Preference category title for managing advertising privacy settings -->
+    <string name="pref_category_advertising_privacy">Faragha ya Matangazo</string>
+
+    <\!-- Preference title for managing ads consent -->
+    <string name="adsConsentManagementTitle">Simamia Mapendekezo ya Matangazo</string>
+
+    <\!-- Preference summary for managing ads consent -->
+    <string name="adsConsentManagementSummary">Dhibiti jinsi data yako inavyotumiwa kwa matangazo yanayokuongoza</string>
 </resources>

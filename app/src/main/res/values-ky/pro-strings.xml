@@ -39,4 +39,13 @@
     <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
     <string name="subscribe_card_title">Жазылуу</string>
 
-    </resources>
+
+    <\!-- Preference category title for managing advertising privacy settings -->
+    <string name="pref_category_advertising_privacy">Жарнама купуялуулугу</string>
+
+    <\!-- Preference title for managing ads consent -->
+    <string name="adsConsentManagementTitle">Жарнама тандоолорун башкаруу</string>
+
+    <\!-- Preference summary for managing ads consent -->
+    <string name="adsConsentManagementSummary">Өзөңүзгө ылайыкташтырылган жарнама үчүн маалыматтарыңыз кантип колдонулганын көзөмөлдөө</string>
+</resources>
