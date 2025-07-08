@@ -140,7 +140,7 @@ android {
         // Set AdMob app ID and App Open ad unit ID for disconnected mode.
         it.buildConfigField 'String', 'APP_OPEN_DISCONNECTED_ID', getBuildProperty('APP_OPEN_DISCONNECTED_ID')
         it.manifestPlaceholders = [
-                ADMOB_APP_ID: getBuildProperty('ADMOB_APP_ID').replaceAll("\"", "")
+                ADMOB_APP_ID: getBuildProperty('PRO_ADMOB_APP_ID').replaceAll("\"", "")
         ]
     }
 
