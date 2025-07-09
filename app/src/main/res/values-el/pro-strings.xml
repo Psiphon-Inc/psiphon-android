@@ -9,32 +9,8 @@
     -->
     <string name="rate_with_unit_template">%1$s%2$s</string>
 
-    <!-- Alert dialog action button caption. Clicking this button dismisses the alert dialog, keep concise -->
-    <string name="psicash_snackbar_action_ok">Οκ</string>
-
-    <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Dismisses the log out dialog without any further action when clicked. -->
-    <string name="psicash_cancel_lbl">Ακύρωση</string>
-
-    <!-- Input field caption for password on the PsiCash account sign screen -->
-    <string name="psicash_account_login_password_hint">Κωδικός </string>
-
-    <!-- Separator text between the 'Log In' and 'Create Account' buttons on the PsiCash account sign in screen. -->
-    <string name="psicash_account_separator_text">ή</string>
-
-    <!--Generic 'close' alert prompt title-->
-    <string name="psicash_webview_close_alert_title">Κλείσιμο</string>
-
-    <!--Generic 'close' alert prompt message-->
-    <string name="psicash_webview_close_alert_message">Θα θέλατε να κλείσετε αυτό το παράθυρο τώρα;</string>
-
-    <!--Generic 'error' alert prompt title-->
-    <string name="psicash_webview_error_alert_title">Σφάλμα</string>
-
-    <!-- A message shown on the blocking overlay when the users are trying to interact with
-    PsiCash account Create,Forgot Password, or Manage Account web page loaded internally while
-    Psiphon is connecting to the server.
-    Note: 'Psiphon' should not be translated or transliterated. -->
-    <string name="psicash_web_wait_tunnel_connecting">Παρακαλούμε περιμένετε όσο συνδέεται το Psiphon</string>
+    <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_dialog_message">Μερικά δεδομένα Διαδικτύου δεν υποστηρίζονται από τη δωρεάν έκδοση του Psiphon Pro. Αγοράστε μια συνδρομή για να ξεκλειδώσετε το πλήρες δυναμικό της εμπειρίας Psiphon σας.</string>
 
     <!--Generic 'close' button label -->
     <string name="label_close">Κλείσιμο</string>
@@ -44,25 +20,6 @@
 
     <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
     <string name="purchase_required_prompt_title">Πώς να αποκτήσετε πρόσβαση στο Psiphon στην περιοχή σας.</string>
-
-    <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
-    <string name="speed_boost_product_1_hr">1 ώρα</string>
-
-    <!-- Label on a button. Clicking this button will buy 1 day (24hr) of Speed Boost. Translate number as well. -->
-    <string name="speed_boost_product_1_day">1 μέρα</string>
-
-    <!-- Label on a button. Clicking this button will buy 1 week (7days) of Speed Boost. Translate number as well. -->
-    <string name="speed_boost_product_1_week">1 εβδομάδα</string>
-
-    <!-- Label on a button. Clicking this button will buy 1 months (31days) of Speed Boost. Translate number as well. -->
-    <string name="speed_boost_product_1_month">1 μήνας</string>
-
-    <!-- This format string specifies the order of 'days' and 'hours' in the date interval string where the first argument is 'days' and the seconds is 'hours'. Examples: "20 d 11 hr", "1 d 2 hr", etc.
-     Reorder the format specifiers '%1$s' and '%2$s' if in the translated language ordering 'days' and 'hours' in date interval string is different from English. -->
-    <string name="speed_boost_left_day_hour_ordered">%1$s%2$s</string>
-
-    <!-- Do not translate or transliterate 'PsiCash'. PsiCash is a unit of currency here. Reorder the format specifier '%s' if in the translated language ordering of unit and amount is different from English. -->
-    <string name="psicash_price_format">%s PsiCash</string>
 
     <!-- Icon description for the Conduit app icon, do not translate or transliterate 'Conduit'. -->
     <string name="conduit_icon_description">εικονίδιο εφαρμογής Conduit</string>
@@ -101,4 +58,4 @@
 
     <!-- Preference summary for managing ads consent -->
     <string name="adsConsentManagementSummary">Ελέγξτε πώς χρησιμοποιούνται τα δεδομένα σας για εξατομικευμένες διαφημίσεις</string>
-    </resources>
+</resources>

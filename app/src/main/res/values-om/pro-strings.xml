@@ -1,26 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Alert dialog action button caption. Clicking this button dismisses the alert dialog, keep concise -->
-    <string name="psicash_snackbar_action_ok">Tole</string>
-
-    <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Dismisses the log out dialog without any further action when clicked. -->
-    <string name="psicash_cancel_lbl">Balleessi </string>
-
-    <!-- Input field caption for password on the PsiCash account sign screen -->
-    <string name="psicash_account_login_password_hint">Darbi-jecha</string>
-
-    <!--Generic 'close' alert prompt title-->
-    <string name="psicash_webview_close_alert_title">Cufi</string>
-
-    <!--Generic 'error' alert prompt title-->
-    <string name="psicash_webview_error_alert_title">Dogoggora</string>
+    <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_dialog_message">Tiraafikii interneetii muraasa Psiphon Pro version bilisaa dhaan hin deeggarmani. Muuxannoo Psiphon keessan humna guutuu isaanii hiikuuf miseensummaa bitadhaa.</string>
 
     <!--Generic 'close' button label -->
     <string name="label_close">Cufi</string>
 
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">Addaan kuti</string>
-
 
     <!-- Preference category title for managing advertising privacy settings -->
     <string name="pref_category_advertising_privacy">Icciitii Beeksisaa</string>
@@ -29,5 +16,5 @@
     <string name="adsConsentManagementTitle">Filannoo Beeksisaa Bulchi</string>
 
     <!-- Preference summary for managing ads consent -->
-    <string name="adsConsentManagementSummary">Akkaataa deetaan kee beeksisa dhuunfaatiif itti fayyadamu to‘achi</string>
+    <string name="adsConsentManagementSummary">Akkaataa deetaan kee beeksisa dhuunfaatiif itti fayyadamu toâ€˜achi</string>
 </resources>

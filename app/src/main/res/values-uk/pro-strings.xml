@@ -55,200 +55,11 @@
          the workflow to subscribe for premium access. -->
     <string name="rate_limit_text_subscribe_button">Оновіть зараз!</string>
 
-    <!-- Alert error message informing user that their Speed Boost purchase request failed because of
-    an unknown error. Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_transaction_invalid_message">Неприпустима відповідь від сервера PsiCash.</string>
-
-    <!-- Internal message not seen by the users, indicates successful Speed Boost purchase. -->
-    <string name="psicash_transaction_success_message">Успішно.</string>
-
-    <!-- Alert error message informing user that their Speed Boost purchase request failed because they have an insufficient balance.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through Psiphon.
-    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
-    anything that indicates a fast or unrestricted speed. -->
-    <string name="psicash_transaction_insufficient_balance_message">Недостатньо коштів для покупки Турбошвидкості.</string>
-
-    <!-- Alert error message informing user that their Speed Boost purchase request failed because they tried to make the purchase with
-    an out of date product price. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network
-    connection speed through Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate',
-    'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed. -->
-    <string name="psicash_transaction_amount_mismatch_message">Вартість Турбошвидкості змінилася. Йде оновлення.</string>
-
-    <!-- Alert error message informing user that they have an active Speed Boost purchase.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through Psiphon.
-    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed',
-    'blast off', or anything that indicates a fast or unrestricted speed. -->
-    <string name="psicash_transaction_existing_message">Ви вже придбали Турбошвидкість.</string>
-
-    <!-- Alert error message informing user that their Speed Boost purchase request failed because they attempted to buy a product that is no longer available
-    and that they should try updating or reinstalling the app. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network
-    connection speed through Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
-    anything that indicates a fast or unrestricted speed. -->
-    <string name="psicash_transaction_type_not_found_message">Турбошвидкість не виявлено. Можливо, ваш застосунок застарів. Будь ласка, перевірте оновлення.</string>
-
-    <!-- Alert error message informing user that their Speed Boost purchase request failed because their app has entered an invalid state and that they
-    should try updating or reinstalling the app. Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_transaction_invalid_tokens_message">Застосунок перейшов в неприпустимий режим. Будь ласка, перевстановіть його, щоб використовувати PsiCash.</string>
-
-    <!-- Alert error message informing user that their Speed Boost purchase request failed because their PsiCash account tokens have expired and they need to
-    log in again prior to retrying last operation. Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_transaction_expired_tokens_message">Термін дії вашого входу в PsiCash минув. Увійдіть у свій обліковий запис і повторіть спробу.</string>
-
-    <!-- Alert error message informing user that the request failed due to a 'bad request' error.
-    Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_transaction_bad_request_message">Сервер PsiCash повідомив, що запит недійсний. Будь ласка, повторіть спробу пізніше.</string>
-
-    <!-- Alert error message informing user that their Speed Boost purchase request failed due to a server error and that they should try again in a few minutes -->
-    <string name="transaction_server_error_message">Помилка сервера. Будь ласка, спробуйте ще раз за кілька хвилин</string>
-
-    <!-- Alert error message informing user that a critical PsiCash related error has occurred and encouraging users to send feedback diagnostics -->
-    <string name="psicash_critical_error_message">Критична помилка. Будь ласка, надішліть відгук.</string>
-
-    <!-- Alert error message informing user that a critical PsiCash error has occurred and their PsiCash balance and purchases are reset(lost) -->
-    <string name="psicash_critical_error_reset_message">Критична помилка. Ваш баланс PsiCash та інші параметри було скинуто.</string>
-
-    <!-- Alert error message informing user that a recoverable PsiCash related error has occurred and last action will most likely succeed next time. -->
-    <string name="psicash_recoverable_error_message">Некритична помилка. Будь ласка, спробуйте ще раз.</string>
-
-    <!-- Alert message informing user that a PsiCash rewarded video is currently not available. -->
-    <string name="psicash_video_not_available_message">Відео недоступне. Спробуйте пізніше.</string>
-
     <!-- Alert error message informing user that an unexpected error has occurred and encouraging the user to send feedback diagnostics. -->
     <string name="unexpected_error_occured_send_feedback_message">Непередбачена помилка, будь ласка, надішліть відгук.</string>
 
-    <!-- Alert error message informing user that the Psiphon tunnel needs to be running in order to make a Speed Boost purchase.
-     'Speed Boost' is a reward that can be purchased with PsiCash credit.
-    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
-    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed. -->
-    <string name="speed_boost_connect_to_purchase_message">Будь ласка, запустіть Psiphon, щоб придбати Турбошвидкість.</string>
-
-    <!-- Alert error message informing user that the Psiphon tunnel needs to complete its connection sequence in order to make a Speed Boost purchase.
-     'Speed Boost' is a reward that can be purchased with PsiCash credit.
-    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
-    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_wait_tunnel_to_connect_to_purchase_message">Будь ласка, дочекайтеся підключення тунелю, щоб придбати Турбошвидкість.</string>
-
-    <!-- Alert error message informing user that a critical error has occurred while trying to retrieve PsiCash balance and encouraging the user to
-    send feedback diagnostics.  Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cant_get_balance_critical_message">Не вдалося отримати відомості з серверу про баланс PsiCash. Будь ласка, надішліть відгук.</string>
-
-    <!-- Alert error message informing user that a recoverable error has occurred while trying to retrieve PsiCash balance and last action will most
-    likely succeed next time.  Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cant_get_balance_recoverable_message">Наразі не вдалося отримати відомості з серверу про баланс PsiCash. Будь ласка, спробуйте пізніше.</string>
-
-    <!-- Alert error message informing user that a critical error has occurred while trying to log in into PsiCash account and encouraging the user to
-    send feedback diagnostics.  Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cannot_login_critical_message">Під час спроби авторизації сервер PsiCash видав помилку. Будь ласка, надішліть відгук.</string>
-
-    <!-- Alert error message informing user that a recoverable error has occurred while trying to log in into PsiCash account.
-    Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cannot_login_recoverable_message">Під час спроби авторизації сервер PsiCash видав помилку. Будь ласка, спробуйте пізніше.</string>
-
-    <!-- Alert error message informing user that a critical error has occurred while trying to make a Speed Boost purchase with PsiCash and encouraging the user to
-    send feedback diagnostics.  Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cannot_make_purchase_critical_message">Під час спроби здійснити покупку сервер PsiCash видав помилку. Будь ласка, надішліть відгук.</string>
-
-    <!-- Alert error message informing user that a recoverable error has occurred while trying to make a Speed Boost purchase with PsiCash.
-    Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cannot_make_purchase_recoverable_message">Під час спроби здійснити покупку сервер PsiCash видав помилку. Будь ласка, спробуйте пізніше.</string>
-
-    <!-- Text which appears in the Speed Boost meter when the user has activated Speed Boost accompanied with a countdown timer showing how much time
-    of the Speed Boost mode has left, like following 'Speed Boost Active - 16:49'. Please keep this text concise as the width of the text box
-    is restricted in size. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
-    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
-    indicates a fast or unrestricted speed. -->
-    <string name="speed_boost_active_label">Турбошвидкість активовано</string>
-
-    <!-- Alert dialog action button caption. Clicking this button dismisses the alert dialog, keep concise -->
-    <string name="psicash_snackbar_action_ok">Ок</string>
-
     <!-- Auto dismissable alert message informing users that subscription options are not available at the moment -->
     <string name="subscription_options_currently_not_available">Можливість підписки наразі недоступна, будь ласка, спробуйте пізніше.</string>
-
-    <!-- Speed Boost button that opens a dialog with various speed boost options available for purchase.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit.
-    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
-    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_button_caption">Турбошвидкість</string>
-
-    <!-- Text next to the button indicating to the user that they will earn PsiCash if they watch a video advertisement. -->
-    <string name="psicash_purchase_free_description">Дивіться відео та отримуйте нагороду</string>
-
-    <!-- Text next to the button indicating to the user that the rewarded video advertisement is only available when they are not connected to Psiphon. -->
-    <string name="psicash_purchase_free_not_available_not_running_description">Потрібно відʼєднатися від Psiphon, щоб дивитися відео та отримувати PsiCash</string>
-
-    <!-- Title of the button that loads and plays a video ad that rewards users with PsiCash -->
-    <string name="psicash_purchase_free_button_price">Безплатно</string>
-
-    <!-- PsiCash in-app purchase disclaimer that appears on the bottom of the screen where users can buy different amounts of PsiCash from the PlayStore.
-    Do not translate or transliterate terms PsiCash or Psiphon Pro, preserve the HTML <b/> tag in <b>Creating a PsiCash account</b> if possible -->
-    <string name="psicash_store_disclaimer">ВАЖЛИВО: <b>Створення облікового запису PsiCash</b> допоможе зберегти ваші PsiCash, якщо ви видалите Psiphon Pro, зробите очистку сховища застосунку або почнете використовувати Psiphon на іншому пристрої.</string>
-
-    <!-- A message to the user indicating that they need to be connected to Psiphon in order to use Speed Boost.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
-    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
-    indicates a fast or unrestricted speed. Do not translate or transliterate word Psiphon -->
-    <string name="speed_boost_unavailable">Щоб активувати Турбошвидкість, потрібно підключитися до Psiphon. Натисніть кнопку нижче і спробуйте знову</string>
-
-    <!-- Title of the button that is presented next to 'Speed Boost is unavailable when you are not connected to Psiphon' message,
-        Also appears on the PsiCash account 'log out' confirmation dialog when the user tries to log out of their PsiCash account while the Psiphon tunnel is not running.
-        Do not translate or transliterate word Psiphon -->
-    <string name="connect_to_psiphon_button_text">Підʼєднатися до Psiphon</string>
-
-    <!-- A title message to the premium user (a user with a subscription when they are trying to navigate to PsiCash and Speed Boost screen
-        Do not translate or transliterate words PsiCash or Psiphon -->
-    <string name="psicash_store_subscription_title">Ваша підписка Psiphon дає вам право преміум-доступу!</string>
-
-    <!-- A description message to the premium user (a user with a subscription) when they are trying to navigate to PsiCash and Speed Boost screen.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
-    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
-    indicates a fast or unrestricted speed.
-    Do not translate or transliterate words PsiCash or Psiphon -->
-    <string name="psicash_store_subscription_description">Ваша передплата Psiphon вже дає вам постійну Турбошвидкість, тому немає причин купувати ще. Ваш баланс PsiCash буде збережено, якщо ви вирішите відмовитися від передплати. \n\nВи все ще можете отримати доступ до налаштувань вашого рахунку PsiCash, перейшовши до розділу Опції &gt; Інші опції &gt; Рахунок PsiCash</string>
-
-    <!-- A message to the user seen when the users are trying to navigate to PsiCash store screen while Psiphon has not finished connecting to the server
-    Do not translate or transliterate words Psiphon -->
-    <string name="wait_for_psiphon_to_finish_connect_to_use_psicash_store">Для роботи з магазином PsiCash, дочекайтеся підключення до Psiphon</string>
-
-    <!-- A message to the user indicating that their PsiCash balance is most likely out of date and needs to be refreshed by connecting to Psiphon.
-    Do not translate or transliterate words PsiCash or Psiphon -->
-    <string name="psicash_out_of_date_dialog_message">Ваш баланс PsiCash застарів. Підключіться до Psiphon для оновлення.</string>
-
-    <!-- A title of the screen seen when the user has purchased PsiCash from PlayStore while the tunnel was not connected. In this case the purchase
-    still needs to be redeemed which can only happen when they are connected to Psiphon.
-    Do not translate or transliterate word PsiCash -->
-    <string name="you_have_an_unfinished_psicash_purchase">Ви маєте незавершену покупку PsiCash</string>
-
-    <!-- A message to the user seen when the user has purchased PsiCash from PlayStore while the tunnel was not connected. In this case the purchase
-    still needs to be redeemed which can only happen when they are connected to Psiphon.
-    Do not translate or transliterate word Psiphon -->
-    <string name="connect_to_psiphon_to_finalize_your_transaction">Підключіться до Psiphon, щоб завершити транзакцію</string>
-
-    <!-- PsiCash tab title where users may purchase some PsiCash from PlayStore or get it for free by watching a video ad. Do not translate or transliterate word PsiCash -->
-    <string name="add_psicash_tab_title">Додати PsiCash</string>
-
-    <!-- SpeedBoost tab title where users may redeem their PsiCash for Speed Boost
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
-    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
-    indicates a fast or unrestricted speed. -->
-    <string name="speed_boost_tab_title">Турбошвидкість</string>
-
-    <!-- A message shown when the PsiCash store is not available for whatever reason. Do not translate or transliterate word PsiCash -->
-    <string name="psicash_store_not_available">Магазин PsiCash недоступний</string>
-
-    <!-- A message to the user seen when the user just purchased PsiCash from PlayStore while connected to Psiphon and the purchase is in process of being redeemed -->
-    <string name="please_wait_while_we_are_finalizing_your_purchase">Зачекайте, поки ми завершимо оформлення вашої покупки</string>
-
-    <!-- Generic billing error message seen by user if there is a billing problem with the PsiCash purchase. Do not translate or transliterate word PsiCash -->
-    <string name="psicash_purchase_not_available_error_message">Купівля PsiCash зараз недоступна, будь ласка, спробуйте пізніше</string>
-
-    <!-- An updated alert message seen by the user when they try to use one of Speed Boost options but their PsiCash balance is insufficient.
-    Note that since we are phasing out the PsiCash system, this message is no longer offering the user to buy more PsiCash, and is just informing
-    them that they do not have enough PsiCash to activate the Speed Boost option.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
-    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
-    indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_insufficient_balance_alert_update">У вас недостатньо PsiCash, щоб активувати опцію Speed Boost.</string>
 
     <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_notification_title">Оновити до Psiphon Pro</string>
@@ -257,16 +68,10 @@
     <string name="disallowed_traffic_alert_notification_message">Додатки не працюють? Натисніть тут, щоб покращити роботу з Psiphon!</string>
 
     <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
-    <string name="disallowed_traffic_alert_dialog_message">Деякі типи інтернет-трафіку не підтримуються безкоштовною версією Psiphon Pro. Придбайте підписку або Speed Boost, щоб розкрити весь потенціал Psiphon.</string>
+    <string name="disallowed_traffic_alert_dialog_message">Деякий інтернет-трафік не підтримується безкоштовною версією Psiphon Pro. Купіть підписку, щоб розкрити весь потенціал вашого досвіду Psiphon.</string>
 
     <!-- Text on the button which takes user to subscription screen -->
     <string name="btn_get_subscription">Підписатися</string>
-
-    <!-- Text on the button which takes user to Speed Boost screen.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
-    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
-    indicates a fast or unrestricted speed.-->
-    <string name="btn_get_speed_boost">Турбошвидкість</string>
 
     <!-- Header text appearing on the subscriptions screen when the user has a limited subscription plan. Note the use of a non-breaking space in '5 Mb/s' -->
     <string name="PaymentChooserActivity.UsingLimitedPlan">Ви користуєтесь базовим тарифним планом зі швидкістю до 5&#160;Мбіт/с. Бажаєте перейти на безлімітний тариф?</string>
@@ -334,172 +139,8 @@
     and does not automatically renew after its expiry, unlike a subscription -->
     <string name="PaymentChooserActivity.TimePassTab">Time Pass</string>
 
-    <!-- PsiCash account login error dialog title
-        Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_account_login_failed_title">Помилка входу в PsiCash</string>
-
-    <!-- Title of the button that dismisses PsiCash account login error alert dialog-->
-    <string name="psicash_login_error_alert_dismiss">Відхилити</string>
-
-    <!-- PsiCash account login error message shown when the user is trying to log in with bad credentials -->
-    <string name="psicash_transaction_invalid_credentials_message">Введено неправильне ім\'я користувача або пароль</string>
-
-    <!-- PsiCash account login error message shown when the user is trying to log in when Psiphon is not running -->
-    <string name="psicash_connect_to_login_message">Неможливо авторизуватися, якщо Psiphon не запущено</string>
-
-    <!-- PsiCash account login error message shown when the user is trying to log in while Psiphon is running but hasn't finished connecting yet -->
-    <string name="psicash_wait_to_connect_to_login_message">Неможливо авторизуватися, доки Psiphon підключається</string>
-
-    <!-- PsiCash account login error message shown when the user tries to login with a blank username -->
-    <string name="psicash_login_empty_username_message">Ім\'я користувача не може бути порожнім</string>
-
-    <!-- PsiCash account login error message shown when the user tries to login with an blank password -->
-    <string name="psicash_login_empty_password_message">Пароль не може бути порожнім</string>
-
-    <!-- An error message informing the user that PsiCash update could not be retrieved from the server because the tunnel is not running.
-            Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
-    <string name="psicash_connect_to_refresh_message">Стан PsiCash не можна отримати, оскільки Psiphon не запущено</string>
-
-    <!-- An error message informing the user that PsiCash update could not be retrieved from the server because the tunnel has not finished connecting yet.
-            Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
-    <string name="psicash_wait_to_connect_to_refresh_message">Стан PsiCash не можна отримати, оскільки Psiphon не завершив підключення</string>
-
-    <!-- A title for the PsiCash store screen as it appears in the navigation.
-        Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_store_title">Магазин PsiCash</string>
-
-    <!-- An alert message to the user shown when a PsiCash login succeeds. There is a fixed number of times that a user can merge a pre-account balance into a PsiCash account. This message indicates that the user has hit that limit and the merge that occurred is the last one allowed.
-        Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_last_tracker_merge_notification">Ви увійшли у свій обліковий запис PsiCash. Попередній баланс із цього пристрою було переведено на ваш обліковий запис, але це останній раз, коли баланс буде об’єднано.</string>
-
-    <!-- Title of the PsiCash account log out alert confirmation dialog -->
-    <string name="psicash_logout_alert_title">Вийти</string>
-
-    <!-- Main body of the PsiCash account log out alert confirmation dialog.
-            Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_logout_alert_connected_message">Ви хочете вийти зі свого облікового запису PsiCash зараз?</string>
-
-    <!-- Alternative main body of the PsiCash account log out alert confirmation dialog for when Psiphon is not running.
-            Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
-    <string name="psicash_logout_alert_disconnected_message">Підключення до мережі Psiphon забезпечує безпечніший вихід з PsiCash. Ви все одно хочете продовжити?</string>
-
-    <!-- Alternative main body of the PsiCash account log out alert confirmation dialog for when Psiphon is running but has not finished connecting yet.
-            Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
-    <string name="psicash_logout_alert_connecting_message">Підключення до мережі Psiphon забезпечує безпечніший вихід з PsiCash. Ви хочете почекати, поки Psiphon закінчить підключення, чи продовжити у будь-якому випадку?</string>
-
-    <!-- Button on the PsiCash account log out alert confirmation dialog for when Psiphon is running but has not finished connecting yet. Dismisses the log out dialog without any further action when clicked. -->
-    <string name="psicash_wait_lbl">Почекати</string>
-
-    <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Dismisses the log out dialog without any further action when clicked. -->
-    <string name="psicash_cancel_lbl">Скасувати</string>
-
-    <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Proceeds to log out the user of their PsiCash account when clicked. -->
-    <string name="psicash_continue_log_out_lbl">Продовжити вихід</string>
-
-    <!-- A message shown when the PsiCash account sign in option is not available for whatever reason. Do not translate or transliterate word PsiCash -->
-    <string name="psicash_account_not_available">Вхід до облікового запису PsiCash недоступний</string>
-
-    <!-- A message to the user shown when the users are trying to navigate to PsiCash account sign in screen while Psiphon has not finished connecting to the server
-            Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
-    <string name="wait_for_psiphon_to_finish_connect_to_use_psicash_account">Зачекайте, поки Psiphon завершить підключення, щоб отримати доступ до входу до облікового запису PsiCash</string>
-
-    <!-- A message to the user indicating that they need to be connected to Psiphon in order to access PsiCash account sign in screen.
-            Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
-    <string name="psicash_account_not_available_psiphon_not_running">Ви повинні підключитися до Psiphon для входу до облікового запису PsiCash, натисніть кнопку нижче і повторіть спробу</string>
-
-    <!-- A hint below the Log In and Manage Account preferences in the app's setting screen indicating that a working Psiphon tunnel connection is required in order to access the setting.
-            Note: 'Psiphon' should not be translated or transliterated. -->
-    <string name="psicash_account_preference_connection_required_hint">Потрібне підключення Psiphon</string>
-
-    <!-- Main text of the dialog shown to the user when they have a PsiCash account, but they are logged out while trying to access the PsiCash store screen.
-        Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_account_login_required_message">Будь ласка, увійдіть до свого облікового запису PsiCash, щоб отримати доступ до магазину PsiCash</string>
-
-    <!-- Label of the button on the dialog shown to the user when they have a PsiCash account, but they are logged out while trying to access the PsiCash store screen.
-        Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_account_continue_to_sign_in_lbl">Продовжити вхід до PsiCashНепередбачена помилка PsiCash, будь ласка, надішліть відгук</string>
-
-    <!-- Main text of the dialog shown to the user when the PsiCash has entered invalid state due to an internal error while trying to access the PsiCash store screen, and encouraging the user to send feedback.
-        Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_invalid_state_fragment_text">Непередбачена помилка PsiCash, будь ласка, надішліть відгук</string>
-
-    <!-- PsiCash account generic title
-        Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_account_generic_title">Обліковий запис PsiCash</string>
-
-    <!-- PsiCash account 'log out' preference title as it appears in the app's preference screen. -->
-    <string name="psicash_account_logout_pref_title">Вийти</string>
-
-    <!-- PsiCash account 'log in' preference title as it appears in the app's preference screen. -->
-    <string name="psicash_account_login_pref_title">Увійти</string>
-
-    <!-- PsiCash account 'manage account' preference title as it appears in the app's preference screen. -->
-    <string name="psicash_account_manage_pref_title">Керування акаунтом</string>
-
-    <!-- Input field caption for username on the PsiCash account sign screen
-            Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_account_login_username_hint">Ім\'я користувача PsiCash</string>
-
-    <!-- Input field caption for password on the PsiCash account sign screen -->
-    <string name="psicash_account_login_password_hint">Пароль</string>
-
-    <!-- Clickable text on the PsiCash account sign in screen, opens 'Forgot credentials' dialog when clicked. -->
-    <string name="psicash_account_login_forgot_lbl">Забули ім\'я користувача чи пароль?</string>
-
-    <!-- Label text for 'Log In' button on the PsiCash account sign in screen -->
-    <string name="psicash_account_log_in_btn_lbl">Увійти</string>
-
-    <!-- Separator text between the 'Log In' and 'Create Account' buttons on the PsiCash account sign in screen. -->
-    <string name="psicash_account_separator_text">або</string>
-
-    <!-- Label text for 'Create Account' button on the PsiCash account sign in screen. The button opens 'Create account' dialog when clicked -->
-    <string name="psicash_account_create_account_btn_lbl">Створити обліковий запис</string>
-
-    <!-- Clickable text on the PsiCash store screen encouraging users to create a PsiCash account. The text is only visible when it is detected the user doesn't have a PsiCash account. Clicking the text opens 'Sign In / Create account' dialog.
-        Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="create_your_psicash_account_or_sign_in_clicker_lbl">Створіть свій обліковий запис PsiCash або авторизуйтесь зараз!</string>
-
-    <!-- Body of a alert dialog that appears when the user tries to buy PsiCash with real money but doens't have an account.
-        Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_create_account_prompt_message">Ми наполегливо рекомендуємо вам завести обліковий запис PsiCash. Наявність облікового запису дозволяє вам обмінюватися балансом між пристроями та захищати свої покупки.</string>
-
-    <!-- Text next to a checkbox on the account creation encouragement dialog, disables showing the prompt for 7 days when checked -->
-    <string name="psicash_create_account_prompt_do_not_remind">Не нагадувати протягом 7 днів</string>
-
-    <!-- Button in the account creation encouragement dialog, proceeds with PsiCash purchase without account when clicked -->
-    <string name="psicash_continue_without_account_lbl">Продовжити без облікового запису</string>
-
-    <!--Generic 'close' alert prompt title-->
-    <string name="psicash_webview_close_alert_title">Закрити</string>
-
-    <!--Generic 'close' alert prompt message-->
-    <string name="psicash_webview_close_alert_message">Бажаєте закрити це вікно зараз?</string>
-
-    <!--Generic 'error' alert prompt title-->
-    <string name="psicash_webview_error_alert_title">Помилка</string>
-
-    <!--Generic 'error' alert prompt message-->
-    <string name="psicash_webview_error_alert_message">Виникла помилка. Будь ласка, повторіть спробу пізніше.</string>
-
-    <!-- A message shown on the blocking overlay when the users are trying to interact with
-    PsiCash account Create,Forgot Password, or Manage Account web page loaded internally while
-    Psiphon is connecting to the server.
-    Note: 'Psiphon' should not be translated or transliterated. -->
-    <string name="psicash_web_wait_tunnel_connecting">Зачекайте, поки Psiphon підключиться</string>
-
     <!--Generic 'close' button label -->
     <string name="label_close">Закрити</string>
-
-    <!-- Text that appears above the "Create account" button on the PsiCash sign in screen. -->
-    <string name="psicash_protect_psicash_text">Захистіть свій PsiCash!</string>
-
-    <!-- Explanation text that appears below "Create account" button on the PsiCash sign in screen.
-    Do not translate or transliterate terms PsiCash or Psiphon, IMPORTANT: preserve the string %s#psicash-account as is, it will be replaced by the proper URL such as https://psiphon.ca/faq.html#psicash-account
-    and 'linkified' programmatically in the app. -->
-    <string name="psicash_create_account_explanation_text_updated">Створення облікового запису PsiCash допоможе зберегти ваш PsiCash, якщо ви перевстановите додаток або будете використовувати Psiphon на іншому пристрої. Будь ласка, відвідайте %s#psicash-account, щоб дізнатися більше.</string>
-
-    <!-- Text that appears above the "Log in" button on the PsiCash sign in screen. -->
-    <string name="psicash_already_have_account_text">Вже маєте обліковий запис?</string>
 
     <!-- Clickable text on the home tab that appears on the home tab if user has an active subscription. Clicking the link opens 'Manage Subscription' screen of the Google Play app -->
     <string name="manage_my_subscription_link_text">Управління вашою підпискою</string>
@@ -518,41 +159,6 @@
 
     <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
     <string name="unlock_required_prompt_body">Доступ до Psiphon у вашому регіоні зараз потребує вашої підтримки. Допоможіть зберегти доступ до Psiphon для людей, які його найбільше потребують, обравши доступну опцію для продовження.</string>
-
-    <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
-    <string name="speed_boost_product_1_hr">1 година</string>
-
-    <!-- Label on a button. Clicking this button will buy 1 day (24hr) of Speed Boost. Translate number as well. -->
-    <string name="speed_boost_product_1_day">1 день</string>
-
-    <!-- Label on a button. Clicking this button will buy 1 week (7days) of Speed Boost. Translate number as well. -->
-    <string name="speed_boost_product_1_week">1 тиждень</string>
-
-    <!-- Label on a button. Clicking this button will buy 1 months (31days) of Speed Boost. Translate number as well. -->
-    <string name="speed_boost_product_1_month">1 місяць</string>
-
-    <!-- The 'days' part in a date interval string as in "10 d 13 hr". Reorder the format specifier '%d' if in the translated language ordering of time unit and amount is different from English. -->
-    <plurals name="speed_boost_left_days">
-        <item quantity="one">%d д.</item>
-        <item quantity="few">%d д.</item>
-        <item quantity="many">%d д.</item>
-        <item quantity="other">%d д.</item>
-    </plurals>
-
-    <!-- The 'hours' part in a date interval string as in "9 d 11 hr". Reorder the format specifier '%d' if in the translated language ordering of time unit and amount is different from English. -->
-    <plurals name="speed_boost_left_hours">
-        <item quantity="one">%d год.</item>
-        <item quantity="few">%d год.</item>
-        <item quantity="many">%d год.</item>
-        <item quantity="other">%d год.</item>
-    </plurals>
-
-    <!-- This format string specifies the order of 'days' and 'hours' in the date interval string where the first argument is 'days' and the seconds is 'hours'. Examples: "20 d 11 hr", "1 d 2 hr", etc.
-     Reorder the format specifiers '%1$s' and '%2$s' if in the translated language ordering 'days' and 'hours' in date interval string is different from English. -->
-    <string name="speed_boost_left_day_hour_ordered">%1$s %2$s</string>
-
-    <!-- Do not translate or transliterate 'PsiCash'. PsiCash is a unit of currency here. Reorder the format specifier '%s' if in the translated language ordering of unit and amount is different from English. -->
-    <string name="psicash_price_format">%s PsiCash</string>
 
     <!-- Icon description for the Conduit app icon, do not translate or transliterate 'Conduit'. -->
     <string name="conduit_icon_description">Іконка програми Conduit</string>
@@ -574,15 +180,6 @@
 
     <!-- Description text under the Subscribe clickable item -->
     <string name="subscribe_card_description">Придбайте план підписки для безперервного доступу до Psiphon</string>
-
-    <!-- Clickable text label, clicking this opens a dialog with various speed boost options available for purchase.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit.
-    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
-    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_card_title">Турбошвидкість</string>
-
-    <!-- Description text under the Speed Boost clickable item -->
-    <string name="speed_boost_card_description">Придбайте Speed Boost за допомогою PsiCash для доступу до Psiphon за розкладом</string>
 
     <!-- Clickable text label to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
     <string name="update_psiphon_pro_title">Оновити Psiphon Pro</string>

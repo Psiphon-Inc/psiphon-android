@@ -3,36 +3,17 @@
     <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
     <string name="speed_rate_limit_not_available">Tidak tersedia</string>
 
+    <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_dialog_message">Sebahagian trafik internet tidak disokong oleh versi percuma Psiphon Pro. Beli langganan untuk membuka kunci potensi penuh pengalaman Psiphon anda.</string>
+
     <!-- Text on the button which takes user to subscription screen -->
     <string name="btn_get_subscription">Langgan</string>
-
-    <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Dismisses the log out dialog without any further action when clicked. -->
-    <string name="psicash_cancel_lbl">Batal</string>
-
-    <!-- PsiCash account 'log in' preference title as it appears in the app's preference screen. -->
-    <string name="psicash_account_login_pref_title">Log masuk</string>
-
-    <!-- Input field caption for password on the PsiCash account sign screen -->
-    <string name="psicash_account_login_password_hint">Kata laluan</string>
-
-    <!-- Label text for 'Log In' button on the PsiCash account sign in screen -->
-    <string name="psicash_account_log_in_btn_lbl">Log masuk</string>
-
-    <!-- Separator text between the 'Log In' and 'Create Account' buttons on the PsiCash account sign in screen. -->
-    <string name="psicash_account_separator_text">atau</string>
-
-    <!--Generic 'close' alert prompt title-->
-    <string name="psicash_webview_close_alert_title">Balas</string>
-
-    <!--Generic 'error' alert prompt title-->
-    <string name="psicash_webview_error_alert_title">Ralat</string>
 
     <!--Generic 'close' button label -->
     <string name="label_close">Balas</string>
 
     <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
     <string name="subscribe_card_title">Langgan</string>
-
 
     <!-- Preference category title for managing advertising privacy settings -->
     <string name="pref_category_advertising_privacy">Privasi Iklan</string>

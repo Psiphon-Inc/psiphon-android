@@ -13,23 +13,8 @@
     <string name="custom_proxy_header_group_6">ርእሲ 6</string>
     <string name="custom_proxy_header_name">ሽም ኣርእስቲ ኣእቱ</string>
     <string name="custom_proxy_header_value">ትሕዝቶ ርእሲ ኣእቱ</string>
-    <!-- Alert dialog action button caption. Clicking this button dismisses the alert dialog, keep concise -->
-    <string name="psicash_snackbar_action_ok">ሕራይ</string>
-
-    <!-- Title of the button that dismisses PsiCash account login error alert dialog-->
-    <string name="psicash_login_error_alert_dismiss">ምብራር</string>
-
-    <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Dismisses the log out dialog without any further action when clicked. -->
-    <string name="psicash_cancel_lbl">ሰርዝ</string>
-
-    <!-- Input field caption for password on the PsiCash account sign screen -->
-    <string name="psicash_account_login_password_hint">ፓስዎርድ</string>
-
-    <!--Generic 'close' alert prompt title-->
-    <string name="psicash_webview_close_alert_title">ንምዕጻው</string>
-
-    <!--Generic 'error' alert prompt title-->
-    <string name="psicash_webview_error_alert_title">ጌጋ</string>
+    <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_dialog_message">ገለ ናይ ኢንተርኔት ትራፊክ ብናይ ነጻ ሰሪት ናይ Psiphon Pro ኣይድገፍን። ንምዝራዕ ናይ Psiphon ተመኩሮኻ ሙሉእ ዓቕምታት ክኸፍት ምዝገባ ኽታዕ።</string>
 
     <!--Generic 'close' button label -->
     <string name="label_close">ንምዕጻው</string>

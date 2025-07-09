@@ -55,200 +55,11 @@
          the workflow to subscribe for premium access. -->
     <string name="rate_limit_text_subscribe_button">Nâng cấp ngay!</string>
 
-    <!-- Alert error message informing user that their Speed Boost purchase request failed because of
-    an unknown error. Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_transaction_invalid_message">Phản hồi không hợp lệ từ máy chủ PsiCash.</string>
-
-    <!-- Internal message not seen by the users, indicates successful Speed Boost purchase. -->
-    <string name="psicash_transaction_success_message">Thành công.</string>
-
-    <!-- Alert error message informing user that their Speed Boost purchase request failed because they have an insufficient balance.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through Psiphon.
-    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
-    anything that indicates a fast or unrestricted speed. -->
-    <string name="psicash_transaction_insufficient_balance_message">Không đủ số dư để mua Tăng Tốc</string>
-
-    <!-- Alert error message informing user that their Speed Boost purchase request failed because they tried to make the purchase with
-    an out of date product price. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network
-    connection speed through Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate',
-    'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed. -->
-    <string name="psicash_transaction_amount_mismatch_message">Giá của Tăng Tốc lỗi thời. Cập nhật sản phẩm địa phương.</string>
-
-    <!-- Alert error message informing user that they have an active Speed Boost purchase.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through Psiphon.
-    Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed',
-    'blast off', or anything that indicates a fast or unrestricted speed. -->
-    <string name="psicash_transaction_existing_message">Bạn đang có một lệnh mua Tăng Tốc.</string>
-
-    <!-- Alert error message informing user that their Speed Boost purchase request failed because they attempted to buy a product that is no longer available
-    and that they should try updating or reinstalling the app. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network
-    connection speed through Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or
-    anything that indicates a fast or unrestricted speed. -->
-    <string name="psicash_transaction_type_not_found_message">Không tìm thấy sản phẩm Tăng Tốc. Ứng dụng của bạn có thể đã lỗi thời. Xin tìm kiếm cập nhập.</string>
-
-    <!-- Alert error message informing user that their Speed Boost purchase request failed because their app has entered an invalid state and that they
-    should try updating or reinstalling the app. Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_transaction_invalid_tokens_message">Ứng dụng rơi vào tình trạng không hợp lệ. Xin cài đặt lại ứng dụng để tiếp tục dùng PsiCash.</string>
-
-    <!-- Alert error message informing user that their Speed Boost purchase request failed because their PsiCash account tokens have expired and they need to
-    log in again prior to retrying last operation. Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_transaction_expired_tokens_message">Đăng nhập PsiCash của bạn đã hết hạn. Đăng nhập lại vào tài khoản của bạn và thử lại.</string>
-
-    <!-- Alert error message informing user that the request failed due to a 'bad request' error.
-    Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_transaction_bad_request_message">Máy chủ PsiCash cho biết yêu cầu không hợp lệ. Xin thử lại lúc khác.</string>
-
-    <!-- Alert error message informing user that their Speed Boost purchase request failed due to a server error and that they should try again in a few minutes -->
-    <string name="transaction_server_error_message">Lỗi máy chủ. Xin thử lại trong vòng vài phút sau.</string>
-
-    <!-- Alert error message informing user that a critical PsiCash related error has occurred and encouraging users to send feedback diagnostics -->
-    <string name="psicash_critical_error_message">Đã xảy ra lỗi nghiêm trọng. Xin gửi phản hồi.</string>
-
-    <!-- Alert error message informing user that a critical PsiCash error has occurred and their PsiCash balance and purchases are reset(lost) -->
-    <string name="psicash_critical_error_reset_message">Đã xảy ra lỗi nghiêm trọng. Số dư PsiCash của bạn và các tình trạng khác đã cài lại.</string>
-
-    <!-- Alert error message informing user that a recoverable PsiCash related error has occurred and last action will most likely succeed next time. -->
-    <string name="psicash_recoverable_error_message">Đã xảy ra lỗi có thể khắc phục được. Xin thử lại.</string>
-
-    <!-- Alert message informing user that a PsiCash rewarded video is currently not available. -->
-    <string name="psicash_video_not_available_message">Video không sẵn sàng, xin thử lại sau.</string>
-
     <!-- Alert error message informing user that an unexpected error has occurred and encouraging the user to send feedback diagnostics. -->
     <string name="unexpected_error_occured_send_feedback_message">Đã xảy ra lỗi bất ngờ, xin gửi phản hồi.</string>
 
-    <!-- Alert error message informing user that the Psiphon tunnel needs to be running in order to make a Speed Boost purchase.
-     'Speed Boost' is a reward that can be purchased with PsiCash credit.
-    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
-    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed. -->
-    <string name="speed_boost_connect_to_purchase_message">Xin khởi động Psiphon để mua Tăng Tốc</string>
-
-    <!-- Alert error message informing user that the Psiphon tunnel needs to complete its connection sequence in order to make a Speed Boost purchase.
-     'Speed Boost' is a reward that can be purchased with PsiCash credit.
-    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
-    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_wait_tunnel_to_connect_to_purchase_message">Xin chờ cho đường hầm kết nối để mua Tăng Tốc.</string>
-
-    <!-- Alert error message informing user that a critical error has occurred while trying to retrieve PsiCash balance and encouraging the user to
-    send feedback diagnostics.  Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cant_get_balance_critical_message">Không truy lại được số dư PsiCash từ máy chủ. Xin gửi phản hồi.</string>
-
-    <!-- Alert error message informing user that a recoverable error has occurred while trying to retrieve PsiCash balance and last action will most
-    likely succeed next time.  Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cant_get_balance_recoverable_message">Không truy lại được số dư PsiCash từ máy chủ trong lúc này. Xin thử lại sau.</string>
-
-    <!-- Alert error message informing user that a critical error has occurred while trying to log in into PsiCash account and encouraging the user to
-    send feedback diagnostics.  Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cannot_login_critical_message">Máy chủ PsiCash báo lỗi khi đăng nhập bạn vào. Xin gửi phản hồi.</string>
-
-    <!-- Alert error message informing user that a recoverable error has occurred while trying to log in into PsiCash account.
-    Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cannot_login_recoverable_message">Máy chủ PsiCash báo lỗi khi đăng nhập bạn vào. Xin thử lại sau.</string>
-
-    <!-- Alert error message informing user that a critical error has occurred while trying to make a Speed Boost purchase with PsiCash and encouraging the user to
-    send feedback diagnostics.  Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cannot_make_purchase_critical_message">Máy chủ PsiCash báo lỗi trong lúc đặt mua. Xin gửi phản hồi.</string>
-
-    <!-- Alert error message informing user that a recoverable error has occurred while trying to make a Speed Boost purchase with PsiCash.
-    Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_cannot_make_purchase_recoverable_message">Máy chủ PsiCash báo lỗi trong lúc đặt mua. Xin thử lại sau.</string>
-
-    <!-- Text which appears in the Speed Boost meter when the user has activated Speed Boost accompanied with a countdown timer showing how much time
-    of the Speed Boost mode has left, like following 'Speed Boost Active - 16:49'. Please keep this text concise as the width of the text box
-    is restricted in size. 'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
-    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
-    indicates a fast or unrestricted speed. -->
-    <string name="speed_boost_active_label">Tăng Tốc Đang Có</string>
-
-    <!-- Alert dialog action button caption. Clicking this button dismisses the alert dialog, keep concise -->
-    <string name="psicash_snackbar_action_ok">Ok</string>
-
     <!-- Auto dismissable alert message informing users that subscription options are not available at the moment -->
     <string name="subscription_options_currently_not_available">Tùy chọn thuê bao hiện chưa có, xin thử lại sau.</string>
-
-    <!-- Speed Boost button that opens a dialog with various speed boost options available for purchase.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit.
-    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
-    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_button_caption">Tăng Tốc</string>
-
-    <!-- Text next to the button indicating to the user that they will earn PsiCash if they watch a video advertisement. -->
-    <string name="psicash_purchase_free_description">Xem Video và kiếm tiền</string>
-
-    <!-- Text next to the button indicating to the user that the rewarded video advertisement is only available when they are not connected to Psiphon. -->
-    <string name="psicash_purchase_free_not_available_not_running_description">Bạn phải ngắt kết nối Psiphon để xem video và kiếm PsiCash</string>
-
-    <!-- Title of the button that loads and plays a video ad that rewards users with PsiCash -->
-    <string name="psicash_purchase_free_button_price">Miễn phí</string>
-
-    <!-- PsiCash in-app purchase disclaimer that appears on the bottom of the screen where users can buy different amounts of PsiCash from the PlayStore.
-    Do not translate or transliterate terms PsiCash or Psiphon Pro, preserve the HTML <b/> tag in <b>Creating a PsiCash account</b> if possible -->
-    <string name="psicash_store_disclaimer">QUAN TRỌNG: <b>Việc tạo tài khoản PsiCash</b> sẽ giúp bạn bảo vệ PsiCash của mình nếu bạn gỡ cài đặt Psiphon Pro, xóa lưu trữ ứng dụng, hay dùng Psiphon trên một thiết bị khác.</string>
-
-    <!-- A message to the user indicating that they need to be connected to Psiphon in order to use Speed Boost.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
-    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
-    indicates a fast or unrestricted speed. Do not translate or transliterate word Psiphon -->
-    <string name="speed_boost_unavailable">Bạn phải kết nối vào Psiphon để kích hoạt Tăng Tốc, bấm vào nút dưới đây để thử lại.</string>
-
-    <!-- Title of the button that is presented next to 'Speed Boost is unavailable when you are not connected to Psiphon' message,
-        Also appears on the PsiCash account 'log out' confirmation dialog when the user tries to log out of their PsiCash account while the Psiphon tunnel is not running.
-        Do not translate or transliterate word Psiphon -->
-    <string name="connect_to_psiphon_button_text">Kết nối vào Psiphon</string>
-
-    <!-- A title message to the premium user (a user with a subscription when they are trying to navigate to PsiCash and Speed Boost screen
-        Do not translate or transliterate words PsiCash or Psiphon -->
-    <string name="psicash_store_subscription_title">Thuê bao Psiphon của bạn cho bạn quyền truy cập ưu tiên!</string>
-
-    <!-- A description message to the premium user (a user with a subscription) when they are trying to navigate to PsiCash and Speed Boost screen.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
-    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
-    indicates a fast or unrestricted speed.
-    Do not translate or transliterate words PsiCash or Psiphon -->
-    <string name="psicash_store_subscription_description">Thuê bao Psiphon của bạn đã bao gồm Tăng Tốc thường trực, do đó không cần phải mua thêm. Số dư PsiCash sẽ được giữ lại nếu bạn quyết định hủy bỏ thuê bao. \n\nBạn vẫn có thể truy cập vào phần thiết đặt tài khoản PsiCash bằng cách vào Tùy chọn &gt; Thêm Tùy chọn &gt; Tài khoản PsiCash</string>
-
-    <!-- A message to the user seen when the users are trying to navigate to PsiCash store screen while Psiphon has not finished connecting to the server
-    Do not translate or transliterate words Psiphon -->
-    <string name="wait_for_psiphon_to_finish_connect_to_use_psicash_store">Xin chờ cho Psiphon kết nối xong để sử dụng cửa hàng PsiCash</string>
-
-    <!-- A message to the user indicating that their PsiCash balance is most likely out of date and needs to be refreshed by connecting to Psiphon.
-    Do not translate or transliterate words PsiCash or Psiphon -->
-    <string name="psicash_out_of_date_dialog_message">Số dư tiền PsiCash của bạn đã lỗi thời. Kết nối vào Psiphon để làm mới.</string>
-
-    <!-- A title of the screen seen when the user has purchased PsiCash from PlayStore while the tunnel was not connected. In this case the purchase
-    still needs to be redeemed which can only happen when they are connected to Psiphon.
-    Do not translate or transliterate word PsiCash -->
-    <string name="you_have_an_unfinished_psicash_purchase">Bạn chưa mua xong PsiCash.</string>
-
-    <!-- A message to the user seen when the user has purchased PsiCash from PlayStore while the tunnel was not connected. In this case the purchase
-    still needs to be redeemed which can only happen when they are connected to Psiphon.
-    Do not translate or transliterate word Psiphon -->
-    <string name="connect_to_psiphon_to_finalize_your_transaction">Kết nối vào Psiphon để hoàn tất giao dịch</string>
-
-    <!-- PsiCash tab title where users may purchase some PsiCash from PlayStore or get it for free by watching a video ad. Do not translate or transliterate word PsiCash -->
-    <string name="add_psicash_tab_title">Thêm PsiCash</string>
-
-    <!-- SpeedBoost tab title where users may redeem their PsiCash for Speed Boost
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
-    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
-    indicates a fast or unrestricted speed. -->
-    <string name="speed_boost_tab_title">Tăng Tốc</string>
-
-    <!-- A message shown when the PsiCash store is not available for whatever reason. Do not translate or transliterate word PsiCash -->
-    <string name="psicash_store_not_available">Cửa hàng PsiCash chưa dùng được</string>
-
-    <!-- A message to the user seen when the user just purchased PsiCash from PlayStore while connected to Psiphon and the purchase is in process of being redeemed -->
-    <string name="please_wait_while_we_are_finalizing_your_purchase">Xin chờ trong khi chúng tôi hoàn tất giao dịch của bạn</string>
-
-    <!-- Generic billing error message seen by user if there is a billing problem with the PsiCash purchase. Do not translate or transliterate word PsiCash -->
-    <string name="psicash_purchase_not_available_error_message">PsiCash hiện chưa mua được, xin thử lại sau</string>
-
-    <!-- An updated alert message seen by the user when they try to use one of Speed Boost options but their PsiCash balance is insufficient.
-    Note that since we are phasing out the PsiCash system, this message is no longer offering the user to buy more PsiCash, and is just informing
-    them that they do not have enough PsiCash to activate the Speed Boost option.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
-    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
-    indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_insufficient_balance_alert_update">Bạn không có đủ PsiCash để kích hoạt tùy chọn Tăng tốc này.</string>
 
     <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_notification_title">Nâng cấp Psiphon Pro</string>
@@ -257,16 +68,10 @@
     <string name="disallowed_traffic_alert_notification_message">Ứng dụng không chạy? Bấm vào đây để cải tiến trải nghiệm Psiphon!</string>
 
     <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
-    <string name="disallowed_traffic_alert_dialog_message">Một số lưu lượng internet không được hỗ trợ với phiên bản miễn phí của Psiphon Pro. Bạn đăng ký thuê bao hoặc mua Tăng Tốc để được trải nghiệm toàn diện của Psiphon.</string>
+    <string name="disallowed_traffic_alert_dialog_message">Một số lưu lượng internet không được hỗ trợ bởi phiên bản miễn phí của Psiphon Pro. Mua gói đăng ký để mở khóa toàn bộ tiềm năng của trải nghiệm Psiphon của bạn.</string>
 
     <!-- Text on the button which takes user to subscription screen -->
     <string name="btn_get_subscription">Đăng ký thuê bao</string>
-
-    <!-- Text on the button which takes user to Speed Boost screen.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit. It provides unlimited network connection speed through
-    Psiphon. Other words that can be used to help with translation are: 'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that
-    indicates a fast or unrestricted speed.-->
-    <string name="btn_get_speed_boost">Tăng Tốc</string>
 
     <!-- Header text appearing on the subscriptions screen when the user has a limited subscription plan. Note the use of a non-breaking space in '5 Mb/s' -->
     <string name="PaymentChooserActivity.UsingLimitedPlan">Bạn đang dùng gói căn bản với tốc độ giới hạn ở mức 5&#160;Mb/s. Bạn muốn nâng cấp lên gói không giới hạn?</string>
@@ -334,172 +139,8 @@
     and does not automatically renew after its expiry, unlike a subscription -->
     <string name="PaymentChooserActivity.TimePassTab">Thẻ Thời gian</string>
 
-    <!-- PsiCash account login error dialog title
-        Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_account_login_failed_title">Đăng nhập PsiCash Thất bại </string>
-
-    <!-- Title of the button that dismisses PsiCash account login error alert dialog-->
-    <string name="psicash_login_error_alert_dismiss">Đóng</string>
-
-    <!-- PsiCash account login error message shown when the user is trying to log in with bad credentials -->
-    <string name="psicash_transaction_invalid_credentials_message">Tên người dùng hoặc mật khẩu không đúng</string>
-
-    <!-- PsiCash account login error message shown when the user is trying to log in when Psiphon is not running -->
-    <string name="psicash_connect_to_login_message">Không thể đăng nhập khi Psiphon không chạy</string>
-
-    <!-- PsiCash account login error message shown when the user is trying to log in while Psiphon is running but hasn't finished connecting yet -->
-    <string name="psicash_wait_to_connect_to_login_message">Không thể đăng nhập khi Psiphon vẫn còn kết nối</string>
-
-    <!-- PsiCash account login error message shown when the user tries to login with a blank username -->
-    <string name="psicash_login_empty_username_message">Tên người dùng không thể trống</string>
-
-    <!-- PsiCash account login error message shown when the user tries to login with an blank password -->
-    <string name="psicash_login_empty_password_message">Mật khẩu không thể trống</string>
-
-    <!-- An error message informing the user that PsiCash update could not be retrieved from the server because the tunnel is not running.
-            Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
-    <string name="psicash_connect_to_refresh_message">Cập nhật PsiCash không truy xuất được vì Psiphon chưa chạy</string>
-
-    <!-- An error message informing the user that PsiCash update could not be retrieved from the server because the tunnel has not finished connecting yet.
-            Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
-    <string name="psicash_wait_to_connect_to_refresh_message">Cập nhật PsiCash không truy xuất được vì Psiphon kết nối chưa xong</string>
-
-    <!-- A title for the PsiCash store screen as it appears in the navigation.
-        Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_store_title">Cửa hàng PsiCash</string>
-
-    <!-- An alert message to the user shown when a PsiCash login succeeds. There is a fixed number of times that a user can merge a pre-account balance into a PsiCash account. This message indicates that the user has hit that limit and the merge that occurred is the last one allowed.
-        Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_last_tracker_merge_notification">Bạn đã đăng nhập vào tài khoản PsiCash. Số dư tồn đọng từ thiết bị này đã được chuyển giao vào tài khoản của bạn, nhưng đây là lần cuối cùng số dư được sát nhập lại.</string>
-
-    <!-- Title of the PsiCash account log out alert confirmation dialog -->
-    <string name="psicash_logout_alert_title">Đăng xuất</string>
-
-    <!-- Main body of the PsiCash account log out alert confirmation dialog.
-            Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_logout_alert_connected_message">Bạn có muốn đăng xuất khỏi tài khoản PsiCash bây giờ?</string>
-
-    <!-- Alternative main body of the PsiCash account log out alert confirmation dialog for when Psiphon is not running.
-            Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
-    <string name="psicash_logout_alert_disconnected_message">Khi kết nối vào mạng Psiphon sẽ giúp đăng xuất khỏi PsiCash an toàn hơn. Bạn vẫn muốn tiếp tục?</string>
-
-    <!-- Alternative main body of the PsiCash account log out alert confirmation dialog for when Psiphon is running but has not finished connecting yet.
-            Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
-    <string name="psicash_logout_alert_connecting_message">Khi kết nối vào mạng Psiphon sẽ giúp đăng xuất khỏi PsiCash an toàn hơn. Bạn có muốn chờ cho Psiphon kết nối xong hay vẫn muốn tiếp tục?</string>
-
-    <!-- Button on the PsiCash account log out alert confirmation dialog for when Psiphon is running but has not finished connecting yet. Dismisses the log out dialog without any further action when clicked. -->
-    <string name="psicash_wait_lbl">Chờ</string>
-
-    <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Dismisses the log out dialog without any further action when clicked. -->
-    <string name="psicash_cancel_lbl">Hủy</string>
-
-    <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Proceeds to log out the user of their PsiCash account when clicked. -->
-    <string name="psicash_continue_log_out_lbl">Tiếp tục đăng xuất</string>
-
-    <!-- A message shown when the PsiCash account sign in option is not available for whatever reason. Do not translate or transliterate word PsiCash -->
-    <string name="psicash_account_not_available">Đăng nhập vào tài khoản PsiCash không khả dụng</string>
-
-    <!-- A message to the user shown when the users are trying to navigate to PsiCash account sign in screen while Psiphon has not finished connecting to the server
-            Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
-    <string name="wait_for_psiphon_to_finish_connect_to_use_psicash_account">Xin chờ cho Psiphon kết nối xong để đăng nhập vào tài khoản PsiCash</string>
-
-    <!-- A message to the user indicating that they need to be connected to Psiphon in order to access PsiCash account sign in screen.
-            Note: 'PsiCash' and 'Psiphon' should not be translated or transliterated. -->
-    <string name="psicash_account_not_available_psiphon_not_running">Bạn phải kết nối vào Psiphon để đăng nhập vào tài khoản PsiCash, bấm vào nút dưới đây để thử lại</string>
-
-    <!-- A hint below the Log In and Manage Account preferences in the app's setting screen indicating that a working Psiphon tunnel connection is required in order to access the setting.
-            Note: 'Psiphon' should not be translated or transliterated. -->
-    <string name="psicash_account_preference_connection_required_hint">Cần có kết nối Psiphon</string>
-
-    <!-- Main text of the dialog shown to the user when they have a PsiCash account, but they are logged out while trying to access the PsiCash store screen.
-        Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_account_login_required_message">Xin đăng nhập vào tài khoản PsiCash để vào cửa hàng PsiCash</string>
-
-    <!-- Label of the button on the dialog shown to the user when they have a PsiCash account, but they are logged out while trying to access the PsiCash store screen.
-        Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_account_continue_to_sign_in_lbl">Tiếp tục đăng nhập vào PsiCash</string>
-
-    <!-- Main text of the dialog shown to the user when the PsiCash has entered invalid state due to an internal error while trying to access the PsiCash store screen, and encouraging the user to send feedback.
-        Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_invalid_state_fragment_text">Có lỗi bất ngờ với PsiCash, xin gửi phản hồi</string>
-
-    <!-- PsiCash account generic title
-        Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_account_generic_title">Tài khoản PsiCash</string>
-
-    <!-- PsiCash account 'log out' preference title as it appears in the app's preference screen. -->
-    <string name="psicash_account_logout_pref_title">Đăng xuất</string>
-
-    <!-- PsiCash account 'log in' preference title as it appears in the app's preference screen. -->
-    <string name="psicash_account_login_pref_title">Đăng nhập</string>
-
-    <!-- PsiCash account 'manage account' preference title as it appears in the app's preference screen. -->
-    <string name="psicash_account_manage_pref_title">Quản lý tài khoản</string>
-
-    <!-- Input field caption for username on the PsiCash account sign screen
-            Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_account_login_username_hint">Tên người dùng PsiCash</string>
-
-    <!-- Input field caption for password on the PsiCash account sign screen -->
-    <string name="psicash_account_login_password_hint">Mật khẩu</string>
-
-    <!-- Clickable text on the PsiCash account sign in screen, opens 'Forgot credentials' dialog when clicked. -->
-    <string name="psicash_account_login_forgot_lbl">Quên tên người dùng hay mật khẩu?</string>
-
-    <!-- Label text for 'Log In' button on the PsiCash account sign in screen -->
-    <string name="psicash_account_log_in_btn_lbl">Đăng nhập</string>
-
-    <!-- Separator text between the 'Log In' and 'Create Account' buttons on the PsiCash account sign in screen. -->
-    <string name="psicash_account_separator_text">hoặc</string>
-
-    <!-- Label text for 'Create Account' button on the PsiCash account sign in screen. The button opens 'Create account' dialog when clicked -->
-    <string name="psicash_account_create_account_btn_lbl">Tạo tài khoản</string>
-
-    <!-- Clickable text on the PsiCash store screen encouraging users to create a PsiCash account. The text is only visible when it is detected the user doesn't have a PsiCash account. Clicking the text opens 'Sign In / Create account' dialog.
-        Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="create_your_psicash_account_or_sign_in_clicker_lbl">Tạo tài khoản PsiCash hoặc đăng nhập ngay!</string>
-
-    <!-- Body of a alert dialog that appears when the user tries to buy PsiCash with real money but doens't have an account.
-        Note: 'PsiCash' should not be translated or transliterated. -->
-    <string name="psicash_create_account_prompt_message">Chúng tôi khuyến nghị bạn nên mở tài khoản PsiCash. Có tài khoản sẽ cho phép bạn chia sẻ số dư giữa các thiết bị và bảo vệ các khoản mua sắm.</string>
-
-    <!-- Text next to a checkbox on the account creation encouragement dialog, disables showing the prompt for 7 days when checked -->
-    <string name="psicash_create_account_prompt_do_not_remind">Đừng nhắc nhở tôi trong vòng 7 ngày</string>
-
-    <!-- Button in the account creation encouragement dialog, proceeds with PsiCash purchase without account when clicked -->
-    <string name="psicash_continue_without_account_lbl">Tiếp tục không cần tài khoản</string>
-
-    <!--Generic 'close' alert prompt title-->
-    <string name="psicash_webview_close_alert_title">Đóng</string>
-
-    <!--Generic 'close' alert prompt message-->
-    <string name="psicash_webview_close_alert_message">Bạn muốn đóng cửa sổ này lại không?</string>
-
-    <!--Generic 'error' alert prompt title-->
-    <string name="psicash_webview_error_alert_title">Lỗi</string>
-
-    <!--Generic 'error' alert prompt message-->
-    <string name="psicash_webview_error_alert_message">Có lỗi xảy ra. Xin thử lại sau.</string>
-
-    <!-- A message shown on the blocking overlay when the users are trying to interact with
-    PsiCash account Create,Forgot Password, or Manage Account web page loaded internally while
-    Psiphon is connecting to the server.
-    Note: 'Psiphon' should not be translated or transliterated. -->
-    <string name="psicash_web_wait_tunnel_connecting">Xin chờ trong khi Psiphon kết nối</string>
-
     <!--Generic 'close' button label -->
     <string name="label_close">Đóng</string>
-
-    <!-- Text that appears above the "Create account" button on the PsiCash sign in screen. -->
-    <string name="psicash_protect_psicash_text">Bảo vệ PsiCash của bạn!</string>
-
-    <!-- Explanation text that appears below "Create account" button on the PsiCash sign in screen.
-    Do not translate or transliterate terms PsiCash or Psiphon, IMPORTANT: preserve the string %s#psicash-account as is, it will be replaced by the proper URL such as https://psiphon.ca/faq.html#psicash-account
-    and 'linkified' programmatically in the app. -->
-    <string name="psicash_create_account_explanation_text_updated">Tạo tài khoản PsiCash sẽ giúp bạn bảo vệ số PsiCash của bạn nếu bạn cài đặt lại ứng dụng hoặc dùng PsiPhon trên một thiết bị khác. Xin xem trang %s#psicash-account để biết thêm.</string>
-
-    <!-- Text that appears above the "Log in" button on the PsiCash sign in screen. -->
-    <string name="psicash_already_have_account_text">Đã có tài khoản rồi?</string>
 
     <!-- Clickable text on the home tab that appears on the home tab if user has an active subscription. Clicking the link opens 'Manage Subscription' screen of the Google Play app -->
     <string name="manage_my_subscription_link_text">Quản lý thuê bao của bạn</string>
@@ -518,35 +159,6 @@
 
     <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
     <string name="unlock_required_prompt_body">Truy cập Psiphon trong khu vực của bạn giờ đây yêu cầu sự hỗ trợ của bạn. Hãy giúp giữ cho Psiphon có thể truy cập được cho những người cần nhất bằng cách chọn một tùy chọn có sẵn để tiếp tục.</string>
-
-    <!-- Label on a button. Clicking this button will buy 1 hour of Speed Boost. Translate number as well. -->
-    <string name="speed_boost_product_1_hr">1 tiếng</string>
-
-    <!-- Label on a button. Clicking this button will buy 1 day (24hr) of Speed Boost. Translate number as well. -->
-    <string name="speed_boost_product_1_day">1 ngày</string>
-
-    <!-- Label on a button. Clicking this button will buy 1 week (7days) of Speed Boost. Translate number as well. -->
-    <string name="speed_boost_product_1_week">1 tuần</string>
-
-    <!-- Label on a button. Clicking this button will buy 1 months (31days) of Speed Boost. Translate number as well. -->
-    <string name="speed_boost_product_1_month">1 tháng</string>
-
-    <!-- The 'days' part in a date interval string as in "10 d 13 hr". Reorder the format specifier '%d' if in the translated language ordering of time unit and amount is different from English. -->
-    <plurals name="speed_boost_left_days">
-        <item quantity="other">%d ngày</item>
-    </plurals>
-
-    <!-- The 'hours' part in a date interval string as in "9 d 11 hr". Reorder the format specifier '%d' if in the translated language ordering of time unit and amount is different from English. -->
-    <plurals name="speed_boost_left_hours">
-        <item quantity="other">%d tiếng</item>
-    </plurals>
-
-    <!-- This format string specifies the order of 'days' and 'hours' in the date interval string where the first argument is 'days' and the seconds is 'hours'. Examples: "20 d 11 hr", "1 d 2 hr", etc.
-     Reorder the format specifiers '%1$s' and '%2$s' if in the translated language ordering 'days' and 'hours' in date interval string is different from English. -->
-    <string name="speed_boost_left_day_hour_ordered">%1$s %2$s</string>
-
-    <!-- Do not translate or transliterate 'PsiCash'. PsiCash is a unit of currency here. Reorder the format specifier '%s' if in the translated language ordering of unit and amount is different from English. -->
-    <string name="psicash_price_format">%s PsiCash</string>
 
     <!-- Icon description for the Conduit app icon, do not translate or transliterate 'Conduit'. -->
     <string name="conduit_icon_description">Biểu tượng ứng dụng Conduit </string>
@@ -568,15 +180,6 @@
 
     <!-- Description text under the Subscribe clickable item -->
     <string name="subscribe_card_description">Mua một gói thuê bao để truy cập Psiphon không bị gián đoạn</string>
-
-    <!-- Clickable text label, clicking this opens a dialog with various speed boost options available for purchase.
-    'Speed Boost' is a reward that can be purchased with PsiCash credit.
-    It provides unlimited network connection speed through Psiphon. Other words that can be used to help with translation are:
-    'turbo' (like cars), 'accelerate', 'warp speed', 'blast off', or anything that indicates a fast or unrestricted speed.-->
-    <string name="speed_boost_card_title">Tăng Tốc độ</string>
-
-    <!-- Description text under the Speed Boost clickable item -->
-    <string name="speed_boost_card_description">Mua một gói Tăng Tốc độ bằng PsiCash để có thể truy cập Psiphon trong một khoảng thời gian nhất định</string>
 
     <!-- Clickable text label to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
     <string name="update_psiphon_pro_title">Nâng cấp Psiphon Pro</string>

@@ -1,31 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Alert dialog action button caption. Clicking this button dismisses the alert dialog, keep concise -->
-    <string name="psicash_snackbar_action_ok">تأیید</string>
+    <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_dialog_message">برخی از ترافیک اینترنت توسط نسخه رایگان Psiphon Pro پشتیبانی نمی‌شود. برای باز کردن تمام ظرفیت‌های تجربه Psiphon خود، اشتراک بخرید.</string>
 
     <!-- Text on the button which takes user to subscription screen -->
     <string name="btn_get_subscription">اشتراک</string>
-
-    <!-- Text on the button on the PsiCash account log out alert confirmation dialog for all Psiphon tunnel states. Dismisses the log out dialog without any further action when clicked. -->
-    <string name="psicash_cancel_lbl">لغو</string>
-
-    <!-- PsiCash account 'log in' preference title as it appears in the app's preference screen. -->
-    <string name="psicash_account_login_pref_title">ورود</string>
-
-    <!-- Input field caption for password on the PsiCash account sign screen -->
-    <string name="psicash_account_login_password_hint">رمز عبور</string>
-
-    <!-- Label text for 'Log In' button on the PsiCash account sign in screen -->
-    <string name="psicash_account_log_in_btn_lbl">ورود</string>
-
-    <!-- Separator text between the 'Log In' and 'Create Account' buttons on the PsiCash account sign in screen. -->
-    <string name="psicash_account_separator_text">یا</string>
-
-    <!-- Label text for 'Create Account' button on the PsiCash account sign in screen. The button opens 'Create account' dialog when clicked -->
-    <string name="psicash_account_create_account_btn_lbl">ایجاد حساب کاربری</string>
-
-    <!--Generic 'close' alert prompt title-->
-    <string name="psicash_webview_close_alert_title">بستن</string>
 
     <!--Generic 'close' button label -->
     <string name="label_close">بستن</string>
@@ -33,15 +12,8 @@
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">قطع اتصال</string>
 
-    <!-- Label on a button. Clicking this button will buy 1 day (24hr) of Speed Boost. Translate number as well. -->
-    <string name="speed_boost_product_1_day">1 روز</string>
-
-    <!-- Label on a button. Clicking this button will buy 1 week (7days) of Speed Boost. Translate number as well. -->
-    <string name="speed_boost_product_1_week">1 هفته</string>
-
     <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
     <string name="subscribe_card_title">اشتراک</string>
-
 
     <!-- Preference category title for managing advertising privacy settings -->
     <string name="pref_category_advertising_privacy">حریم خصوصی تبلیغات</string>
