@@ -25,6 +25,8 @@ android {
             defaultConfig {
                 applicationId "com.psiphon3.subscription"
                 resValue "string", "tray__authority", "${applicationId}.tray"
+                // Override the app name for the Google Play Store
+                resValue "string", "app_name", "Psiphon Pro"
                 minSdkVersion 21 // Google Play Billing Library 7+ requires API level 21
                 compileSdk 35
                 targetSdkVersion 35

@@ -694,7 +694,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             }
             View dialogView = getLayoutInflater().inflate(R.layout.vpn_data_collection_disclosure_prompt_layout, null);
 
-            String topMessage = String.format(getString(R.string.vpn_data_collection_disclosure_top), getString(R.string.app_name_psiphon_pro));
+            String topMessage = String.format(getString(R.string.vpn_data_collection_disclosure_top), getString(R.string.app_name));
 
             SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder();
             spannableStringBuilder.append(topMessage);

@@ -764,7 +764,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         return notificationBuilder
                 .setSmallIcon(iconID)
                 .setGroup(getContext().getString(R.string.status_notification_group))
-                .setContentTitle(getContext().getText(R.string.app_name_psiphon_pro))
+                .setContentTitle(getContext().getText(R.string.app_name))
                 .setContentText(contentText)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(contentText))
                 .setTicker(ticker)
