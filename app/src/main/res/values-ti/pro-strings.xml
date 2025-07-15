@@ -13,6 +13,12 @@
     <string name="custom_proxy_header_group_6">ርእሲ 6</string>
     <string name="custom_proxy_header_name">ሽም ኣርእስቲ ኣእቱ</string>
     <string name="custom_proxy_header_value">ትሕዝቶ ርእሲ ኣእቱ</string>
+    <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_title">Psiphon Pro ኣመሓይሽ</string>
+
+    <!-- Content of the toolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_message">መተግበሪያታት አይሰሩን? የPsiphon ተመኩሮኻ ምምሕያሽ ኣብዚ ጠቕዕ!</string>
+
     <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_dialog_message">ገለ ናይ ኢንተርኔት ትራፊክ ብናይ ነጻ ሰሪት ናይ Psiphon Pro ኣይድገፍን። ንምዝራዕ ናይ Psiphon ተመኩሮኻ ሙሉእ ዓቕምታት ክኸፍት ምዝገባ ኽታዕ።</string>
 

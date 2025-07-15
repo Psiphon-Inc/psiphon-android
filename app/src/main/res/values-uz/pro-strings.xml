@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_title">Psiphon Pro-ni yangilash</string>
+
+    <!-- Content of the toolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_message">Ilovalar ishlamayaptimi? Psiphon tajribangizni yaxshilash uchun shu yerni bosing!</string>
+
     <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_dialog_message">Baʼzi internet trafigi Psiphon Pro ning bepul versiyasi tomonidan qoʼllab-quvvatlanmaydi. Psiphon tajribangizning toʼliq salohiyatini ochish uchun obuna sotib oling.</string>
 

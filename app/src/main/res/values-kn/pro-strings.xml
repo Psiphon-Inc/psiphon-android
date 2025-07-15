@@ -13,6 +13,12 @@
     <string name="custom_proxy_header_group_6">ಹೆಡರ್‌ 6</string>
     <string name="custom_proxy_header_name">ಹೆಡರ್‌ ಹೆಸರನ್ನು ನಮೂದಿಸಿ</string>
     <string name="custom_proxy_header_value">ಹೆಡರ್ ಮೌಲ್ಯವನ್ನು ನಮೂದಿಸಿ</string>
+    <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_title">Psiphon Pro ಅನ್ನು ಅಪ್‌ಗ್ರೇಡ್ ಮಾಡಿ</string>
+
+    <!-- Content of the toolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_message">ಅಪ್ಲಿಕೇಶನ್‌ಗಳು ಕೆಲಸ ಮಾಡುತ್ತಿಲ್ಲವೇ? ನಿಮ್ಮ Psiphon ಅನುಭವವನ್ನು ಸುಧಾರಿಸಲು ಇಲ್ಲಿ ಕ್ಲಿಕ್ ಮಾಡಿ!</string>
+
     <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_dialog_message">ಕೆಲವು ಇಂಟರ್ನೆಟ್ ಟ್ರಾಫಿಕ್ ಅನ್ನು Psiphon Pro ನ ಉಚಿತ ಆವೃತ್ತಿಯಿಂದ ಬೆಂಬಲಿಸಲಾಗುವುದಿಲ್ಲ. ನಿಮ್ಮ Psiphon ಅನುಭವದ ಸಂಪೂರ್ಣ ಸಾಮರ್ಥ್ಯವನ್ನು ಅನ್ಲಾಕ್ ಮಾಡಲು ಚಂದಾದಾರಿಕೆಯನ್ನು ಖರೀದಿಸಿ.</string>
 

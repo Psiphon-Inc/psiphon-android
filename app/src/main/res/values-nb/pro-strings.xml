@@ -36,6 +36,12 @@
          the workflow to subscribe for premium access. -->
     <string name="rate_limit_text_subscribe_button">Oppgrader nå!</string>
 
+    <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_title">Oppgrader Psiphon Pro</string>
+
+    <!-- Content of the toolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_message">Fungerer ikke appene? Klikk her for å forbedre din Psiphon-opplevelse!</string>
+
     <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_dialog_message">Noe internetttrafikk støttes ikke av gratisversjonen av Psiphon Pro. Kjøp et abonnement for å låse opp det fulle potensialet til din Psiphon-opplevelse.</string>
 

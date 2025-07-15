@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_title">Psiphon Pro fooyyessi</string>
+
+    <!-- Content of the toolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_message">Applikeeshiniiwwan hin hojjatanii? Muuxannoo kee Psiphon fooyyessuuf asitti cuqaasi!</string>
+
     <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_dialog_message">Tiraafikii interneetii muraasa Psiphon Pro version bilisaa dhaan hin deeggarmani. Muuxannoo Psiphon keessan humna guutuu isaanii hiikuuf miseensummaa bitadhaa.</string>
 

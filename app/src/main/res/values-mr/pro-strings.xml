@@ -23,6 +23,12 @@
          the workflow to subscribe for premium access. -->
     <string name="rate_limit_text_subscribe_button">आता अपग्रेड करा!</string>
 
+    <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_title">Psiphon Pro अपग्रेड करा</string>
+
+    <!-- Content of the toolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_message">अॅप्स काम करत नाहीत? तुमचा Psiphon अनुभव सुधारण्यासाठी येथे क्लिक करा!</string>
+
     <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_dialog_message">काही इंटरनेट ट्रॅफिक Psiphon Pro च्या मोफत आवृत्तीद्वारे समर्थित नाही. आपल्या Psiphon अनुभवाची संपूर्ण क्षमता अनलॉक करण्यासाठी सबस्क्रिप्शन खरेदी करा.</string>
 

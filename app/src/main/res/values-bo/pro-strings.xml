@@ -55,6 +55,12 @@
          the workflow to subscribe for premium access. -->
     <string name="rate_limit_text_subscribe_button">དའ་བུང་ཀའད་མམ་སྒོན་བ།</string>
 
+    <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_title">Psiphon Pro གསར་སྒྱུར།</string>
+
+    <!-- Content of the toolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_message">ཉར་སྤྱོད་མ་འདྲེན་པ། Psiphon ཉམས་མྱོང་གསར་སྒྱུར་བྱེད་པར་འདིར་གནོན།</string>
+
     <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_dialog_message">དྲ་རྒྱ་འགྲུལ་སྐྱོད་ལ་ཁག་གཅིག་ནི་ཚིག་རྡུང་ Psiphon Pro རིན་མེད་པའི་ནུས་པས་རྒྱབ་སྐྱོར་མི་བྱེད། ཁྱོད་ཀྱི་ Psiphon ཉམས་མྱོང་གི་ནུས་པ་ཆ་ཚང་སྒྲོལ་བ་ལ་ཞབས་རུ་ཉོ།</string>
 

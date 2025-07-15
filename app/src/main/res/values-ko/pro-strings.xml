@@ -23,6 +23,12 @@
          the workflow to subscribe for premium access. -->
     <string name="rate_limit_text_subscribe_button">지금 업그레이드!</string>
 
+    <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_title">Psiphon Pro 업그레이드</string>
+
+    <!-- Content of the toolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_message">앱이 작동하지 않나요? Psiphon 경험을 개선하려면 여기를 클릭하세요!</string>
+
     <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_dialog_message">일부 인터넷 트래픽은 Psiphon Pro의 무료 버전에서 지원되지 않습니다. 구독을 구매하여 Psiphon 경험의 모든 잠재력을 잠금 해제하세요.</string>
 

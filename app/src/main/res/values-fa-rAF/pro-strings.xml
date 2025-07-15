@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_title">ارتقاء Psiphon Pro</string>
+
+    <!-- Content of the toolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_message">برنامه‌ها کار نمی‌کنند؟ برای بهبود تجربه Psiphon خود اینجا کلیک کنید!</string>
+
     <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_dialog_message">برخی از ترافیک اینترنت توسط نسخه رایگان Psiphon Pro پشتیبانی نمی‌شود. برای باز کردن تمام ظرفیت‌های تجربه Psiphon خود، اشتراک بخرید.</string>
 

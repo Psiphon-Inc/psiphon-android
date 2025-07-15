@@ -25,6 +25,12 @@
     <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
     <string name="speed_rate_limit_not_available">មិនទំនេរ</string>
 
+    <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_title">កែលំអ Psiphon Pro</string>
+
+    <!-- Content of the toolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_message">កម្មវិធីមិនដំណើរការ? ចុចត្រង់នេះដើម្បីកែលំអបទពិសោធន៍ Psiphon របស់អ្នក!</string>
+
     <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_dialog_message">ចរាចរណ៍អ៊ីនធឺណិតមួយចំនួនមិនត្រូវបានគាំទ្រដោយកំណែឥតគិតថ្លៃរបស់ Psiphon Pro។ ទិញការជាវដើម្បីបើកសក្តានុពលពេញរបស់បទពិសោធន៍ Psiphon របស់អ្នក។</string>
 

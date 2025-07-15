@@ -13,6 +13,12 @@
     <string name="custom_proxy_header_group_6">ശീര്‍ഷകം 6</string>
     <string name="custom_proxy_header_name">ശീര്‍ഷകത്തിന്റെ പേര് നല്‍കുക</string>
     <string name="custom_proxy_header_value">ശീര്‍ഷകത്തിന്റെ മൂല്യം നല്‍കുക</string>
+    <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_title">Psiphon Pro അപ്ഗ്രേഡ് ചെയ്യുക</string>
+
+    <!-- Content of the toolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
+    <string name="disallowed_traffic_alert_notification_message">ആപ്പുകൾ പ്രവർത്തിക്കുന്നില്ലേ? നിങ്ങളുടെ Psiphon അനുഭവം മെച്ചപ്പെടുത്താൻ ഇവിടെ ക്ലിക്ക് ചെയ്യുക!</string>
+
     <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_dialog_message">ചില ഇന്റർനെറ്റ് ട്രാഫിക്കിന് Psiphon Pro-ന്റെ സൗജന്യ പതിപ്പിൽ പിന്തുണയില്ല. നിങ്ങളുടെ Psiphon അനുഭവത്തിന്റെ മുഴുവൻ സാധ്യതകളും അൺലോക്ക് ചെയ്യാൻ ഒരു സബ്‌സ്ക്രിപ്‌ഷൻ വാങ്ങുക.</string>
 
