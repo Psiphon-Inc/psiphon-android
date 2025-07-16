@@ -221,6 +221,12 @@ public class TunnelServiceInteractor {
                 .subscribe();
     }
 
+    // Send a message to the service that the unlock required UI has been dismissed
+    public void unlockRequiredUiDismissed() {
+        sendServiceMessageCompletable(TunnelManager.ClientToServiceMessage.UNLOCK_REQUIRED_UI_DISMISSED.ordinal(), null)
+                .subscribe();
+    }
+
     public Single<String> exportNfcDataSingle() {
         return sendServiceMessageCompletable(TunnelManager.ClientToServiceMessage.NFC_CONNECTION_INFO_EXCHANGE_EXPORT.ordinal(), null)
                 .andThen(Single.<String>create(emitter -> {

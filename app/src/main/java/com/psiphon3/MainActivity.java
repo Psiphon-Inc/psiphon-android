@@ -569,6 +569,9 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
         unlockRequiredDialog = new UnlockRequiredDialog.Builder(this, this)
                 .setUnlockOptions(unlockOptions)
+                .setOnDismissButtonClickListener(() -> {
+                    getTunnelServiceInteractor().unlockRequiredUiDismissed();
+                })
                 .setDisconnectTunnelRunnable(() -> compositeDisposable.add(
                         getTunnelServiceInteractor().tunnelStateFlowable()
                                 .filter(state -> !state.isUnknown())
