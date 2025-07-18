@@ -54,6 +54,7 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
     private final List<UnlockOptionHandler> handlers = new ArrayList<>();
     private Runnable dismissListener;
     private Runnable disconnectTunnelRunnable;
+    private Runnable dismissButtonClickListener;
 
     private UnlockRequiredDialog(Context context) {
         View contentView = LayoutInflater.from(context).inflate(R.layout.unlock_required_dialog_layout, null);
@@ -92,6 +93,10 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
 
     private void setDismissListener(Runnable dismissListener) {
         this.dismissListener = dismissListener;
+    }
+
+    private void setOnDismissButtonClickListener(Runnable runnable) {
+        this.dismissButtonClickListener = runnable;
     }
 
     private void setUnlockOptions(UnlockOptions unlockOptions) {
@@ -236,6 +241,10 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
         if (unlockOptions.isEnforce() && disconnectTunnelRunnable != null) {
             disconnectTunnelRunnable.run();
         }
+        // Notify the dismiss button click listener if set
+        if (dismissButtonClickListener != null) {
+            dismissButtonClickListener.run();
+        }
         dialog.dismiss();
     }
 
@@ -250,6 +259,10 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
 
         public Builder setDisconnectTunnelRunnable(Runnable runnable) {
             dialog.setDisconnectTunnelRunnable(runnable);
+            return this;
+        }
+        public Builder setOnDismissButtonClickListener(Runnable runnable) {
+            dialog.setOnDismissButtonClickListener(runnable);
             return this;
         }
 

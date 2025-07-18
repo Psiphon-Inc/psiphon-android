@@ -109,6 +109,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         CHANGED_LOCALE,
         NFC_CONNECTION_INFO_EXCHANGE_IMPORT,
         NFC_CONNECTION_INFO_EXCHANGE_EXPORT,
+        UNLOCK_REQUIRED_UI_DISMISSED,
     }
 
     // Service -> Client
@@ -219,6 +220,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     // Flag to pin unlock options for the current session if they are valid
     private boolean unlockOptionsPinnedForSession = false;
 
+    private final PublishRelay<Boolean> unlockUiDismissedPublishRelay = PublishRelay.create();
+    // Flag to track if we sent the landing page intent to the client activity during the current tunnel session.
+    private final AtomicBoolean homePageHandled = new AtomicBoolean(false);
+
     TunnelManager(Service parentService) {
         m_parentService = parentService;
         m_context = parentService;
@@ -283,6 +288,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         );
 
         m_compositeDisposable.add(connectionStatusUpdaterDisposable());
+
+        // Observe unlock options UI dismissed events and send the home page intent
+        // in case of NOT_ENFORCED unlock if not already handled.
+        m_compositeDisposable.add(unlockDismissHandlerDisposable());
     }
 
     // Implementation of android.app.Service.onStartCommand
@@ -323,10 +332,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                                     TunnelConfigManager.RestartType restartType = config.getRestartType();
                                     if (restartType == TunnelConfigManager.RestartType.FULL_RESTART) {
                                         // On full restart reset unlock options, "unlock UI delivery" state,
-                                        // and "pin options for the session" flag.
+                                        // "pin options for the session" flag, and home page handled state.
                                         unlockOptions.reset();
                                         cachedUnlockUiDeliveryCompletable = null;
                                         unlockOptionsPinnedForSession = false;
+                                        homePageHandled.set(false);
 
 
                                         m_networkConnectionStatePublishRelay.accept(
@@ -439,7 +449,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                                     .andThen(Observable.empty());
                         }
 
-                        if (m_tunnelState.homePages != null && m_tunnelState.homePages.size() != 0) {
+                        if (m_tunnelState.homePages != null && m_tunnelState.homePages.size() != 0 && !homePageHandled.get()) {
                             if (canSendIntentToActivity()) {
                                 m_vpnManager.routeThroughTunnel(m_tunnel.getLocalSocksProxyPort());
                                 sendHandshakeIntent();
@@ -955,6 +965,17 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     }
                     break;
 
+                case UNLOCK_REQUIRED_UI_DISMISSED:
+                    if (manager != null) {
+                        // Ignore the message if the sender is not registered
+                        if (manager.mClients.get(msg.replyTo.hashCode()) == null) {
+                            return;
+                        }
+
+                        manager.unlockUiDismissedPublishRelay.accept(true);
+                    }
+                    break;
+
                 default:
                     super.handleMessage(msg);
             }
@@ -1043,6 +1064,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     }
 
     private void sendHandshakeIntent() {
+        if (!homePageHandled.compareAndSet(false, true)) {
+            MyLog.i("TunnelManager: handshake intent already sent, skipping");
+            return;
+        }
         PendingIntent handshakePendingIntent = getPendingIntent(m_parentService, INTENT_ACTION_HANDSHAKE, getTunnelStateBundle());
         try {
             handshakePendingIntent.send();
@@ -2177,6 +2202,35 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                         }
                     });
         });
+    }
+
+    private Disposable unlockDismissHandlerDisposable() {
+        return Observable.combineLatest(
+                        unlockUiDismissedPublishRelay.startWith(false),
+                        m_networkConnectionStatePublishRelay,
+                        m_isRoutingThroughTunnelPublishRelay,
+                        (dismissed, networkState, isRouting) ->
+                                dismissed &&
+                                networkState == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED &&
+                                isRouting)
+                .switchMap(conditionsMet ->
+                        conditionsMet ? Observable.just(new Object()) : Observable.empty())
+                .switchMapCompletable(__ -> {
+                    if (unlockOptions.unlockRequired() == UnlockOptions.UnlockType.NOT_ENFORCED &&
+                            !homePageHandled.get() &&
+                            m_tunnelState.homePages != null &&
+                            !m_tunnelState.homePages.isEmpty()) {
+                        if (canSendIntentToActivity()) {
+                            sendHandshakeIntent();
+                            return Completable.complete();
+                        } else {
+                            return waitSendIntentAndRouteThroughTunnelCompletable(this::sendHandshakeIntent);
+                        }
+                    }
+                    // Just complete for any other unlock state, or if home page was already handled, or there are no home pages.
+                    return Completable.complete();
+                })
+                .subscribe();
     }
 
     private void processConduitUnlockEntry(String entryKey,
