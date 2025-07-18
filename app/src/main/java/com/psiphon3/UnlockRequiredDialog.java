@@ -49,6 +49,7 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
     private final LinearLayout unlockOptionsContainer;
     private final CardView dismissCardView;
     private final TextView dismissButtonLabel;
+    private final TextView dismissButtonExtraLabel;
 
     private UnlockOptions unlockOptions;
     private final List<UnlockOptionHandler> handlers = new ArrayList<>();
@@ -63,6 +64,7 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
         unlockOptionsContainer = contentView.findViewById(R.id.unlockOptionsContainer);
         dismissCardView = contentView.findViewById(R.id.dismissCardView);
         dismissButtonLabel = contentView.findViewById(R.id.dismissButtonLabel);
+        dismissButtonExtraLabel = contentView.findViewById(R.id.dismissButtonExtraLabel);
 
         // Set click listeners
         dismissCardView.setOnClickListener(v -> dismissWithAction());
@@ -114,9 +116,11 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
         }
         // Set the dismiss / disconnect button text
         if (unlockOptions != null && unlockOptions.isEnforce()) {
+            dismissButtonExtraLabel.setVisibility(View.GONE);
             dismissButtonLabel.setText(R.string.btn_disconnect);
         } else {
-            dismissButtonLabel.setText(R.string.label_dismiss);
+            dismissButtonExtraLabel.setVisibility(View.VISIBLE);
+            dismissButtonLabel.setText(R.string.btn_label_continue);
         }
 
         createHandlers();
