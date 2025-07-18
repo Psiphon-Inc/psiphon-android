@@ -78,4 +78,10 @@
 
     <!-- Preference summary for managing ads consent -->
     <string name="adsConsentManagementSummary">वैयक्तिक जाहिरातींसाठी तुमचा डेटा कसा वापरला जातो याचे नियंत्रण करा</string>
+
+    <!-- Extra label that appears above the "Continue" button in the unlock required dialog in case of unlock required when unlock is not enforced -->
+    <string name="unlock_dismiss_button_extra_label">मला मदत करायची नाही.</string>
+
+    <!-- Generic 'Continue' button label for dialogs and alerts -->
+    <string name="btn_label_continue">सुरू ठेवा</string>
 </resources>

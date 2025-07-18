@@ -240,4 +240,10 @@
 
     <!-- Preference summary for managing ads consent -->
     <string name="adsConsentManagementSummary">Kiểm soát cách dữ liệu của bạn được sử dụng cho quảng cáo được cá nhân hóa</string>
+
+    <!-- Extra label that appears above the "Continue" button in the unlock required dialog in case of unlock required when unlock is not enforced -->
+    <string name="unlock_dismiss_button_extra_label">Tôi không muốn giúp đỡ.</string>
+
+    <!-- Generic 'Continue' button label for dialogs and alerts -->
+    <string name="btn_label_continue">Tiếp tục</string>
 </resources>

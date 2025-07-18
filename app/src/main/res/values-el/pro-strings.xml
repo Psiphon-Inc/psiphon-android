@@ -64,4 +64,10 @@
 
     <!-- Preference summary for managing ads consent -->
     <string name="adsConsentManagementSummary">Ελέγξτε πώς χρησιμοποιούνται τα δεδομένα σας για εξατομικευμένες διαφημίσεις</string>
+
+    <!-- Extra label that appears above the "Continue" button in the unlock required dialog in case of unlock required when unlock is not enforced -->
+    <string name="unlock_dismiss_button_extra_label">Δε θέλω να βοηθήσω.</string>
+
+    <!-- Generic 'Continue' button label for dialogs and alerts -->
+    <string name="btn_label_continue">Συνέχεια</string>
 </resources>

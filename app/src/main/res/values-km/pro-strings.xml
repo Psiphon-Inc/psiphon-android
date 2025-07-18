@@ -70,4 +70,10 @@
 
     <!-- Preference summary for managing ads consent -->
     <string name="adsConsentManagementSummary">ត្រួតពិនិត្យរបៀបដែលទិន្នន័យរបស់អ្នកត្រូវបានប្រើសម្រាប់ផ្សាយពាណិជ្ជកម្មផ្ទាល់ខ្លួន</string>
+
+    <!-- Extra label that appears above the "Continue" button in the unlock required dialog in case of unlock required when unlock is not enforced -->
+    <string name="unlock_dismiss_button_extra_label">ខ្ញុំមិនចង់ជួយទេ។</string>
+
+    <!-- Generic 'Continue' button label for dialogs and alerts -->
+    <string name="btn_label_continue">បន្ត</string>
 </resources>

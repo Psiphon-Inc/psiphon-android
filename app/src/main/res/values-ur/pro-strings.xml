@@ -240,4 +240,10 @@
 
     <!-- Preference summary for managing ads consent -->
     <string name="adsConsentManagementSummary">کنٹرول کریں کہ آپ کا ڈیٹا ذاتی اشتہارات کے لیے کیسے استعمال ہوتا ہے</string>
+
+    <!-- Extra label that appears above the "Continue" button in the unlock required dialog in case of unlock required when unlock is not enforced -->
+    <string name="unlock_dismiss_button_extra_label">میں مدد نہیں کرنا چاہتا۔</string>
+
+    <!-- Generic 'Continue' button label for dialogs and alerts -->
+    <string name="btn_label_continue">جاری رکھیں</string>
 </resources>
