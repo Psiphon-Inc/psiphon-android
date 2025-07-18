@@ -86,15 +86,24 @@
                 android:padding="12dp">
 
                 <TextView
+                    android:id="@+id/dismissButtonExtraLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Caption"
+                    android:textStyle="normal"
+                    android:text="@string/unlock_dismiss_button_extra_label"
+                    android:layout_marginBottom="4dp"
+                    android:visibility="gone" />
+                <TextView
                     android:id="@+id/dismissButtonLabel"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center_horizontal"
                     android:textAppearance="@style/TextAppearance.AppCompat.Headline"
-                    android:textStyle="normal" />
+                    android:textStyle="bold" />
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>
     </LinearLayout>
-
 </LinearLayout>
