@@ -55,6 +55,12 @@
          the workflow to subscribe for premium access. -->
     <string name="rate_limit_text_subscribe_button">አሁንኑ አስተካክል!</string>
 
+    <!-- Alert error message informing user that an unexpected error has occurred and encouraging the user to send feedback diagnostics. -->
+    <string name="unexpected_error_occured_send_feedback_message">ያልተጠበቀ ስህተት ተፈጥሯል፣ እባክዎ ግብአት ይላኩ።</string>
+
+    <!-- Auto dismissable alert message informing users that subscription options are not available at the moment -->
+    <string name="subscription_options_currently_not_available">የምዝገባ አማራጮች በአሁኑ ጊዜ አይገኙም፣ እባክዎ በኋላ እንደገና ይሞክሩ።</string>
+
     <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_notification_title">Psiphon Pro ያሻሽሉ</string>
 
@@ -67,11 +73,83 @@
     <!-- Text on the button which takes user to subscription screen -->
     <string name="btn_get_subscription">ይመዝገቡ </string>
 
+    <!-- Header text appearing on the subscriptions screen when the user has a limited subscription plan. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.UsingLimitedPlan">የመሰረታዊ እቅድ እየተጠቀሙ ነው ፍጥነቱ 5 Mb/s ተገድቧል። ወደ ያላገደበ እቅድ ማሻሻል ይፈልጋሉ?</string>
+
+    <!-- Header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.UsingFreePlan">ነጻ፣ ማስታወቂያ የሚደገፍ፣ ፍጥነት የተገደበ፣ ወደብ የተገደበ እቅድ እየተጠቀሙ ነው። ይህንን እቅድ መጠቀም መቀጠል ወይም ወደ ፕሪሚየም እቅዶቻችን አንዱ ማሻሻል ይችላሉ</string>
+
+    <!-- Alternative header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon በእርስዎ አካባቢ ነጻ አይደለም። አገልግሎቱን መጠቀም ለመቀጠል እባክዎ ወደ ፕሪሚየም እቅዶቻችን አንዱ ያሻሽሉ</string>
+
+    <!-- Common description text for all time passes. A time pass is a single use license that is valid for a certain
+    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="PaymentChooserActivity.TimepassCommonDescription">በእያንዳንዱ የጊዜ ፈቃድ ግዢ ሁኔታ ያልተገደበ፣ ያላገደበ ፍጥነት እና ያላገደቡ ወደቦች</string>
+
+    <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '7-day pass - CA$3.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice7Text">7-ቀን ፈቃድ - %s</string>
+
+    <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '30-day pass - CA$8.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice30Text">30-ቀን ፈቃድ - %s</string>
+
+    <!-- Label for button that user will click to buy a 360-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '360-day pass - CA$99.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice360Text">360-ቀን ፈቃድ - %s</string>
+
+    <!-- Extra label showing price per day on all time pass buttons. Keep as short as possible. -->
+    <string name="PaymentChooserActivity.TimepassPricePerDayText">%s/ቀን</string>
+
+    <!-- Label for button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., 'Basic - CA$5.99 monthly' -->
+    <string name="PaymentChooserActivity.LimitedSubscriptionTitlePriceText">መሰረታዊ - %s ወርሃዊ</string>
+
+    <!-- Description text on the button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+         Appears below 'Basic - CA$5.99 monthly' label in smaller font. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">ሁኔታ ያልተገደበ፣ እስከ 5 Mb/s ድረስ ከፍተኛ ፍጥነት እና ያላገደቡ ወደቦች</string>
+
+    <!-- Label for button that user will click in order to buy an unlimited subscription for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., 'Unlimited - CA$11.99 monthly' -->
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionTitlePriceText">ያላገደበ - %s ወርሃዊ</string>
+
+    <!-- Description text on the button that user will click in order to buy an unlimited subscription for Psiphon Pro.
+         Appears below 'Unlimited - CA$11.99 monthly' label in smaller font-->
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">ሁኔታ ያልተገደበ፣ ያላገደበ ፍጥነት እና ያላገደቡ ወደቦች</string>
+
+    <!-- Text Label that appears on the subscription buying button for Psiphon Pro in case if there
+         is a trial period available for that subscription. The formated string is the length of the
+         trial period in days. Keep as short as possible -->
+    <string name="PaymentChooserActivity.FreeTrialPeriod">ነጻ ሙከራ - %d ቀናት</string>
+
+    <!-- Extra text on all subscriptions buttons showing monthly price per subscription after free trial ends-->
+    <string name="PaymentChooserActivity.PriceAfterFreeTrialText">ነጻ ሙከራ ከተጠናቀቀ በኋላ %s/ወር</string>
+
+    <!-- Subscription terms text, appears at the bottom of the subscriptions screen -->
+    <string name="PaymentChooserActivity.SubscriptionsTerms">በGoogle Play ላይ በምዝገባ ክፍል ውስጥ የእርስዎን ምዝገባ በማንኛውም ጊዜ ይሰርዙ። ምዝገባዎን ሲሰርዙ፣ የአሁኑ የክፍያ ወቅት በሚያቃረን ወቅት በምዝገባው ውል መሰረት በሚሰጡ ፕሪሚየም ባህሪዎች መዳረሻዎን ያጣሉ። በአንድ ተጠቃሚ አንድ ነጻ ሙከራ ብቻ። የነጻ የሙከራ ጊዜዎ በሚያቃረን ወቅት በምዝገባዎ ውል መሰረት በተመለከተው መጠን በራሱ ክፍያ ይከፈላል። ክፍያዎችን ለማስወገድ፣ የሙከራ ወቅቱ ከመጠናቀቁ በፊት ምዝገባውን ይሰርዙ።</string>
+
+    <!-- Time pass explanation text -->
+    <string name="PaymentChooserActivity.TimePassExplanation">የጊዜ ፈቃድ በተገዛበት ወቅት ከተወሰነ ጊዜ ጋር ልክ የሆነ እና እንደ ምዝገባ አይነት ከተጠናቀቀ በኋላ በራሱ የማይታደስ የአንድ ጊዜ የመጠቀሚያ ፈቃድ ነው።</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available subscriptions -->
+    <string name="PaymentChooserActivity.SubscriptionTab">ምዝገባ</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available time passes.
+    A time pass is a single use license that is valid for a certain period of time from the moment it is purchased
+    and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="PaymentChooserActivity.TimePassTab">የጊዜ ፈቃድ</string>
+
     <!--Generic 'close' button label -->
     <string name="label_close">ዝጋ</string>
 
     <!-- Clickable text on the home tab that appears on the home tab if user has an active subscription. Clicking the link opens 'Manage Subscription' screen of the Google Play app -->
     <string name="manage_my_subscription_link_text">የደንበኝነት ምዝገባዎን ያስተዳድሩ</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. A short message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text">Psiphon በእርስዎ አካባቢ ነጻ አይደለም።</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. A longer message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text_big">Psiphon በእርስዎ አካባቢ ነጻ አይደለም፣ ተጨማሪ ለማወቅ እዚህ ይንኩ።</string>
 
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">ግንኙነት አቋርጥ</string>
