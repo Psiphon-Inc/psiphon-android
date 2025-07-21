@@ -245,5 +245,5 @@
     <string name="unlock_dismiss_button_extra_label">Je ne veux pas aider.</string>
 
     <!-- Generic 'Continue' button label for dialogs and alerts -->
-    <string name="btn_label_continue">Continuer</string>
+    <string name="btn_label_continue">Poursuivre</string>
 </resources>

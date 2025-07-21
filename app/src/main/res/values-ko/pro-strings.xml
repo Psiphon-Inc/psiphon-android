@@ -114,5 +114,5 @@
     <string name="unlock_dismiss_button_extra_label">도움을 주고 싶지 않습니다.</string>
 
     <!-- Generic 'Continue' button label for dialogs and alerts -->
-    <string name="btn_label_continue">계속</string>
+    <string name="btn_label_continue">계속하기</string>
 </resources>

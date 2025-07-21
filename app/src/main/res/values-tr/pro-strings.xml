@@ -245,5 +245,5 @@
     <string name="unlock_dismiss_button_extra_label">Yardım etmek istemiyorum.</string>
 
     <!-- Generic 'Continue' button label for dialogs and alerts -->
-    <string name="btn_label_continue">Devam Et</string>
+    <string name="btn_label_continue">İlerle</string>
 </resources>

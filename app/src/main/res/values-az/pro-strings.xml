@@ -164,5 +164,5 @@
     <string name="unlock_dismiss_button_extra_label">Kömək etmək istəmirəm.</string>
 
     <!-- Generic 'Continue' button label for dialogs and alerts -->
-    <string name="btn_label_continue">Davam et</string>
+    <string name="btn_label_continue">Davam</string>
 </resources>

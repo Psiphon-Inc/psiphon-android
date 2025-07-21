@@ -54,5 +54,5 @@
     <string name="unlock_dismiss_button_extra_label">ክሕግዝ ኣይደልይን።</string>
 
     <!-- Generic 'Continue' button label for dialogs and alerts -->
-    <string name="btn_label_continue">ተቀጻጸል</string>
+    <string name="btn_label_continue">ቀጽል</string>
 </resources>

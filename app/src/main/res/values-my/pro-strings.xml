@@ -245,5 +245,5 @@
     <string name="unlock_dismiss_button_extra_label">ကူညီချင်တာ မရှိပါ။</string>
 
     <!-- Generic 'Continue' button label for dialogs and alerts -->
-    <string name="btn_label_continue">ဆက်လက်လုပ်ဆောင်မယ်</string>
+    <string name="btn_label_continue">ဆက်လုပ်မည်</string>
 </resources>

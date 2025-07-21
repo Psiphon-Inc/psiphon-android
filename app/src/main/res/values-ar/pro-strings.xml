@@ -245,5 +245,5 @@
     <string name="unlock_dismiss_button_extra_label">لا أريد أن أساعد.</string>
 
     <!-- Generic 'Continue' button label for dialogs and alerts -->
-    <string name="btn_label_continue">متابعة</string>
+    <string name="btn_label_continue">الاستمرار</string>
 </resources>
