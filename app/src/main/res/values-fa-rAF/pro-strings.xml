@@ -12,6 +12,9 @@
     <!-- Text on the button which takes user to subscription screen -->
     <string name="btn_get_subscription">اشتراک</string>
 
+    <!-- Alternative header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon دیگر در منطقه شما رایگان نیست. لطفاً به یکی از برنامه‌های پریمیوم ما ارتقاء دهید تا به استفاده از سرویس ادامه دهید</string>
+
     <!--Generic 'close' button label -->
     <string name="label_close">بستن</string>
 

@@ -25,6 +25,9 @@
     <!-- Text on the button which takes user to subscription screen -->
     <string name="btn_get_subscription">Обуна шудан</string>
 
+    <!-- Alternative header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon дигар дар минтақаи шумо ройгон нест. Лутфан ба яке аз тарифаҳои махсуси мо артиқоб шавед, то хизматрасониро идома диҳед</string>
+
     <!--Generic 'close' button label -->
     <string name="label_close">Пӯшидан</string>
 

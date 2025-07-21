@@ -22,6 +22,9 @@
     <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_dialog_message">ገለ ናይ ኢንተርኔት ትራፊክ ብናይ ነጻ ሰሪት ናይ Psiphon Pro ኣይድገፍን። ንምዝራዕ ናይ Psiphon ተመኩሮኻ ሙሉእ ዓቕምታት ክኸፍት ምዝገባ ኽታዕ።</string>
 
+    <!-- Alternative header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon ኣብ ዞባኻ ብነጻ ኣይኮነን ዝርከብ። እቲ ኣገልግሎት ክትጸንሐ ንሓደ ካብ ፕሪሚየም ውክልና ተሻጊሩ</string>
+
     <!--Generic 'close' button label -->
     <string name="label_close">ንምዕጻው</string>
 

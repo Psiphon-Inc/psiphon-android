@@ -9,6 +9,9 @@
     <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_dialog_message">Tiraafikii interneetii muraasa Psiphon Pro version bilisaa dhaan hin deeggarmani. Muuxannoo Psiphon keessan humna guutuu isaanii hiikuuf miseensummaa bitadhaa.</string>
 
+    <!-- Alternative header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon naanno keessan keessatti deebi\'ee bilisa miti. Tajaajila kana itti fayyadamuu keetif karoora premium keenya keessaa tokko olii fudhadhu</string>
+
     <!--Generic 'close' button label -->
     <string name="label_close">Cufi</string>
 

@@ -9,6 +9,9 @@
     <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_dialog_message">Mamwe ma traffic e internet haatsigirwe ne free version ye Psiphon Pro. Tenga subscription kuti uvhure simba rese re Psiphon experience yako.</string>
 
+    <!-- Alternative header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon haichisiri yemahara mudunhu rako. Tapota kwidzira kune imwe yedu premium plans kuti uranbe uchishandisa basa iri</string>
+
     <!--Generic 'close' button label -->
     <string name="label_close">Vhara</string>
 

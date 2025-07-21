@@ -12,6 +12,9 @@
     <!-- Text on the button which takes user to subscription screen -->
     <string name="btn_get_subscription">Жазылуу</string>
 
+    <!-- Alternative header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon сиздин аймагыңызда эми акысыз эмес. Кызматты колдонууну улантуу үчүн биздин премиум планыстарынын биринин жаңыртыңыз</string>
+
     <!--Generic 'close' button label -->
     <string name="label_close">Жабуу</string>
 
