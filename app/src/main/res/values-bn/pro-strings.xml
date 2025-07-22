@@ -55,6 +55,12 @@
          the workflow to subscribe for premium access. -->
     <string name="rate_limit_text_subscribe_button">অ্যাপগ্রেড করুন!</string>
 
+    <!-- Alert error message informing user that an unexpected error has occurred and encouraging the user to send feedback diagnostics. -->
+    <string name="unexpected_error_occured_send_feedback_message">একটি অপ্রত্যাশিত ত্রুটি ঘটেছে, দয়া করে ফিডব্যাক পাঠান।</string>
+
+    <!-- Auto dismissable alert message informing users that subscription options are not available at the moment -->
+    <string name="subscription_options_currently_not_available">সাবস্ক্রিপশন অপশন বর্তমানে উপলব্ধ নয়, পরে আবার চেষ্টা করুন।</string>
+
     <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_notification_title">Psiphon Pro আপগ্রেড করুন</string>
 
@@ -67,8 +73,83 @@
     <!-- Text on the button which takes user to subscription screen -->
     <string name="btn_get_subscription">সাবস্ক্রাইব</string>
 
+    <!-- Header text appearing on the subscriptions screen when the user has a limited subscription plan. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.UsingLimitedPlan">আপনি ৫&#160;Mb/s গতি সীমা সহ বেসিক প্ল্যান ব্যবহার করছেন। আপনি কি আনলিমিটেড প্ল্যানে আপগ্রেড করতে চান?</string>
+
+    <!-- Header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.UsingFreePlan">আপনি বিজ্ঞাপন সমর্থিত, গতি সীমিত এবং ডেটা ক্যাপ সহ বিনামূল্যে প্ল্যান ব্যবহার করছেন। আপনি এই প্ল্যান চালিয়ে যেতে পারেন অথবা আমাদের প্রিমিয়াম প্ল্যানে আপগ্রেড করতে পারেন</string>
+
+    <!-- Alternative header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">আপনার অঞ্চলে Psiphon বিনামূল্যে নয়। সেবা চালিয়ে যেতে আমাদের প্রিমিয়াম প্ল্যানে আপগ্রেড করুন।</string>
+
+    <!-- Common description text for all time passes. A time pass is a single use license that is valid for a certain
+    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="PaymentChooserActivity.TimepassCommonDescription">বিনা বিজ্ঞাপন, আনলিমিটেড গতি সহ আনলিমিটেড ডেটা সকল টাইম পাস ক্রয়ে</string>
+
+    <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '7-day pass - CA$3.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice7Text">৭ দিনের পাস - %s</string>
+
+    <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '30-day pass - CA$8.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice30Text">৩০ দিনের পাস - %s</string>
+
+    <!-- Label for button that user will click to buy a 360-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '360-day pass - CA$99.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice360Text">৩৬০ দিনের পাস - %s</string>
+
+    <!-- Extra label showing price per day on all time pass buttons. Keep as short as possible. -->
+    <string name="PaymentChooserActivity.TimepassPricePerDayText">%s/দিন</string>
+
+    <!-- Label for button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., 'Basic - CA$5.99 monthly' -->
+    <string name="PaymentChooserActivity.LimitedSubscriptionTitlePriceText">বেসিক - %s প্রতি মাসে</string>
+
+    <!-- Description text on the button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+         Appears below 'Basic - CA$5.99 monthly' label in smaller font. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">বিনা বিজ্ঞাপন, ৫&#160;Mb/s পর্যন্ত গতি সহ আনলিমিটেড ডেটা</string>
+
+    <!-- Label for button that user will click in order to buy an unlimited subscription for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., 'Unlimited - CA$11.99 monthly' -->
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionTitlePriceText">আনলিমিটেড - %s প্রতি মাসে</string>
+
+    <!-- Description text on the button that user will click in order to buy an unlimited subscription for Psiphon Pro.
+         Appears below 'Unlimited - CA$11.99 monthly' label in smaller font-->
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">বিনা বিজ্ঞাপন, আনলিমিটেড গতি সহ আনলিমিটেড ডেটা</string>
+
+    <!-- Text Label that appears on the subscription buying button for Psiphon Pro in case if there
+         is a trial period available for that subscription. The formated string is the length of the
+         trial period in days. Keep as short as possible -->
+    <string name="PaymentChooserActivity.FreeTrialPeriod">বিনামূল্যে ট্রায়াল - %d দিন</string>
+
+    <!-- Extra text on all subscriptions buttons showing monthly price per subscription after free trial ends-->
+    <string name="PaymentChooserActivity.PriceAfterFreeTrialText">বিনামূল্যে ট্রায়াল শেষ হওয়ার পর %s/মাস</string>
+
+    <!-- Subscription terms text, appears at the bottom of the subscriptions screen -->
+    <string name="PaymentChooserActivity.SubscriptionsTerms">আপনি যেকোনো সময় Google Play এর পেমেন্ট সেকশনে আপনার সাবস্ক্রিপশন বাতিল করতে পারেন। আপনি যখন আপনার সাবস্ক্রিপশন বাতিল করবেন, তখন বর্তমান বিলিং পিরিয়ডের শেষে আপনি পেমেন্ট প্ল্যান দ্বারা প্রদত্ত প্রিমিয়াম বৈশিষ্ট্যগুলিতে অ্যাক্সেস হারাবেন। প্রতি ব্যবহারকারী একটিই বিনামূল্যে ট্রায়াল। আপনার বিনামূল্যে ট্রায়াল পিরিয়ডের শেষে, আপনার পেমেন্ট প্ল্যানের পরিমাণ স্বয়ংক্রিয়ভাবে চার্জ করা হবে। চার্জ এড়াতে, ট্রায়াল পিরিয়ড শেষ হওয়ার আগে সাবস্ক্রিপশন বাতিল করুন।</string>
+
+    <!-- Time pass explanation text -->
+    <string name="PaymentChooserActivity.TimePassExplanation">টাইম পাস হল একটি একক ব্যবহারের লাইসেন্স যা ক্রয়ের মুহূর্ত থেকে নির্দিষ্ট সময়ের জন্য বৈধ এবং মেয়াদ শেষ হওয়ার পর স্বয়ংক্রিয়ভাবে নবায়ন হয় না, সাবস্ক্রিপশনের বিপরীতে।</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available subscriptions -->
+    <string name="PaymentChooserActivity.SubscriptionTab">সাবস্ক্রিপশন</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available time passes.
+    A time pass is a single use license that is valid for a certain period of time from the moment it is purchased
+    and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="PaymentChooserActivity.TimePassTab">টাইম পাস</string>
+
     <!--Generic 'close' button label -->
     <string name="label_close">বন্ধ</string>
+
+    <!-- Clickable text on the home tab that appears on the home tab if user has an active subscription. Clicking the link opens 'Manage Subscription' screen of the Google Play app -->
+    <string name="manage_my_subscription_link_text">আপনার সাবস্ক্রিপশন পরিচালনা করুন</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. A short message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text">Psiphon আপনার অঞ্চলে আর বিনামূল্যে নয়।</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. A longer message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text_big">Psiphon আপনার অঞ্চলে আর বিনামূল্যে নয়, আরও জানতে এখানে ট্যাপ করুন।</string>
 
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">সংযোগ বিচ্ছিন্ন করা</string>

@@ -55,6 +55,12 @@
          the workflow to subscribe for premium access. -->
     <string name="rate_limit_text_subscribe_button">Indi yüksəldin!</string>
 
+    <!-- Alert error message informing user that an unexpected error has occurred and encouraging the user to send feedback diagnostics. -->
+    <string name="unexpected_error_occured_send_feedback_message">Gözlənilməz xəta baş verdi, zəhmət olmasa rəy göndərin.</string>
+
+    <!-- Auto dismissable alert message informing users that subscription options are not available at the moment -->
+    <string name="subscription_options_currently_not_available">Abunəlik variantları hal-hazırda mövcud deyil, sonra yenidən cəhd edin.</string>
+
     <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_notification_title">Psiphon Pro-nu yeniləyin</string>
 
@@ -67,8 +73,83 @@
     <!-- Text on the button which takes user to subscription screen -->
     <string name="btn_get_subscription">Abunə ol</string>
 
+    <!-- Header text appearing on the subscriptions screen when the user has a limited subscription plan. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.UsingLimitedPlan">Siz 5&#160;Mb/s sürət həddi olan əsas planı istifadə edirsiniz. Limitsiz plana təkmilləşdirmək istəyirsinizmi?</string>
+
+    <!-- Header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.UsingFreePlan">Siz reklam dəstəkli, sürət məhdud və məlumat həddli pulsuz planı istifadə edirsiniz. Bu planı davam etdirə bilər və ya bizim premium planimiza təkmilləşdirə bilərsiniz</string>
+
+    <!-- Alternative header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon sizin bölgənizdə pulsuz deyil. Xidməti davam etdirmək üçün bizim premium planimiza təkmilləşdirin.</string>
+
+    <!-- Common description text for all time passes. A time pass is a single use license that is valid for a certain
+    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="PaymentChooserActivity.TimepassCommonDescription">Reklamsız, limitsiz sürətlə limitsiz məlumat bütün vaxt keçidi alışlarında</string>
+
+    <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '7-day pass - CA$3.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice7Text">7 günlük keçid - %s</string>
+
+    <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '30-day pass - CA$8.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice30Text">30 günlük keçid - %s</string>
+
+    <!-- Label for button that user will click to buy a 360-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '360-day pass - CA$99.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice360Text">360 günlük keçid - %s</string>
+
+    <!-- Extra label showing price per day on all time pass buttons. Keep as short as possible. -->
+    <string name="PaymentChooserActivity.TimepassPricePerDayText">%s/gün</string>
+
+    <!-- Label for button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., 'Basic - CA$5.99 monthly' -->
+    <string name="PaymentChooserActivity.LimitedSubscriptionTitlePriceText">Əsas - aylıq %s</string>
+
+    <!-- Description text on the button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+         Appears below 'Basic - CA$5.99 monthly' label in smaller font. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">Reklamsız, 5&#160;Mb/s-ə qədər sürətlə limitsiz məlumat</string>
+
+    <!-- Label for button that user will click in order to buy an unlimited subscription for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., 'Unlimited - CA$11.99 monthly' -->
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionTitlePriceText">Limitsiz - aylıq %s</string>
+
+    <!-- Description text on the button that user will click in order to buy an unlimited subscription for Psiphon Pro.
+         Appears below 'Unlimited - CA$11.99 monthly' label in smaller font-->
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">Reklamsız, limitsiz sürətlə limitsiz məlumat</string>
+
+    <!-- Text Label that appears on the subscription buying button for Psiphon Pro in case if there
+         is a trial period available for that subscription. The formated string is the length of the
+         trial period in days. Keep as short as possible -->
+    <string name="PaymentChooserActivity.FreeTrialPeriod">Pulsuz sınaq - %d gün</string>
+
+    <!-- Extra text on all subscriptions buttons showing monthly price per subscription after free trial ends-->
+    <string name="PaymentChooserActivity.PriceAfterFreeTrialText">Pulsuz sınaq bitdikdən sonra aylıq %s</string>
+
+    <!-- Subscription terms text, appears at the bottom of the subscriptions screen -->
+    <string name="PaymentChooserActivity.SubscriptionsTerms">Abunəliyinizi istədiyiniz zaman Google Play-də Ödəniş bölməsində ləğv edə bilərsiniz. Abunəliyinizi ləğv etdiyinizdə, cari hesablama dövrünün sonunda ödəniş planınızın təqdim etdiyi premium xüsusiyyətlərə girişinizi itirəcəksiniz. Hər istifadəçi üçün yalnız bir pulsuz sınaq. Pulsuz sınaq dövrunüzün sonunda ödəniş planınızın məbləği avtomatik olaraq hesablanacaq. Ödəmədən qaçınmaq üçün sınaq dövrü bitmədən əvvəl abunəliyi ləğv edin.</string>
+
+    <!-- Time pass explanation text -->
+    <string name="PaymentChooserActivity.TimePassExplanation">Vaxt keçidi satın alındıqdan müəyyən müddət ərzində etibarlı olan və abunəlikdən fərqli olaraq, müddəti bitdikdən sonra avtomatik yenilənməyən tək istifadəlik lisansiyadır.</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available subscriptions -->
+    <string name="PaymentChooserActivity.SubscriptionTab">Abunəliklər</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available time passes.
+    A time pass is a single use license that is valid for a certain period of time from the moment it is purchased
+    and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="PaymentChooserActivity.TimePassTab">Vaxt keçidi</string>
+
     <!--Generic 'close' button label -->
     <string name="label_close">Bağla</string>
+
+    <!-- Clickable text on the home tab that appears on the home tab if user has an active subscription. Clicking the link opens 'Manage Subscription' screen of the Google Play app -->
+    <string name="manage_my_subscription_link_text">Abunəliyimi idarə et</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. A short message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text">Psiphon artıq sizin bölgənizdə pulsuz deyil.</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. A longer message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text_big">Psiphon artıq sizin bölgənizdə pulsuz deyil, daha çox öyrənmək üçün burada toxunun.</string>
 
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">Ayrıl</string>

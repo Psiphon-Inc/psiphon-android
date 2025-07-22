@@ -1,5 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- New option title in the 'More options' dialog. It appears in the Proxy Setting category.
+        When clicked a new screen opens where users can specify additional HTTP headers to be added to
+        to HTTP proxy requests. Users may specify up to 3 custom headers -->
+    <string name="custom_proxy_headers_title">Προσαρμοσμένα HTTP headers</string>
+
+    <!--  Summary text for 'Custom HTTP header' option, appears underneath the option title -->
+    <string name="custom_proxy_headers_summary">Ρύθμιση πρόσθετων προσαρμοσμένων HTTP headers για αιτήματα proxy</string>
+
+    <!-- Checkbox that toggles adding custom headers feature-->
+    <string name="custom_proxy_headers_checkbox_title">Προσθήκη προσαρμοσμένων HTTP headers</string>
+
+    <!--  Summary text for 'Add custom HTTP headers' checkbox, appears underneath the checkbox title -->
+    <string name="custom_proxy_headers_checkbox_description">Προσθήκη προσαρμοσμένων HTTP headers σε όλα τα εξερχόμενα αιτήματα HTTP proxy</string>
+    <string name="custom_proxy_header_group_1">Header 1</string>
+    <string name="custom_proxy_header_group_2">Header 2</string>
+    <string name="custom_proxy_header_group_3">Header 3</string>
+    <string name="custom_proxy_header_group_4">Header 4</string>
+    <string name="custom_proxy_header_group_5">Header 5</string>
+    <string name="custom_proxy_header_group_6">Header 6</string>
+    <string name="custom_proxy_header_name">Εισαγάγετε όνομα header</string>
+    <string name="custom_proxy_header_value">Εισαγάγετε αξία header</string>
+    <string name="custom_proxy_header_ignored_values">Προειδοποίηση: Headers με κενά ονόματα θα αγνοηθούν!</string>
+    <string name="custom_proxy_header_invalid_name">Σφάλμα: Το όνομα header περιέχει μη έγκυρους χαρακτήρες!</string>
+    <!-- Title for other text showing what the user's current speed limit is. Users have limited
+         speed if they have not paid for premium service. -->
+    <string name="rate_limit_text_title">Όριο ταχύτητας Psiphon:</string>
+
     <!--
         Template for rendering a rate value and its unit label.
         %1$s = numeric value (e.g., "5.3"), %2$s = unit label (e.g., "MB/s").
@@ -8,6 +35,31 @@
         Reorder the format specifiers '%1$s' and '%2$s' if in the translated language ordering numeric value and rate unit in speed rate string is different from English.
     -->
     <string name="rate_with_unit_template">%1$s%2$s</string>
+
+    <!-- Unit labels used with 'rate_with_unit_template' for bit-per-second speeds. These represent: bits, kilobits, megabits, etc. per second. -->
+    <string name="rate_unit_bps_bits">bps</string>
+    <string name="rate_unit_kbps_bits">Kbps</string>
+    <string name="rate_unit_mbps_bits">Mbps</string>
+    <string name="rate_unit_gbps_bits">Gbps</string>
+    <string name="rate_unit_tbps_bits">Tbps</string>
+    <string name="rate_unit_pbps_bits">Pbps</string>
+
+
+    <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
+    <string name="speed_rate_limit_not_available">Μη διαθέσιμο</string>
+
+    <!-- Text shown on the home tab under Psiphon speed limit label when the there is no speed limit, like when the user has an unlimited subscription, for example -->
+    <string name="speed_rate_limit_no_limit">Χωρίς όριο</string>
+
+    <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
+         the workflow to subscribe for premium access. -->
+    <string name="rate_limit_text_subscribe_button">Αναβάθμιση τώρα!</string>
+
+    <!-- Alert error message informing user that an unexpected error has occurred and encouraging the user to send feedback diagnostics. -->
+    <string name="unexpected_error_occured_send_feedback_message">Προέκυψε ένα απροσδόκητο σφάλμα, παρακαλώ στείλτε σχόλια.</string>
+
+    <!-- Auto dismissable alert message informing users that subscription options are not available at the moment -->
+    <string name="subscription_options_currently_not_available">Οι επιλογές συνδρομής δεν είναι διαθέσιμες αυτή τη στιγμή, δοκιμάστε ξανά αργότερα.</string>
 
     <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_notification_title">Αναβάθμιση Psiphon Pro</string>
@@ -18,14 +70,95 @@
     <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_dialog_message">Μερικά δεδομένα Διαδικτύου δεν υποστηρίζονται από τη δωρεάν έκδοση του Psiphon Pro. Αγοράστε μια συνδρομή για να ξεκλειδώσετε το πλήρες δυναμικό της εμπειρίας Psiphon σας.</string>
 
+    <!-- Text on the button which takes user to subscription screen -->
+    <string name="btn_get_subscription">Εγγραφή</string>
+
+    <!-- Header text appearing on the subscriptions screen when the user has a limited subscription plan. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.UsingLimitedPlan">Χρησιμοποιείτε το βασικό πλάνο με όριο ταχύτητας 5&#160;Mb/s. Θέλετε να αναβαθμίσετε σε απεριόριστο πλάνο;</string>
+
+    <!-- Header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.UsingFreePlan">Χρησιμοποιείτε το δωρεάν πλάνο με υποστήριξη διαφημίσεων, περιορισμένη ταχύτητα και όριο δεδομένων. Μπορείτε να συνεχίσετε με αυτό το πλάνο ή να αναβαθμίσετε στο premium πλάνο μας</string>
+
+    <!-- Alternative header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Το Psiphon δεν είναι δωρεάν στην περιοχή σας. Αναβαθμίστε στο premium πλάνο μας για να συνεχίσετε την υπηρεσία.</string>
+
+    <!-- Common description text for all time passes. A time pass is a single use license that is valid for a certain
+    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="PaymentChooserActivity.TimepassCommonDescription">Χωρίς διαφημίσεις, απεριόριστη ταχύτητα με απεριόριστα δεδομένα σε όλες τις αγορές time pass</string>
+
+    <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '7-day pass - CA$3.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice7Text">7-ημερο πάσο - %s</string>
+
+    <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '30-day pass - CA$8.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice30Text">30-ημερο πάσο - %s</string>
+
+    <!-- Label for button that user will click to buy a 360-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '360-day pass - CA$99.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice360Text">360-ημερο πάσο - %s</string>
+
+    <!-- Extra label showing price per day on all time pass buttons. Keep as short as possible. -->
+    <string name="PaymentChooserActivity.TimepassPricePerDayText">%s/ημέρα</string>
+
+    <!-- Label for button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., 'Basic - CA$5.99 monthly' -->
+    <string name="PaymentChooserActivity.LimitedSubscriptionTitlePriceText">Βασικό - %s μηνιαίως</string>
+
+    <!-- Description text on the button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+         Appears below 'Basic - CA$5.99 monthly' label in smaller font. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">Χωρίς διαφημίσεις, απεριόριστα δεδομένα με ταχύτητα έως 5&#160;Mb/s</string>
+
+    <!-- Label for button that user will click in order to buy an unlimited subscription for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., 'Unlimited - CA$11.99 monthly' -->
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionTitlePriceText">Απεριόριστο - %s μηνιαίως</string>
+
+    <!-- Description text on the button that user will click in order to buy an unlimited subscription for Psiphon Pro.
+         Appears below 'Unlimited - CA$11.99 monthly' label in smaller font-->
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">Χωρίς διαφημίσεις, απεριόριστα δεδομένα με απεριόριστη ταχύτητα</string>
+
+    <!-- Text Label that appears on the subscription buying button for Psiphon Pro in case if there
+         is a trial period available for that subscription. The formated string is the length of the
+         trial period in days. Keep as short as possible -->
+    <string name="PaymentChooserActivity.FreeTrialPeriod">Δωρεάν δοκιμή - %d ημέρες</string>
+
+    <!-- Extra text on all subscriptions buttons showing monthly price per subscription after free trial ends-->
+    <string name="PaymentChooserActivity.PriceAfterFreeTrialText">%s/μήνα μετά το τέλος της δωρεάν δοκιμής</string>
+
+    <!-- Subscription terms text, appears at the bottom of the subscriptions screen -->
+    <string name="PaymentChooserActivity.SubscriptionsTerms">Μπορείτε να ακυρώσετε τη συνδρομή σας ανά πάσα στιγμή στην ενότητα Πληρωμές του Google Play. Όταν ακυρώσετε τη συνδρομή σας, θα χάσετε την πρόσβαση στις premium λειτουργίες που παρέχονται από το πλάνο πληρωμής στο τέλος της τρέχουσας περιόδου χρέωσης. Υπάρχει μόνο μια δωρεάν δοκιμή ανά χρήστη. Στο τέλος της περιόδου δωρεάν δοκιμής, θα χρεωθείτε αυτόματα το ποσό του πλάνου πληρωμής σας. Για να αποφύγετε τη χρέωση, ακυρώστε τη συνδρομή πριν λήξει η περίοδος δοκιμής.</string>
+
+    <!-- Time pass explanation text -->
+    <string name="PaymentChooserActivity.TimePassExplanation">Το Time pass είναι μια άδεια μίας χρήσης που ισχύει για συγκεκριμένη χρονική περίοδο από τη στιγμή αγοράς και δεν ανανεώνεται αυτόματα μετά τη λήξη του, σε αντίθεση με τη συνδρομή.</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available subscriptions -->
+    <string name="PaymentChooserActivity.SubscriptionTab">Συνδρομές</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available time passes.
+    A time pass is a single use license that is valid for a certain period of time from the moment it is purchased
+    and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="PaymentChooserActivity.TimePassTab">Time Pass</string>
+
     <!--Generic 'close' button label -->
     <string name="label_close">Κλείσιμο</string>
+
+    <!-- Clickable text on the home tab that appears on the home tab if user has an active subscription. Clicking the link opens 'Manage Subscription' screen of the Google Play app -->
+    <string name="manage_my_subscription_link_text">Διαχείριση συνδρομής</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. A short message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text">Το Psiphon δεν είναι πλέον δωρεάν στην περιοχή σας.</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. A longer message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text_big">Το Psiphon δεν είναι πλέον δωρεάν στην περιοχή σας, πατήστε εδώ για να μάθετε περισσότερα.</string>
 
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">Αποσύνδεση</string>
 
     <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
     <string name="purchase_required_prompt_title">Πώς να αποκτήσετε πρόσβαση στο Psiphon στην περιοχή σας.</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="unlock_required_prompt_body">Η πρόσβαση στο Psiphon στην περιοχή σας απαιτεί πλέον την υποστήριξή σας. Βοηθήστε να παραμείνει το Psiphon προσβάσιμο για όσους το χρειάζονται περισσότερο επιλέγοντας μια διαθέσιμη επιλογή για να συνεχίσετε.</string>
 
     <!-- Icon description for the Conduit app icon, do not translate or transliterate 'Conduit'. -->
     <string name="conduit_icon_description">εικονίδιο εφαρμογής Conduit</string>
@@ -36,8 +169,17 @@
     <!-- Title for the Install Conduit action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
     <string name="conduit_install_title">Εγκατάσταση  Conduit</string>
 
+    <!-- Description text for the clickable Conduit app card, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_card_description">Εκτελέστε την εφαρμογή Conduit και παραμείνετε συνδεδεμένοι στο Psiphon δωρεάν</string>
+
     <!-- Clickable text label to open the Conduit app, do not translate or transliterate 'Conduit'. -->
     <string name="launch_conduit_action">Εκκίνηση Conduit</string>
+
+    <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
+    <string name="subscribe_card_title">Εγγραφή</string>
+
+    <!-- Description text under the Subscribe clickable item -->
+    <string name="subscribe_card_description">Αγοράστε ένα πλάνο συνδρομής για απρόσκοπτη πρόσβαση στο Psiphon</string>
 
     <!-- Clickable text label to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
     <string name="update_psiphon_pro_title">Ενημέρωση Psiphon Pro</string>
@@ -45,9 +187,40 @@
     <!-- Title for the 'Update' action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
     <string name="conduit_update_title">Ενημέρωση Conduit</string>
 
+    <!-- Description for the 'Update' Action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_update_description">Ενημερώστε στην τελευταία έκδοση του Conduit για να αποκτήσετε πρόσβαση σε αυτό το χαρακτηριστικό</string>
+
     <!-- Title for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
     <string name="update_psiphon_pro_action_title">Ενημέρωση Psiphon Pro</string>
 
+    <!-- Description for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_action_description">Ενημερώστε στην τελευταία έκδοση του Psiphon Pro για να αποκτήσετε πρόσβαση σε αυτό το χαρακτηριστικό</string>
+
+    <!-- Access status label shown on the home tab when the user has a limited subscription plan -->
+    <string name="subscription_limited">Συνδρομή: Περιορισμένη</string>
+
+    <!-- Access status label shown on the home tab when the user has an unlimited subscription plan -->
+    <string name="subscription_unlimited">Συνδρομή: Απεριόριστη</string>
+
+    <!-- Access status label shown on the home tab when the user has time pass plan. A time pass is a single use license that is valid for a certain
+    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="time_pass_active">Time Pass: Ενεργό</string>
+
+    <!-- Access status label shown on the home tab when the user has no subscription or time pass plan -->
+    <string name="subscription_none">Δωρεάν πρόσβαση</string>
+
+    <!-- Access status label shown on the home tab when the user is running the Conduit app on the same device which may provide enhanced access to Psiphon.
+     Do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_active">Conduit: Ενεργό</string>
+
+    <!-- Short (collapsed) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_short">Η πρόσβαση στο Psiphon είναι μπλοκαρισμένη. Πατήστε για να μάθετε περισσότερα</string>
+
+    <!-- Long (expanded) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_long">Η δωρεάν πρόσβαση στο Psiphon δεν είναι πλέον διαθέσιμη στην περιοχή σας. Πατήστε για να δείτε επιλογές ξεκλειδώματος</string>
+
+    <!-- Generic 'Dismiss' button label for dialogs and alerts -->
+    <string name="label_dismiss">Απόρριψη</string>
     <!-- Title of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon Pro UI features.
     The %s will be replaced with the app name passed to the string resource. -->
     <string name="install_app_to_unlock_title">Εγκατάσταση %s</string>
@@ -55,6 +228,9 @@
     <!-- Description of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon Pro UI features.
     The %s will be replaced with the app name passed to the string resource. -->
     <string name="install_app_to_unlock_description">Εγκαταστήστε το %s από το Play Store για να παραμείνετε συνδεδεμένοι στο Psiphon δωρεάν</string>
+
+    <!-- Header text above "Update Psiphon Pro" action in the unlock required dialog. -->
+    <string name="update_psiphon_pro_action_header">Πρώτα ενημερώστε το Psiphon Pro</string>
 
     <!-- Preference category title for managing advertising privacy settings -->
     <string name="pref_category_advertising_privacy">Απόρρητο διαφημίσεων</string>
