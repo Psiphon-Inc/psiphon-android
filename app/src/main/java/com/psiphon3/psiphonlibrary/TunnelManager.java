@@ -201,7 +201,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     private PendingIntent m_notificationPendingIntent;
 
     private PublishRelay<TunnelState.ConnectionData.NetworkConnectionState> m_networkConnectionStatePublishRelay = PublishRelay.create();
-    private final PublishRelay<Boolean> m_isRoutingThroughTunnelPublishRelay = PublishRelay.create();
     private PublishRelay<Object> m_newClientPublishRelay = PublishRelay.create();
     private CompositeDisposable m_compositeDisposable = new CompositeDisposable();
     private Disposable conduitStateObserver;
@@ -338,11 +337,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                                         unlockOptionsPinnedForSession = false;
                                         homePageHandled.set(false);
 
-
                                         m_networkConnectionStatePublishRelay.accept(
                                                 TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
                                         m_vpnManager.stopRouteThroughTunnel();
-                                        m_isRoutingThroughTunnelPublishRelay.accept(Boolean.FALSE);
                                         MyLog.i("TunnelManager: tunnel config observer: full tunnel restart due to new tunnel config");
                                     } else {
                                         MyLog.i("TunnelManager: tunnel config observer: quiet tunnel restart due to new tunnel config");
@@ -427,45 +424,27 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     }
 
                     // The tunnel is connected but we are not routing traffic through the tunnel yet,
-                    // check in the following order if:
-                    // a) or we need to send a "Unlock Required" intent if we are not enforcing unlock,
-                    // b) or we need to send a landing page intent.
                     if (networkConnectionState == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED && !isRoutingThroughTunnel) {
-                        // Handle any unlock requirement by delivering UI first, then starting routing.
-                        // Strategy: Cut tunnel initially to get user attention, then restore after UI delivery.
-                        //
-                        // Cases handled:
-                        // - NOT_ENFORCED: Normal flow - show UI, wait for delivery, then route
-                        // - ENFORCED: Safety net case - this shouldn't normally be reached since we stop
-                        //   the service earlier for enforced unlock, but if somehow we get here,
-                        //   deliver UI and route (better than leaving user in broken state)
+                        // If the unlock options require unlock do not route through tunnel and bypass the
+                        // home page intent handling. In this case the home page intent will be handled
+                        // via unlockDismissHandlerDisposable when the unlock options UI is dismissed.
                         if (unlockOptions.unlockRequired() != UnlockOptions.UnlockType.NOT_REQUIRED) {
-                            return ensureUnlockUIDelivered()
-                                    // Start routing once the unlock UI delivery flow is complete
-                                    .doOnComplete(() -> {
-                                        m_vpnManager.routeThroughTunnel(m_tunnel.getLocalSocksProxyPort());
-                                        m_isRoutingThroughTunnelPublishRelay.accept(Boolean.TRUE);
-                                    })
-                                    .andThen(Observable.empty());
+                            return ensureUnlockUIDelivered().andThen(Observable.empty());
                         }
 
+                        // If the unlock options do not require unlock, then we can handle the home page intent
                         if (m_tunnelState.homePages != null && m_tunnelState.homePages.size() != 0 && !homePageHandled.get()) {
-                            if (canSendIntentToActivity()) {
-                                m_vpnManager.routeThroughTunnel(m_tunnel.getLocalSocksProxyPort());
-                                sendHandshakeIntent();
-                                m_isRoutingThroughTunnelPublishRelay.accept(Boolean.TRUE);
-                                // Do not emit downstream if we are just started routing.
-                                return Observable.empty();
-                            }
-                            // Emit CONNECTING and start waiting for an activity to bind
+                            // Do not emit downstream if we are handling home page intent, once the
+                            // intent is sent connectionObservable emission will be triggered again
+                            // with the new isRoutingThroughTunnel state because sendHandshakeIntent
+                            // starts routing through tunnel.
                             return waitSendIntentAndRouteThroughTunnelCompletable(this::sendHandshakeIntent)
-                                    .<TunnelState.ConnectionData.NetworkConnectionState>toObservable()
-                                    .startWith(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
+                                    .andThen(Observable.empty());
                         }
                         // No intents to send, just route through tunnel.
                         m_vpnManager.routeThroughTunnel(m_tunnel.getLocalSocksProxyPort());
-                        m_isRoutingThroughTunnelPublishRelay.accept(Boolean.TRUE);
-                        // Do not emit downstream if we are just started routing.
+                        // Do not emit downstream if we are just started routing, the connectionObservable
+                        // will emit again with the new isRoutingThroughTunnel state.
                         return Observable.empty();
                     }
                     return Observable.just(networkConnectionState);
@@ -502,6 +481,14 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     }
 
     private Completable waitSendIntentAndRouteThroughTunnelCompletable(Runnable runnable) {
+        if (canSendIntentToActivity()) {
+            // If we can send intent to activity, then just send the intent and route through tunnel.
+            return Completable.fromRunnable(() -> {
+                runnable.run();
+                m_vpnManager.routeThroughTunnel(m_tunnel.getLocalSocksProxyPort());
+            });
+        }
+
         return m_newClientPublishRelay
                 // Test the activity client(s) again by pinging, block until there's at least one live client
                 .filter(__ -> pingForActivity())
@@ -511,7 +498,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 .doOnComplete(() -> {
                     m_vpnManager.routeThroughTunnel(m_tunnel.getLocalSocksProxyPort());
                     runnable.run();
-                    m_isRoutingThroughTunnelPublishRelay.accept(Boolean.TRUE);
                 })
                 // Cancel "Open Psiphon to keep connecting" when completed or disposed
                 .doFinally(this::cancelOpenAppToFinishConnectingNotification);
@@ -1141,7 +1127,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
         m_isStopping.set(false);
         m_networkConnectionStatePublishRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
-        m_isRoutingThroughTunnelPublishRelay.accept(Boolean.FALSE);
 
         MyLog.i(R.string.starting_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
 
@@ -1176,7 +1161,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
             m_isStopping.set(true);
             m_networkConnectionStatePublishRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
-            m_isRoutingThroughTunnelPublishRelay.accept(false);
             m_vpnManager.vpnTeardown();
             m_tunnel.stop();
 
@@ -1574,7 +1558,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
      // Emits a new pair every time when either of the sources emits a new value.
     private Observable<Pair<TunnelState.ConnectionData.NetworkConnectionState, Boolean>> connectionObservable() {
         return Observable.combineLatest(m_networkConnectionStatePublishRelay,
-                m_isRoutingThroughTunnelPublishRelay,
+                m_vpnManager.routingThroughTunnelObservable(),
                 ((BiFunction<TunnelState.ConnectionData.NetworkConnectionState, Boolean,
                         Pair<TunnelState.ConnectionData.NetworkConnectionState, Boolean>>) Pair::new))
                 .subscribeOn(Schedulers.io())
@@ -2191,7 +2175,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     .ignoreElements()
                     .doOnSubscribe(__ -> {
                         m_vpnManager.stopRouteThroughTunnel();
-                        m_isRoutingThroughTunnelPublishRelay.accept(Boolean.FALSE);
                         showUnlockRequiredNotification();
                     })
                     .doOnComplete(() -> {
@@ -2208,11 +2191,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         return Observable.combineLatest(
                         unlockUiDismissedPublishRelay.startWith(false),
                         m_networkConnectionStatePublishRelay,
-                        m_isRoutingThroughTunnelPublishRelay,
+                        m_vpnManager.routingThroughTunnelObservable(),
                         (dismissed, networkState, isRouting) ->
                                 dismissed &&
                                 networkState == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED &&
-                                isRouting)
+                                !isRouting)
                 .switchMap(conditionsMet ->
                         conditionsMet ? Observable.just(new Object()) : Observable.empty())
                 .switchMapCompletable(__ -> {
@@ -2220,12 +2203,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                             !homePageHandled.get() &&
                             m_tunnelState.homePages != null &&
                             !m_tunnelState.homePages.isEmpty()) {
-                        if (canSendIntentToActivity()) {
-                            sendHandshakeIntent();
-                            return Completable.complete();
-                        } else {
                             return waitSendIntentAndRouteThroughTunnelCompletable(this::sendHandshakeIntent);
-                        }
                     }
                     // Just complete for any other unlock state, or if home page was already handled, or there are no home pages.
                     return Completable.complete();
