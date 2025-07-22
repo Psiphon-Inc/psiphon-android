@@ -1,5 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- New option title in the 'More options' dialog. It appears in the Proxy Setting category.
+        When clicked a new screen opens where users can specify additional HTTP headers to be added to
+        to HTTP proxy requests. Users may specify up to 3 custom headers -->
+    <string name="custom_proxy_headers_title">ส่วนหัว HTTP ที่กำหนดเอง</string>
+
+    <!--  Summary text for 'Custom HTTP header' option, appears underneath the option title -->
+    <string name="custom_proxy_headers_summary">ตั้งค่าส่วนหัว HTTP เพิ่มเติมสำหรับคำขอพร็อกซี</string>
+
+    <!-- Checkbox that toggles adding custom headers feature-->
+    <string name="custom_proxy_headers_checkbox_title">เพิ่มส่วนหัว HTTP ที่กำหนดเอง</string>
+
+    <!--  Summary text for 'Add custom HTTP headers' checkbox, appears underneath the checkbox title -->
+    <string name="custom_proxy_headers_checkbox_description">เพิ่มส่วนหัว HTTP ที่กำหนดเองไปยังคำขอพร็อกซี HTTP ขาออกทั้งหมด</string>
+    <string name="custom_proxy_header_group_1">ส่วนหัว 1</string>
+    <string name="custom_proxy_header_group_2">ส่วนหัว 2</string>
+    <string name="custom_proxy_header_group_3">ส่วนหัว 3</string>
+    <string name="custom_proxy_header_group_4">ส่วนหัว 4</string>
+    <string name="custom_proxy_header_group_5">ส่วนหัว 5</string>
+    <string name="custom_proxy_header_group_6">ส่วนหัว 6</string>
+    <string name="custom_proxy_header_name">ใส่ชื่อส่วนหัว</string>
+    <string name="custom_proxy_header_value">ใส่ค่าส่วนหัว</string>
+    <string name="custom_proxy_header_ignored_values">คำเตือน: ส่วนหัวที่มีชื่อว่างจะถูกละเว้น!</string>
+    <string name="custom_proxy_header_invalid_name">ข้อผิดพลาด: ชื่อส่วนหัวมีอักขระที่ผิดกฎหมาย!</string>
+    <!-- Title for other text showing what the user's current speed limit is. Users have limited
+         speed if they have not paid for premium service. -->
+    <string name="rate_limit_text_title">ขีดจำกัดความเร็ว Psiphon:</string>
+
     <!--
         Template for rendering a rate value and its unit label.
         %1$s = numeric value (e.g., "5.3"), %2$s = unit label (e.g., "MB/s").
@@ -9,52 +36,214 @@
     -->
     <string name="rate_with_unit_template">%1$s %2$s</string>
 
+    <!-- Unit labels used with 'rate_with_unit_template' for bit-per-second speeds. These represent: bits, kilobits, megabits, etc. per second. -->
+    <string name="rate_unit_bps_bits">bps</string>
+    <string name="rate_unit_kbps_bits">Kbps</string>
+    <string name="rate_unit_mbps_bits">Mbps</string>
+    <string name="rate_unit_gbps_bits">Gbps</string>
+    <string name="rate_unit_tbps_bits">Tbps</string>
+    <string name="rate_unit_pbps_bits">Pbps</string>
+
+
     <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
-    <string name="speed_rate_limit_not_available">ไม่สามารถใช้ได้</string>
+    <string name="speed_rate_limit_not_available">ไม่พร้อมใช้งาน</string>
+
+    <!-- Text shown on the home tab under Psiphon speed limit label when the there is no speed limit, like when the user has an unlimited subscription, for example -->
+    <string name="speed_rate_limit_no_limit">ไม่จำกัด</string>
+
+    <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
+         the workflow to subscribe for premium access. -->
+    <string name="rate_limit_text_subscribe_button">อัปเกรดเดี๋ยวนี้!</string>
+
+    <!-- Alert error message informing user that an unexpected error has occurred and encouraging the user to send feedback diagnostics. -->
+    <string name="unexpected_error_occured_send_feedback_message">เกิดข้อผิดพลาดที่ไม่คาดคิด โปรดส่งความคิดเห็น</string>
+
+    <!-- Auto dismissable alert message informing users that subscription options are not available at the moment -->
+    <string name="subscription_options_currently_not_available">ตัวเลือกการสมัครสมาชิกไม่พร้อมใช้งานในขณะนี้ โปรดลองอีกครั้งในภายหลัง</string>
 
     <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
-    <string name="disallowed_traffic_alert_notification_title">อัพเกรด Psiphon Pro</string>
+    <string name="disallowed_traffic_alert_notification_title">อัปเกรด Psiphon Pro</string>
 
     <!-- Content of the toolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_notification_message">แอปไม่ทำงาน? คลิกที่นี่เพื่อปรับปรุงประสบการณ์ Psiphon ของคุณ!</string>
 
     <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
-    <string name="disallowed_traffic_alert_dialog_message">ข้อมูลอินเทอร์เน็ตบางส่วนไม่ได้รับการสนับสนุนจากเวอร์ชั่นฟรีของ Psiphon Pro ซื้อการสมัครสมาชิกเพื่อปลดล็อกศักยภาพเต็มรูปแบบของประสบการณ์ Psiphon ของคุณ</string>
+    <string name="disallowed_traffic_alert_dialog_message">การจราจรอินเทอร์เน็ตบางส่วนไม่ได้รับการสนับสนุนโดย Psiphon Pro เวอร์ชันฟรี ซื้อการสมัครสมาชิกเพื่อปลดล็อกศักยภาพเต็มของประสบการณ์ Psiphon ของคุณ</string>
+
+    <!-- Text on the button which takes user to subscription screen -->
+    <string name="btn_get_subscription">สมัครสมาชิก</string>
+
+    <!-- Header text appearing on the subscriptions screen when the user has a limited subscription plan. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.UsingLimitedPlan">คุณกำลังใช้แผนพื้นฐานที่มีความเร็วจำกัดที่ 5&#160;Mb/s คุณต้องการอัปเกรดเป็นแผนไม่จำกัดหรือไม่?</string>
+
+    <!-- Header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.UsingFreePlan">คุณกำลังใช้แผนฟรีที่มีโฆษณา ความเร็วจำกัด พอร์ตจำกัด คุณสามารถใช้แผนนี้ต่อไปหรืออัปเกรดเป็นหนึ่งในแผนพรีเมียมของเรา</string>
 
     <!-- Alternative header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
-    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon ไม่ฟรีอีกต่อไปในภูมิภาคของคุณ โปรดอัปเกรดเป็นแผนพรีเมียมเพื่อใช้บริการต่อไป</string>
+    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon ไม่ฟรีในภูมิภาคของคุณอีกต่อไป โปรดอัปเกรดเป็นหนึ่งในแผนพรีเมียมของเราเพื่อใช้บริการต่อไป</string>
+
+    <!-- Common description text for all time passes. A time pass is a single use license that is valid for a certain
+    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="PaymentChooserActivity.TimepassCommonDescription">ไม่มีการขัดจังหวะ ความเร็วไม่จำกัด พร้อมพอร์ตไม่จำกัดในแต่ละการซื้อตั้งเวลาผ่าน</string>
+
+    <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '7-day pass - CA$3.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice7Text">ตั้งเวลาผ่าน 7 วัน - %s</string>
+
+    <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '30-day pass - CA$8.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice30Text">ตั้งเวลาผ่าน 30 วัน - %s</string>
+
+    <!-- Label for button that user will click to buy a 360-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '360-day pass - CA$99.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice360Text">ตั้งเวลาผ่าน 360 วัน - %s</string>
+
+    <!-- Extra label showing price per day on all time pass buttons. Keep as short as possible. -->
+    <string name="PaymentChooserActivity.TimepassPricePerDayText">%s/วัน</string>
+
+    <!-- Label for button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., 'Basic - CA$5.99 monthly' -->
+    <string name="PaymentChooserActivity.LimitedSubscriptionTitlePriceText">พื้นฐาน - %s รายเดือน</string>
+
+    <!-- Description text on the button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+         Appears below 'Basic - CA$5.99 monthly' label in smaller font. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">ไม่มีการขัดจังหวะ ความเร็วสูงสูงสุด 5&#160;Mb/s พร้อมพอร์ตไม่จำกัด</string>
+
+    <!-- Label for button that user will click in order to buy an unlimited subscription for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., 'Unlimited - CA$11.99 monthly' -->
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionTitlePriceText">ไม่จำกัด - %s รายเดือน</string>
+
+    <!-- Description text on the button that user will click in order to buy an unlimited subscription for Psiphon Pro.
+         Appears below 'Unlimited - CA$11.99 monthly' label in smaller font-->
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">ไม่มีการขัดจังหวะ ความเร็วไม่จำกัด พร้อมพอร์ตไม่จำกัด</string>
+
+    <!-- Text Label that appears on the subscription buying button for Psiphon Pro in case if there
+         is a trial period available for that subscription. The formated string is the length of the
+         trial period in days. Keep as short as possible -->
+    <string name="PaymentChooserActivity.FreeTrialPeriod">ทดลองฟรี - %d วัน</string>
+
+    <!-- Extra text on all subscriptions buttons showing monthly price per subscription after free trial ends-->
+    <string name="PaymentChooserActivity.PriceAfterFreeTrialText">%s/เดือน หลังจากการทดลองฟรีสิ้นสุด</string>
+
+    <!-- Subscription terms text, appears at the bottom of the subscriptions screen -->
+    <string name="PaymentChooserActivity.SubscriptionsTerms">ยกเลิกการสมัครสมาชิกของคุณได้ตลอดเวลาในส่วนการสมัครสมาชิกใน Google Play เมื่อคุณยกเลิกการสมัครสมาชิกของคุณ คุณจะสูญเสียการเข้าถึงคุณสมบัติพรีเมียมที่เสนอโดยข้อกำหนดของการสมัครสมาชิกเมื่อสิ้นสุดรอบการเรียกเก็บเงินปัจจุบัน การทดลองฟรีหนึ่งครั้งต่อผู้ใช้เท่านั้น เมื่อสิ้นสุดรอบการทดลองฟรีของคุณ คุณจะถูกเรียกเก็บเงินโดยอัตโนมัติตามจำนวนเงินในข้อกำหนดการสมัครสมาชิกของคุณ เพื่อหลีกเลี่ยงค่าธรรมเนียม ให้ยกเลิกการสมัครสมาชิกก่อนที่รอบการทดลองจะหมดอายุ</string>
+
+    <!-- Time pass explanation text -->
+    <string name="PaymentChooserActivity.TimePassExplanation">ตั้งเวลาผ่านคือใบอนุญาตใช้งานครั้งเดียวที่มีผลสำหรับระยะเวลาหนึ่งนับจากช่วงเวลาที่ซื้อและไม่ต่ออายุโดยอัตโนมัติหลังจากหมดอายุ ไม่เหมือนกับการสมัครสมาชิก</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available subscriptions -->
+    <string name="PaymentChooserActivity.SubscriptionTab">การสมัครสมาชิก</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available time passes.
+    A time pass is a single use license that is valid for a certain period of time from the moment it is purchased
+    and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="PaymentChooserActivity.TimePassTab">ตั้งเวลาผ่าน</string>
 
     <!--Generic 'close' button label -->
     <string name="label_close">ปิด</string>
 
+    <!-- Clickable text on the home tab that appears on the home tab if user has an active subscription. Clicking the link opens 'Manage Subscription' screen of the Google Play app -->
+    <string name="manage_my_subscription_link_text">จัดการการสมัครสมาชิกของคุณ</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. A short message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text">Psiphon ไม่ฟรีในภูมิภาคของคุณอีกต่อไป</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. A longer message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text_big">Psiphon ไม่ฟรีในภูมิภาคของคุณอีกต่อไป แตะที่นี่เพื่อเรียนรู้เพิ่มเติม</string>
+
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">ตัดการเชื่อมต่อ</string>
 
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="purchase_required_prompt_title">วิธีเข้าถึง Psiphon ในภูมิภาคของคุณ</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="unlock_required_prompt_body">การเข้าถึง Psiphon ในภูมิภาคของคุณตอนนี้ต้องการการสนับสนุนของคุณ ช่วยให้ Psiphon เข้าถึงได้สำหรับผู้ที่ต้องการมากที่สุดโดยเลือกตัวเลือกที่มีให้เพื่อดำเนินการต่อ</string>
+
+    <!-- Icon description for the Conduit app icon, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_icon_description">ไอคอนแอป Conduit</string>
+
+    <!-- Icon description for the Google Play app icon, do not translate or transliterate 'Google Play'. -->
+    <string name="google_play_icon_description">ไอคอน Google Play</string>
+
+    <!-- Title for the Install Conduit action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_install_title">ติดตั้ง Conduit</string>
+
+    <!-- Description text for the clickable Conduit app card, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_card_description">เรียกใช้แอปมือถือ Conduit และเชื่อมต่อกับ Psiphon ฟรี</string>
+
+    <!-- Clickable text label to open the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="launch_conduit_action">เปิด Conduit</string>
+
+    <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
+    <string name="subscribe_card_title">สมัครสมาชิก</string>
+
+    <!-- Description text under the Subscribe clickable item -->
+    <string name="subscribe_card_description">ซื้อแผนการสมัครสมาชิกสำหรับการเข้าถึง Psiphon ที่ไม่มีการขัดจังหวะ</string>
+
+    <!-- Clickable text label to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_title">อัปเดต Psiphon Pro</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_update_title">อัปเดต Conduit</string>
+
+    <!-- Description for the 'Update' Action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_update_description">อัปเดตเป็นเวอร์ชันล่าสุดของ Conduit เพื่อเข้าถึงคุณสมบัตินี้</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_action_title">อัปเดต Psiphon Pro</string>
+
+    <!-- Description for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_action_description">อัปเดตเป็นเวอร์ชันล่าสุดของ Psiphon Pro เพื่อเข้าถึงคุณสมบัตินี้</string>
+
+    <!-- Access status label shown on the home tab when the user has a limited subscription plan -->
+    <string name="subscription_limited">การสมัครสมาชิก: จำกัด</string>
+
+    <!-- Access status label shown on the home tab when the user has an unlimited subscription plan -->
+    <string name="subscription_unlimited">การสมัครสมาชิก: ไม่จำกัด</string>
+
+    <!-- Access status label shown on the home tab when the user has time pass plan. A time pass is a single use license that is valid for a certain
+    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="time_pass_active">ตั้งเวลาผ่าน: ใช้งานอยู่</string>
+
+    <!-- Access status label shown on the home tab when the user has no subscription or time pass plan -->
+    <string name="subscription_none">การเข้าถึงฟรี</string>
+
+    <!-- Access status label shown on the home tab when the user is running the Conduit app on the same device which may provide enhanced access to Psiphon.
+     Do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_active">Conduit: ใช้งานอยู่</string>
+
+    <!-- Short (collapsed) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_short">การเข้าถึง Psiphon ถูกบล็อค แตะเพื่อเรียนรู้เพิ่มเติม</string>
+
+    <!-- Long (expanded) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_long">การเข้าถึง Psiphon ฟรีไม่มีให้ในภูมิภาคของคุณอีกต่อไป แตะเพื่อดูตัวเลือกการปลดล็อค</string>
+
     <!-- Generic 'Dismiss' button label for dialogs and alerts -->
-    <string name="label_dismiss">เลิกทำ</string>
+    <string name="label_dismiss">ปิด</string>
     <!-- Title of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon Pro UI features.
     The %s will be replaced with the app name passed to the string resource. -->
     <string name="install_app_to_unlock_title">ติดตั้ง %s</string>
 
     <!-- Description of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon Pro UI features.
     The %s will be replaced with the app name passed to the string resource. -->
-    <string name="install_app_to_unlock_description">ติดตั้ง %s จาก Play Store เพื่อเชื่อมต่อกับ Psiphon ฟรีต่อไป</string>
+    <string name="install_app_to_unlock_description">ติดตั้ง %s จาก Play Store เพื่อเชื่อมต่อกับ Psiphon ฟรี</string>
 
     <!-- Header text above "Update Psiphon Pro" action in the unlock required dialog. -->
     <string name="update_psiphon_pro_action_header">ก่อนอื่น อัปเดต Psiphon Pro</string>
 
     <!-- Preference category title for managing advertising privacy settings -->
-    <string name="pref_category_advertising_privacy">ความเป็นส่วนตัวของโฆษณา</string>
+    <string name="pref_category_advertising_privacy">ความเป็นส่วนตัวการโฆษณา</string>
 
     <!-- Preference title for managing ads consent -->
     <string name="adsConsentManagementTitle">จัดการการตั้งค่าโฆษณา</string>
 
     <!-- Preference summary for managing ads consent -->
-    <string name="adsConsentManagementSummary">ควบคุมวิธีการใช้ข้อมูลของคุณสำหรับโฆษณาที่เป็นส่วนตัว</string>
+    <string name="adsConsentManagementSummary">ควบคุมวิธีการใช้ข้อมูลของคุณสำหรับการโฆษณาส่วนบุคคล</string>
 
     <!-- Extra label that appears above the "Continue" button in the unlock required dialog in case of unlock required when unlock is not enforced -->
-    <string name="unlock_dismiss_button_extra_label">ฉันไม่อยากช่วย</string>
+    <string name="unlock_dismiss_button_extra_label">ฉันไม่ต้องการช่วย</string>
 
     <!-- Generic 'Continue' button label for dialogs and alerts -->
-    <string name="btn_label_continue">ทำต่อ</string>
+    <string name="btn_label_continue">ดำเนินการต่อ</string>
 </resources>

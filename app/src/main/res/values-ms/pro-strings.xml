@@ -1,37 +1,245 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- New option title in the 'More options' dialog. It appears in the Proxy Setting category.
+        When clicked a new screen opens where users can specify additional HTTP headers to be added to
+        to HTTP proxy requests. Users may specify up to 3 custom headers -->
+    <string name="custom_proxy_headers_title">Pengepala HTTP tersuai</string>
+
+    <!--  Summary text for 'Custom HTTP header' option, appears underneath the option title -->
+    <string name="custom_proxy_headers_summary">Sediakan pengepala HTTP tersuai tambahan untuk permintaan proksi</string>
+
+    <!-- Checkbox that toggles adding custom headers feature-->
+    <string name="custom_proxy_headers_checkbox_title">Tambah pengepala HTTP tersuai</string>
+
+    <!--  Summary text for 'Add custom HTTP headers' checkbox, appears underneath the checkbox title -->
+    <string name="custom_proxy_headers_checkbox_description">Tambah pengepala HTTP tersuai kepada semua permintaan proksi HTTP keluar</string>
+    <string name="custom_proxy_header_group_1">Pengepala 1</string>
+    <string name="custom_proxy_header_group_2">Pengepala 2</string>
+    <string name="custom_proxy_header_group_3">Pengepala 3</string>
+    <string name="custom_proxy_header_group_4">Pengepala 4</string>
+    <string name="custom_proxy_header_group_5">Pengepala 5</string>
+    <string name="custom_proxy_header_group_6">Pengepala 6</string>
+    <string name="custom_proxy_header_name">Masukkan nama pengepala</string>
+    <string name="custom_proxy_header_value">Masukkan nilai pengepala</string>
+    <string name="custom_proxy_header_ignored_values">Amaran: pengepala dengan nama kosong akan diabaikan!</string>
+    <string name="custom_proxy_header_invalid_name">Ralat: nama pengepala mengandungi aksara haram!</string>
+    <!-- Title for other text showing what the user's current speed limit is. Users have limited
+         speed if they have not paid for premium service. -->
+    <string name="rate_limit_text_title">Had kelajuan Psiphon:</string>
+
+    <!--
+        Template for rendering a rate value and its unit label.
+        %1$s = numeric value (e.g., "5.3"), %2$s = unit label (e.g., "MB/s").
+        Reorder the format specifiers if in your language the unit appears before the value.
+        Example output: "5.3 MB/s", "1.2 Kbps".
+        Reorder the format specifiers '%1$s' and '%2$s' if in the translated language ordering numeric value and rate unit in speed rate string is different from English.
+    -->
+    <string name="rate_with_unit_template">%1$s %2$s</string>
+
+    <!-- Unit labels used with 'rate_with_unit_template' for bit-per-second speeds. These represent: bits, kilobits, megabits, etc. per second. -->
+    <string name="rate_unit_bps_bits">bps</string>
+    <string name="rate_unit_kbps_bits">Kbps</string>
+    <string name="rate_unit_mbps_bits">Mbps</string>
+    <string name="rate_unit_gbps_bits">Gbps</string>
+    <string name="rate_unit_tbps_bits">Tbps</string>
+    <string name="rate_unit_pbps_bits">Pbps</string>
+
+
     <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
     <string name="speed_rate_limit_not_available">Tidak tersedia</string>
 
+    <!-- Text shown on the home tab under Psiphon speed limit label when the there is no speed limit, like when the user has an unlimited subscription, for example -->
+    <string name="speed_rate_limit_no_limit">Tiada had</string>
+
+    <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
+         the workflow to subscribe for premium access. -->
+    <string name="rate_limit_text_subscribe_button">Naik taraf sekarang!</string>
+
+    <!-- Alert error message informing user that an unexpected error has occurred and encouraging the user to send feedback diagnostics. -->
+    <string name="unexpected_error_occured_send_feedback_message">Ralat tidak dijangka telah berlaku, sila hantar maklum balas.</string>
+
+    <!-- Auto dismissable alert message informing users that subscription options are not available at the moment -->
+    <string name="subscription_options_currently_not_available">Pilihan langganan tidak tersedia pada masa ini, sila cuba lagi kemudian.</string>
+
     <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
-    <string name="disallowed_traffic_alert_notification_title">Tingkatkan Psiphon Pro</string>
+    <string name="disallowed_traffic_alert_notification_title">Naik taraf Psiphon Pro</string>
 
     <!-- Content of the toolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_notification_message">Aplikasi tidak berfungsi? Klik di sini untuk meningkatkan pengalaman Psiphon anda!</string>
 
     <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
-    <string name="disallowed_traffic_alert_dialog_message">Sebahagian trafik internet tidak disokong oleh versi percuma Psiphon Pro. Beli langganan untuk membuka kunci potensi penuh pengalaman Psiphon anda.</string>
+    <string name="disallowed_traffic_alert_dialog_message">Sebahagian trafik Internet tidak disokong oleh versi percuma Psiphon Pro. Beli langganan untuk membuka kunci potensi penuh pengalaman Psiphon anda.</string>
 
     <!-- Text on the button which takes user to subscription screen -->
     <string name="btn_get_subscription">Langgan</string>
 
+    <!-- Header text appearing on the subscriptions screen when the user has a limited subscription plan. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.UsingLimitedPlan">Anda menggunakan pelan asas dengan kelajuan terhad kepada 5&#160;Mb/s. Adakah anda ingin naik taraf kepada pelan tidak terhad?</string>
+
+    <!-- Header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.UsingFreePlan">Anda menggunakan pelan percuma, disokong iklan, kelajuan terhad, port terhad. Anda boleh terus menggunakan pelan ini atau naik taraf kepada salah satu pelan premium kami</string>
+
     <!-- Alternative header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
-    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon tidak lagi percuma di rantau anda. Sila naik taraf ke salah satu pelan premium kami untuk terus menggunakan perkhidmatan ini</string>
+    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon tidak lagi percuma di rantau anda. Sila naik taraf kepada salah satu pelan premium kami untuk terus menggunakan perkhidmatan</string>
+
+    <!-- Common description text for all time passes. A time pass is a single use license that is valid for a certain
+    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="PaymentChooserActivity.TimepassCommonDescription">Tanpa gangguan, kelajuan tidak terhad dengan port tidak terhad dengan setiap pembelian pas masa</string>
+
+    <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '7-day pass - CA$3.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice7Text">Pas 7 hari - %s</string>
+
+    <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '30-day pass - CA$8.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice30Text">Pas 30 hari - %s</string>
+
+    <!-- Label for button that user will click to buy a 360-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '360-day pass - CA$99.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice360Text">Pas 360 hari - %s</string>
+
+    <!-- Extra label showing price per day on all time pass buttons. Keep as short as possible. -->
+    <string name="PaymentChooserActivity.TimepassPricePerDayText">%s/hari</string>
+
+    <!-- Label for button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., 'Basic - CA$5.99 monthly' -->
+    <string name="PaymentChooserActivity.LimitedSubscriptionTitlePriceText">Asas - %s bulanan</string>
+
+    <!-- Description text on the button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+         Appears below 'Basic - CA$5.99 monthly' label in smaller font. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">Tanpa gangguan, kelajuan tinggi sehingga 5&#160;Mb/s dengan port tidak terhad</string>
+
+    <!-- Label for button that user will click in order to buy an unlimited subscription for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., 'Unlimited - CA$11.99 monthly' -->
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionTitlePriceText">Tidak terhad - %s bulanan</string>
+
+    <!-- Description text on the button that user will click in order to buy an unlimited subscription for Psiphon Pro.
+         Appears below 'Unlimited - CA$11.99 monthly' label in smaller font-->
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">Tanpa gangguan, kelajuan tidak terhad dengan port tidak terhad</string>
+
+    <!-- Text Label that appears on the subscription buying button for Psiphon Pro in case if there
+         is a trial period available for that subscription. The formated string is the length of the
+         trial period in days. Keep as short as possible -->
+    <string name="PaymentChooserActivity.FreeTrialPeriod">Percubaan percuma - %d hari</string>
+
+    <!-- Extra text on all subscriptions buttons showing monthly price per subscription after free trial ends-->
+    <string name="PaymentChooserActivity.PriceAfterFreeTrialText">%s/bulan selepas percubaan percuma tamat</string>
+
+    <!-- Subscription terms text, appears at the bottom of the subscriptions screen -->
+    <string name="PaymentChooserActivity.SubscriptionsTerms">Batalkan langganan anda pada bila-bila masa dalam bahagian langganan di Google Play. Apabila anda membatalkan langganan anda, anda akan kehilangan akses kepada ciri premium yang ditawarkan oleh syarat langganan pada akhir tempoh pengebilan semasa. Hanya satu percubaan percuma bagi setiap pengguna. Pada akhir tempoh percubaan percuma anda, anda akan dikenakan caj secara automatik mengikut jumlah dalam syarat langganan anda. Untuk mengelakkan caj, batalkan langganan sebelum tempoh percubaan tamat.</string>
+
+    <!-- Time pass explanation text -->
+    <string name="PaymentChooserActivity.TimePassExplanation">Pas masa adalah lesen sekali guna yang sah untuk tempoh masa tertentu dari masa ia dibeli dan tidak diperbaharui secara automatik selepas tamat tempoh, tidak seperti langganan.</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available subscriptions -->
+    <string name="PaymentChooserActivity.SubscriptionTab">Langganan</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available time passes.
+    A time pass is a single use license that is valid for a certain period of time from the moment it is purchased
+    and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="PaymentChooserActivity.TimePassTab">Pas Masa</string>
 
     <!--Generic 'close' button label -->
-    <string name="label_close">Balas</string>
+    <string name="label_close">Tutup</string>
+
+    <!-- Clickable text on the home tab that appears on the home tab if user has an active subscription. Clicking the link opens 'Manage Subscription' screen of the Google Play app -->
+    <string name="manage_my_subscription_link_text">Urus langganan anda</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. A short message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text">Psiphon tidak lagi percuma di rantau anda.</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. A longer message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text_big">Psiphon tidak lagi percuma di rantau anda, ketik di sini untuk ketahui lebih lanjut.</string>
+
+    <!--Title of button that disconnects the VPN. -->
+    <string name="btn_disconnect">Putus sambungan</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="purchase_required_prompt_title">Cara mengakses Psiphon di rantau anda.</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="unlock_required_prompt_body">Akses kepada Psiphon di rantau anda kini memerlukan sokongan anda. Bantu pastikan Psiphon dapat diakses oleh orang yang paling memerlukannya dengan memilih pilihan yang tersedia untuk meneruskan.</string>
+
+    <!-- Icon description for the Conduit app icon, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_icon_description">Ikon aplikasi Conduit</string>
+
+    <!-- Icon description for the Google Play app icon, do not translate or transliterate 'Google Play'. -->
+    <string name="google_play_icon_description">Ikon Google Play</string>
+
+    <!-- Title for the Install Conduit action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_install_title">Pasang Conduit</string>
+
+    <!-- Description text for the clickable Conduit app card, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_card_description">Jalankan aplikasi mudah alih Conduit dan kekal terhubung dengan Psiphon secara percuma</string>
+
+    <!-- Clickable text label to open the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="launch_conduit_action">Lancarkan Conduit</string>
 
     <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
     <string name="subscribe_card_title">Langgan</string>
 
+    <!-- Description text under the Subscribe clickable item -->
+    <string name="subscribe_card_description">Beli pelan langganan untuk akses tanpa gangguan kepada Psiphon</string>
+
+    <!-- Clickable text label to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_title">Kemas kini Psiphon Pro</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_update_title">Kemas kini Conduit</string>
+
+    <!-- Description for the 'Update' Action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_update_description">Kemas kini kepada versi terkini Conduit untuk mengakses ciri ini</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_action_title">Kemas kini Psiphon Pro</string>
+
+    <!-- Description for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_action_description">Kemas kini kepada versi terkini Psiphon Pro untuk mengakses ciri ini</string>
+
+    <!-- Access status label shown on the home tab when the user has a limited subscription plan -->
+    <string name="subscription_limited">Langganan: Terhad</string>
+
+    <!-- Access status label shown on the home tab when the user has an unlimited subscription plan -->
+    <string name="subscription_unlimited">Langganan: Tidak Terhad</string>
+
+    <!-- Access status label shown on the home tab when the user has time pass plan. A time pass is a single use license that is valid for a certain
+    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="time_pass_active">Pas Masa: Aktif</string>
+
+    <!-- Access status label shown on the home tab when the user has no subscription or time pass plan -->
+    <string name="subscription_none">Akses Percuma</string>
+
+    <!-- Access status label shown on the home tab when the user is running the Conduit app on the same device which may provide enhanced access to Psiphon.
+     Do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_active">Conduit: Aktif</string>
+
+    <!-- Short (collapsed) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_short">Akses Psiphon disekat. Ketik untuk ketahui lebih lanjut</string>
+
+    <!-- Long (expanded) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_long">Akses percuma kepada Psiphon tidak lagi tersedia di rantau anda. Ketik untuk lihat pilihan buka kunci</string>
+
+    <!-- Generic 'Dismiss' button label for dialogs and alerts -->
+    <string name="label_dismiss">Tolak</string>
+    <!-- Title of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon Pro UI features.
+    The %s will be replaced with the app name passed to the string resource. -->
+    <string name="install_app_to_unlock_title">Pasang %s</string>
+
+    <!-- Description of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon Pro UI features.
+    The %s will be replaced with the app name passed to the string resource. -->
+    <string name="install_app_to_unlock_description">Pasang %s dari Play Store untuk kekal terhubung dengan Psiphon secara percuma</string>
+
+    <!-- Header text above "Update Psiphon Pro" action in the unlock required dialog. -->
+    <string name="update_psiphon_pro_action_header">Pertama, kemas kini Psiphon Pro</string>
+
     <!-- Preference category title for managing advertising privacy settings -->
-    <string name="pref_category_advertising_privacy">Privasi Iklan</string>
+    <string name="pref_category_advertising_privacy">Privasi Pengiklanan</string>
 
     <!-- Preference title for managing ads consent -->
     <string name="adsConsentManagementTitle">Urus Keutamaan Iklan</string>
 
     <!-- Preference summary for managing ads consent -->
-    <string name="adsConsentManagementSummary">Kawal cara data anda digunakan untuk iklan yang diperibadikan</string>
+    <string name="adsConsentManagementSummary">Kawal cara data anda digunakan untuk pengiklanan yang diperibadikan</string>
 
     <!-- Extra label that appears above the "Continue" button in the unlock required dialog in case of unlock required when unlock is not enforced -->
     <string name="unlock_dismiss_button_extra_label">Saya tidak mahu membantu.</string>
