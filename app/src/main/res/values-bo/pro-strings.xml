@@ -55,6 +55,12 @@
          the workflow to subscribe for premium access. -->
     <string name="rate_limit_text_subscribe_button">དའ་བུང་ཀའད་མམ་སྒོན་བ།</string>
 
+    <!-- Alert error message informing user that an unexpected error has occurred and encouraging the user to send feedback diagnostics. -->
+    <string name="unexpected_error_occured_send_feedback_message">རེ་བ་མིན་པའི་ནོར་འཁྲུལ་ཞིག་བྱུང་། ཞུགས་ལན་གནང་རོགས།</string>
+
+    <!-- Auto dismissable alert message informing users that subscription options are not available at the moment -->
+    <string name="subscription_options_currently_not_available">མངགས་སྐར་འདེམས་ཆས་ད་ལྟ་མེད། ཤུལ་ལ་སླད་ཙམ་ཞིག་བསམ་རོགས།</string>
+
     <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_notification_title">Psiphon Pro གསར་སྒྱུར།</string>
 
@@ -67,8 +73,83 @@
     <!-- Text on the button which takes user to subscription screen -->
     <string name="btn_get_subscription">མངགས་པ།</string>
 
+    <!-- Header text appearing on the subscriptions screen when the user has a limited subscription plan. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.UsingLimitedPlan">ཁྱེད་ཀྱིས་མཚཽ་ཁུག་༥&#160;Mb/s ཀྱི་རྩ་བའི་འཆར་གཞི་སྤྱད་བཞིན་འདུག། མཚཽ་ཁུག་མེད་པའི་འཆར་གཞིར་ཡར་རྒྱས་བྱེད་འདོད་འདུག་གམ།</string>
+
+    <!-- Header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.UsingFreePlan">ཁྱེད་ཀྱིས་རིན་ལང་། སྒྲུང་རྒྱུད་རྒྱབ་སྐྱོར་། མཚཽ་ཁུག་ཅན། འགྲོ་སའི་ཁྱད་པར་གཟབ་འདེགས་ཀྱི་འཆར་གཞི་སྤྱད་བཞིན་འདུག། འདི་མུ་མཐུད་སྤྱོད་ཐུབ་མམ་ང་ཚོའི་དམ་པའི་འཆར་གཞི་ལ་ཡར་རྒྱས་བྱེད་ཆོག</string>
+
+    <!-- Alternative header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">ཁྱེད་ཀྱི་ས་ཁུལ་ནང་ Psiphon དུས་རིན་ལང་ཆགས་མི་འདུག། ཞུགས་པ་རྒྱུན་འཇུག་བྱེད་ཆེད་ང་ཚོའི་དམ་པའི་འཆར་གཞི་ལ་ཡར་རྒྱས་གནང་རོགས།</string>
+
+    <!-- Common description text for all time passes. A time pass is a single use license that is valid for a certain
+    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="PaymentChooserActivity.TimepassCommonDescription">དུས་ཙོད་ཆས་ཐུབ་རེར་བཅད་མེད། མཚཽ་ཁུག་མེད། འགྲོ་ས་ཁྱད་པར་མེད།</string>
+
+    <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '7-day pass - CA$3.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice7Text">ཉིན་༧ དུས་ཙོད་ཆས - %s</string>
+
+    <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '30-day pass - CA$8.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice30Text">ཉིན་༣༠ དུས་ཙོད་ཆས - %s</string>
+
+    <!-- Label for button that user will click to buy a 360-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '360-day pass - CA$99.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice360Text">ཉིན་༣༦༠ དུས་ཙོད་ཆས - %s</string>
+
+    <!-- Extra label showing price per day on all time pass buttons. Keep as short as possible. -->
+    <string name="PaymentChooserActivity.TimepassPricePerDayText">%s/ཉིན་</string>
+
+    <!-- Label for button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., 'Basic - CA$5.99 monthly' -->
+    <string name="PaymentChooserActivity.LimitedSubscriptionTitlePriceText">རྩ་བ། - %s ཟླ་རེར</string>
+
+    <!-- Description text on the button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+         Appears below 'Basic - CA$5.99 monthly' label in smaller font. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">བཅད་མེད། མཚཽ་ཁུག་༥&#160;Mb/s བར་དུ། འགྲོ་ས་ཁྱད་པར་མེད།</string>
+
+    <!-- Label for button that user will click in order to buy an unlimited subscription for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., 'Unlimited - CA$11.99 monthly' -->
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionTitlePriceText">མཚཽ་ཁུག་མེད། - %s ཟླ་རེར</string>
+
+    <!-- Description text on the button that user will click in order to buy an unlimited subscription for Psiphon Pro.
+         Appears below 'Unlimited - CA$11.99 monthly' label in smaller font-->
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">བཅད་མེད། མཚཽ་ཁུག་མེད། འགྲོ་ས་ཁྱད་པར་མེད།</string>
+
+    <!-- Text Label that appears on the subscription buying button for Psiphon Pro in case if there
+         is a trial period available for that subscription. The formated string is the length of the
+         trial period in days. Keep as short as possible -->
+    <string name="PaymentChooserActivity.FreeTrialPeriod">རིན་ལང་ཚོད་ལྟ - ཉིན་%d</string>
+
+    <!-- Extra text on all subscriptions buttons showing monthly price per subscription after free trial ends-->
+    <string name="PaymentChooserActivity.PriceAfterFreeTrialText">རིན་ལང་ཚོད་ལྟ་རྫོགས་རེས %s/ཟླ་</string>
+
+    <!-- Subscription terms text, appears at the bottom of the subscriptions screen -->
+    <string name="PaymentChooserActivity.SubscriptionsTerms">Google Play འི་མངགས་སྐར་ཁྱབ་ནང་ནས་ནམ་རྒྱུན་མངགས་པ་འདོར་ཆོག། མངགས་འདོར་ཚེ་གློག་སྒོ་བསྡུ་ལེན་དུས་སྐབས་ཀྱི་མཇུག་ལ་མངགས་ཁྱིམས་ཀྱི་དམ་པའི་ཁྱད་ཆས་རྣམས་བརྒྱུད་ལམ་བརླག་ཡོང་། མི་རེར་རིན་ལང་ཚོད་ལྟ་ཅིག་རེ། རིན་ལང་ཚོད་ལྟའི་དུས་སྐབས་རྫོགས་ཚེ་འགུལ་སྒུལ་ཅན་གྱིས་མངགས་ཁྱིམས་འི་དངུལ་གྱིས་རིན་དངུལ་ལེན་ཡོང་། དངུལ་སྒྲུབ་འདོད་མིན་ན་ཚོད་ལྟ་དུས་སྐབས་མ་རྫོགས་གོང་མངགས་འདོར་རོགས།</string>
+
+    <!-- Time pass explanation text -->
+    <string name="PaymentChooserActivity.TimePassExplanation">དུས་ཙོད་ཆས་ནི་ཉོ་ཚེས་ནས་དུས་ཡུན་ངེས་ཅན་རིང་ནུས་པ་ཡོད་པའི་ལན་ཅིག་སྤྱོད་ཆོག་གི་ཆོག་མཆན་ཞིག་ཡིན་ལ་དུས་ཚོད་རྫོགས་རེས་མངགས་རྒྱུན་བཞིན་རང་སྐྱོང་གིས་ཚེ་རིང་མི་བྱེད།</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available subscriptions -->
+    <string name="PaymentChooserActivity.SubscriptionTab">མངགས་པ</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available time passes.
+    A time pass is a single use license that is valid for a certain period of time from the moment it is purchased
+    and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="PaymentChooserActivity.TimePassTab">དུས་ཙོད་ཆས</string>
+
     <!--Generic 'close' button label -->
     <string name="label_close">ཁ་རྒག་པ</string>
+
+    <!-- Clickable text on the home tab that appears on the home tab if user has an active subscription. Clicking the link opens 'Manage Subscription' screen of the Google Play app -->
+    <string name="manage_my_subscription_link_text">ཁྱེད་ཀྱི་མངགས་སྐར་འཛིན་སྐྱོང</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. A short message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text">ཁྱེད་ཀྱི་ས་ཁུལ་ནང་ Psiphon དུས་རིན་ལང་ཆགས་མི་འདུག།</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. A longer message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text_big">ཁྱེད་ཀྱི་ས་ཁུལ་ནང་ Psiphon དུས་རིན་ལང་ཆགས་མི་འདུག། ཤེས་རྒྱུར་འདིར་གནོན།</string>
 
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">མཐུད་མཚམས་བཞག</string>

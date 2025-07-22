@@ -37,6 +37,17 @@
     <!-- Text on the button which takes user to subscription screen -->
     <string name="btn_get_subscription">ភ្ជាប់សេវា</string>
 
+    <!-- Alternative header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon មិនមែនអស់គិតថ្លៃនៅក្នុងជូមិភាករបស់អ្នកទេ។ សូមកើនចែនទៅជាមួយនៃគំរោងព្រីមីរបស់យើងដើម្បីបន្តប្រើប្រាស់សេវា។</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available subscriptions -->
+    <string name="PaymentChooserActivity.SubscriptionTab">ការជាវយពន្លាស់</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available time passes.
+    A time pass is a single use license that is valid for a certain period of time from the moment it is purchased
+    and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="PaymentChooserActivity.TimePassTab">អនុញ្ញាតពេលវេលា</string>
+
     <!--Generic 'close' button label -->
     <string name="label_close">បិទ</string>
 
