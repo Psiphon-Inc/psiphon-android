@@ -1553,17 +1553,26 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         }
     }
 
-     // This observable emits a pair consisting of the latest NetworkConnectionState state and a
-     // Boolean representing whether we are routing the traffic via tunnel.
-     // Emits a new pair every time when either of the sources emits a new value.
+    // This observable emits a pair consisting of the latest NetworkConnectionState state and a
+    // Boolean representing whether we are routing the traffic via tunnel.
+    // Emits a new pair every time when either of the sources emits a new value.
+    // Note the lazy initialization and caching of the observable to emit the latest value
+    // immediately to the subscribers.
+    private Observable<Pair<TunnelState.ConnectionData.NetworkConnectionState, Boolean>> cachedConnectionObservable;
+
     private Observable<Pair<TunnelState.ConnectionData.NetworkConnectionState, Boolean>> connectionObservable() {
-        return Observable.combineLatest(m_networkConnectionStatePublishRelay,
-                m_vpnManager.routingThroughTunnelObservable(),
-                ((BiFunction<TunnelState.ConnectionData.NetworkConnectionState, Boolean,
-                        Pair<TunnelState.ConnectionData.NetworkConnectionState, Boolean>>) Pair::new))
+        if (cachedConnectionObservable != null) {
+            return cachedConnectionObservable;
+        }
+        cachedConnectionObservable =  Observable.combineLatest(m_networkConnectionStatePublishRelay,
+                        m_vpnManager.routingThroughTunnelObservable(),
+                        ((BiFunction<TunnelState.ConnectionData.NetworkConnectionState, Boolean,
+                                Pair<TunnelState.ConnectionData.NetworkConnectionState, Boolean>>) Pair::new))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .distinctUntilChanged();
+                .distinctUntilChanged()
+                .replay(1).refCount();
+        return cachedConnectionObservable;
     }
 
     /**
@@ -1951,7 +1960,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             }
 
             // Also do not show the alert if we are showing or going to show the Unlock Required UI
-            if(unlockOptions.unlockRequired() != UnlockOptions.UnlockType.NOT_REQUIRED) {
+            if (unlockOptions.unlockRequired() != UnlockOptions.UnlockType.NOT_REQUIRED) {
                 return;
             }
 
@@ -2188,27 +2197,39 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     }
 
     private Disposable unlockDismissHandlerDisposable() {
-        return Observable.combineLatest(
-                        unlockUiDismissedPublishRelay.startWith(false),
-                        m_networkConnectionStatePublishRelay,
-                        m_vpnManager.routingThroughTunnelObservable(),
-                        (dismissed, networkState, isRouting) ->
-                                dismissed &&
-                                networkState == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED &&
-                                !isRouting)
-                .switchMap(conditionsMet ->
-                        conditionsMet ? Observable.just(new Object()) : Observable.empty())
-                .switchMapCompletable(__ -> {
-                    if (unlockOptions.unlockRequired() == UnlockOptions.UnlockType.NOT_ENFORCED &&
-                            !homePageHandled.get() &&
-                            m_tunnelState.homePages != null &&
-                            !m_tunnelState.homePages.isEmpty()) {
-                            return waitSendIntentAndRouteThroughTunnelCompletable(this::sendHandshakeIntent);
-                    }
-                    // Just complete for any other unlock state, or if home page was already handled, or there are no home pages.
-                    return Completable.complete();
-                })
+        return unlockUiDismissedPublishRelay.startWith(false)
+                .switchMapSingle(this::waitForTunnelConditions)
+                .switchMapCompletable(this::handleUnlockAction)
                 .subscribe();
+    }
+
+    private Single<Boolean> waitForTunnelConditions(boolean dismissed) {
+        return connectionObservable()
+                .map(connectionState -> {
+                    return dismissed && areTunnelConditionsMet(connectionState);
+                })
+                .distinctUntilChanged()
+                .filter(result -> result)
+                .firstOrError();
+    }
+
+    private boolean areTunnelConditionsMet(Pair<TunnelState.ConnectionData.NetworkConnectionState, Boolean> state) {
+        return state.first == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED
+                && !state.second;
+    }
+
+    private Completable handleUnlockAction(boolean conditionsMet) {
+        if (shouldSendHandshakeIntent()) {
+            return waitSendIntentAndRouteThroughTunnelCompletable(this::sendHandshakeIntent);
+        }
+        return Completable.complete();
+    }
+
+    private boolean shouldSendHandshakeIntent() {
+        return unlockOptions.unlockRequired() == UnlockOptions.UnlockType.NOT_ENFORCED
+                && !homePageHandled.get()
+                && m_tunnelState.homePages != null
+                && !m_tunnelState.homePages.isEmpty();
     }
 
     private void processConduitUnlockEntry(String entryKey,
