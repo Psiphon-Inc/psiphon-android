@@ -5,6 +5,14 @@
         to HTTP proxy requests. Users may specify up to 3 custom headers -->
     <string name="custom_proxy_headers_title">ಕಸ್ಟಮ್ HTTP ಹೆಡರ್‌ಗಳು</string>
 
+    <!--  Summary text for 'Custom HTTP header' option, appears underneath the option title -->
+    <string name="custom_proxy_headers_summary">ಪ್ರಾಕ್ಸಿ ವಿನಂತಿಗಳಿಗೆ ಹೆಚ್ಚುವರಿ ಕಸ್ಟಮ್ HTTP ಹೆಡರ್‌ಗಳನ್ನು ಸೆಟಪ್ ಮಾಡಿ</string>
+
+    <!-- Checkbox that toggles adding custom headers feature-->
+    <string name="custom_proxy_headers_checkbox_title">ಕಸ್ಟಮ್ HTTP ಹೆಡರ್‌ಗಳನ್ನು ಸೇರಿಸಿ</string>
+
+    <!--  Summary text for 'Add custom HTTP headers' checkbox, appears underneath the checkbox title -->
+    <string name="custom_proxy_headers_checkbox_description">ಎಲ್ಲಾ ಹೊರಹೋಗುವ HTTP ಪ್ರಾಕ್ಸಿ ವಿನಂತಿಗಳಿಗೆ ಕಸ್ಟಮ್ HTTP ಹೆಡರ್‌ಗಳನ್ನು ಸೇರಿಸಿ</string>
     <string name="custom_proxy_header_group_1">ಹೆಡರ್‌ 1</string>
     <string name="custom_proxy_header_group_2">ಹೆಡರ್‌ 2</string>
     <string name="custom_proxy_header_group_3">ಹೆಡರ್‌ 3</string>
@@ -13,6 +21,46 @@
     <string name="custom_proxy_header_group_6">ಹೆಡರ್‌ 6</string>
     <string name="custom_proxy_header_name">ಹೆಡರ್‌ ಹೆಸರನ್ನು ನಮೂದಿಸಿ</string>
     <string name="custom_proxy_header_value">ಹೆಡರ್ ಮೌಲ್ಯವನ್ನು ನಮೂದಿಸಿ</string>
+    <string name="custom_proxy_header_ignored_values">ಎಚ್ಚರಿಕೆ: ಖಾಲಿ ಹೆಸರುಗಳೊಂದಿಗಿನ ಹೆಡರ್‌ಗಳನ್ನು ನಿರ್ಲಕ್ಷಿಸಲಾಗುತ್ತದೆ!</string>
+    <string name="custom_proxy_header_invalid_name">ದೋಷ: ಹೆಡರ್ ಹೆಸರಿನಲ್ಲಿ ಅಕ್ರಮ ಅಕ್ಷರಗಳಿವೆ!</string>
+    <!-- Title for other text showing what the user's current speed limit is. Users have limited
+         speed if they have not paid for premium service. -->
+    <string name="rate_limit_text_title">Psiphon ವೇಗ ಮಿತಿ:</string>
+
+    <!--
+        Template for rendering a rate value and its unit label.
+        %1$s = numeric value (e.g., "5.3"), %2$s = unit label (e.g., "MB/s").
+        Reorder the format specifiers if in your language the unit appears before the value.
+        Example output: "5.3 MB/s", "1.2 Kbps".
+        Reorder the format specifiers '%1$s' and '%2$s' if in the translated language ordering numeric value and rate unit in speed rate string is different from English.
+    -->
+    <string name="rate_with_unit_template">%1$s %2$s</string>
+
+    <!-- Unit labels used with 'rate_with_unit_template' for bit-per-second speeds. These represent: bits, kilobits, megabits, etc. per second. -->
+    <string name="rate_unit_bps_bits">bps</string>
+    <string name="rate_unit_kbps_bits">Kbps</string>
+    <string name="rate_unit_mbps_bits">Mbps</string>
+    <string name="rate_unit_gbps_bits">Gbps</string>
+    <string name="rate_unit_tbps_bits">Tbps</string>
+    <string name="rate_unit_pbps_bits">Pbps</string>
+
+
+    <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
+    <string name="speed_rate_limit_not_available">ಲಭ್ಯವಿಲ್ಲ</string>
+
+    <!-- Text shown on the home tab under Psiphon speed limit label when the there is no speed limit, like when the user has an unlimited subscription, for example -->
+    <string name="speed_rate_limit_no_limit">ಮಿತಿಯಿಲ್ಲ</string>
+
+    <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
+         the workflow to subscribe for premium access. -->
+    <string name="rate_limit_text_subscribe_button">ಈಗ ಅಪ್‌ಗ್ರೇಡ್ ಮಾಡಿ!</string>
+
+    <!-- Alert error message informing user that an unexpected error has occurred and encouraging the user to send feedback diagnostics. -->
+    <string name="unexpected_error_occured_send_feedback_message">ಅನಿರೀಕ್ಷಿತ ದೋಷ ಸಂಭವಿಸಿದೆ, ದಯವಿಟ್ಟು ಪ್ರತಿಕ್ರಿಯೆ ಕಳುಹಿಸಿ.</string>
+
+    <!-- Auto dismissable alert message informing users that subscription options are not available at the moment -->
+    <string name="subscription_options_currently_not_available">ಚಂದಾದಾರಿಕೆ ಆಯ್ಕೆಗಳು ಪ್ರಸ್ತುತ ಲಭ್ಯವಿಲ್ಲ, ದಯವಿಟ್ಟು ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.</string>
+
     <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_notification_title">Psiphon Pro ಅನ್ನು ಅಪ್‌ಗ್ರೇಡ್ ಮಾಡಿ</string>
 
@@ -25,8 +73,151 @@
     <!-- Text on the button which takes user to subscription screen -->
     <string name="btn_get_subscription">ಚಂದಾದರರಾಗಿ</string>
 
+    <!-- Header text appearing on the subscriptions screen when the user has a limited subscription plan. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.UsingLimitedPlan">ಸೀಮಿತ ಯೋಜನೆಯನ್ನು ಬಳಸುತ್ತಿದೆ</string>
+
+    <!-- Header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.UsingFreePlan">ಉಚಿತ ಯೋಜನೆಯನ್ನು ಬಳಸುತ್ತಿದೆ</string>
+
+    <!-- Alternative header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon ಉಚಿತ ಪ್ರದೇಶವಲ್ಲ</string>
+
+    <!-- Common description text for all time passes. A time pass is a single use license that is valid for a certain
+    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="PaymentChooserActivity.TimepassCommonDescription">ಸಾಮಾನ್ಯ ವಿವರಣೆ</string>
+
+    <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '7-day pass - CA$3.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice7Text">7-ದಿನದ ಪಾಸ್ - %s</string>
+
+    <!-- Label for button that user will click to buy a 30-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '30-day pass - CA$8.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice30Text">30-ದಿನದ ಪಾಸ್ - %s</string>
+
+    <!-- Label for button that user will click to buy a 360-day pass for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., '360-day pass - CA$99.99' -->
+    <string name="PaymentChooserActivity.TimepassTitlePrice360Text">360-ದಿನದ ಪಾಸ್ - %s</string>
+
+    <!-- Extra label showing price per day on all time pass buttons. Keep as short as possible. -->
+    <string name="PaymentChooserActivity.TimepassPricePerDayText">ಪ್ರತಿದಿನದ ಬೆಲೆ</string>
+
+    <!-- Label for button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., 'Basic - CA$5.99 monthly' -->
+    <string name="PaymentChooserActivity.LimitedSubscriptionTitlePriceText">ಸೀಮಿತ - ಮಾಸಿಕ %s</string>
+
+    <!-- Description text on the button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+         Appears below 'Basic - CA$5.99 monthly' label in smaller font. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">ಸೀಮಿತ ಚಂದಾದಾರಿಕೆ ವಿವರಣೆ</string>
+
+    <!-- Label for button that user will click in order to buy an unlimited subscription for Psiphon Pro.
+    The string format argument is the formatted price and currency as specified by current locale, e.g., 'Unlimited - CA$11.99 monthly' -->
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionTitlePriceText">ಅಮಿತ - ಮಾಸಿಕ %s</string>
+
+    <!-- Description text on the button that user will click in order to buy an unlimited subscription for Psiphon Pro.
+         Appears below 'Unlimited - CA$11.99 monthly' label in smaller font-->
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">ಅಮಿತ ಚಂದಾದಾರಿಕೆ ವಿವರಣೆ</string>
+
+    <!-- Text Label that appears on the subscription buying button for Psiphon Pro in case if there
+         is a trial period available for that subscription. The formated string is the length of the
+         trial period in days. Keep as short as possible -->
+    <string name="PaymentChooserActivity.FreeTrialPeriod">ಉಚಿತ ಪ್ರಯೋಗ ಅವಧಿ</string>
+
+    <!-- Extra text on all subscriptions buttons showing monthly price per subscription after free trial ends-->
+    <string name="PaymentChooserActivity.PriceAfterFreeTrialText">ಉಚಿತ ಪ್ರಯೋಗದ ನಂತರದ ಬೆಲೆ</string>
+
+    <!-- Subscription terms text, appears at the bottom of the subscriptions screen -->
+    <string name="PaymentChooserActivity.SubscriptionsTerms">ನಿಯಮಗಳು ಮತ್ತು ಷರತ್ತುಗಳು</string>
+
+    <!-- Time pass explanation text -->
+    <string name="PaymentChooserActivity.TimePassExplanation">ಟೈಮ್ ಪಾಸ್ ವಿವರಣೆ</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available subscriptions -->
+    <string name="PaymentChooserActivity.SubscriptionTab">ಚಂದಾದಾರಿಕೆ</string>
+
+    <!-- Label text for tab that once selected takes the user to the screen displaying all available time passes.
+    A time pass is a single use license that is valid for a certain period of time from the moment it is purchased
+    and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="PaymentChooserActivity.TimePassTab">ಟೈಮ್ ಪಾಸ್</string>
+
+    <!--Generic 'close' button label -->
+    <string name="label_close">ಮುಚ್ಚಿ</string>
+
+    <!-- Clickable text on the home tab that appears on the home tab if user has an active subscription. Clicking the link opens 'Manage Subscription' screen of the Google Play app -->
+    <string name="manage_my_subscription_link_text">ನನ್ನ ಚಂದಾದಾರಿಕೆಯನ್ನು ನಿರ್ವಹಿಸಿ</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. A short message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text">ಪಾವತಿ ಅಗತ್ಯ ಅಧಿಸೂಚನೆ ಪಠ್ಯ</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. A longer message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text_big">ಪಾವತಿ ಅಗತ್ಯ ಅಧಿಸೂಚನೆ ದೊಡ್ಡ ಪಠ್ಯ</string>
+
+    <!--Title of button that disconnects the VPN. -->
+    <string name="btn_disconnect">ಸಂಪರ್ಕ ಕಡಿತಗೊಳಿಸಿ</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="purchase_required_prompt_title">ಖರೀದಿ ಅಗತ್ಯ ಪ್ರಾಂಪ್ಟ್ ಶೀರ್ಷಿಕೆ</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="unlock_required_prompt_body">ನಿಮ್ಮ ಪ್ರದೇಶದಲ್ಲಿ Psiphon ಪ್ರವೇಶಕ್ಕೆ ಈಗ ನಿಮ್ಮ ಬೆಂಬಲದ ಅಗತ್ಯವಿದೆ. ಇದು ಹೆಚ್ಚು ಅಗತ್ಯವಿರುವವರಿಗೆ Psiphon ಪ್ರವೇಶಯೋಗ್ಯವಾಗಿ ಇರಿಸಿಕೊಳ್ಳಲು ಸಹಾಯ ಮಾಡಿ ಮತ್ತು ಮುಂದುವರಿಸಲು ಲಭ್ಯವಿರುವ ಆಯ್ಕೆಯನ್ನು ಆಯ್ಕೆ ಮಾಡಿ.</string>
+
+    <!-- Icon description for the Conduit app icon, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_icon_description">Conduit ಐಕಾನ್ ವಿವರಣೆ</string>
+
+    <!-- Icon description for the Google Play app icon, do not translate or transliterate 'Google Play'. -->
+    <string name="google_play_icon_description">Google Play ಐಕಾನ್ ವಿವರಣೆ</string>
+
+    <!-- Title for the Install Conduit action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_install_title">Conduit ಸ್ಥಾಪಿಸಿ</string>
+
+    <!-- Description text for the clickable Conduit app card, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_card_description">Conduit ಮೊಬೈಲ್ ಅಪ್ಲಿಕೇಶನ್ ಚಲಾಯಿಸಿ ಮತ್ತು ಉಚಿತವಾಗಿ Psiphon ಗೆ ಸಂಪರ್ಕಗೊಂಡಿರಿ</string>
+
+    <!-- Clickable text label to open the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="launch_conduit_action">Conduit ಲಾಂಚ್ ಮಾಡಿ</string>
+
     <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
     <string name="subscribe_card_title">ಚಂದಾದರರಾಗಿ</string>
+
+    <!-- Description text under the Subscribe clickable item -->
+    <string name="subscribe_card_description">ಚಂದಾದಾರಿಕೆ ಕಾರ್ಡ್ ವಿವರಣೆ</string>
+
+    <!-- Clickable text label to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_title">Psiphon Pro ನವೀಕರಿಸಿ</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_update_title">Conduit ನವೀಕರಿಸಿ</string>
+
+    <!-- Description for the 'Update' Action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_update_description">Conduit ನವೀಕರಣ ವಿವರಣೆ</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_action_title">Psiphon Pro ನವೀಕರಿಸಿ</string>
+
+    <!-- Description for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_action_description">ಈ ವೈಶಿಷ್ಟ್ಯವನ್ನು ಪ್ರವೇಶಿಸಲು Psiphon Pro ನ ಇತ್ತೀಚಿನ ಆವೃತ್ತಿಗೆ ನವೀಕರಿಸಿ</string>
+
+    <!-- Access status label shown on the home tab when the user has a limited subscription plan -->
+    <string name="subscription_limited">ಚಂದಾದಾರಿಕೆ: ಸೀಮಿತ</string>
+
+    <!-- Access status label shown on the home tab when the user has an unlimited subscription plan -->
+    <string name="subscription_unlimited">ಚಂದಾದಾರಿಕೆ: ಅಮಿತ</string>
+
+    <!-- Access status label shown on the home tab when the user has time pass plan. A time pass is a single use license that is valid for a certain
+    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="time_pass_active">ಟೈಮ್ ಪಾಸ್: ಸಕ್ರಿಯ</string>
+
+    <!-- Access status label shown on the home tab when the user has no subscription or time pass plan -->
+    <string name="subscription_none">ಉಚಿತ ಪ್ರವೇಶ</string>
+
+    <!-- Access status label shown on the home tab when the user is running the Conduit app on the same device which may provide enhanced access to Psiphon.
+     Do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_active">Conduit: ಸಕ್ರಿಯ</string>
+
+    <!-- Short (collapsed) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_short">ಅನ್‌ಲಾಕ್ ಅಗತ್ಯ ಚಿಕ್ಕ ಅಧಿಸೂಚನೆ ಪಠ್ಯ</string>
+
+    <!-- Long (expanded) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_long">ನಿಮ್ಮ ಪ್ರದೇಶದಲ್ಲಿ Psiphon ಗೆ ಉಚಿತ ಪ್ರವೇಶ ಇನ್ನು ಲಭ್ಯವಿಲ್ಲ. ಅನ್‌ಲಾಕ್ ಆಯ್ಕೆಗಳನ್ನು ನೋಡಲು ಟ್ಯಾಪ್ ಮಾಡಿ</string>
 
     <!-- Generic 'Dismiss' button label for dialogs and alerts -->
     <string name="label_dismiss">ವಜಾಗೊಳಿಸಿ</string>
