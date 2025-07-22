@@ -22,6 +22,7 @@ package com.psiphon3;
 import android.net.VpnService;
 import android.os.ParcelFileDescriptor;
 
+import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.log.MyLog;
 
 import java.io.IOException;
@@ -39,6 +40,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import ca.psiphon.Tun2SocksJniLoader;
+import io.reactivex.Observable;
 
 // The VpnManager class manages the VPN interface and tun2socks library. It creates the VPN
 // interface, starts tun2socks to route traffic through the VPN interface, and stops tun2socks.
@@ -60,6 +62,14 @@ public class VpnManager {
     private final AtomicBoolean isRoutingThroughTunnel;
     private Thread mTun2SocksThread;
     private WeakReference<VpnServiceBuilderProvider> vpnServiceBuilderProviderRef;
+
+    private final PublishRelay<Boolean> isRoutingThroughTunnelPublishRelay = PublishRelay.create();
+
+    public Observable<Boolean> routingThroughTunnelObservable() {
+        return isRoutingThroughTunnelPublishRelay.hide()
+                .distinctUntilChanged()
+                .startWith(isRoutingThroughTunnel.get());
+    }
 
     // Initialize the tun2socks logger with the class name and method name
     // This is called once when the class is loaded
@@ -249,6 +259,7 @@ public class VpnManager {
                     udpgwServerAddress,
                     true);
             MyLog.i("Routing through tunnel");
+            isRoutingThroughTunnelPublishRelay.accept(true);
         } catch (IOException e) {
             MyLog.e("routeThroughTunnel: error duplicating tun FD: " + e);
         }
@@ -257,6 +268,7 @@ public class VpnManager {
     // Stop routing traffic via tunnel by stopping tun2socks if currently routing through tunnel
     public synchronized void stopRouteThroughTunnel() {
         if (isRoutingThroughTunnel.compareAndSet(true, false)) {
+            isRoutingThroughTunnelPublishRelay.accept(false);
             stopTun2Socks();
         }
     }

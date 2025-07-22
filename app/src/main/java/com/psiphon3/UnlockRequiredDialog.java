@@ -32,6 +32,7 @@ import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 
 import com.psiphon3.log.MyLog;
+import com.psiphon3.psiphonlibrary.TunnelServiceInteractor;
 import com.psiphon3.subscription.R;
 import com.psiphon3.unlockui.AppInstallUnlockHandler;
 import com.psiphon3.unlockui.ConduitUnlockHandler;
@@ -55,7 +56,6 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
     private final List<UnlockOptionHandler> handlers = new ArrayList<>();
     private Runnable dismissListener;
     private Runnable disconnectTunnelRunnable;
-    private Runnable dismissButtonClickListener;
 
     private UnlockRequiredDialog(Context context) {
         View contentView = LayoutInflater.from(context).inflate(R.layout.unlock_required_dialog_layout, null);
@@ -79,10 +79,24 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
             }
         });
         dialog.setOnDismissListener(dialogInterface -> {
+            // Notify the service that the UI has been dismissed
+            sendUnlockDismissedToService(dialog.getContext().getApplicationContext());
             if (dismissListener != null) {
                 dismissListener.run();
             }
         });
+    }
+
+    private void sendUnlockDismissedToService(Context context) {
+        // We use a fresh instance of TunnelServiceInteractor here to avoid any lifecycle issues
+        // with the one in MainActivity. At this point, the main activity's interactor might be unbound,
+        // and the message wouldn’t reach the service. This ensures the signal is delivered reliably.
+        MyLog.i("UnlockRequiredDialog: sending unlock dismissed message to service");
+        TunnelServiceInteractor tunnelServiceInteractor = new TunnelServiceInteractor(context, false);
+        tunnelServiceInteractor.onStart(context);
+        tunnelServiceInteractor.unlockRequiredUiDismissed();
+        tunnelServiceInteractor.onStop(context);
+        tunnelServiceInteractor.onDestroy(context);
     }
 
     private void registerLifecycleOwner(LifecycleOwner owner) {
@@ -95,10 +109,6 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
 
     private void setDismissListener(Runnable dismissListener) {
         this.dismissListener = dismissListener;
-    }
-
-    private void setOnDismissButtonClickListener(Runnable runnable) {
-        this.dismissButtonClickListener = runnable;
     }
 
     private void setUnlockOptions(UnlockOptions unlockOptions) {
@@ -245,10 +255,6 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
         if (unlockOptions.isEnforce() && disconnectTunnelRunnable != null) {
             disconnectTunnelRunnable.run();
         }
-        // Notify the dismiss button click listener if set
-        if (dismissButtonClickListener != null) {
-            dismissButtonClickListener.run();
-        }
         dialog.dismiss();
     }
 
@@ -263,10 +269,6 @@ public class UnlockRequiredDialog implements DefaultLifecycleObserver {
 
         public Builder setDisconnectTunnelRunnable(Runnable runnable) {
             dialog.setDisconnectTunnelRunnable(runnable);
-            return this;
-        }
-        public Builder setOnDismissButtonClickListener(Runnable runnable) {
-            dialog.setOnDismissButtonClickListener(runnable);
             return this;
         }
 

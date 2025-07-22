@@ -559,7 +559,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
         if (unlockRequiredDialog != null && unlockRequiredDialog.isShowing()) {
             // Already showing, do nothing
-            return false;
+            return true;
         }
 
         // Cancel disallowed traffic alert if it is showing
@@ -569,9 +569,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
         unlockRequiredDialog = new UnlockRequiredDialog.Builder(this, this)
                 .setUnlockOptions(unlockOptions)
-                .setOnDismissButtonClickListener(() -> {
-                    getTunnelServiceInteractor().unlockRequiredUiDismissed();
-                })
                 .setDisconnectTunnelRunnable(() -> compositeDisposable.add(
                         getTunnelServiceInteractor().tunnelStateFlowable()
                                 .filter(state -> !state.isUnknown())
