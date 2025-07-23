@@ -1,5 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- New option title in the 'More options' dialog. It appears in the Proxy Setting category.
+        When clicked a new screen opens where users can specify additional HTTP headers to be added to
+        to HTTP proxy requests. Users may specify up to 3 custom headers -->
+    <string name="custom_proxy_headers_title">사용자 지정 HTTP 헤더</string>
+
+    <!--  Summary text for 'Custom HTTP header' option, appears underneath the option title -->
+    <string name="custom_proxy_headers_summary">프록시 요청에 대한 추가 사용자 지정 HTTP 헤더 설정</string>
+
+    <!-- Checkbox that toggles adding custom headers feature-->
+    <string name="custom_proxy_headers_checkbox_title">사용자 지정 HTTP 헤더 추가</string>
+
+    <!--  Summary text for 'Add custom HTTP headers' checkbox, appears underneath the checkbox title -->
+    <string name="custom_proxy_headers_checkbox_description">모든 나가는 HTTP 프록시 요청에 사용자 지정 HTTP 헤더 추가</string>
+    <string name="custom_proxy_header_group_1">헤더 1</string>
+    <string name="custom_proxy_header_group_2">헤더 2</string>
+    <string name="custom_proxy_header_group_3">헤더 3</string>
+    <string name="custom_proxy_header_group_4">헤더 4</string>
+    <string name="custom_proxy_header_group_5">헤더 5</string>
+    <string name="custom_proxy_header_group_6">헤더 6</string>
+    <string name="custom_proxy_header_name">헤더 이름 입력</string>
+    <string name="custom_proxy_header_value">헤더 값 입력</string>
+    <string name="custom_proxy_header_ignored_values">경고: 빈 이름을 가진 헤더는 무시됩니다!</string>
+    <string name="custom_proxy_header_invalid_name">오류: 헤더 이름에 불법 문자가 포함되어 있습니다!</string>
     <!-- Title for other text showing what the user's current speed limit is. Users have limited
          speed if they have not paid for premium service. -->
     <string name="rate_limit_text_title">Psiphon 속도 제한:</string>
@@ -13,6 +36,15 @@
     -->
     <string name="rate_with_unit_template">%1$s %2$s</string>
 
+    <!-- Unit labels used with 'rate_with_unit_template' for bit-per-second speeds. These represent: bits, kilobits, megabits, etc. per second. -->
+    <string name="rate_unit_bps_bits">bps</string>
+    <string name="rate_unit_kbps_bits">Kbps</string>
+    <string name="rate_unit_mbps_bits">Mbps</string>
+    <string name="rate_unit_gbps_bits">Gbps</string>
+    <string name="rate_unit_tbps_bits">Tbps</string>
+    <string name="rate_unit_pbps_bits">Pbps</string>
+
+
     <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
     <string name="speed_rate_limit_not_available">사용 불가</string>
 
@@ -22,6 +54,12 @@
     <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
          the workflow to subscribe for premium access. -->
     <string name="rate_limit_text_subscribe_button">지금 업그레이드!</string>
+
+    <!-- Alert error message informing user that an unexpected error has occurred and encouraging the user to send feedback diagnostics. -->
+    <string name="unexpected_error_occured_send_feedback_message">예상치 못한 오류가 발생했습니다. 피드백을 보내주세요.</string>
+
+    <!-- Auto dismissable alert message informing users that subscription options are not available at the moment -->
+    <string name="subscription_options_currently_not_available">구독 옵션을 현재 사용할 수 없습니다. 나중에 다시 시도해주세요.</string>
 
     <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_notification_title">Psiphon Pro 업그레이드</string>
@@ -34,6 +72,19 @@
 
     <!-- Text on the button which takes user to subscription screen -->
     <string name="btn_get_subscription">구독</string>
+
+    <!-- Header text appearing on the subscriptions screen when the user has a limited subscription plan. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.UsingLimitedPlan">속도가 5&#160;Mb/s로 제한된 기본 요금제를 사용하고 있습니다. 무제한 요금제로 업그레이드하시겠습니까?</string>
+
+    <!-- Header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.UsingFreePlan">무료, 광고 지원, 속도 제한, 포트 제한 요금제를 사용하고 있습니다. 이 요금제를 계속 사용하거나 프리미엄 요금제 중 하나로 업그레이드할 수 있습니다</string>
+
+    <!-- Alternative header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon은 더 이상 귀하의 지역에서 무료가 아닙니다. 서비스를 계속 사용하려면 프리미엄 요금제 중 하나로 업그레이드하세요</string>
+
+    <!-- Common description text for all time passes. A time pass is a single use license that is valid for a certain
+    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="PaymentChooserActivity.TimepassCommonDescription">각 시간 패스 구매마다 중단 없는, 무제한 속도, 개방된 포트 제공</string>
 
     <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., '7-day pass - CA$3.99' -->
@@ -54,9 +105,31 @@
     The string format argument is the formatted price and currency as specified by current locale, e.g., 'Basic - CA$5.99 monthly' -->
     <string name="PaymentChooserActivity.LimitedSubscriptionTitlePriceText">기본 - 월 %s</string>
 
+    <!-- Description text on the button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+         Appears below 'Basic - CA$5.99 monthly' label in smaller font. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">중단 없는, 5&#160;Mb/s까지 고속, 개방된 포트</string>
+
     <!-- Label for button that user will click in order to buy an unlimited subscription for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., 'Unlimited - CA$11.99 monthly' -->
     <string name="PaymentChooserActivity.UnlimitedSubscriptionTitlePriceText">무제한 - 월 %s</string>
+
+    <!-- Description text on the button that user will click in order to buy an unlimited subscription for Psiphon Pro.
+         Appears below 'Unlimited - CA$11.99 monthly' label in smaller font-->
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">중단 없는, 무제한 속도, 개방된 포트</string>
+
+    <!-- Text Label that appears on the subscription buying button for Psiphon Pro in case if there
+         is a trial period available for that subscription. The formated string is the length of the
+         trial period in days. Keep as short as possible -->
+    <string name="PaymentChooserActivity.FreeTrialPeriod">무료 체험 - %d일</string>
+
+    <!-- Extra text on all subscriptions buttons showing monthly price per subscription after free trial ends-->
+    <string name="PaymentChooserActivity.PriceAfterFreeTrialText">무료 체험 종료 후 %s/월</string>
+
+    <!-- Subscription terms text, appears at the bottom of the subscriptions screen -->
+    <string name="PaymentChooserActivity.SubscriptionsTerms">Google Play의 구독에서 언제든지 구독을 취소하세요. 구독을 취소하면 현재 청구 기간 말에 구독 조건에서 제공하는 프리미엄 기능에 대한 액세스를 잃게 됩니다. 사용자당 하나의 무료 체험만 가능합니다. 무료 체험 기간이 끝나면 구독 조건에 명시된 금액이 자동으로 청구됩니다. 요금을 피하려면 체험 기간이 만료되기 전에 구독을 취소하세요.</string>
+
+    <!-- Time pass explanation text -->
+    <string name="PaymentChooserActivity.TimePassExplanation">시간 패스는 구매 순간부터 일정 기간 동안 유효한 일회용 라이선스로, 구독과 달리 만료 후 자동으로 갱신되지 않습니다.</string>
 
     <!-- Label text for tab that once selected takes the user to the screen displaying all available subscriptions -->
     <string name="PaymentChooserActivity.SubscriptionTab">구독</string>
@@ -69,11 +142,59 @@
     <!--Generic 'close' button label -->
     <string name="label_close">닫기</string>
 
+    <!-- Clickable text on the home tab that appears on the home tab if user has an active subscription. Clicking the link opens 'Manage Subscription' screen of the Google Play app -->
+    <string name="manage_my_subscription_link_text">내 구독 관리</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. A short message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text">Psiphon은 더 이상 귀하의 지역에서 무료가 아닙니다.</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. A longer message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text_big">Psiphon은 더 이상 귀하의 지역에서 무료가 아닙니다. 자세한 내용은 여기를 탭하세요.</string>
+
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">연결 끊기</string>
 
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="purchase_required_prompt_title">귀하의 지역에서 Psiphon에 액세스하는 방법.</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="unlock_required_prompt_body">귀하의 지역에서 Psiphon 액세스는 이제 귀하의 지원이 필요합니다. 계속하려면 사용 가능한 옵션 중 하나를 선택하여 가장 필요한 사람들을 위해 Psiphon을 열어두는 데 도움을 주세요.</string>
+
+    <!-- Icon description for the Conduit app icon, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_icon_description">Conduit 앱 아이콘</string>
+
+    <!-- Icon description for the Google Play app icon, do not translate or transliterate 'Google Play'. -->
+    <string name="google_play_icon_description">Google Play 아이콘</string>
+
+    <!-- Title for the Install Conduit action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_install_title">Conduit 설치</string>
+
+    <!-- Description text for the clickable Conduit app card, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_card_description">Conduit 모바일 앱을 실행하고 Psiphon에 무료로 연결 상태를 유지하세요</string>
+
+    <!-- Clickable text label to open the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="launch_conduit_action">Conduit 실행</string>
+
     <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
     <string name="subscribe_card_title">구독</string>
+
+    <!-- Description text under the Subscribe clickable item -->
+    <string name="subscribe_card_description">중단 없는 Psiphon 액세스를 위한 구독 계획 구매</string>
+
+    <!-- Clickable text label to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_title">Psiphon Pro 업데이트</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_update_title">Conduit 업데이트</string>
+
+    <!-- Description for the 'Update' Action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_update_description">이 기능에 액세스하려면 최신 버전의 Conduit로 업데이트하세요</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_action_title">Psiphon Pro 업데이트</string>
+
+    <!-- Description for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_action_description">이 기능에 액세스하려면 최신 버전의 Psiphon Pro로 업데이트하세요</string>
 
     <!-- Access status label shown on the home tab when the user has a limited subscription plan -->
     <string name="subscription_limited">구독: 제한됨</string>
@@ -87,6 +208,16 @@
 
     <!-- Access status label shown on the home tab when the user has no subscription or time pass plan -->
     <string name="subscription_none">무료 액세스</string>
+
+    <!-- Access status label shown on the home tab when the user is running the Conduit app on the same device which may provide enhanced access to Psiphon.
+     Do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_active">Conduit: 활성</string>
+
+    <!-- Short (collapsed) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_short">Psiphon 액세스가 차단되었습니다. 자세한 내용을 보려면 탭하세요</string>
+
+    <!-- Long (expanded) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_long">귀하의 지역에서 무료 Psiphon 액세스를 더 이상 사용할 수 없습니다. 잠금 해제 옵션을 보려면 탭하세요</string>
 
     <!-- Generic 'Dismiss' button label for dialogs and alerts -->
     <string name="label_dismiss">그만 보기</string>

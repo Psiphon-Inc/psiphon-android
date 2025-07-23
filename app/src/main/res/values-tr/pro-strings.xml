@@ -68,7 +68,7 @@
     <string name="disallowed_traffic_alert_notification_message">Uygulamalar çalışmıyor mu? Psiphon deneyiminizi iyileştirmek için buraya tıklayın!</string>
 
     <!-- Content of the alert dialog which is shown to the user when they click toolbar notification of unsupported Internet traffic request  -->
-    <string name="disallowed_traffic_alert_dialog_message">Bazı internet trafiği Psiphon Proʼnun ücretsiz sürümü tarafından desteklenmiyor. Psiphon deneyiminizin tam potansiyelini açmak için bir abonelik satın alın.</string>
+    <string name="disallowed_traffic_alert_dialog_message">Ücretsiz Psiphon Pro sürümü bazı internet trafiklerini desteklemez. Psiphon deneyiminizin tam olması için bir abonelik satın alın.</string>
 
     <!-- Text on the button which takes user to subscription screen -->
     <string name="btn_get_subscription">Abone ol</string>
@@ -239,7 +239,7 @@
     <string name="adsConsentManagementTitle">Reklam Tercihlerini Yönet</string>
 
     <!-- Preference summary for managing ads consent -->
-    <string name="adsConsentManagementSummary">Kişiselleştirilmiş reklamlar için verilerinizin nasıl kullanıldığını kontrol edin</string>
+    <string name="adsConsentManagementSummary">Kişiselleştirilmiş reklamlar için verilerinizin nasıl kullanılacağını belirleyin</string>
 
     <!-- Extra label that appears above the "Continue" button in the unlock required dialog in case of unlock required when unlock is not enforced -->
     <string name="unlock_dismiss_button_extra_label">Yardım etmek istemiyorum.</string>

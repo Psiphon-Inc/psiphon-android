@@ -1,5 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- New option title in the 'More options' dialog. It appears in the Proxy Setting category.
+        When clicked a new screen opens where users can specify additional HTTP headers to be added to
+        to HTTP proxy requests. Users may specify up to 3 custom headers -->
+    <string name="custom_proxy_headers_title">Mukautetut HTTP-otsikot</string>
+
+    <!--  Summary text for 'Custom HTTP header' option, appears underneath the option title -->
+    <string name="custom_proxy_headers_summary">Määritä lisäisiä mukautettuja HTTP-otsikoita proksi-pyynnöille</string>
+
+    <!-- Checkbox that toggles adding custom headers feature-->
+    <string name="custom_proxy_headers_checkbox_title">Lisää mukautettuja HTTP-otsikoita</string>
+
+    <!--  Summary text for 'Add custom HTTP headers' checkbox, appears underneath the checkbox title -->
+    <string name="custom_proxy_headers_checkbox_description">Lisää mukautettuja HTTP-otsikoita kaikkiin lähteviin HTTP-proksi-pyyntöihin</string>
+    <string name="custom_proxy_header_group_1">Otsikko 1</string>
+    <string name="custom_proxy_header_group_2">Otsikko 2</string>
+    <string name="custom_proxy_header_group_3">Otsikko 3</string>
+    <string name="custom_proxy_header_group_4">Otsikko 4</string>
+    <string name="custom_proxy_header_group_5">Otsikko 5</string>
+    <string name="custom_proxy_header_group_6">Otsikko 6</string>
+    <string name="custom_proxy_header_name">Syötä otsikon nimi</string>
+    <string name="custom_proxy_header_value">Syötä otsikon arvo</string>
+    <string name="custom_proxy_header_ignored_values">Varoitus: tyhjät otsikot jätetään huomioimatta!</string>
+    <string name="custom_proxy_header_invalid_name">Virhe: otsikon nimessä on laittomia merkkejä!</string>
     <!-- Title for other text showing what the user's current speed limit is. Users have limited
          speed if they have not paid for premium service. -->
     <string name="rate_limit_text_title">Psiphon nopeusraja:</string>
@@ -13,6 +36,15 @@
     -->
     <string name="rate_with_unit_template">%1$s %2$s</string>
 
+    <!-- Unit labels used with 'rate_with_unit_template' for bit-per-second speeds. These represent: bits, kilobits, megabits, etc. per second. -->
+    <string name="rate_unit_bps_bits">bps</string>
+    <string name="rate_unit_kbps_bits">Kbps</string>
+    <string name="rate_unit_mbps_bits">Mbps</string>
+    <string name="rate_unit_gbps_bits">Gbps</string>
+    <string name="rate_unit_tbps_bits">Tbps</string>
+    <string name="rate_unit_pbps_bits">Pbps</string>
+
+
     <!-- Text shown on the home tab under Psiphon speed limit label when the speed limit values are not available, like when the user just installed the app and the speed limit is not yet known -->
     <string name="speed_rate_limit_not_available">Ei saatavilla</string>
 
@@ -22,6 +54,12 @@
     <!-- Text on button beside speed limit (if it's not unlimited). This button leads the user to
          the workflow to subscribe for premium access. -->
     <string name="rate_limit_text_subscribe_button">Päivitä nyt!</string>
+
+    <!-- Alert error message informing user that an unexpected error has occurred and encouraging the user to send feedback diagnostics. -->
+    <string name="unexpected_error_occured_send_feedback_message">Odottamaton virhe tapahtui, lähetä palautetta.</string>
+
+    <!-- Auto dismissable alert message informing users that subscription options are not available at the moment -->
+    <string name="subscription_options_currently_not_available">Tilaustoiminnot eivät ole tällä hetkellä saatavilla, yritä myöhemmin uudelleen.</string>
 
     <!-- Title of the tolbar notification which is shown to the user when Psiphon server detects an unsupported Internet traffic request  -->
     <string name="disallowed_traffic_alert_notification_title">Päivitä Psiphon Pro</string>
@@ -34,6 +72,19 @@
 
     <!-- Text on the button which takes user to subscription screen -->
     <string name="btn_get_subscription">Tilaa</string>
+
+    <!-- Header text appearing on the subscriptions screen when the user has a limited subscription plan. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.UsingLimitedPlan">Käytät perustilausta, jonka nopeus on rajoitettu 5&#160;Mb/s. Haluatko päivittää rajoittamattomaan tilaukseen?</string>
+
+    <!-- Header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.UsingFreePlan">Käytät ilmaista, mainosrahoitteista, nopeusrajoitettua, porttirajoitettua suunnitelmaa. Voit jatkaa tämän suunnitelman käyttöä tai päivittää yhteen premium-suunnitelmiimme</string>
+
+    <!-- Alternative header text appearing on the subscriptions screen when the user doesn't have a subscription. -->
+    <string name="PaymentChooserActivity.PsiphonNotFreeRegion">Psiphon ei ole enää ilmainen alueellasi. Päivitä yhteen premium-suunnitelmiimme jatkaaksesi palvelun käyttöä</string>
+
+    <!-- Common description text for all time passes. A time pass is a single use license that is valid for a certain
+    period of time from the moment it is purchased and does not automatically renew after its expiry, unlike a subscription -->
+    <string name="PaymentChooserActivity.TimepassCommonDescription">Keskeytymätöntä, rajoittamatonta nopeutta avoimin portein jokaisen aikapassin oston yhteydessä</string>
 
     <!-- Label for button that user will click to buy a 7-day pass for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., '7-day pass - CA$3.99' -->
@@ -54,9 +105,31 @@
     The string format argument is the formatted price and currency as specified by current locale, e.g., 'Basic - CA$5.99 monthly' -->
     <string name="PaymentChooserActivity.LimitedSubscriptionTitlePriceText">Perus - %s kuukaudessa</string>
 
+    <!-- Description text on the button that user will click in order to buy a rate-limited (cheaper) subscription for Psiphon Pro.
+         Appears below 'Basic - CA$5.99 monthly' label in smaller font. Note the use of a non-breaking space in '5 Mb/s' -->
+    <string name="PaymentChooserActivity.LimitedSubscriptionDescription">Keskeytymätöntä, nopeaa yhteyttä 5&#160;Mb/s asti avoimin portein</string>
+
     <!-- Label for button that user will click in order to buy an unlimited subscription for Psiphon Pro.
     The string format argument is the formatted price and currency as specified by current locale, e.g., 'Unlimited - CA$11.99 monthly' -->
     <string name="PaymentChooserActivity.UnlimitedSubscriptionTitlePriceText">Rajoittamaton - %s kuukaudessa</string>
+
+    <!-- Description text on the button that user will click in order to buy an unlimited subscription for Psiphon Pro.
+         Appears below 'Unlimited - CA$11.99 monthly' label in smaller font-->
+    <string name="PaymentChooserActivity.UnlimitedSubscriptionDescription">Keskeytymätöntä, rajoittamatonta nopeutta avoimin portein</string>
+
+    <!-- Text Label that appears on the subscription buying button for Psiphon Pro in case if there
+         is a trial period available for that subscription. The formated string is the length of the
+         trial period in days. Keep as short as possible -->
+    <string name="PaymentChooserActivity.FreeTrialPeriod">Ilmainen kokeilu - %d päivää</string>
+
+    <!-- Extra text on all subscriptions buttons showing monthly price per subscription after free trial ends-->
+    <string name="PaymentChooserActivity.PriceAfterFreeTrialText">%s/kuukausi ilmaisen kokeilun päätyttyä</string>
+
+    <!-- Subscription terms text, appears at the bottom of the subscriptions screen -->
+    <string name="PaymentChooserActivity.SubscriptionsTerms">Peruuta tilauksesi milloin tahansa Google Playn tilauksissa. Kun peruutat tilauksesi, menetät pääsyn tilausehtojen tarjoamiin premium-ominaisuuksiin nykyisen laskutuskauden lopussa. Vain yksi ilmainen kokeilu käyttäjää kohden. Ilmaisen kokeilujakson päätyttyä sinulta veloitetaan automaattisesti tilausehdoissasi mainittu summa. Välttääksesi maksut peruuta tilaus ennen kokeilujakson päättymistä.</string>
+
+    <!-- Time pass explanation text -->
+    <string name="PaymentChooserActivity.TimePassExplanation">Aikapassi on kertakäyttöinen lisenssi, joka on voimassa tietyn ajan ostohetkestä alkaen eikä uusiudu automaattisesti vanhentumisensa jälkeen, toisin kuin tilaus.</string>
 
     <!-- Label text for tab that once selected takes the user to the screen displaying all available subscriptions -->
     <string name="PaymentChooserActivity.SubscriptionTab">Tilaus</string>
@@ -69,11 +142,59 @@
     <!--Generic 'close' button label -->
     <string name="label_close">Sulje</string>
 
+    <!-- Clickable text on the home tab that appears on the home tab if user has an active subscription. Clicking the link opens 'Manage Subscription' screen of the Google Play app -->
+    <string name="manage_my_subscription_link_text">Hallinnoi tilaustasi</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. A short message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text">Psiphon ei ole enää ilmainen alueellasi.</string>
+
+    <!-- Do not translate or transliterate 'Psiphon'. A longer message in the notification that is shown when the user connects from a region where free service is no longer offered, asking the user to subscribe. -->
+    <string name="notification_payment_required_text_big">Psiphon ei ole enää ilmainen alueellasi, napauta tästä saadaksesi lisätietoja.</string>
+
     <!--Title of button that disconnects the VPN. -->
     <string name="btn_disconnect">Katkaise yhteys</string>
 
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="purchase_required_prompt_title">Kuinka käyttää Psiphonia alueellasi.</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+    <string name="unlock_required_prompt_body">Psiphon-pääsy alueellasi vaatii nyt tukeasi. Auta pitämään Psiphon avoinna niille, jotka tarvitsevat sitä eniten valitsemalla yksi saatavilla olevista vaihtoehdoista jatkaaksesi.</string>
+
+    <!-- Icon description for the Conduit app icon, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_icon_description">Conduit-sovelluskuvake</string>
+
+    <!-- Icon description for the Google Play app icon, do not translate or transliterate 'Google Play'. -->
+    <string name="google_play_icon_description">Google Play -kuvake</string>
+
+    <!-- Title for the Install Conduit action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_install_title">Asenna Conduit</string>
+
+    <!-- Description text for the clickable Conduit app card, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_card_description">Käynnistä Conduit-mobiilisovellus ja pysy yhteydessä Psiphoniin ilmaiseksi</string>
+
+    <!-- Clickable text label to open the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="launch_conduit_action">Käynnistä Conduit</string>
+
     <!-- Clickable text label, clicking this will take the user to various in-app subscription options -->
     <string name="subscribe_card_title">Tilaa</string>
+
+    <!-- Description text under the Subscribe clickable item -->
+    <string name="subscribe_card_description">Osta tilaussuunnitelma keskeytymätöntä Psiphon-pääsyä varten</string>
+
+    <!-- Clickable text label to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_title">Päivitä Psiphon Pro</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_update_title">Päivitä Conduit</string>
+
+    <!-- Description for the 'Update' Action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_update_description">Päivitä uusimpaan Conduit-versioon käyttääksesi tätä ominaisuutta</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_action_title">Päivitä Psiphon Pro</string>
+
+    <!-- Description for the 'Update' action to open the Play Store page for the Psiphon Pro app, do not translate or transliterate 'Psiphon Pro'. -->
+    <string name="update_psiphon_pro_action_description">Päivitä uusimpaan Psiphon Pro -versioon käyttääksesi tätä ominaisuutta</string>
 
     <!-- Access status label shown on the home tab when the user has a limited subscription plan -->
     <string name="subscription_limited">Tilaus: Rajoitettu</string>
@@ -87,6 +208,16 @@
 
     <!-- Access status label shown on the home tab when the user has no subscription or time pass plan -->
     <string name="subscription_none">Ilmainen käyttö</string>
+
+    <!-- Access status label shown on the home tab when the user is running the Conduit app on the same device which may provide enhanced access to Psiphon.
+     Do not translate or transliterate 'Conduit'. -->
+    <string name="conduit_active">Conduit: Aktiivinen</string>
+
+    <!-- Short (collapsed) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_short">Psiphon-pääsy estetty. Napauta saadaksesi lisätietoja</string>
+
+    <!-- Long (expanded) notification text shown when the user is connected to Psiphon but their access is blocked due to a region restriction and they need to unlock access. Do not translate or transliterate 'Psiphon'. -->
+    <string name="notification_text_unlock_required_long">Ilmainen Psiphon-pääsy ei ole enää saatavilla alueellasi. Napauta nähdäksesi lukituksen avausvaihtoehdot</string>
 
     <!-- Generic 'Dismiss' button label for dialogs and alerts -->
     <string name="label_dismiss">Hylkää</string>
