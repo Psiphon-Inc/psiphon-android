@@ -2216,6 +2216,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         if (shouldSendHandshakeIntent()) {
             return waitSendIntentAndRouteThroughTunnelCompletable(this::sendHandshakeIntent);
         }
+
+        // Handle edge case: a quiet restart does not reset homePageHandled. If the NOT_ENFORCED
+        // unlock UI is triggered, the call to waitSendIntentAndRouteThroughTunnelCompletable above
+        // will be skipped. In that case, start routing now.
+        m_vpnManager.routeThroughTunnel(m_tunnel.getLocalSocksProxyPort());
+        
         return Completable.complete();
     }
 
