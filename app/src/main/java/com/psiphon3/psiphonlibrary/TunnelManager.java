@@ -329,21 +329,21 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                                 // Perform a tunnel restart when a new tunnel config is received and we are not in the process of stopping
                                 if (!m_isStopping.get()) {
                                     TunnelConfigManager.RestartType restartType = config.getRestartType();
+                                    // On full restart reset home page handled flag
                                     if (restartType == TunnelConfigManager.RestartType.FULL_RESTART) {
-                                        // On full restart reset unlock options, "unlock UI delivery" state,
-                                        // "pin options for the session" flag, and home page handled state.
-                                        unlockOptions.reset();
-                                        cachedUnlockUiDeliveryCompletable = null;
-                                        unlockOptionsPinnedForSession = false;
                                         homePageHandled.set(false);
-
-                                        m_networkConnectionStatePublishRelay.accept(
-                                                TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
-                                        m_vpnManager.stopRouteThroughTunnel();
                                         MyLog.i("TunnelManager: tunnel config observer: full tunnel restart due to new tunnel config");
                                     } else {
                                         MyLog.i("TunnelManager: tunnel config observer: quiet tunnel restart due to new tunnel config");
                                     }
+                                    // Reset unlock-related state for all restart types
+                                    unlockOptions.reset();
+                                    cachedUnlockUiDeliveryCompletable = null;
+                                    unlockOptionsPinnedForSession = false;
+
+                                    m_networkConnectionStatePublishRelay.accept(
+                                            TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
+                                    m_vpnManager.stopRouteThroughTunnel();
                                     onRestartTunnel();
                                 }
                             })
@@ -381,16 +381,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                                 .map(ignored -> unlockOptions.hasConduitEntry())
                                 .distinctUntilChanged()
                                 .doOnNext(hasConduitUnlockOption -> {
-                                    // Update the tunnel config manager with the conduit state.
-                                    // For the hasConduitEnforcement parameter, we check pass the following condition:
-                                    // if the unlock required is ENFORCED, and conduit entry is present ? true : false
-                                    boolean shouldFullRestart = unlockOptions.unlockRequired() ==
-                                            UnlockOptions.UnlockType.ENFORCED && hasConduitUnlockOption;
                                     MyLog.i("TunnelManager: Conduit is running: " + isRunning +
-                                            ", unlock required: " + unlockOptions.unlockRequired() +
                                             ", has conduit unlock option: " + hasConduitUnlockOption +
-                                            ", updating tunnel config manager with full restart: " + shouldFullRestart);
-                                    tunnelConfigManager.updateConduitStateConditional(isRunning, shouldFullRestart);
+                                            ", updating tunnel config manager");
+                                    tunnelConfigManager.updateConduitStateConditional(isRunning, hasConduitUnlockOption);
                                 }))
                 .subscribe();
 

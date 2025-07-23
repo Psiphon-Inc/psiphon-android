@@ -506,6 +506,10 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     }
 
     private boolean handleUnlockRequiredUi() {
+        if (unlockRequiredDialog != null && unlockRequiredDialog.isShowing()) {
+            return true;
+        }
+
         // Cancel notification when user returns to app
         NotificationManagerCompat.from(this).cancel(R.id.notification_id_unlock_required);
 
