@@ -118,12 +118,6 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.psiphon3.MainActivity" />
         </activity>
-        <activity android:theme="@style/Theme.DialogAlert"
-            android:excludeFromRecents="true"
-            android:name="com.psiphon3.NotificationPermissionRationaleActivity" />
-        <activity android:theme="@style/Theme.DialogAlert"
-            android:excludeFromRecents="true"
-            android:name="com.psiphon3.LocationPermissionRationaleActivity" />
         <service
             android:name="com.psiphon3.PsiphonCrashService"
             android:exported="false"

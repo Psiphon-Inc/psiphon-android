@@ -100,6 +100,7 @@ import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.subjects.CompletableSubject;
 
 public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
@@ -108,14 +109,14 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     }
 
     static final int REQUEST_CODE_PERMISSIONS = 103;
-    static final int REQUEST_CODE_NOTIFICATION_RATIONALE = 104;
-    static final int REQUEST_CODE_LOCATION_RATIONALE = 105;
 
     public static final String INTENT_EXTRA_PREVENT_AUTO_START = "com.psiphon3.MainActivity.PREVENT_AUTO_START";
 
     private static final String CURRENT_TAB = "currentTab";
 
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
+    private CompletableSubject permissionsCompletableSubject;
+
     private Button toggleButton;
     private ProgressBar connectionProgressBar;
     private ViewGroup connectionWaitingNetworkIndicator;
@@ -363,20 +364,18 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         if (savedInstanceState == null) {
             // Schedule handling current intent when the main view is fully inflated
             getWindow().getDecorView().post(() -> HandleCurrentIntent(getIntent()));
-
-            // Also run permissions check once per app creation and request them if needed.
-            // Check suggested workflow for details:
-            // https://developer.android.com/training/permissions/requesting#workflow_for_requesting_permissions
-            checkPermissions();
-
-            // If we are on Android pre-M or already have coarse location permission, start location
-            // update.
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
-                    ContextCompat.checkSelfPermission(this,
-                            Manifest.permission.ACCESS_COARSE_LOCATION) == PermissionChecker.PERMISSION_GRANTED) {
-                Location.runCurrentLocationUpdate(this);
-            }
         }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        // Initialize permissions completable subject
+        if (permissionsCompletableSubject == null || permissionsCompletableSubject.hasComplete() || permissionsCompletableSubject.hasThrowable()) {
+            permissionsCompletableSubject = CompletableSubject.create();
+        }
+        checkPermissions();
     }
 
     @Override
@@ -409,7 +408,13 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 if (permissions[i].equals(Manifest.permission.ACCESS_COARSE_LOCATION) &&
                         grantResults[i] == PermissionChecker.PERMISSION_GRANTED) {
                     Location.runCurrentLocationUpdate(this);
+                    break;
                 }
+            }
+
+            // Notify that permissions have been handled
+            if (permissionsCompletableSubject != null && !permissionsCompletableSubject.hasComplete()) {
+                permissionsCompletableSubject.onComplete();
             }
         }
     }
@@ -440,15 +445,43 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                     .subscribe());
         }
 
-         // If we are going to show the Unlock Required dialog, we do not want to run any
-        // potentially disruptive onResume actions such as showing toasts, alerts,
-        // The rest of the flow will run after the dialog is dismissed.
-        if (handleUnlockRequiredUi()) {
-            return;
-        }
+        // Observe custom proxy validation results to show a toast for invalid ones
+        compositeDisposable.add(viewModel.customProxyValidationResultFlowable()
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext(isValidResult -> {
+                    if (!isValidResult) {
+                        cancelInvalidProxySettingsToast();
+                        invalidProxySettingsToast = Toast.makeText(this,
+                                R.string.network_proxy_connect_invalid_values, Toast.LENGTH_SHORT);
+                        invalidProxySettingsToast.show();
+                    }
+                })
+                .subscribe());
 
-        // Ads flow is only started if we are not showing the Unlock Required dialog
-        handleAdsOrDisruptiveActions();
+        // Observe link clicks in the modal web view to open in the external browser
+        compositeDisposable.add(viewModel.externalBrowserUrlFlowable()
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext(url -> displayBrowser(this, url))
+                .subscribe());
+
+        // Wait for permissions to complete, then handle unlock dialog and ads flow
+        Completable permissionsCompletable = permissionsCompletableSubject != null ?
+                permissionsCompletableSubject : Completable.complete();
+
+        compositeDisposable.add(permissionsCompletable
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnComplete(() -> {
+                    // If we are going to show the Unlock Required dialog, we do not want to run any
+                    // potentially disruptive onResume actions such as showing toasts, alerts,
+                    // The rest of the flow will run after the dialog is dismissed.
+                    if (handleUnlockRequiredUi()) {
+                        return;
+                    }
+
+                    // Ads flow is only started if we are not showing the Unlock Required dialog
+                    handleAdsOrDisruptiveActions();
+                })
+                .subscribe());
     }
 
     private void handleAdsOrDisruptiveActions() {
@@ -527,25 +560,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     }
 
     private void handleDisruptiveOnResumeActions() {
-        // Observe custom proxy validation results to show a toast for invalid ones
-        compositeDisposable.add(viewModel.customProxyValidationResultFlowable()
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext(isValidResult -> {
-                    if (!isValidResult) {
-                        cancelInvalidProxySettingsToast();
-                        invalidProxySettingsToast = Toast.makeText(this,
-                                R.string.network_proxy_connect_invalid_values, Toast.LENGTH_SHORT);
-                        invalidProxySettingsToast.show();
-                    }
-                })
-                .subscribe());
-
-        // Observe link clicks in the modal web view to open in the external browser
-        compositeDisposable.add(viewModel.externalBrowserUrlFlowable()
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext(url -> displayBrowser(this, url))
-                .subscribe());
-
         // Check if user data collection disclosure needs to be shown followed by the unsafe traffic
         // alerts preference check and then check if the tunnel should be started automatically
         compositeDisposable.add(
@@ -592,7 +606,12 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
     // Check runtime permissions and show rationales if needed.
     // When we are done with the rationales return granted permissions.
-    private  void checkPermissions() {
+    private void checkPermissions() {
+        // Check location precision condition once
+        final AppPreferences mp = new AppPreferences(getApplicationContext());
+        int deviceLocationPrecision = mp.getInt(getString(R.string.deviceLocationPrecisionParameter), 0);
+        boolean needsLocationPermission = deviceLocationPrecision > 0 && deviceLocationPrecision <= 12;
+
         // Runtime permissions are only needed on Android M+ (API 23+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             List<String> permissionsToRequest = new ArrayList<>();
@@ -604,39 +623,43 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                     permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS);
                     // Check if we should show a rationale for notification permission
                     if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.POST_NOTIFICATIONS)) {
-                        // Start notification rationale activity and abort further permission checks and requests.
-                        // We will run permission check again when the rationale activity is finished.
-                        startActivityForResult(
-                                new Intent(this, NotificationPermissionRationaleActivity.class),
-                                REQUEST_CODE_NOTIFICATION_RATIONALE);
+                        // Show notification rationale dialog - it will handle the permission request
+                        NotificationPermissionRationaleDialog.show(this);
                         return;
                     }
                 }
             }
 
             // Check if we need coarse location permission
-            final AppPreferences mp = new AppPreferences(getApplicationContext());
-            int deviceLocationPrecision =  mp.getInt(getString(R.string.deviceLocationPrecisionParameter), 0);
-
-            if (deviceLocationPrecision > 0 && deviceLocationPrecision <= 12 &&
+            if (needsLocationPermission &&
                     ContextCompat.checkSelfPermission(this,
                             Manifest.permission.ACCESS_COARSE_LOCATION) != PermissionChecker.PERMISSION_GRANTED) {
                 permissionsToRequest.add(Manifest.permission.ACCESS_COARSE_LOCATION);
                 // Check if we should show a rationale for location permission
                 if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_COARSE_LOCATION)) {
-                    // Start location rationale activity and abort further permission checks and requests.
-                    // We will run permissions check again the rationale activity is finished.
-                    startActivityForResult(
-                            new Intent(this, LocationPermissionRationaleActivity.class),
-                            REQUEST_CODE_LOCATION_RATIONALE);
+                    // Show location rationale dialog - it will handle the permission request
+                    LocationPermissionRationaleDialog.show(this);
                     return;
                 }
             }
 
-            // Request permissions if needed
+            // Request permissions if needed (when no rationales are required)
             if (permissionsToRequest.size() > 0) {
                 requestPermissions(permissionsToRequest.toArray(new String[0]), REQUEST_CODE_PERMISSIONS);
+                return;
             }
+        }
+
+        // Complete permissions gathering
+        if (permissionsCompletableSubject != null && !permissionsCompletableSubject.hasComplete()) {
+            permissionsCompletableSubject.onComplete();
+        }
+
+        // Run location update if we need it and have permission (or pre-M)
+        if (needsLocationPermission && (Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
+                ContextCompat.checkSelfPermission(this,
+                        Manifest.permission.ACCESS_COARSE_LOCATION) == PermissionChecker.PERMISSION_GRANTED)) {
+            Location.runCurrentLocationUpdate(this);
         }
     }
 
@@ -735,17 +758,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             });
         })
                 .subscribeOn(AndroidSchedulers.mainThread());
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_CODE_NOTIFICATION_RATIONALE ||
-                requestCode == REQUEST_CODE_LOCATION_RATIONALE) {
-            // If we are returning from a permission rationale activity, run permissions check
-            // when we resume again since the previous check may have been interrupted.
-            checkPermissions();
-        }
-        super.onActivityResult(requestCode, resultCode, data);
     }
 
     @Override
