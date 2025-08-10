@@ -95,7 +95,6 @@ import java.util.Locale;
 import java.util.Set;
 
 import io.reactivex.Completable;
-import io.reactivex.Maybe;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
@@ -130,10 +129,11 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
 
     private boolean isFirstRun = true;
+    private boolean updateHandledThisSession = false;
+    private Disposable onResumeFlowDisposable;
     private AlertDialog upstreamProxyErrorAlertDialog;
     private AlertDialog disallowedTrafficAlertDialog;
     private UnlockRequiredDialog unlockRequiredDialog;
-    private Disposable unlockDialogDismissDisposable;
 
     private MenuItem psiphonBumpHelpItem;
     private FloatingActionButton helpConnectFab;
@@ -149,7 +149,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     // Ads related fields
     private boolean adsHandledThisSession = false;
     private boolean isFirstAppStartEver;
-    private Disposable coldStartDisposable;
     private FrameLayout overlayContainer;
     private ProgressBar overlayProgress;
     private final AdManager adManager = new AdManager();
@@ -382,11 +381,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     public void onDestroy() {
         compositeDisposable.dispose();
         googlePlayBillingHelper.stopObservePurchasesUpdates();
-        if (unlockDialogDismissDisposable != null && !unlockDialogDismissDisposable.isDisposed()) {
-            unlockDialogDismissDisposable.dispose();
-        }
-        if (coldStartDisposable != null) {
-            coldStartDisposable.dispose();
+        if (onResumeFlowDisposable != null) {
+            onResumeFlowDisposable.dispose();
         }
         super.onDestroy();
     }
@@ -464,144 +460,194 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 .doOnNext(url -> displayBrowser(this, url))
                 .subscribe());
 
-        // Wait for permissions to complete, then handle unlock dialog and ads flow
-        Completable permissionsCompletable = permissionsCompletableSubject != null ?
-                permissionsCompletableSubject : Completable.complete();
-
-        compositeDisposable.add(permissionsCompletable
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnComplete(() -> {
-                    // If we are going to show the Unlock Required dialog, we do not want to run any
-                    // potentially disruptive onResume actions such as showing toasts, alerts,
-                    // The rest of the flow will run after the dialog is dismissed.
-                    if (handleUnlockRequiredUi()) {
-                        return;
-                    }
-
-                    // Ads flow is only started if we are not showing the Unlock Required dialog
-                    handleAdsOrDisruptiveActions();
-                })
-                .subscribe());
-    }
-
-    private void handleAdsOrDisruptiveActions() {
-        if (coldStartDisposable != null && !coldStartDisposable.isDisposed()) {
+        // Handle potentially disruptive actions on resume, such as showing unlock dialog,
+        // ads, startup prompts, auto start, etc.
+        if (onResumeFlowDisposable != null && !onResumeFlowDisposable.isDisposed()) {
+            // Flow is already running, don't start another one
             return;
         }
 
-        coldStartDisposable = shouldShowAdsSingle()
-                .flatMapCompletable(shouldShow -> {
-                    adsHandledThisSession = true;
-                    if (shouldShow) {
-                        MyLog.i("MainActivity: starting cold start ads flow");
-                        return Completable.fromAction(this::showAdsOverlay)
-                                .andThen(ColdStartFlowHelper.executeColdStartFlow(
-                                        this,
-                                        googlePlayBillingHelper,
-                                        adManager,
-                                        getTunnelServiceInteractor().tunnelStateFlowable(),
-                                        createAdLoadingCallback()
-                                ))
-                                .doOnError(error -> MyLog.e("MainActivity: cold start ads flow error: " + error))
-                                .onErrorComplete()
-                                .doFinally(this::hideAdsOverlay);
-                    } else {
-                        return Completable.complete();
-                    }
-                })
-                .andThen(Completable.fromAction(this::handleDisruptiveOnResumeActions))
-                .subscribe();
+        onResumeFlowDisposable =
+                waitForPermissions()
+                        .andThen(Single.just(ResumeFlowState.initial()))
+                        .flatMap(this::handleStartupPrompts)
+                        .flatMap(this::handleUnlockDialog)
+                        .flatMap(this::handleAds)
+                        .flatMap(this::handleUpdateCheck)
+                        .flatMap(this::handleAutoStart)
+                        .subscribe();
     }
 
-    private Single<Boolean> shouldShowAdsSingle() {
-        return Single.fromCallable(() ->
-                // Need SDK 23+ to show ads
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-                        !adsHandledThisSession &&
-                        !isFirstAppStartEver &&
-                        startPromptsHandled()
-        );
+    private Completable waitForPermissions() {
+        return permissionsCompletableSubject != null && !permissionsCompletableSubject.hasComplete()
+                ? permissionsCompletableSubject
+                : Completable.complete();
     }
 
-    private boolean startPromptsHandled() {
-        // Check if VPN service data collection disclosure has been accepted
-        if (!multiProcessPreferences.getBoolean(getString(R.string.vpnServiceDataCollectionDisclosureAccepted), false)) {
-            return false;
-        }
-
-        // Check if unsafe traffic alerts preference has been set
-        try {
-            multiProcessPreferences.getBoolean(getString(R.string.unsafeTrafficAlertsPreference));
-            return true; // Both prompts handled
-        } catch (ItemNotFoundException ex) {
-            return false;
-        }
+    private Single<ResumeFlowState> handleStartupPrompts(ResumeFlowState state) {
+        return showVpnDisclosure()
+                .flatMap(vpnShown -> showTrafficAlerts()
+                        .map(trafficShown -> vpnShown || trafficShown))
+                .map(anyPromptShown -> anyPromptShown ? state.withPromptsShown() : state);
     }
 
-    private boolean handleUnlockRequiredUi() {
-        if (unlockRequiredDialog != null && unlockRequiredDialog.isShowing()) {
-            return true;
-        }
-
+    private Single<ResumeFlowState> handleUnlockDialog(ResumeFlowState state) {
         // Cancel notification when user returns to app
         NotificationManagerCompat.from(this).cancel(R.id.notification_id_unlock_required);
 
-        // Read and clear any persisted unlock options to prevent duplicate processing
+        // Read and clear any persisted unlock options
         UnlockOptions unlockOptions = UnlockOptions.fromFile(this);
         UnlockOptions.clear(this);
 
-        if (unlockOptions.hasDisplayableEntries()) {
-            // if we have unlock options, we do not need to run the rest of potentially disruptive
-            // onResume logic, so return early.
-            // We will run the rest of onResume logic after the dialog is dismissed.
-            return showUnlockRequiredDialog(unlockOptions);
+        // Check if we should show the dialog
+        if (unlockOptions.hasDisplayableEntries() && !isFinishing()) {
+            // Show unlock dialog and wait for dismissal, then update state
+            return showUnlockDialog(unlockOptions)
+                    .andThen(Single.just(state.withUnlockShown()));
         }
-        return false;
+
+        // No unlock dialog needed, return unchanged state
+        return Single.just(state);
     }
 
-    private void handleDisruptiveOnResumeActions() {
-        // Check if user data collection disclosure needs to be shown followed by the unsafe traffic
-        // alerts preference check and then check if the tunnel should be started automatically
-        compositeDisposable.add(
-                vpnServiceDataCollectionDisclosureCompletable()
-                        .andThen(unsafeTrafficAlertsCompletable())
-                        .andThen(autoStartMaybe())
-                        .doOnSuccess(__ -> startTunnel())
-                        .subscribe());
+    private Completable showUnlockDialog(UnlockOptions unlockOptions) {
+        return Completable.create(emitter -> {
+            // Cancel disallowed traffic alert if it's showing
+            if (disallowedTrafficAlertDialog != null && disallowedTrafficAlertDialog.isShowing()) {
+                disallowedTrafficAlertDialog.dismiss();
+            }
+
+            // If dialog is already showing, just complete
+            if (unlockRequiredDialog != null && unlockRequiredDialog.isShowing()) {
+                if (!emitter.isDisposed()) {
+                    emitter.onComplete();
+                }
+                return;
+            }
+
+            // Build and show the unlock dialog
+            unlockRequiredDialog = new UnlockRequiredDialog.Builder(this, this)
+                    .setUnlockOptions(unlockOptions)
+                    .setDisconnectTunnelRunnable(() -> {
+                        // Disconnect tunnel if running
+                        compositeDisposable.add(
+                                getTunnelServiceInteractor().tunnelStateFlowable()
+                                        .filter(tunnelState -> !tunnelState.isUnknown())
+                                        .firstOrError()
+                                        .doOnSuccess(tunnelState -> {
+                                            if (tunnelState.isRunning()) {
+                                                getTunnelServiceInteractor().stopTunnelService();
+                                            }
+                                        })
+                                        .subscribe()
+                        );
+                    })
+                    .setDismissListener(() -> {
+                        // Signal completion when dialog is dismissed
+                        if (!emitter.isDisposed()) {
+                            emitter.onComplete();
+                        }
+                    })
+                    .show();
+
+            // Handle disposal (e.g., activity destroyed while dialog is showing)
+            emitter.setCancellable(() -> {
+                if (unlockRequiredDialog != null && unlockRequiredDialog.isShowing()) {
+                    unlockRequiredDialog.dismiss();
+                    unlockRequiredDialog = null;
+                }
+            });
+        }).subscribeOn(AndroidSchedulers.mainThread());
     }
 
-    private boolean showUnlockRequiredDialog(UnlockOptions unlockOptions) {
-        if (isFinishing()) {
-            return false;
+    private Single<ResumeFlowState> handleAds(ResumeFlowState state) {
+        if (adsHandledThisSession) {
+            return Single.just(state);
+        }
+        adsHandledThisSession = true;
+
+        if (state.shouldSkipAds()) {
+            return Single.just(state);
         }
 
-        if (unlockRequiredDialog != null && unlockRequiredDialog.isShowing()) {
-            // Already showing, do nothing
-            return true;
+        if (!shouldShowAds()) {
+            return Single.just(state);
         }
 
-        // Cancel disallowed traffic alert if it is showing
-        if (disallowedTrafficAlertDialog != null && disallowedTrafficAlertDialog.isShowing()) {
-            disallowedTrafficAlertDialog.dismiss();
-        }
+        MyLog.i("MainActivity: starting cold start ads flow");
 
-        unlockRequiredDialog = new UnlockRequiredDialog.Builder(this, this)
-                .setUnlockOptions(unlockOptions)
-                .setDisconnectTunnelRunnable(() -> compositeDisposable.add(
-                        getTunnelServiceInteractor().tunnelStateFlowable()
-                                .filter(state -> !state.isUnknown())
-                                .firstOrError()
-                                .doOnSuccess(state -> {
-                                    if (state.isRunning()) {
-                                        getTunnelServiceInteractor().stopTunnelService();
-                                    }
-                                })
-                                .subscribe()
+        // Show ads and update state when complete
+        return Completable.fromAction(this::showAdsOverlay)
+                .andThen(ColdStartFlowHelper.executeColdStartFlow(
+                        this,
+                        googlePlayBillingHelper,
+                        adManager,
+                        getTunnelServiceInteractor().tunnelStateFlowable(),
+                        createAdLoadingCallback()
                 ))
-                // Run the rest of onResume logic after the dialog is dismissed
-                .setDismissListener(this::handleDisruptiveOnResumeActions)
-                .show();
-        return true;
+                .doOnError(error -> MyLog.e("MainActivity: cold start ads flow error: " + error))
+                .onErrorComplete()  // Continue even if ads fail
+                .doFinally(this::hideAdsOverlay)
+                .andThen(Single.just(state.withAdsShown()));
+    }
+
+    private boolean shouldShowAds() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&  // Need SDK 23+ for ads
+                !isFirstAppStartEver; // Skip on very first app launch
+    }
+    private Single<ResumeFlowState> handleUpdateCheck(ResumeFlowState state) {
+        // Check if already handled this session
+        if (updateHandledThisSession) {
+            return Single.just(state);
+        }
+
+        // Mark as handled regardless of what happens next
+        updateHandledThisSession = true;
+
+        if (state.shouldSkipUpdateCheck()) {
+            return Single.just(state);
+        }
+
+        // TODO: Implement actual update check
+        // For now, always return state unchanged (no update available)
+        return Single.just(state);
+    }
+
+    private Single<ResumeFlowState> handleAutoStart(ResumeFlowState state) {
+        if (state.shouldSkipAutoStart()) {
+            return Single.just(state);
+        }
+
+        if (!shouldAutoStart()) {
+            preventAutoStart();
+            return Single.just(state);
+        }
+
+        // Prevent future auto-starts
+        preventAutoStart();
+
+        // Check subscription state before auto-starting
+        return googlePlayBillingHelper.subscriptionStateFlowable()
+                .firstOrError()
+                .flatMap(subscriptionState -> {
+                    if (subscriptionState.hasValidPurchase() ||
+                            subscriptionState.status() == SubscriptionState.Status.IAB_FAILURE) {
+                        // Has valid purchase or IAB check failed - start tunnel
+                        startTunnel();
+                        return Single.just(state.withAutoStartTriggered());
+                    }
+                    return Single.just(state);
+                })
+                .onErrorReturnItem(state);
+    }
+
+    private boolean shouldAutoStart() {
+        return isFirstRun &&
+                !getIntent().getBooleanExtra(INTENT_EXTRA_PREVENT_AUTO_START, false);
+    }
+
+    private void preventAutoStart() {
+        isFirstRun = false;
     }
 
     // Check runtime permissions and show rationales if needed.
@@ -663,14 +709,12 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         }
     }
 
-    // Completes right away if unsafe traffic alerts preference exists, otherwise displays an alert
-    // and waits until the user picks an answer and preference is stored, then completes.
-    Completable unsafeTrafficAlertsCompletable() {
-        return Completable.create(emitter -> {
+    Single<Boolean> showTrafficAlerts() {
+        return Single.<Boolean>create(emitter -> {
             try {
                 multiProcessPreferences.getBoolean(getString(R.string.unsafeTrafficAlertsPreference));
                 if (!emitter.isDisposed()) {
-                    emitter.onComplete();
+                    emitter.onSuccess(false);
                 }
             } catch (ItemNotFoundException e) {
                 LayoutInflater inflater = this.getLayoutInflater();
@@ -688,14 +732,14 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                                 (dialog, whichButton) -> {
                                     multiProcessPreferences.put(getString(R.string.unsafeTrafficAlertsPreference), true);
                                     if (!emitter.isDisposed()) {
-                                        emitter.onComplete();
+                                        emitter.onSuccess(true);
                                     }
                                 })
                         .setNegativeButton(R.string.lbl_no,
                                 (dialog, whichButton) -> {
                                     multiProcessPreferences.put(getString(R.string.unsafeTrafficAlertsPreference), false);
                                     if (!emitter.isDisposed()) {
-                                        emitter.onComplete();
+                                        emitter.onSuccess(true);
                                     }
                                 })
                         .show();
@@ -711,52 +755,56 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 .subscribeOn(AndroidSchedulers.mainThread());
     }
 
-    // Completes right away if VPN service data collection disclosure has been accepted, otherwise
-    // displays a prompt and waits until the user accepts and preference is stored, then completes.
-    Completable vpnServiceDataCollectionDisclosureCompletable() {
-        return Completable.create(emitter -> {
-            if (multiProcessPreferences.getBoolean(getString(R.string.vpnServiceDataCollectionDisclosureAccepted), false) &&
-                    !emitter.isDisposed()) {
-                emitter.onComplete();
-            }
-            View dialogView = getLayoutInflater().inflate(R.layout.vpn_data_collection_disclosure_prompt_layout, null);
+    Single<Boolean> showVpnDisclosure() {
+        return Single.<Boolean>create(emitter -> {
+                    if (multiProcessPreferences.getBoolean(getString(R.string.vpnServiceDataCollectionDisclosureAccepted),
+                            false)) {
+                        if (!emitter.isDisposed()) {
+                            emitter.onSuccess(false);
+                        }
+                        return;
+                    }
+                    View dialogView =
+                            getLayoutInflater().inflate(R.layout.vpn_data_collection_disclosure_prompt_layout, null);
 
-            String topMessage = String.format(getString(R.string.vpn_data_collection_disclosure_top), getString(R.string.app_name));
+                    String topMessage = String.format(getString(R.string.vpn_data_collection_disclosure_top),
+                            getString(R.string.app_name));
 
-            SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder();
-            spannableStringBuilder.append(topMessage);
-            spannableStringBuilder.append("\n\n");
-            SpannableString bp = new SpannableString(getString(R.string.vpn_data_collection_disclosure_bp1));
-            bp.setSpan(new BulletSpan(15), 0, bp.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            spannableStringBuilder.append(bp);
-            spannableStringBuilder.append("\n\n");
-            bp = new SpannableString(getString(R.string.vpn_data_collection_disclosure_bp2));
-            bp.setSpan(new BulletSpan(15), 0, bp.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            spannableStringBuilder.append(bp);
-            spannableStringBuilder.append("\n\n");
-            ((TextView)dialogView.findViewById(R.id.textView)).setText(spannableStringBuilder);
+                    SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder();
+                    spannableStringBuilder.append(topMessage);
+                    spannableStringBuilder.append("\n\n");
+                    SpannableString bp = new SpannableString(getString(R.string.vpn_data_collection_disclosure_bp1));
+                    bp.setSpan(new BulletSpan(15), 0, bp.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    spannableStringBuilder.append(bp);
+                    spannableStringBuilder.append("\n\n");
+                    bp = new SpannableString(getString(R.string.vpn_data_collection_disclosure_bp2));
+                    bp.setSpan(new BulletSpan(15), 0, bp.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    spannableStringBuilder.append(bp);
+                    spannableStringBuilder.append("\n\n");
+                    ((TextView) dialogView.findViewById(R.id.textView)).setText(spannableStringBuilder);
 
-            final AlertDialog alertDialog = new AlertDialog.Builder(this)
-                    .setCancelable(false)
-                    .setTitle(R.string.vpn_data_collection_disclosure_prompt_title)
-                    .setView(dialogView)
-                    // Only emit a completion event if we have a positive response
-                    .setPositiveButton(R.string.vpn_data_collection_disclosure_accept_btn_text,
-                            (dialog, whichButton) -> {
-                                multiProcessPreferences.put(getString(R.string.vpnServiceDataCollectionDisclosureAccepted), true);
-                                if (!emitter.isDisposed()) {
-                                    emitter.onComplete();
-                                }
-                            })
-                    .show();
-            // Also dismiss the alert when subscription is disposed, for example, on orientation
-            // change or when the app is backgrounded.
-            emitter.setCancellable(() -> {
-                if (alertDialog != null && alertDialog.isShowing()) {
-                    alertDialog.dismiss();
-                }
-            });
-        })
+                    final AlertDialog alertDialog = new AlertDialog.Builder(this)
+                            .setCancelable(false)
+                            .setTitle(R.string.vpn_data_collection_disclosure_prompt_title)
+                            .setView(dialogView)
+                            // Only emit a completion event if we have a positive response
+                            .setPositiveButton(R.string.vpn_data_collection_disclosure_accept_btn_text,
+                                    (dialog, whichButton) -> {
+                                        multiProcessPreferences.put(
+                                                getString(R.string.vpnServiceDataCollectionDisclosureAccepted), true);
+                                        if (!emitter.isDisposed()) {
+                                            emitter.onSuccess(true);
+                                        }
+                                    })
+                            .show();
+                    // Also dismiss the alert when subscription is disposed, for example, on orientation
+                    // change or when the app is backgrounded.
+                    emitter.setCancellable(() -> {
+                        if (alertDialog != null && alertDialog.isShowing()) {
+                            alertDialog.dismiss();
+                        }
+                    });
+                })
                 .subscribeOn(AndroidSchedulers.mainThread());
     }
 
@@ -1169,44 +1217,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 }
             }
         }
-    }
-
-    private void preventAutoStart() {
-        isFirstRun = false;
-    }
-
-    private boolean shouldAutoStart() {
-        return isFirstRun &&
-                !getIntent().getBooleanExtra(INTENT_EXTRA_PREVENT_AUTO_START, false);
-    }
-
-    // Returns an object only if tunnel should be auto-started,
-    // completes with no value otherwise.
-    private Maybe<Object> autoStartMaybe() {
-        return Maybe.create(emitter -> {
-            boolean shouldAutoStart = shouldAutoStart();
-            preventAutoStart();
-            if (!emitter.isDisposed()) {
-                if (shouldAutoStart) {
-                    emitter.onSuccess(new Object());
-                } else {
-                    emitter.onComplete();
-                }
-            }
-        }).flatMap(autoStart -> {
-            // If this is a first app run then check subscription state and
-            // return a value if user has a valid purchase or if IAB check failed,
-            // the IAB status check will be triggered again in onResume
-            return googlePlayBillingHelper.subscriptionStateFlowable()
-                    .firstOrError()
-                    .flatMapMaybe(subscriptionState -> {
-                        if (subscriptionState.hasValidPurchase()
-                                || subscriptionState.status() == SubscriptionState.Status.IAB_FAILURE) {
-                            return Maybe.just(new Object());
-                        }
-                        return Maybe.empty();
-                    });
-        });
     }
 
     public static boolean shouldLoadInEmbeddedWebView(String url) {
