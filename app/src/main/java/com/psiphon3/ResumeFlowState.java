@@ -27,63 +27,71 @@ public final class ResumeFlowState {
     public final boolean adsShown;
     public final boolean flexibleUpdateShown;
     public final boolean immediateUpdateShown;
+    public final boolean restartSnackbarShown;
     public final boolean autoStartTriggered;
 
     private ResumeFlowState(boolean promptsShown, boolean unlockShown, boolean adsShown,
                             boolean flexibleUpdateShown, boolean immediateUpdateShown,
-                            boolean autoStartTriggered) {
+                            boolean restartSnackbarShown, boolean autoStartTriggered) {
+        // Constructor is private to enforce the use of factory methods.
         this.promptsShown = promptsShown;
         this.unlockShown = unlockShown;
         this.adsShown = adsShown;
         this.flexibleUpdateShown = flexibleUpdateShown;
         this.immediateUpdateShown = immediateUpdateShown;
+        this.restartSnackbarShown = restartSnackbarShown;
         this.autoStartTriggered = autoStartTriggered;
     }
 
     public static ResumeFlowState initial() {
-        return new ResumeFlowState(false, false, false, false, false, false);
+        return new ResumeFlowState(false, false, false, false, false, false, false);
     }
 
     public ResumeFlowState withPromptsShown() {
         return new ResumeFlowState(true, unlockShown, adsShown,
-                flexibleUpdateShown, immediateUpdateShown, autoStartTriggered);
+                flexibleUpdateShown, immediateUpdateShown, restartSnackbarShown, autoStartTriggered);
     }
 
     public ResumeFlowState withUnlockShown() {
         return new ResumeFlowState(promptsShown, true, adsShown,
-                flexibleUpdateShown, immediateUpdateShown, autoStartTriggered);
+                flexibleUpdateShown, immediateUpdateShown, restartSnackbarShown, autoStartTriggered);
     }
 
     public ResumeFlowState withAdsShown() {
         return new ResumeFlowState(promptsShown, unlockShown, true,
-                flexibleUpdateShown, immediateUpdateShown, autoStartTriggered);
+                flexibleUpdateShown, immediateUpdateShown, restartSnackbarShown, autoStartTriggered);
     }
 
     public ResumeFlowState withFlexibleUpdateShown() {
         return new ResumeFlowState(promptsShown, unlockShown, adsShown,
-                true, immediateUpdateShown, autoStartTriggered);
+                true, immediateUpdateShown, restartSnackbarShown, autoStartTriggered);
     }
 
     public ResumeFlowState withImmediateUpdateShown() {
         return new ResumeFlowState(promptsShown, unlockShown, adsShown,
-                flexibleUpdateShown, true, autoStartTriggered);
+                flexibleUpdateShown, true, restartSnackbarShown, autoStartTriggered);
+    }
+
+    public ResumeFlowState withRestartSnackbarShown() {
+        return new ResumeFlowState(promptsShown, unlockShown, adsShown,
+                flexibleUpdateShown, immediateUpdateShown, true, autoStartTriggered);  // ← SET restartSnackbarShown to true
     }
 
     public ResumeFlowState withAutoStartTriggered() {
         return new ResumeFlowState(promptsShown, unlockShown, adsShown,
-                flexibleUpdateShown, immediateUpdateShown, true);
+                flexibleUpdateShown, immediateUpdateShown, restartSnackbarShown,true);
     }
 
     public boolean shouldSkipAds() {
         return promptsShown || unlockShown;
     }
 
-    public boolean shouldSkipUpdateCheck() {
+    public boolean shouldSkipUpdateAvailabilityCheck() {
         return promptsShown || unlockShown;
     }
 
     public boolean shouldSkipAutoStart() {
-        return unlockShown || immediateUpdateShown;
+        return unlockShown || immediateUpdateShown || flexibleUpdateShown || restartSnackbarShown;
     }
 
     @NonNull
@@ -95,6 +103,7 @@ public final class ResumeFlowState {
                 ", adsShown=" + adsShown +
                 ", flexibleUpdateShown=" + flexibleUpdateShown +
                 ", immediateUpdateShown=" + immediateUpdateShown +
+                ", restartSnackbarShown=" + restartSnackbarShown +
                 ", autoStartTriggered=" + autoStartTriggered +
                 '}';
     }

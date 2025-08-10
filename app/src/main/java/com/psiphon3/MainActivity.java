@@ -129,7 +129,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
 
     private boolean isFirstRun = true;
-    private boolean updateHandledThisSession = false;
     private Disposable onResumeFlowDisposable;
     private AlertDialog upstreamProxyErrorAlertDialog;
     private AlertDialog disallowedTrafficAlertDialog;
@@ -145,6 +144,10 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         NEED_SYSTEM_NFC,
         ENABLED
     }
+
+    // In-app update related fields
+    private boolean updateHandledThisSession = false;
+    private AppUpdateHelper appUpdateHelper;
 
     // Ads related fields
     private boolean adsHandledThisSession = false;
@@ -355,6 +358,10 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             }
         });
 
+        // Set up in-app updates
+        View anchor = findViewById(R.id.root_container);
+        appUpdateHelper = new AppUpdateHelper(this, anchor);
+
         // Switch to last tab when view pager is ready
         viewPager.post(() ->
                 viewPager.setCurrentItem(multiProcessPreferences.getInt(CURRENT_TAB, 0), false));
@@ -383,6 +390,9 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         googlePlayBillingHelper.stopObservePurchasesUpdates();
         if (onResumeFlowDisposable != null) {
             onResumeFlowDisposable.dispose();
+        }
+        if (appUpdateHelper != null) {
+            appUpdateHelper.onDestroy();
         }
         super.onDestroy();
     }
@@ -473,7 +483,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                         .flatMap(this::handleStartupPrompts)
                         .flatMap(this::handleUnlockDialog)
                         .flatMap(this::handleAds)
-                        .flatMap(this::handleUpdateCheck)
+                        .flatMap(this::handleUpdateDownloadState)
+                        .flatMap(this::handleUpdateAvailabilityCheck)
                         .flatMap(this::handleAutoStart)
                         .subscribe();
     }
@@ -595,22 +606,60 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&  // Need SDK 23+ for ads
                 !isFirstAppStartEver; // Skip on very first app launch
     }
-    private Single<ResumeFlowState> handleUpdateCheck(ResumeFlowState state) {
+
+    private Single<ResumeFlowState> handleUpdateDownloadState(ResumeFlowState state) {
+        if (appUpdateHelper == null) {
+            return Single.just(state);
+        }
+        return appUpdateHelper.checkUpdateState()
+                .map(result -> {
+                    switch (result) {
+                        case RESTART_SNACKBAR_SHOWN:
+                            // Flexible update downloaded - snackbar shown, continue
+                            return state.withRestartSnackbarShown();
+                        case NO_ACTION_NEEDED:
+                        case USER_CANCELLED:
+                        case FAILED_TO_LAUNCH:
+                        default:
+                            return state;
+                    }
+                })
+                .onErrorReturnItem(state);
+    }
+
+    private Single<ResumeFlowState> handleUpdateAvailabilityCheck(ResumeFlowState state) {
         // Check if already handled this session
         if (updateHandledThisSession) {
             return Single.just(state);
         }
 
-        // Mark as handled regardless of what happens next
         updateHandledThisSession = true;
 
-        if (state.shouldSkipUpdateCheck()) {
+        // Skip if earlier prompts or immediate-update UI were shown
+        if (state.shouldSkipUpdateAvailabilityCheck()) {
             return Single.just(state);
         }
 
-        // TODO: Implement actual update check
-        // For now, always return state unchanged (no update available)
-        return Single.just(state);
+        if (appUpdateHelper == null) {
+            return Single.just(state);
+        }
+
+        return appUpdateHelper.checkForNewUpdates()
+                .map(result -> {
+                    switch (result) {
+                        case IMMEDIATE_UPDATE_SHOWN:
+                            return state.withImmediateUpdateShown();
+                        case FLEXIBLE_UPDATE_SHOWN:
+                            return state.withFlexibleUpdateShown();
+                        case NO_UPDATE_AVAILABLE:
+                        case UPDATE_CHECK_FAILED:
+                        case USER_CANCELLED:
+                        case FAILED_TO_LAUNCH:
+                        default:
+                            return state;
+                    }
+                })
+                .onErrorReturnItem(state);
     }
 
     private Single<ResumeFlowState> handleAutoStart(ResumeFlowState state) {
@@ -806,6 +855,14 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                     });
                 })
                 .subscribeOn(AndroidSchedulers.mainThread());
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (appUpdateHelper != null) {
+            appUpdateHelper.handleUpdateActivityResult(requestCode, resultCode);
+        }
     }
 
     @Override
