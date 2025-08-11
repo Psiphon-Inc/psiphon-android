@@ -43,9 +43,7 @@ public class AppUpdateHelper {
 
     public enum UpdateStateResult {
         RESTART_SNACKBAR_SHOWN,
-        NO_ACTION_NEEDED,
-        USER_CANCELLED,
-        FAILED_TO_LAUNCH
+        NO_ACTION_NEEDED
     }
 
     private static final int RC_APP_UPDATE = 1001;

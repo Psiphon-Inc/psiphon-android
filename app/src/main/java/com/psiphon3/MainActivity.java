@@ -618,8 +618,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                             // Flexible update downloaded - snackbar shown, continue
                             return state.withRestartSnackbarShown();
                         case NO_ACTION_NEEDED:
-                        case USER_CANCELLED:
-                        case FAILED_TO_LAUNCH:
                         default:
                             return state;
                     }
