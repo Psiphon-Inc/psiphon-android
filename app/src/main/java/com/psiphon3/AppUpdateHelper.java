@@ -3,6 +3,8 @@ package com.psiphon3;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.os.Build;
 import android.view.View;
 import android.widget.Toast;
 
@@ -23,6 +25,8 @@ import com.google.android.play.core.install.model.InstallStatus;
 import com.google.android.play.core.install.model.UpdateAvailability;
 import com.psiphon3.log.MyLog;
 import com.psiphon3.subscription.R;
+
+import net.grandcentrix.tray.AppPreferences;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -49,7 +53,7 @@ public class AppUpdateHelper {
     private static final int RC_APP_UPDATE = 1001;
 
     private static final String PREFS_KEY = "APP_UPDATE_PREFS";
-    private static final String LAST_PROMPTED_UPDATE = "LAST_PROMPTED_UPDATE"; // "version_staleness"
+    private static final String LAST_PROMPTED_FLEXIBLE_UPDATE = "LAST_PROMPTED_FLEXIBLE_UPDATE"; // "version_staleness"
 
     @Nullable
     private Snackbar restartSnackbar;
@@ -57,23 +61,45 @@ public class AppUpdateHelper {
     @Nullable
     private  InstallStateUpdatedListener installListener;
 
-    // Simple policy - replace later with server config if needed
-    // TODO: make configurable via server pushed config
-    public static class UpdatePolicy {
-        public final int stalenessThresholdDays;
-        public final int highPriorityThreshold;
-
-        public UpdatePolicy(int stalenessThresholdDays, int highPriorityThreshold) {
-            this.stalenessThresholdDays = stalenessThresholdDays;
-            this.highPriorityThreshold = highPriorityThreshold;
-        }
-    }
-
     private final AppUpdateManager updateManager;
     private final AppCompatActivity activity;
     private final SharedPreferences prefs;
     private final @NonNull View snackBarAnchor;
-    private final UpdatePolicy policy;
+    private final AppUpdatePolicy policy;
+    
+    private static AppUpdatePolicy loadAppUpdatePolicy(Context context) {
+        try {
+            AppPreferences mp = new AppPreferences(context.getApplicationContext());
+            String json = mp.getString(AppUpdatePolicy.PREF_SERVER_UPDATE_POLICY, null);
+            if (json != null && !json.isEmpty()) {
+                long savedWall = mp.getLong(AppUpdatePolicy.PREF_UPDATE_POLICY_TIMESTAMP_MS, 0L);
+                int ttlDays = AppUpdatePolicy.getTtlDays(json);
+
+                long ageDays = (System.currentTimeMillis() - savedWall) / (24L * 60 * 60 * 1000L);
+                boolean expired = ageDays >= ttlDays;
+
+                if (expired) {
+                    mp.remove(AppUpdatePolicy.PREF_SERVER_UPDATE_POLICY);
+                    mp.remove(AppUpdatePolicy.PREF_UPDATE_POLICY_TIMESTAMP_MS);
+                    MyLog.i("AppUpdateHelper: server policy expired (TTL " + ttlDays + " days), using defaults");
+                    return AppUpdatePolicy.getDefaultPolicy();
+                }
+
+                String pkg = context.getPackageName();
+                MyLog.i("AppUpdateHelper: using server policy for " + pkg + " (size: " + json.length() + " chars)");
+                return AppUpdatePolicy.fromJson(json, pkg);
+            } else {
+                MyLog.i("AppUpdateHelper: no server update policy found, using defaults");
+            }
+        } catch (AppUpdatePolicy.AppNotConfiguredException e) {
+            String packageName = context.getPackageName();
+            MyLog.i("AppUpdateHelper: no update policy configured for " + packageName + ", using defaults");
+        } catch (Exception e) {
+            String packageName = context.getPackageName();
+            MyLog.e("AppUpdateHelper: server update policy validation failed for " + packageName + ": " + e + ", using defaults");
+        }
+        return AppUpdatePolicy.getDefaultPolicy();
+    }
 
     private final AtomicBoolean updateFlowInFlight = new AtomicBoolean(false);
 
@@ -88,20 +114,21 @@ public class AppUpdateHelper {
         this(activity,
                 AppUpdateManagerFactory.create(activity),
                 activity.getSharedPreferences(PREFS_KEY, Context.MODE_PRIVATE),
-                snackbarAnchor);
+                snackbarAnchor,
+                loadAppUpdatePolicy(activity));
     }
 
     @VisibleForTesting
     AppUpdateHelper(@NonNull AppCompatActivity activity,
                     @NonNull AppUpdateManager updateManager,
                     @NonNull SharedPreferences prefs,
-                    @NonNull View snackbarAnchor) {
+                    @NonNull View snackbarAnchor,
+                    @NonNull AppUpdatePolicy policy) {
         this.activity = activity;
         this.updateManager = updateManager;
         this.prefs = prefs;
         this.snackBarAnchor = snackbarAnchor;
-        // Default policy: 30 days staleness or priority >= 5 triggers forced update
-        this.policy = new UpdatePolicy(/*staleness*/30, /*priority*/5);
+        this.policy = policy;
 
         this.installListener = state -> {
             final int status = state.installStatus();
@@ -169,7 +196,8 @@ public class AppUpdateHelper {
         Integer stalenessDays = info.clientVersionStalenessDays();
         int staleness = stalenessDays != null ? stalenessDays : 0;
 
-        boolean isForced = shouldForceUpdate(priority, staleness);
+        int currentVersion = getCurrentVersionCode();
+        boolean isForced = shouldForceUpdate(currentVersion, priority, staleness);
 
         if (isForced) {
             return startBestEffortForcedUpdate(info);
@@ -296,21 +324,32 @@ public class AppUpdateHelper {
         }
     }
 
-    private boolean shouldForceUpdate(int priority, int staleness) {
-        return priority >= policy.highPriorityThreshold || staleness >= policy.stalenessThresholdDays;
+    private int getCurrentVersionCode() {
+        try {
+            PackageInfo pi = activity.getPackageManager().getPackageInfo(activity.getPackageName(), 0);
+            long vc = Build.VERSION.SDK_INT >= 28 ? pi.getLongVersionCode() : pi.versionCode;
+            return (int)Math.min(vc, Integer.MAX_VALUE);
+        } catch (Exception e) {
+            MyLog.e("AppUpdateHelper: failed to get current version code: " + e);
+            return -1; // unknown version
+        }
+    }
+
+    private boolean shouldForceUpdate(int currentVersion, int priority, int staleness) {
+        return policy.shouldForceUpdate(currentVersion, priority, staleness);
     }
 
     private boolean shouldShowOptionalUpdate(int versionCode, int staleness) {
         // Check if we have already prompted for this version/staleness combination
         // Prevent from prompting again on the same day if the version has not changed
         String currentUpdate = versionCode + "_" + staleness;
-        String lastPromptedUpdate = prefs.getString(LAST_PROMPTED_UPDATE, "");
+        String lastPromptedUpdate = prefs.getString(LAST_PROMPTED_FLEXIBLE_UPDATE, "");
         return !currentUpdate.equals(lastPromptedUpdate);
     }
 
     private void recordUpdatePrompt(int versionCode, int staleness) {
         String currentUpdate = versionCode + "_" + staleness;
-        boolean ok = prefs.edit().putString(LAST_PROMPTED_UPDATE, currentUpdate).commit();
+        boolean ok = prefs.edit().putString(LAST_PROMPTED_FLEXIBLE_UPDATE, currentUpdate).commit();
         MyLog.i("AppUpdateHelper: recorded update prompt: " + currentUpdate + " - committed=" + ok);
     }
 
