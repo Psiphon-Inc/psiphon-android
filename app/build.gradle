@@ -225,6 +225,9 @@ dependencies {
     implementation "com.google.android.gms:play-services-ads:$rootProject.ext.playServicesAdsVersion"
     implementation "com.google.android.ump:user-messaging-platform:$rootProject.ext.userMessagingPlatformVersion"
 
+    // Play In-App Updates
+    implementation "com.google.android.play:app-update:$rootProject.ext.playAppUpdateVersion"
+
     // Need Guava because adding Google Play Services Ads dependency messes up the ListenableFuture, see
     // https://github.com/google/ExoPlayer/issues/7993 for more info.
     implementation 'com.google.guava:guava:31.1-android'

@@ -55,5 +55,6 @@ ext {
     playServicesAdsVersion = '24.4.0'
     userMessagingPlatformVersion = '3.1.0'
     coreKtxVersion = '1.16.0'
+    playAppUpdateVersion = '2.1.0'
 }
 

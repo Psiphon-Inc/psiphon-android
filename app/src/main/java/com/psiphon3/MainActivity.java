@@ -95,11 +95,11 @@ import java.util.Locale;
 import java.util.Set;
 
 import io.reactivex.Completable;
-import io.reactivex.Maybe;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.subjects.CompletableSubject;
 
 public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
@@ -108,14 +108,14 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     }
 
     static final int REQUEST_CODE_PERMISSIONS = 103;
-    static final int REQUEST_CODE_NOTIFICATION_RATIONALE = 104;
-    static final int REQUEST_CODE_LOCATION_RATIONALE = 105;
 
     public static final String INTENT_EXTRA_PREVENT_AUTO_START = "com.psiphon3.MainActivity.PREVENT_AUTO_START";
 
     private static final String CURRENT_TAB = "currentTab";
 
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
+    private CompletableSubject permissionsCompletableSubject;
+
     private Button toggleButton;
     private ProgressBar connectionProgressBar;
     private ViewGroup connectionWaitingNetworkIndicator;
@@ -129,10 +129,10 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
 
     private boolean isFirstRun = true;
+    private Disposable onResumeFlowDisposable;
     private AlertDialog upstreamProxyErrorAlertDialog;
     private AlertDialog disallowedTrafficAlertDialog;
     private UnlockRequiredDialog unlockRequiredDialog;
-    private Disposable unlockDialogDismissDisposable;
 
     private MenuItem psiphonBumpHelpItem;
     private FloatingActionButton helpConnectFab;
@@ -145,10 +145,13 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         ENABLED
     }
 
+    // In-app update related fields
+    private boolean updateHandledThisSession = false;
+    private AppUpdateHelper appUpdateHelper;
+
     // Ads related fields
     private boolean adsHandledThisSession = false;
     private boolean isFirstAppStartEver;
-    private Disposable coldStartDisposable;
     private FrameLayout overlayContainer;
     private ProgressBar overlayProgress;
     private final AdManager adManager = new AdManager();
@@ -355,6 +358,10 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             }
         });
 
+        // Set up in-app updates
+        View anchor = findViewById(R.id.root_container);
+        appUpdateHelper = new AppUpdateHelper(this, anchor);
+
         // Switch to last tab when view pager is ready
         viewPager.post(() ->
                 viewPager.setCurrentItem(multiProcessPreferences.getInt(CURRENT_TAB, 0), false));
@@ -363,31 +370,29 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         if (savedInstanceState == null) {
             // Schedule handling current intent when the main view is fully inflated
             getWindow().getDecorView().post(() -> HandleCurrentIntent(getIntent()));
-
-            // Also run permissions check once per app creation and request them if needed.
-            // Check suggested workflow for details:
-            // https://developer.android.com/training/permissions/requesting#workflow_for_requesting_permissions
-            checkPermissions();
-
-            // If we are on Android pre-M or already have coarse location permission, start location
-            // update.
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
-                    ContextCompat.checkSelfPermission(this,
-                            Manifest.permission.ACCESS_COARSE_LOCATION) == PermissionChecker.PERMISSION_GRANTED) {
-                Location.runCurrentLocationUpdate(this);
-            }
         }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        // Initialize permissions completable subject
+        if (permissionsCompletableSubject == null || permissionsCompletableSubject.hasComplete() || permissionsCompletableSubject.hasThrowable()) {
+            permissionsCompletableSubject = CompletableSubject.create();
+        }
+        checkPermissions();
     }
 
     @Override
     public void onDestroy() {
         compositeDisposable.dispose();
         googlePlayBillingHelper.stopObservePurchasesUpdates();
-        if (unlockDialogDismissDisposable != null && !unlockDialogDismissDisposable.isDisposed()) {
-            unlockDialogDismissDisposable.dispose();
+        if (onResumeFlowDisposable != null) {
+            onResumeFlowDisposable.dispose();
         }
-        if (coldStartDisposable != null) {
-            coldStartDisposable.dispose();
+        if (appUpdateHelper != null) {
+            appUpdateHelper.onDestroy();
         }
         super.onDestroy();
     }
@@ -409,7 +414,13 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 if (permissions[i].equals(Manifest.permission.ACCESS_COARSE_LOCATION) &&
                         grantResults[i] == PermissionChecker.PERMISSION_GRANTED) {
                     Location.runCurrentLocationUpdate(this);
+                    break;
                 }
+            }
+
+            // Notify that permissions have been handled
+            if (permissionsCompletableSubject != null && !permissionsCompletableSubject.hasComplete()) {
+                permissionsCompletableSubject.onComplete();
             }
         }
     }
@@ -440,93 +451,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                     .subscribe());
         }
 
-         // If we are going to show the Unlock Required dialog, we do not want to run any
-        // potentially disruptive onResume actions such as showing toasts, alerts,
-        // The rest of the flow will run after the dialog is dismissed.
-        if (handleUnlockRequiredUi()) {
-            return;
-        }
-
-        // Ads flow is only started if we are not showing the Unlock Required dialog
-        handleAdsOrDisruptiveActions();
-    }
-
-    private void handleAdsOrDisruptiveActions() {
-        if (coldStartDisposable != null && !coldStartDisposable.isDisposed()) {
-            return;
-        }
-
-        coldStartDisposable = shouldShowAdsSingle()
-                .flatMapCompletable(shouldShow -> {
-                    adsHandledThisSession = true;
-                    if (shouldShow) {
-                        MyLog.i("MainActivity: starting cold start ads flow");
-                        return Completable.fromAction(this::showAdsOverlay)
-                                .andThen(ColdStartFlowHelper.executeColdStartFlow(
-                                        this,
-                                        googlePlayBillingHelper,
-                                        adManager,
-                                        getTunnelServiceInteractor().tunnelStateFlowable(),
-                                        createAdLoadingCallback()
-                                ))
-                                .doOnError(error -> MyLog.e("MainActivity: cold start ads flow error: " + error))
-                                .onErrorComplete()
-                                .doFinally(this::hideAdsOverlay);
-                    } else {
-                        return Completable.complete();
-                    }
-                })
-                .andThen(Completable.fromAction(this::handleDisruptiveOnResumeActions))
-                .subscribe();
-    }
-
-    private Single<Boolean> shouldShowAdsSingle() {
-        return Single.fromCallable(() ->
-                // Need SDK 23+ to show ads
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-                        !adsHandledThisSession &&
-                        !isFirstAppStartEver &&
-                        startPromptsHandled()
-        );
-    }
-
-    private boolean startPromptsHandled() {
-        // Check if VPN service data collection disclosure has been accepted
-        if (!multiProcessPreferences.getBoolean(getString(R.string.vpnServiceDataCollectionDisclosureAccepted), false)) {
-            return false;
-        }
-
-        // Check if unsafe traffic alerts preference has been set
-        try {
-            multiProcessPreferences.getBoolean(getString(R.string.unsafeTrafficAlertsPreference));
-            return true; // Both prompts handled
-        } catch (ItemNotFoundException ex) {
-            return false;
-        }
-    }
-
-    private boolean handleUnlockRequiredUi() {
-        if (unlockRequiredDialog != null && unlockRequiredDialog.isShowing()) {
-            return true;
-        }
-
-        // Cancel notification when user returns to app
-        NotificationManagerCompat.from(this).cancel(R.id.notification_id_unlock_required);
-
-        // Read and clear any persisted unlock options to prevent duplicate processing
-        UnlockOptions unlockOptions = UnlockOptions.fromFile(this);
-        UnlockOptions.clear(this);
-
-        if (unlockOptions.hasDisplayableEntries()) {
-            // if we have unlock options, we do not need to run the rest of potentially disruptive
-            // onResume logic, so return early.
-            // We will run the rest of onResume logic after the dialog is dismissed.
-            return showUnlockRequiredDialog(unlockOptions);
-        }
-        return false;
-    }
-
-    private void handleDisruptiveOnResumeActions() {
         // Observe custom proxy validation results to show a toast for invalid ones
         compositeDisposable.add(viewModel.customProxyValidationResultFlowable()
                 .observeOn(AndroidSchedulers.mainThread())
@@ -546,53 +470,241 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 .doOnNext(url -> displayBrowser(this, url))
                 .subscribe());
 
-        // Check if user data collection disclosure needs to be shown followed by the unsafe traffic
-        // alerts preference check and then check if the tunnel should be started automatically
-        compositeDisposable.add(
-                vpnServiceDataCollectionDisclosureCompletable()
-                        .andThen(unsafeTrafficAlertsCompletable())
-                        .andThen(autoStartMaybe())
-                        .doOnSuccess(__ -> startTunnel())
-                        .subscribe());
+        // Handle potentially disruptive actions on resume, such as showing unlock dialog,
+        // ads, startup prompts, auto start, etc.
+        if (onResumeFlowDisposable != null && !onResumeFlowDisposable.isDisposed()) {
+            // Flow is already running, don't start another one
+            return;
+        }
+
+        onResumeFlowDisposable =
+                waitForPermissions()
+                        .andThen(Single.just(ResumeFlowState.initial()))
+                        .flatMap(this::handleStartupPrompts)
+                        .flatMap(this::handleUnlockDialog)
+                        .flatMap(this::handleAds)
+                        .flatMap(this::handleUpdateDownloadState)
+                        .flatMap(this::handleUpdateAvailabilityCheck)
+                        .flatMap(this::handleAutoStart)
+                        .subscribe();
     }
 
-    private boolean showUnlockRequiredDialog(UnlockOptions unlockOptions) {
-        if (isFinishing()) {
-            return false;
+    private Completable waitForPermissions() {
+        return permissionsCompletableSubject != null && !permissionsCompletableSubject.hasComplete()
+                ? permissionsCompletableSubject
+                : Completable.complete();
+    }
+
+    private Single<ResumeFlowState> handleStartupPrompts(ResumeFlowState state) {
+        return showVpnDisclosure()
+                .flatMap(vpnShown -> showTrafficAlerts()
+                        .map(trafficShown -> vpnShown || trafficShown))
+                .map(anyPromptShown -> anyPromptShown ? state.withPromptsShown() : state);
+    }
+
+    private Single<ResumeFlowState> handleUnlockDialog(ResumeFlowState state) {
+        // Cancel notification when user returns to app
+        NotificationManagerCompat.from(this).cancel(R.id.notification_id_unlock_required);
+
+        // Read and clear any persisted unlock options
+        UnlockOptions unlockOptions = UnlockOptions.fromFile(this);
+        UnlockOptions.clear(this);
+
+        // Check if we should show the dialog
+        if (unlockOptions.hasDisplayableEntries() && !isFinishing()) {
+            // Show unlock dialog and wait for dismissal, then update state
+            return showUnlockDialog(unlockOptions)
+                    .andThen(Single.just(state.withUnlockShown()));
         }
 
-        if (unlockRequiredDialog != null && unlockRequiredDialog.isShowing()) {
-            // Already showing, do nothing
-            return true;
+        // No unlock dialog needed, return unchanged state
+        return Single.just(state);
+    }
+
+    private Completable showUnlockDialog(UnlockOptions unlockOptions) {
+        return Completable.create(emitter -> {
+            // Cancel disallowed traffic alert if it's showing
+            if (disallowedTrafficAlertDialog != null && disallowedTrafficAlertDialog.isShowing()) {
+                disallowedTrafficAlertDialog.dismiss();
+            }
+
+            // If dialog is already showing, just complete
+            if (unlockRequiredDialog != null && unlockRequiredDialog.isShowing()) {
+                if (!emitter.isDisposed()) {
+                    emitter.onComplete();
+                }
+                return;
+            }
+
+            // Build and show the unlock dialog
+            unlockRequiredDialog = new UnlockRequiredDialog.Builder(this, this)
+                    .setUnlockOptions(unlockOptions)
+                    .setDisconnectTunnelRunnable(() -> {
+                        // Disconnect tunnel if running
+                        compositeDisposable.add(
+                                getTunnelServiceInteractor().tunnelStateFlowable()
+                                        .filter(tunnelState -> !tunnelState.isUnknown())
+                                        .firstOrError()
+                                        .doOnSuccess(tunnelState -> {
+                                            if (tunnelState.isRunning()) {
+                                                getTunnelServiceInteractor().stopTunnelService();
+                                            }
+                                        })
+                                        .subscribe()
+                        );
+                    })
+                    .setDismissListener(() -> {
+                        // Signal completion when dialog is dismissed
+                        if (!emitter.isDisposed()) {
+                            emitter.onComplete();
+                        }
+                    })
+                    .show();
+
+            // Handle disposal (e.g., activity destroyed while dialog is showing)
+            emitter.setCancellable(() -> {
+                if (unlockRequiredDialog != null && unlockRequiredDialog.isShowing()) {
+                    unlockRequiredDialog.dismiss();
+                    unlockRequiredDialog = null;
+                }
+            });
+        }).subscribeOn(AndroidSchedulers.mainThread());
+    }
+
+    private Single<ResumeFlowState> handleAds(ResumeFlowState state) {
+        if (adsHandledThisSession) {
+            return Single.just(state);
+        }
+        adsHandledThisSession = true;
+
+        if (state.shouldSkipAds()) {
+            return Single.just(state);
         }
 
-        // Cancel disallowed traffic alert if it is showing
-        if (disallowedTrafficAlertDialog != null && disallowedTrafficAlertDialog.isShowing()) {
-            disallowedTrafficAlertDialog.dismiss();
+        if (!shouldShowAds()) {
+            return Single.just(state);
         }
 
-        unlockRequiredDialog = new UnlockRequiredDialog.Builder(this, this)
-                .setUnlockOptions(unlockOptions)
-                .setDisconnectTunnelRunnable(() -> compositeDisposable.add(
-                        getTunnelServiceInteractor().tunnelStateFlowable()
-                                .filter(state -> !state.isUnknown())
-                                .firstOrError()
-                                .doOnSuccess(state -> {
-                                    if (state.isRunning()) {
-                                        getTunnelServiceInteractor().stopTunnelService();
-                                    }
-                                })
-                                .subscribe()
+        MyLog.i("MainActivity: starting cold start ads flow");
+
+        // Show ads and update state when complete
+        return Completable.fromAction(this::showAdsOverlay)
+                .andThen(ColdStartFlowHelper.executeColdStartFlow(
+                        this,
+                        googlePlayBillingHelper,
+                        adManager,
+                        getTunnelServiceInteractor().tunnelStateFlowable(),
+                        createAdLoadingCallback()
                 ))
-                // Run the rest of onResume logic after the dialog is dismissed
-                .setDismissListener(this::handleDisruptiveOnResumeActions)
-                .show();
-        return true;
+                .doOnError(error -> MyLog.e("MainActivity: cold start ads flow error: " + error))
+                .onErrorComplete()  // Continue even if ads fail
+                .doFinally(this::hideAdsOverlay)
+                .andThen(Single.just(state.withAdsShown()));
+    }
+
+    private boolean shouldShowAds() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&  // Need SDK 23+ for ads
+                !isFirstAppStartEver; // Skip on very first app launch
+    }
+
+    private Single<ResumeFlowState> handleUpdateDownloadState(ResumeFlowState state) {
+        if (appUpdateHelper == null) {
+            return Single.just(state);
+        }
+        return appUpdateHelper.checkUpdateState()
+                .map(result -> {
+                    switch (result) {
+                        case RESTART_SNACKBAR_SHOWN:
+                            // Flexible update downloaded - snackbar shown, continue
+                            return state.withRestartSnackbarShown();
+                        case NO_ACTION_NEEDED:
+                        default:
+                            return state;
+                    }
+                })
+                .onErrorReturnItem(state);
+    }
+
+    private Single<ResumeFlowState> handleUpdateAvailabilityCheck(ResumeFlowState state) {
+        // Check if already handled this session
+        if (updateHandledThisSession) {
+            return Single.just(state);
+        }
+
+        updateHandledThisSession = true;
+
+        // Skip if earlier prompts or immediate-update UI were shown
+        if (state.shouldSkipUpdateAvailabilityCheck()) {
+            return Single.just(state);
+        }
+
+        if (appUpdateHelper == null) {
+            return Single.just(state);
+        }
+
+        return appUpdateHelper.checkForNewUpdates()
+                .map(result -> {
+                    switch (result) {
+                        case IMMEDIATE_UPDATE_SHOWN:
+                            return state.withImmediateUpdateShown();
+                        case FLEXIBLE_UPDATE_SHOWN:
+                            return state.withFlexibleUpdateShown();
+                        case NO_UPDATE_AVAILABLE:
+                        case UPDATE_CHECK_FAILED:
+                        case USER_CANCELLED:
+                        case FAILED_TO_LAUNCH:
+                        default:
+                            return state;
+                    }
+                })
+                .onErrorReturnItem(state);
+    }
+
+    private Single<ResumeFlowState> handleAutoStart(ResumeFlowState state) {
+        if (state.shouldSkipAutoStart()) {
+            return Single.just(state);
+        }
+
+        if (!shouldAutoStart()) {
+            preventAutoStart();
+            return Single.just(state);
+        }
+
+        // Prevent future auto-starts
+        preventAutoStart();
+
+        // Check subscription state before auto-starting
+        return googlePlayBillingHelper.subscriptionStateFlowable()
+                .firstOrError()
+                .flatMap(subscriptionState -> {
+                    if (subscriptionState.hasValidPurchase() ||
+                            subscriptionState.status() == SubscriptionState.Status.IAB_FAILURE) {
+                        // Has valid purchase or IAB check failed - start tunnel
+                        startTunnel();
+                        return Single.just(state.withAutoStartTriggered());
+                    }
+                    return Single.just(state);
+                })
+                .onErrorReturnItem(state);
+    }
+
+    private boolean shouldAutoStart() {
+        return isFirstRun &&
+                !getIntent().getBooleanExtra(INTENT_EXTRA_PREVENT_AUTO_START, false);
+    }
+
+    private void preventAutoStart() {
+        isFirstRun = false;
     }
 
     // Check runtime permissions and show rationales if needed.
     // When we are done with the rationales return granted permissions.
-    private  void checkPermissions() {
+    private void checkPermissions() {
+        // Check location precision condition once
+        final AppPreferences mp = new AppPreferences(getApplicationContext());
+        int deviceLocationPrecision = mp.getInt(getString(R.string.deviceLocationPrecisionParameter), 0);
+        boolean needsLocationPermission = deviceLocationPrecision > 0 && deviceLocationPrecision <= 12;
+
         // Runtime permissions are only needed on Android M+ (API 23+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             List<String> permissionsToRequest = new ArrayList<>();
@@ -604,50 +716,52 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                     permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS);
                     // Check if we should show a rationale for notification permission
                     if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.POST_NOTIFICATIONS)) {
-                        // Start notification rationale activity and abort further permission checks and requests.
-                        // We will run permission check again when the rationale activity is finished.
-                        startActivityForResult(
-                                new Intent(this, NotificationPermissionRationaleActivity.class),
-                                REQUEST_CODE_NOTIFICATION_RATIONALE);
+                        // Show notification rationale dialog - it will handle the permission request
+                        NotificationPermissionRationaleDialog.show(this);
                         return;
                     }
                 }
             }
 
             // Check if we need coarse location permission
-            final AppPreferences mp = new AppPreferences(getApplicationContext());
-            int deviceLocationPrecision =  mp.getInt(getString(R.string.deviceLocationPrecisionParameter), 0);
-
-            if (deviceLocationPrecision > 0 && deviceLocationPrecision <= 12 &&
+            if (needsLocationPermission &&
                     ContextCompat.checkSelfPermission(this,
                             Manifest.permission.ACCESS_COARSE_LOCATION) != PermissionChecker.PERMISSION_GRANTED) {
                 permissionsToRequest.add(Manifest.permission.ACCESS_COARSE_LOCATION);
                 // Check if we should show a rationale for location permission
                 if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_COARSE_LOCATION)) {
-                    // Start location rationale activity and abort further permission checks and requests.
-                    // We will run permissions check again the rationale activity is finished.
-                    startActivityForResult(
-                            new Intent(this, LocationPermissionRationaleActivity.class),
-                            REQUEST_CODE_LOCATION_RATIONALE);
+                    // Show location rationale dialog - it will handle the permission request
+                    LocationPermissionRationaleDialog.show(this);
                     return;
                 }
             }
 
-            // Request permissions if needed
+            // Request permissions if needed (when no rationales are required)
             if (permissionsToRequest.size() > 0) {
                 requestPermissions(permissionsToRequest.toArray(new String[0]), REQUEST_CODE_PERMISSIONS);
+                return;
             }
+        }
+
+        // Complete permissions gathering
+        if (permissionsCompletableSubject != null && !permissionsCompletableSubject.hasComplete()) {
+            permissionsCompletableSubject.onComplete();
+        }
+
+        // Run location update if we need it and have permission (or pre-M)
+        if (needsLocationPermission && (Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
+                ContextCompat.checkSelfPermission(this,
+                        Manifest.permission.ACCESS_COARSE_LOCATION) == PermissionChecker.PERMISSION_GRANTED)) {
+            Location.runCurrentLocationUpdate(this);
         }
     }
 
-    // Completes right away if unsafe traffic alerts preference exists, otherwise displays an alert
-    // and waits until the user picks an answer and preference is stored, then completes.
-    Completable unsafeTrafficAlertsCompletable() {
-        return Completable.create(emitter -> {
+    Single<Boolean> showTrafficAlerts() {
+        return Single.<Boolean>create(emitter -> {
             try {
                 multiProcessPreferences.getBoolean(getString(R.string.unsafeTrafficAlertsPreference));
                 if (!emitter.isDisposed()) {
-                    emitter.onComplete();
+                    emitter.onSuccess(false);
                 }
             } catch (ItemNotFoundException e) {
                 LayoutInflater inflater = this.getLayoutInflater();
@@ -665,14 +779,14 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                                 (dialog, whichButton) -> {
                                     multiProcessPreferences.put(getString(R.string.unsafeTrafficAlertsPreference), true);
                                     if (!emitter.isDisposed()) {
-                                        emitter.onComplete();
+                                        emitter.onSuccess(true);
                                     }
                                 })
                         .setNegativeButton(R.string.lbl_no,
                                 (dialog, whichButton) -> {
                                     multiProcessPreferences.put(getString(R.string.unsafeTrafficAlertsPreference), false);
                                     if (!emitter.isDisposed()) {
-                                        emitter.onComplete();
+                                        emitter.onSuccess(true);
                                     }
                                 })
                         .show();
@@ -688,64 +802,65 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 .subscribeOn(AndroidSchedulers.mainThread());
     }
 
-    // Completes right away if VPN service data collection disclosure has been accepted, otherwise
-    // displays a prompt and waits until the user accepts and preference is stored, then completes.
-    Completable vpnServiceDataCollectionDisclosureCompletable() {
-        return Completable.create(emitter -> {
-            if (multiProcessPreferences.getBoolean(getString(R.string.vpnServiceDataCollectionDisclosureAccepted), false) &&
-                    !emitter.isDisposed()) {
-                emitter.onComplete();
-            }
-            View dialogView = getLayoutInflater().inflate(R.layout.vpn_data_collection_disclosure_prompt_layout, null);
+    Single<Boolean> showVpnDisclosure() {
+        return Single.<Boolean>create(emitter -> {
+                    if (multiProcessPreferences.getBoolean(getString(R.string.vpnServiceDataCollectionDisclosureAccepted),
+                            false)) {
+                        if (!emitter.isDisposed()) {
+                            emitter.onSuccess(false);
+                        }
+                        return;
+                    }
+                    View dialogView =
+                            getLayoutInflater().inflate(R.layout.vpn_data_collection_disclosure_prompt_layout, null);
 
-            String topMessage = String.format(getString(R.string.vpn_data_collection_disclosure_top), getString(R.string.app_name));
+                    String topMessage = String.format(getString(R.string.vpn_data_collection_disclosure_top),
+                            getString(R.string.app_name));
 
-            SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder();
-            spannableStringBuilder.append(topMessage);
-            spannableStringBuilder.append("\n\n");
-            SpannableString bp = new SpannableString(getString(R.string.vpn_data_collection_disclosure_bp1));
-            bp.setSpan(new BulletSpan(15), 0, bp.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            spannableStringBuilder.append(bp);
-            spannableStringBuilder.append("\n\n");
-            bp = new SpannableString(getString(R.string.vpn_data_collection_disclosure_bp2));
-            bp.setSpan(new BulletSpan(15), 0, bp.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            spannableStringBuilder.append(bp);
-            spannableStringBuilder.append("\n\n");
-            ((TextView)dialogView.findViewById(R.id.textView)).setText(spannableStringBuilder);
+                    SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder();
+                    spannableStringBuilder.append(topMessage);
+                    spannableStringBuilder.append("\n\n");
+                    SpannableString bp = new SpannableString(getString(R.string.vpn_data_collection_disclosure_bp1));
+                    bp.setSpan(new BulletSpan(15), 0, bp.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    spannableStringBuilder.append(bp);
+                    spannableStringBuilder.append("\n\n");
+                    bp = new SpannableString(getString(R.string.vpn_data_collection_disclosure_bp2));
+                    bp.setSpan(new BulletSpan(15), 0, bp.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    spannableStringBuilder.append(bp);
+                    spannableStringBuilder.append("\n\n");
+                    ((TextView) dialogView.findViewById(R.id.textView)).setText(spannableStringBuilder);
 
-            final AlertDialog alertDialog = new AlertDialog.Builder(this)
-                    .setCancelable(false)
-                    .setTitle(R.string.vpn_data_collection_disclosure_prompt_title)
-                    .setView(dialogView)
-                    // Only emit a completion event if we have a positive response
-                    .setPositiveButton(R.string.vpn_data_collection_disclosure_accept_btn_text,
-                            (dialog, whichButton) -> {
-                                multiProcessPreferences.put(getString(R.string.vpnServiceDataCollectionDisclosureAccepted), true);
-                                if (!emitter.isDisposed()) {
-                                    emitter.onComplete();
-                                }
-                            })
-                    .show();
-            // Also dismiss the alert when subscription is disposed, for example, on orientation
-            // change or when the app is backgrounded.
-            emitter.setCancellable(() -> {
-                if (alertDialog != null && alertDialog.isShowing()) {
-                    alertDialog.dismiss();
-                }
-            });
-        })
+                    final AlertDialog alertDialog = new AlertDialog.Builder(this)
+                            .setCancelable(false)
+                            .setTitle(R.string.vpn_data_collection_disclosure_prompt_title)
+                            .setView(dialogView)
+                            // Only emit a completion event if we have a positive response
+                            .setPositiveButton(R.string.vpn_data_collection_disclosure_accept_btn_text,
+                                    (dialog, whichButton) -> {
+                                        multiProcessPreferences.put(
+                                                getString(R.string.vpnServiceDataCollectionDisclosureAccepted), true);
+                                        if (!emitter.isDisposed()) {
+                                            emitter.onSuccess(true);
+                                        }
+                                    })
+                            .show();
+                    // Also dismiss the alert when subscription is disposed, for example, on orientation
+                    // change or when the app is backgrounded.
+                    emitter.setCancellable(() -> {
+                        if (alertDialog != null && alertDialog.isShowing()) {
+                            alertDialog.dismiss();
+                        }
+                    });
+                })
                 .subscribeOn(AndroidSchedulers.mainThread());
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_CODE_NOTIFICATION_RATIONALE ||
-                requestCode == REQUEST_CODE_LOCATION_RATIONALE) {
-            // If we are returning from a permission rationale activity, run permissions check
-            // when we resume again since the previous check may have been interrupted.
-            checkPermissions();
-        }
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (appUpdateHelper != null) {
+            appUpdateHelper.handleUpdateActivityResult(requestCode, resultCode);
+        }
     }
 
     @Override
@@ -1150,51 +1265,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
     private void cancelInvalidProxySettingsToast() {
         if (invalidProxySettingsToast != null) {
-            View toastView = invalidProxySettingsToast.getView();
-            if (toastView != null) {
-                if (toastView.isShown()) {
-                    invalidProxySettingsToast.cancel();
-                }
-            }
+            invalidProxySettingsToast.cancel();
         }
-    }
-
-    private void preventAutoStart() {
-        isFirstRun = false;
-    }
-
-    private boolean shouldAutoStart() {
-        return isFirstRun &&
-                !getIntent().getBooleanExtra(INTENT_EXTRA_PREVENT_AUTO_START, false);
-    }
-
-    // Returns an object only if tunnel should be auto-started,
-    // completes with no value otherwise.
-    private Maybe<Object> autoStartMaybe() {
-        return Maybe.create(emitter -> {
-            boolean shouldAutoStart = shouldAutoStart();
-            preventAutoStart();
-            if (!emitter.isDisposed()) {
-                if (shouldAutoStart) {
-                    emitter.onSuccess(new Object());
-                } else {
-                    emitter.onComplete();
-                }
-            }
-        }).flatMap(autoStart -> {
-            // If this is a first app run then check subscription state and
-            // return a value if user has a valid purchase or if IAB check failed,
-            // the IAB status check will be triggered again in onResume
-            return googlePlayBillingHelper.subscriptionStateFlowable()
-                    .firstOrError()
-                    .flatMapMaybe(subscriptionState -> {
-                        if (subscriptionState.hasValidPurchase()
-                                || subscriptionState.status() == SubscriptionState.Status.IAB_FAILURE) {
-                            return Maybe.just(new Object());
-                        }
-                        return Maybe.empty();
-                    });
-        });
     }
 
     public static boolean shouldLoadInEmbeddedWebView(String url) {
