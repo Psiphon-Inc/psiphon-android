@@ -53,7 +53,6 @@ import androidx.core.content.PermissionChecker;
 
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.AppUpdatePolicy;
-import com.psiphon3.BuildConfig;
 import com.psiphon3.ConduitState;
 import com.psiphon3.ConduitStateManager;
 import com.psiphon3.Location;
@@ -65,6 +64,7 @@ import com.psiphon3.UnlockOptions;
 import com.psiphon3.VpnManager;
 import com.psiphon3.billing.PurchaseVerifier;
 import com.psiphon3.log.MyLog;
+import com.psiphon3.subscription.BuildConfig;
 import com.psiphon3.subscription.R;
 
 import net.grandcentrix.tray.AppPreferences;
@@ -2471,3 +2471,4 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         });
     }
 }
+
