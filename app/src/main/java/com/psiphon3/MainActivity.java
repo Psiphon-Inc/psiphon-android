@@ -1265,12 +1265,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
     private void cancelInvalidProxySettingsToast() {
         if (invalidProxySettingsToast != null) {
-            View toastView = invalidProxySettingsToast.getView();
-            if (toastView != null) {
-                if (toastView.isShown()) {
-                    invalidProxySettingsToast.cancel();
-                }
-            }
+            invalidProxySettingsToast.cancel();
         }
     }
 
