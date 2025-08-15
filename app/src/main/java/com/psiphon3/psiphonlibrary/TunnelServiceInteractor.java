@@ -302,6 +302,14 @@ public class TunnelServiceInteractor {
         }
         tunnelState.upstreamRateLimitBytesPerSecond = data.getLong(TunnelManager.DATA_TUNNEL_STATE_UPSTREAM_RATE_LIMIT, -1);
         tunnelState.downstreamRateLimitBytesPerSecond = data.getLong(TunnelManager.DATA_TUNNEL_STATE_DOWNSTREAM_RATE_LIMIT, -1);
+        tunnelState.vpnMode = (VpnAppsUtils.VpnAppsExclusionSetting) data.getSerializable(TunnelManager.DATA_TUNNEL_STATE_VPN_MODE);
+        if (tunnelState.vpnMode == null) {
+            tunnelState.vpnMode = VpnAppsUtils.VpnAppsExclusionSetting.ALL_APPS;
+        }
+        ArrayList<String> vpnApps = data.getStringArrayList(TunnelManager.DATA_TUNNEL_STATE_VPN_APPS);
+        if (vpnApps != null) {
+            tunnelState.vpnApps = vpnApps;
+        }
         return tunnelState;
     }
 
@@ -356,6 +364,8 @@ public class TunnelServiceInteractor {
                                 .setHomePages(state.homePages)
                                 .setUpstreamRateLimitBytesPerSecond(state.upstreamRateLimitBytesPerSecond)
                                 .setDownstreamRateLimitBytesPerSecond(state.downstreamRateLimitBytesPerSecond)
+                                .setVpnMode(state.vpnMode)
+                                .setVpnApps(state.vpnApps)
                                 .build();
                         tunnelState = TunnelState.running(connectionData);
                     } else {
