@@ -2219,10 +2219,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 try {
                     AppUpdatePolicy.fromJson(updatePolicyJson.toString(), getContext().getPackageName());
                     int ttlDays = AppUpdatePolicy.getTtlDays(updatePolicyJson.toString());
-                    final AppPreferences mp = new AppPreferences(getContext().getApplicationContext());
-                    mp.put(AppUpdatePolicy.PREF_SERVER_UPDATE_POLICY, updatePolicyJson.toString());
-                    mp.put(AppUpdatePolicy.PREF_UPDATE_POLICY_TIMESTAMP_MS, System.currentTimeMillis());
-                    MyLog.i("TunnelManager: stored server update policy (" + updatePolicyJson.toString().length() + " chars, TTL: " + ttlDays + " days)");
+                    AppUpdatePolicy.saveAppUpdatePolicyToFile(getContext().getApplicationContext(),
+                            updatePolicyJson.toString(), System.currentTimeMillis());
+                    MyLog.i("TunnelManager: stored server update policy (" + updatePolicyJson.toString()
+                            .length() + " chars, TTL: " + ttlDays + " days)");
                 } catch (Exception validationError) {
                     MyLog.e("TunnelManager: rejecting update policy, invalid for this app: " + validationError);
                 }

@@ -26,8 +26,6 @@ import com.google.android.play.core.install.model.UpdateAvailability;
 import com.psiphon3.log.MyLog;
 import com.psiphon3.subscription.R;
 
-import net.grandcentrix.tray.AppPreferences;
-
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.reactivex.Single;
@@ -69,19 +67,19 @@ public class AppUpdateHelper {
     
     private static AppUpdatePolicy loadAppUpdatePolicy(Context context) {
         try {
-            AppPreferences mp = new AppPreferences(context.getApplicationContext());
-            String json = mp.getString(AppUpdatePolicy.PREF_SERVER_UPDATE_POLICY, null);
+            AppUpdatePolicy.AppUpdatePolicyData policyData = AppUpdatePolicy.readAppUpdatePolicyFromFile(
+                    context.getApplicationContext());
+            String json = policyData.policyJson;
             if (json != null && !json.isEmpty()) {
-                long savedWall = mp.getLong(AppUpdatePolicy.PREF_UPDATE_POLICY_TIMESTAMP_MS, 0L);
+                long savedWall = policyData.timestampMs;
                 int ttlDays = AppUpdatePolicy.getTtlDays(json);
 
                 long ageDays = (System.currentTimeMillis() - savedWall) / (24L * 60 * 60 * 1000L);
                 boolean expired = ageDays >= ttlDays;
 
                 if (expired) {
-                    mp.remove(AppUpdatePolicy.PREF_SERVER_UPDATE_POLICY);
-                    mp.remove(AppUpdatePolicy.PREF_UPDATE_POLICY_TIMESTAMP_MS);
                     MyLog.i("AppUpdateHelper: server policy expired (TTL " + ttlDays + " days), using defaults");
+                    AppUpdatePolicy.saveAppUpdatePolicyToFile(context.getApplicationContext(), "", 0);
                     return AppUpdatePolicy.getDefaultPolicy();
                 }
 
