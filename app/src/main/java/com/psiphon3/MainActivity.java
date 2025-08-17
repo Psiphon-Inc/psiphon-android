@@ -146,6 +146,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         ENABLED
     }
 
+    // Permissions flow handled flag
+    private boolean permissionsHandledThisSession = false;
     // In-app update related fields
     private boolean updateHandledThisSession = false;
     private AppUpdateHelper appUpdateHelper;
@@ -717,6 +719,15 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     // Check runtime permissions and show rationales if needed.
     // When we are done with the rationales return granted permissions.
     private void checkPermissions() {
+        if (permissionsHandledThisSession) {
+            // Permissions already handled this session, nothing to do
+            if (permissionsCompletableSubject != null && !permissionsCompletableSubject.hasComplete()) {
+                permissionsCompletableSubject.onComplete();
+            }
+            return;
+        }
+        permissionsHandledThisSession = true;
+
         // Check location precision condition once
         final AppPreferences mp = new AppPreferences(getApplicationContext());
         int deviceLocationPrecision = mp.getInt(getString(R.string.deviceLocationPrecisionParameter), 0);
