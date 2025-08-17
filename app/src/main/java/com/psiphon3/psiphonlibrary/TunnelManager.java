@@ -1892,16 +1892,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
         // Multiple patterns are evaluated in array order until first match (OR logic).
         // Use care with ordering: ["*", ">=100"] will always match "*" first.
         try {
-            JSONObject excludeRules = params.optJSONObject("VpnExcludeRules");
-            JSONObject includeRules = params.optJSONObject("VpnIncludeRules");
-
-            if (excludeRules == null && includeRules == null) {
-                return;
-            }
-
             Map<String, Map<String, List<String>>> vpnRules = new HashMap<>();
 
             // Process exclude rules
+            JSONObject excludeRules = params.optJSONObject("VpnExcludeRules");
             if (excludeRules != null) {
                 vpnRules.put("exclude", VpnRulesHelper.parseRulesCategory(excludeRules));
             } else {
@@ -1909,6 +1903,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
             }
 
             // Process include rules
+            JSONObject includeRules = params.optJSONObject("VpnIncludeRules");
             if (includeRules != null) {
                 vpnRules.put("include", VpnRulesHelper.parseRulesCategory(includeRules));
             } else {
