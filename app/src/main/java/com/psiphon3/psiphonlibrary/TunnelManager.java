@@ -53,6 +53,8 @@ import androidx.core.content.PermissionChecker;
 
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.BuildConfig;
+import com.psiphon3.ConduitState;
+import com.psiphon3.ConduitStateManager;
 import com.psiphon3.Location;
 import com.psiphon3.PackageHelper;
 import com.psiphon3.PsiphonCrashService;
@@ -209,6 +211,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
     private final PublishRelay<Boolean> m_isRoutingThroughTunnelPublishRelay = PublishRelay.create();
     private PublishRelay<Object> m_newClientPublishRelay = PublishRelay.create();
     private CompositeDisposable m_compositeDisposable = new CompositeDisposable();
+    private Disposable conduitStateObserver;
     private VpnAppsUtils.VpnAppsExclusionSetting vpnAppsExclusionSetting = VpnAppsUtils.VpnAppsExclusionSetting.ALL_APPS;
     private int vpnAppsExclusionCount = 0;
     private ArrayList<String> unsafeTrafficSubjects;
@@ -311,9 +314,35 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
             // after an app update, upon receiving a package replaced broadcast in the PsiphonUpdateReceiver.
             new AppPreferences(getContext()).put(getContext().getString(R.string.serviceRunningPreference), true);
 
-
+            // Start Conduit state observer
+            setupConduitStateObserver();
         }
         return Service.START_REDELIVER_INTENT;
+    }
+
+    private void setupConduitStateObserver() {
+        if (conduitStateObserver != null && !conduitStateObserver.isDisposed()) {
+            conduitStateObserver.dispose();
+        }
+
+        // Configure runtime trusted signatures
+        PackageHelper.configureRuntimeTrustedSignatures(
+                PackageHelper.readTrustedSignaturesFromFile(getContext().getApplicationContext())
+        );
+
+        // Observe conduit state changes
+        conduitStateObserver = ConduitStateManager.newManager(getContext()).stateFlowable()
+                .doOnNext(state -> MyLog.i("TunnelManager: Conduit state: " + state))
+                .filter(state -> state.status() != ConduitState.Status.UNKNOWN)
+                .map(state -> state.status() == ConduitState.Status.RUNNING)
+                .onErrorReturnItem(false)
+                .doOnNext(isRunning -> {
+                    MyLog.i("TunnelManager: Conduit is running: " + isRunning);
+                    // TODO: Add config change handling here when tunnelConfigManager is available
+                })
+                .subscribe();
+
+        m_compositeDisposable.add(conduitStateObserver);
     }
 
     IBinder onBind(Intent intent) {
@@ -1861,6 +1890,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
 
             // Save the trusted signatures to file
             PackageHelper.saveTrustedSignaturesToFile(getContext().getApplicationContext(), trustedSignatures);
+
+            // Restart the Conduit state observer to pick up new signatures
+            setupConduitStateObserver();
+
+            MyLog.i("TunnelManager: Restarted Conduit state observer after updating trusted signatures");
             // Make the runtime trusted signatures available to the PackageHelper ASAP
             PackageHelper.configureRuntimeTrustedSignatures(trustedSignatures);
         } catch (JSONException e) {

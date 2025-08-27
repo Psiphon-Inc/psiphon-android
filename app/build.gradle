@@ -84,6 +84,7 @@ android {
 
     buildFeatures {
         buildConfig true
+        aidl true
     }
 
     if (propFile.canRead()) {
