@@ -167,4 +167,10 @@ Katso lokeista teknisiä tietoja.</string>
   <string name="app_update_restart">Asenna</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Päivitys epäonnistui</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">Psiphon-pääsy estetty. Napauta saadaksesi lisätietoja</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">Ilmainen Psiphon-pääsy ei ole enää saatavilla alueellasi. Napauta nähdäksesi lukituksen avausvaihtoehdot</string>
 </resources>

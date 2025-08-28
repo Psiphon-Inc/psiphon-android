@@ -158,4 +158,10 @@
   <string name="app_update_restart">Pasang</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Kemas kini gagal</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">Akses Psiphon disekat. Ketik untuk ketahui lebih lanjut</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">Akses percuma kepada Psiphon tidak lagi tersedia di rantau anda. Ketik untuk lihat pilihan buka kunci</string>
 </resources>

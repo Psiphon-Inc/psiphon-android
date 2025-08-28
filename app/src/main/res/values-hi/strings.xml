@@ -165,4 +165,10 @@
   <string name="app_update_restart">इंस्टॉल करें</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">अपडेट विफल</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">Psiphon पहुंच अवरुद्ध। अधिक जानने के लिए टैप करें</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">आपके क्षेत्र में Psiphon तक मुफ्त पहुंच अब उपलब्ध नहीं है। अनलॉक विकल्प देखने के लिए टैप करें</string>
 </resources>

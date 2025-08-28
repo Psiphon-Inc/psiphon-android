@@ -160,4 +160,10 @@
   <string name="app_update_restart">Орнату</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Жаңарту сәтсіз</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">Psiphon қол жетімділігі бұғатталған. Көбірек білу үшін басыңыз</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">Psiphon-ға тегін қол жету енді сіздің аймағыңызда қолжетімді емес. Ашу нұсқаларын көру үшін басыңыз</string>
 </resources>

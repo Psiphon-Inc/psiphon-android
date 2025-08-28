@@ -160,4 +160,10 @@
   <string name="app_update_restart">نصب</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">به‌روزرسانی ناموفق</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">دسترسی Psiphon مسدود شده. برای اطلاعات بیشتر ضربه بزنید</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">دسترسی رایگان به Psiphon دیگر در منطقه شما قابل دسترس نیست. برای مشاهده گزینه‌های بازکردن ضربه بزنید</string>
 </resources>

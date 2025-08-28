@@ -166,4 +166,10 @@
   <string name="app_update_restart">Yükle</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Güncelleme başarısız</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">Psiphon erişimi engellendi. Ayrıntılar için dokunun</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">Bölgenizde Psiphon uygulamasına ücretsiz erişim artık kullanılamıyor. Erişim seçeneklerini görmek için dokunun</string>
 </resources>

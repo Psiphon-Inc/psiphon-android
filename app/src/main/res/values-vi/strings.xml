@@ -165,4 +165,10 @@
   <string name="app_update_restart">Cài đặt</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Cập nhật thất bại</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">Truy cập Psiphon bị chặn. Nhấn để tìm hiểu thêm</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">Truy cập miễn phí đến Psiphon không còn khả dụng trong khu vực của bạn. Nhấn để xem các tùy chọn mở khóa</string>
 </resources>

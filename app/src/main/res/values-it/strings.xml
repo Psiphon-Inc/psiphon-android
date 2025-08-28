@@ -165,4 +165,9 @@
   <string name="app_update_restart">Installa</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Aggiornamento fallito</string>
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">Accesso Psiphon bloccato. Tocchi per saperne di più</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">L\'accesso gratuito a Psiphon non è più disponibile nella sua regione. Tocchi per vedere le opzioni di sblocco</string>
 </resources>

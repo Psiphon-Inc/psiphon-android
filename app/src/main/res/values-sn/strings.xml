@@ -162,4 +162,10 @@
   <string name="app_update_restart">Isa</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Kuvandudzwa kwatadza</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">Psiphon kupinda kwavharwa. Dzvanya kuti udzidze zvakawanda</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">Kupinda mahara kuPsiphon hakuchasisiri kuwanikwa mudunhu rako. Dzvanya kuona unlock options</string>
 </resources>

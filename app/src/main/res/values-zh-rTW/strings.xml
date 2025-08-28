@@ -166,4 +166,10 @@
   <string name="app_update_restart">安裝</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">更新失敗</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">Psiphon 存取被封鎖。點擊了解更多</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">您地區的 Psiphon 免費存取已不再提供。點擊查看解鎖選項</string>
 </resources>

@@ -160,4 +160,10 @@
   <string name="app_update_restart">Instalar</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Atualização falhou</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">Acesso ao Psiphon bloqueado. Toque para saber mais</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">O acesso gratuito ao Psiphon não está mais disponível na sua região. Toque para ver as opções de desbloqueio</string>
 </resources>

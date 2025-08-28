@@ -159,4 +159,10 @@
   <string name="app_update_restart">སྒྲིག་སྦྱོར</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">གསར་བཟོ་ཕམ</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">Psiphon ལ་འཛུལ་སྤྱོད་བྱེད་པ་བཀག་འགོག་བྱས་ཡོད། ཧེང་བཀོད་བྱས་ན་ཧེང་བརྡ་དོན་ཤེས་ཐུབ།</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">ཁྱེད་ཀྱི་ས་ཁུལ་ནང་ Psiphon ལ་སྤྱོད་མི་འདི་ད་ལྟ་རང་རེད་མི་འདུག ཧེང་བཀོད་བྱས་ན་སྒོ་ཕྱེ་ཐབས་ཚུལ་ལ་ལེན་ཐུབ།</string>
 </resources>

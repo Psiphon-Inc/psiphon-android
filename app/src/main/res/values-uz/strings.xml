@@ -158,4 +158,10 @@
   <string name="app_update_restart">O\'rnatish</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Yangilanish muvaffaqiyatsiz</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">Psiphon kirish bloklandi. Ko\'proq bilish uchun bosing</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">Sizning hududingizda Psiphon-ga bepul kirish endi mavjud emas. Qulfni ochish variantlarini ko\'rish uchun bosing</string>
 </resources>

@@ -162,4 +162,10 @@
   <string name="app_update_restart">ដំឡើង</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">កំណែថ្មីបរាជ័យ</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">ការចូលដំណើរការ Psiphon ត្រូវបានរារាំះព ប៉ះដើម្បីស្វែងយល់បន្ថែម</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">ការចូលដំណើរការឥិតគិតថ្លៃទៅ Psiphon លែងមិនរក្សាទុកក្នុងតំបន់របស់អ្នកទីយតែហើយះ ប៉ះដើម្បីមើលជំរើសដោះសោ</string>
 </resources>

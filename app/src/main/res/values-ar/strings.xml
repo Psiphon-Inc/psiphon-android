@@ -167,4 +167,10 @@
   <string name="app_update_restart">تثبيت</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">فشل التحديث</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">تم حظر الوصول إلى Psiphon. اضغط لمعرفة المزيد</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">الوصول المجاني إلى Psiphon لم يعد متاحًا في منطقتك. اضغط لرؤية خيارات الإلغاء</string>
 </resources>

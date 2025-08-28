@@ -178,6 +178,12 @@ public class TunnelServiceInteractor {
                 .subscribe();
     }
 
+    // Send a message to the service that the unlock required UI has been dismissed
+    public void unlockRequiredUiDismissed() {
+        sendServiceMessageCompletable(TunnelManager.ClientToServiceMessage.UNLOCK_REQUIRED_UI_DISMISSED.ordinal(), null)
+                .subscribe();
+    }
+
     public Flowable<TunnelState> tunnelStateFlowable() {
         return tunnelStateRelay
                 .distinctUntilChanged()

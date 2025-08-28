@@ -160,4 +160,10 @@
   <string name="app_update_restart">Насб кардан</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Навсозӣ бо нокомӣ анҷом ёфт</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">Дастрасӣ ба Psiphon маҳдуд шуд. Барои дониши биштар зер кунед</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">Дастрасӣи ройгон ба Psiphon дар минтақаи шумо дигар дастрас нист. Барои дидани вариантҳои кушодан зер кунед</string>
 </resources>

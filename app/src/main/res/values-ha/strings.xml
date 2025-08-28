@@ -161,4 +161,10 @@
   <string name="app_update_restart">Shigar</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Sabuntawa ta gaza</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">An toshe damar shiga Psiphon. Ka danna don ƙara koyo</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">Damar shiga Psiphon kyauta ba ta samuwa a yankinku ba. Ka danna don duba zaɓuɓɓukan buɗewa</string>
 </resources>

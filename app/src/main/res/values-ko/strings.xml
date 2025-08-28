@@ -162,4 +162,10 @@
   <string name="app_update_restart">설치</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">업데이트 실패</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">Psiphon 액세스가 차단되었습니다. 자세한 내용을 보려면 탭하세요</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">귀하의 지역에서 무료 Psiphon 액세스를 더 이상 사용할 수 없습니다. 잠금 해제 옵션을 보려면 탭하세요</string>
 </resources>

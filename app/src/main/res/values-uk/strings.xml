@@ -166,4 +166,10 @@
   <string name="app_update_restart">Встановити</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Оновлення не вдалося</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">Доступ до Psiphon заблоковано. Торкніться, щоб дізнатися більше</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">Безкоштовний доступ до Psiphon більше не доступний у вашому регіоні. Торкніться, щоб побачити варіанти розблокування</string>
 </resources>

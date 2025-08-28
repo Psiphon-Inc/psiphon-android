@@ -165,4 +165,10 @@
   <string name="app_update_restart">Instal</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Update gagal</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">Akses Psiphon diblokir. Ketuk untuk mempelajari lebih lanjut</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">Akses gratis ke Psiphon tidak lagi tersedia di wilayah Anda. Ketuk untuk melihat opsi pembukaan kunci</string>
 </resources>

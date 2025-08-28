@@ -157,4 +157,10 @@
   <string name="app_update_restart">Kuusi</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Haaromsi hin milkoofne</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">Argannaan Psiphon cufame. Barumsaaf cuqaasi</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">Argannaan bilisaan Psiphonitti naanno keessan keessatti deebi\'ee hin jiru. Filannoowwan banuu arguuf cuqaasi</string>
 </resources>

@@ -166,4 +166,9 @@
   <string name="app_update_restart">安装</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">更新失败</string>
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">Psiphon 访问被阻止。点击了解更多</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">您地区的 Psiphon 免费访问已不再可用。点击查看解锁选项</string>
 </resources>

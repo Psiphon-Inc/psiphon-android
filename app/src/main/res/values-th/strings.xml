@@ -158,4 +158,10 @@
   <string name="app_update_restart">ติดตั้ง</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">อัปเดตล้มเหลว</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">การเข้าถึง Psiphon ถูกบล็อค แตะเพื่อเรียนรู้เพิ่มเติม</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">การเข้าถึง Psiphon ฟรีไม่มีให้ในภูมิภาคของคุณอีกต่อไป แตะเพื่อดูตัวเลือกการปลดล็อค</string>
 </resources>

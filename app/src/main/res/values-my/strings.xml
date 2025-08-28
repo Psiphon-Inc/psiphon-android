@@ -166,4 +166,10 @@
   <string name="app_update_restart">ထည့်သွင်းမည်</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">အပ်ဒိတ် မအောင်မြင်ပါ</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">Psiphon ဝင်ရောက်ခွင့် ပိတ်ပင်ထားသည်။ ပိုမိုလေ့လာရန် နှိပ်ပါ</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">သင့်ဒေသတွင် Psiphon သို့ အခမဲ့ ဝင်ရောက်ခွင့် မရတော့ပါ။ ဖွင့်ရန် ရွေးချယ်မှုများကို ကြည့်ရန် နှိပ်ပါ</string>
 </resources>

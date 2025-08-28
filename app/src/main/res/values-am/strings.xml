@@ -163,4 +163,10 @@
   <string name="app_update_restart">ይጫኑ</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">ማዘመን አልተሳካም</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">የPsiphon መዳረሻ ታግዷል። ለተጨማሪ መረጃ ይንኩ</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">በአካባቢዎ ውስጥ ነጻ የPsiphon መዳረሻ አልተገኘም። የመክፈቻ አማራጮችን ለማየት ይንኩ</string>
 </resources>

@@ -162,4 +162,10 @@
   <string name="app_update_restart">Installer</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Oppdatering mislyktes</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">Psiphon-tilgang blokkert. Trykk for mer informasjon</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">Gratis Psiphon-tilgang er ikke lenger tilgjengelig i din region. Trykk for å se låseopphevingsalternativer</string>
 </resources>

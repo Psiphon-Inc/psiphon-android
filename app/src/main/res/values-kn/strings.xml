@@ -162,4 +162,10 @@
   <string name="app_update_restart">ಸ್ಥಾಪಿಸಿ</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">ಅಪ್‌ಡೇಟ್ ವಿಫಲ</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">ಅನ್‌ಲಾಕ್ ಅಗತ್ಯ ಚಿಕ್ಕ ಅಧಿಸೂಚನೆ ಪಠ್ಯ</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">ನಿಮ್ಮ ಪ್ರದೇಶದಲ್ಲಿ Psiphon ಗೆ ಉಚಿತ ಪ್ರವೇಶ ಇನ್ನು ಲಭ್ಯವಿಲ್ಲ. ಅನ್‌ಲಾಕ್ ಆಯ್ಕೆಗಳನ್ನು ನೋಡಲು ಟ್ಯಾಪ್ ಮಾಡಿ</string>
 </resources>

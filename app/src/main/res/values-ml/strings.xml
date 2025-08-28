@@ -162,4 +162,10 @@
   <string name="app_update_restart">ഇൻസ്റ്റാൾ ചെയ്യുക</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">അപ്‌ഡേറ്റ് പരാജയപ്പെട്ടു</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">സൈഫോൺ ആക്‌സസ് ബ്ലോക്ക് ചെയ്തു. കൂടുതലറിയാൻ ടാപ്പ് ചെയ്യുക</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">നിങ്ങളുടെ പ്രദേശത്ത് സൈഫോൺ ആക്‌സസ് ഇനി സൗജന്യമായി ലഭ്യമല്ല. അൺലോക്ക് ഓപ്‌ഷനുകൾ കാണാൻ ടാപ്പ് ചെയ്യുക</string>
 </resources>

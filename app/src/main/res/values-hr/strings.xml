@@ -163,4 +163,10 @@
   <string name="app_update_restart">Instaliraj</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Ažuriranje nije uspjelo</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">Pristup Psiphon-u je blokiran. Dodirnite za saznavanje više</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">Besplatan pristup Psiphon-u više nije dostupan u vašoj regiji. Dodirnite za pregled opcija otključavanja</string>
 </resources>
