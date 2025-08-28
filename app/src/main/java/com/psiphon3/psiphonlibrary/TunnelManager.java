@@ -55,7 +55,6 @@ import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.BuildConfig;
 import com.psiphon3.ConduitState;
 import com.psiphon3.ConduitStateManager;
-import com.psiphon3.Location;
 import com.psiphon3.PackageHelper;
 import com.psiphon3.PsiphonCrashService;
 import com.psiphon3.R;
@@ -154,19 +153,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
         postServiceNotification(false, m_tunnelState.networkConnectionState);
     }
 
-    // Tunnel config, received from the client.
-    static class Config {
-        String egressRegion = PsiphonConstants.REGION_CODE_ANY;
-        boolean disableTimeouts = false;
-        String sponsorId = EmbeddedValues.SPONSOR_ID;
-        String deviceLocation = "";
-    }
-
-    private Config m_tunnelConfig;
-
-    private void setTunnelConfig(Config config) {
-        m_tunnelConfig = config;
-    }
 
     // Shared tunnel state, sent to the client in the HANDSHAKE
     // intent and in the MSG_TUNNEL_CONNECTION_STATE service message.
@@ -212,6 +198,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
     private PublishRelay<Object> m_newClientPublishRelay = PublishRelay.create();
     private CompositeDisposable m_compositeDisposable = new CompositeDisposable();
     private Disposable conduitStateObserver;
+    private TunnelConfigManager tunnelConfigManager;
     private VpnAppsUtils.VpnAppsExclusionSetting vpnAppsExclusionSetting = VpnAppsUtils.VpnAppsExclusionSetting.ALL_APPS;
     private int vpnAppsExclusionCount = 0;
     private ArrayList<String> unsafeTrafficSubjects;
@@ -224,6 +211,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
         m_context = parentService;
         m_isStopping = new AtomicBoolean(false);
         unsafeTrafficSubjects = new ArrayList<>();
+        tunnelConfigManager = new TunnelConfigManager(getContext());
     }
 
     void onCreate() {
@@ -301,22 +289,48 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
             m_firstStart = false;
             m_tunnelThreadStopSignal = new CountDownLatch(1);
             m_compositeDisposable.add(
-                    getTunnelConfigSingle()
+                    tunnelConfigManager.initConfiguration(conduitStateSingle(), deviceLocationSingle())
                             .doOnSuccess(config -> {
-                                setTunnelConfig(config);
+                                MyLog.i("TunnelManager: tunnel config initialized");
                                 m_tunnelThread = new Thread(this::runTunnel);
                                 m_tunnelThread.start();
                             })
                             .subscribe());
 
+
+            // Start a tunnel config observer to restart the tunnel when there is a new tunnel config
+            // This is the preferred method to restart the tunnel in all cases
+            m_compositeDisposable.add(
+                    tunnelConfigManager.observeTunnelConfig()
+                            .skip(1) // Skip the initial config value
+                            .doOnNext(config -> {
+                                // Perform a tunnel restart when a new tunnel config is received and we are not in the process of stopping
+                                if (!m_isStopping.get()) {
+                                    TunnelConfigManager.RestartType restartType = config.getRestartType();
+                                    // On full restart reset home page handled flag
+                                    if (restartType == TunnelConfigManager.RestartType.FULL_RESTART) {
+                                        MyLog.i("TunnelManager: tunnel config observer: full tunnel restart due to new tunnel config");
+                                    } else {
+                                        MyLog.i("TunnelManager: tunnel config observer: quiet tunnel restart due to new tunnel config");
+                                    }
+
+                                    m_networkConnectionStatePublishRelay.accept(
+                                            TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
+                                    m_vpnManager.stopRouteThroughTunnel();
+                                    onRestartTunnel();
+                                }
+                            })
+                            .subscribe()
+            );
+
+            // Start Conduit state observer
+            setupConduitStateObserver();
+
             // Set the persistent service running flag to true.
             // This flag is used to determine whether the service should be automatically restarted
             // after an app update, upon receiving a package replaced broadcast in the PsiphonUpdateReceiver.
             new AppPreferences(getContext()).put(getContext().getString(R.string.serviceRunningPreference), true);
-
-            // Start Conduit state observer
-            setupConduitStateObserver();
-        }
+       }
         return Service.START_REDELIVER_INTENT;
     }
 
@@ -337,12 +351,41 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
                 .map(state -> state.status() == ConduitState.Status.RUNNING)
                 .onErrorReturnItem(false)
                 .doOnNext(isRunning -> {
-                    MyLog.i("TunnelManager: Conduit is running: " + isRunning);
-                    // TODO: Add config change handling here when tunnelConfigManager is available
+                    MyLog.i("TunnelManager: Conduit is running: " + isRunning + ", updating tunnel config");
+                    // TODO: pass the enforcement flag from unlock options when we port them from Pro.
+                    tunnelConfigManager.updateConduitStateConditional(isRunning, false);
                 })
                 .subscribe();
 
         m_compositeDisposable.add(conduitStateObserver);
+    }
+
+    // Get the initial conduit state and return a boolean indicating whether the conduit is running
+    // Note that we are not using a member variable for the conduit state single because
+    // ConduitStateManager.stateFlowable() should not be reused across multiple calls.
+    private Single<Boolean> conduitStateSingle() {
+        return ConduitStateManager.newManager(getContext()).stateFlowable()
+                // Filter out UNKNOWN states
+                .filter(state -> state.status() != ConduitState.Status.UNKNOWN)
+                // Wait for up to 1 second for the first state, explicit timeout error
+                .timeout(1000, java.util.concurrent.TimeUnit.MILLISECONDS)
+                .firstOrError()
+                .doOnSuccess(state -> MyLog.i("TunnelManager: initial Conduit state: " + state))
+                // Any state other than RUNNING is considered not running
+                .map(state -> state.status() == ConduitState.Status.RUNNING ? Boolean.TRUE : Boolean.FALSE)
+                // If there is an error, log it and treat it as Conduit not running
+                .onErrorReturn(e -> {
+                    MyLog.e("TunnelManager: error getting initial Conduit state: " + e);
+                    return Boolean.FALSE;
+                });
+    }
+
+    // Get device location from preferences
+    private Single<String> deviceLocationSingle() {
+        return Single.fromCallable(() -> {
+            // For now, return empty string - can be extended later for actual location logic
+            return "";
+        });
     }
 
     IBinder onBind(Intent intent) {
@@ -600,36 +643,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
                         PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
-    private Single<Config> getTunnelConfigSingle() {
-        final AppPreferences multiProcessPreferences = new AppPreferences(getContext());
-
-        Single<Config> configSingle = Single.fromCallable(() -> {
-            Config tunnelConfig = new Config();
-            tunnelConfig.egressRegion = multiProcessPreferences
-                    .getString(getContext().getString(R.string.egressRegionPreference),
-                            PsiphonConstants.REGION_CODE_ANY);
-            tunnelConfig.disableTimeouts = multiProcessPreferences
-                    .getBoolean(getContext().getString(R.string.disableTimeoutsPreference),
-                            false);
-            return tunnelConfig;
-        });
-
-        int deviceLocationPrecision = multiProcessPreferences
-                .getInt(getContext().getString(R.string.deviceLocationPrecisionParameter),
-                        0);
-
-        Single<String> geoHashSingle =
-                Location.getGeoHashSingle(getContext(), deviceLocationPrecision, 1000)
-                        .onErrorReturnItem("");
-
-        BiFunction<Config, String, Config> zipper =
-                (config, deviceLocation) -> {
-                    config.deviceLocation = deviceLocation;
-                    return config;
-                };
-
-        return Single.zip(configSingle, geoHashSingle, zipper);
-    }
 
     private Notification createNotification(
             boolean alert,
@@ -737,7 +750,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
     }
 
     private boolean isSelectedEgressRegionAvailable(List<String> availableRegions) {
-        String selectedEgressRegion = m_tunnelConfig.egressRegion;
+        String selectedEgressRegion = tunnelConfigManager.getEgressRegion();
         if (selectedEgressRegion == null || selectedEgressRegion.equals(PsiphonConstants.REGION_CODE_ANY)) {
             // User region is either not set or set to 'Best Performance', do nothing
             return true;
@@ -840,17 +853,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
                             return;
                         }
 
-                        // TODO: notify client that the tunnel is going to restart
-                        //  rather than reporting tunnel is not connected?
-                        manager.m_networkConnectionStatePublishRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
+                        // On a restart, a new tunnel configuration is created and emitted via tunnelConfigManager.observeTunnelConfig()
+                        // This emission automatically triggers a tunnel restart through the Rx subscription in the onStartCommand() method.
+                        MyLog.i("TunnelManager: received restart tunnel message");
                         manager.m_compositeDisposable.add(
-                                manager.getTunnelConfigSingle()
-                                        .doOnSuccess(config -> {
-                                            manager.m_vpnManager.stopRouteThroughTunnel();
-                                            manager.m_isRoutingThroughTunnelPublishRelay.accept(Boolean.FALSE);
-                                            manager.setTunnelConfig(config);
-                                            manager.onRestartTunnel();
-                                        })
+                                manager.tunnelConfigManager.initConfiguration(manager.conduitStateSingle(),
+                                                manager.deviceLocationSingle())
                                         .subscribe());
                     }
                     break;
@@ -955,16 +963,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
     }
 
     private Bundle getTunnelStateBundle() {
-        // Update with the latest sponsorId from the tunnel config
-        m_tunnelState.sponsorId = m_tunnelConfig != null ? m_tunnelConfig.sponsorId : "";
-
         Bundle data = new Bundle();
         data.putBoolean(DATA_TUNNEL_STATE_IS_RUNNING, m_tunnelState.isRunning);
         data.putInt(DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT, m_tunnelState.listeningLocalSocksProxyPort);
         data.putInt(DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT, m_tunnelState.listeningLocalHttpProxyPort);
         data.putSerializable(DATA_TUNNEL_STATE_NETWORK_CONNECTION_STATE, m_tunnelState.networkConnectionState);
         data.putString(DATA_TUNNEL_STATE_CLIENT_REGION, m_tunnelState.clientRegion);
-        data.putString(DATA_TUNNEL_STATE_SPONSOR_ID, m_tunnelState.sponsorId);
+        data.putString(DATA_TUNNEL_STATE_SPONSOR_ID, tunnelConfigManager.getSponsorId());
         data.putStringArrayList(DATA_TUNNEL_STATE_HOME_PAGES, m_tunnelState.homePages);
         data.putSerializable(DATA_TUNNEL_STATE_VPN_MODE, m_tunnelState.vpnMode);
         data.putStringArrayList(DATA_TUNNEL_STATE_VPN_APPS, m_tunnelState.vpnApps);
@@ -1308,7 +1313,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
      * tunnel, the UpgradeChecker temp tunnel and the FeedbackWorker upload operation).
      *
      * @param context
-     * @param tunnelConfig     Config values to be set in the tunnel core config.
+     * @param tunnelConfigManager Config manager to get the sponsor ID and egress region and other config values.
      * @param useUpstreamProxy If an upstream proxy has been configured, include it in the returned
      *                         config. Used to omit the proxy from the returned config when network
      *                         operations will already be tunneled over a connection which uses the
@@ -1318,7 +1323,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
      */
     public static String buildTunnelCoreConfig(
             Context context,
-            Config tunnelConfig,
+            TunnelConfigManager tunnelConfigManager,
             boolean useUpstreamProxy,
             String tempTunnelName) {
         boolean temporaryTunnel = tempTunnelName != null && !tempTunnelName.isEmpty();
@@ -1331,7 +1336,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
 
             json.put("PropagationChannelId", EmbeddedValues.PROPAGATION_CHANNEL_ID);
 
-            json.put("SponsorId", tunnelConfig.sponsorId);
+            json.put("SponsorId", tunnelConfigManager.getSponsorId());
 
             json.put("RemoteServerListURLs", new JSONArray(EmbeddedValues.REMOTE_SERVER_LIST_URLS_JSON));
 
@@ -1395,12 +1400,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
                 json.put("TunnelWholeDevice", 0);
                 json.put("EgressRegion", "");
             } else {
-                String egressRegion = tunnelConfig.egressRegion;
+                String egressRegion = tunnelConfigManager.getEgressRegion();
                 MyLog.i("EgressRegion", "regionCode", egressRegion);
                 json.put("EgressRegion", egressRegion);
             }
 
-            if (tunnelConfig.disableTimeouts) {
+            if (tunnelConfigManager.isDisableTimeouts()) {
                 //disable timeouts
                 MyLog.i("DisableTimeouts", "disableTimeouts", true);
                 json.put("NetworkLatencyMultiplierLambda", 0.1);
@@ -1427,8 +1432,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
 
             json.put("DNSResolverAlternateServers", new JSONArray("[\"1.1.1.1\", \"1.0.0.1\", \"8.8.8.8\", \"8.8.4.4\"]"));
 
-            if (!TextUtils.isEmpty(tunnelConfig.deviceLocation)) {
-                json.put("DeviceLocation", tunnelConfig.deviceLocation);
+            if (!TextUtils.isEmpty(tunnelConfigManager.getDeviceLocation())) {
+                json.put("DeviceLocation", tunnelConfigManager.getDeviceLocation());
             }
 
             json.put("EmitBytesTransferred", true);
@@ -1474,7 +1479,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
     @Override
     public String getPsiphonConfig() {
         setPlatformAffixes(m_tunnel, null);
-        String config = buildTunnelCoreConfig(getContext(), m_tunnelConfig, true, null);
+        String config = buildTunnelCoreConfig(getContext(), tunnelConfigManager, true, null);
         return config == null ? "" : config;
     }
 

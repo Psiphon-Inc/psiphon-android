@@ -113,6 +113,24 @@ android {
         }
     }
 
+    buildTypes.each {
+        it.buildConfigField 'String', "CONDUIT_RUNNING_SPONSOR_ID", getBuildProperty('CONDUIT_RUNNING_SPONSOR_ID')
+    }
+}
+
+def getBuildProperty(String propertyName) {
+    def propsFile = rootProject.file('build.properties')
+    if (propsFile.exists()) {
+        def props = new Properties()
+        props.load(new FileInputStream(propsFile))
+        if(props != null && props.containsKey(propertyName)) {
+            return props[propertyName];
+        } else {
+            return "";
+        }
+    } else {
+        throw new GradleException('File \'build.properties\' is missing! Please copy \'build.properties.stub\' to \'build.properties\' and edit the values.')
+    }
 }
 
 dependencies {
