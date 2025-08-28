@@ -355,7 +355,7 @@ public class ConduitStateManager {
         switch (state.status()) {
             case NOT_INSTALLED:        // User needs to install Conduit
             case INCOMPATIBLE_VERSION: // User needs to update Conduit
-            case UNSUPPORTED_SCHEMA:   // User needs to update Psiphon Pro
+            case UNSUPPORTED_SCHEMA:   // User needs to update Psiphon
             case ERROR:                // Something went wrong
                 return true;
             case UNKNOWN:

@@ -171,4 +171,56 @@
   
   <!-- Unlock required notification long text -->
   <string name="notification_text_unlock_required_common_long">您地区的 Psiphon 免费访问已不再可用。点击查看解锁选项</string>
+
+
+
+    <!-- Title of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon UI features.
+    The %s will be replaced with the app name passed to the string resource. -->
+        <string name="install_app_to_unlock_title_common">安装 %s</string>
+
+    <!-- Description of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon UI features.
+    The %s will be replaced with the app name passed to the string resource. -->
+        <string name="install_app_to_unlock_description_common">从 Play 商店安装 %s，保持免费连接 Psiphon</string>
+
+    <!-- Header text above "Update Psiphon" action in the unlock required dialog. -->
+        <string name="update_psiphon_action_header_common">首先更新 Psiphon</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Psiphon app, do not translate or transliterate 'Psiphon'. -->
+        <string name="update_psiphon_action_title_common">更新 Psiphon</string>
+
+    <!-- Description for the 'Update' action to open the Play Store page for the Psiphon app, do not translate or transliterate 'Psiphon'. -->
+        <string name="update_psiphon_action_description_common">更新到最新版本的 Psiphon 以访问此功能</string>
+
+    <!-- Icon description for the Google Play app icon, do not translate or transliterate 'Google Play'. -->
+        <string name="google_play_icon_description_common">Google Play 图标</string>
+
+    <!-- Title for the Install Conduit action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_install_title_common">安装 Conduit</string>
+
+    <!-- Description text for the clickable Conduit app card, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_card_description_common">运行 Conduit 移动应用程序，免费保持连接到 Psiphon</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_update_title_common">更新 Conduit</string>
+
+    <!-- Description for the 'Update' Action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_update_description_common">更新到最新版本的 Conduit 以访问此功能</string>
+
+    <!-- Clickable text label to open the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="launch_conduit_action_common">启动 Conduit</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+        <string name="purchase_required_prompt_title_common">如何在您的地区访问 Psiphon。</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+        <string name="unlock_required_prompt_body_common">在您的地区访问 Psiphon 现在需要您的支持。通过选择可用的选项继续，来帮助让最需要的人能够访问 Psiphon。</string>
+
+    <!-- Extra label that appears above the "Continue" button in the unlock required dialog in case of unlock required when unlock is not enforced -->
+        <string name="unlock_dismiss_button_extra_label_common">我不想帮忙。</string>
+
+    <!--Title of button that disconnects the VPN. -->
+        <string name="btn_disconnect_common">中断连接</string>
+
+    <!-- Generic 'Continue' button label for dialogs and alerts -->
+        <string name="btn_label_continue_common">继续</string>
 </resources>

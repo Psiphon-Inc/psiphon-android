@@ -165,4 +165,56 @@
   
   <!-- Unlock required notification long text -->
   <string name="notification_text_unlock_required_common_long">আপনার অঞ্চলে Psiphon-এ বিনামূল্যে প্রবেশ আর উপলব্ধ নেই। আনলক বিকল্প দেখতে ট্যাপ করুন</string>
+
+
+
+    <!-- Title of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon UI features.
+    The %s will be replaced with the app name passed to the string resource. -->
+        <string name="install_app_to_unlock_title_common">%s ইনস্টল করুন</string>
+
+    <!-- Description of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon UI features.
+    The %s will be replaced with the app name passed to the string resource. -->
+        <string name="install_app_to_unlock_description_common">বিনামূল্যে Psiphon সংযুক্ত থাকতে Play Store থেকে %s ইনস্টল করুন</string>
+
+    <!-- Header text above "Update Psiphon" action in the unlock required dialog. -->
+        <string name="update_psiphon_action_header_common">প্রথমে Psiphon আপডেট করুন</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Psiphon app, do not translate or transliterate 'Psiphon'. -->
+        <string name="update_psiphon_action_title_common">Psiphon আপডেট করুন</string>
+
+    <!-- Description for the 'Update' action to open the Play Store page for the Psiphon app, do not translate or transliterate 'Psiphon'. -->
+        <string name="update_psiphon_action_description_common">এই বৈশিষ্ট্য অ্যাক্সেস করতে Psiphon এর সর্বশেষ ভার্সনে আপডেট করুন</string>
+
+    <!-- Icon description for the Google Play app icon, do not translate or transliterate 'Google Play'. -->
+        <string name="google_play_icon_description_common">Google Play আইকন</string>
+
+    <!-- Title for the Install Conduit action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_install_title_common">Conduit ইনস্টল করুন</string>
+
+    <!-- Description text for the clickable Conduit app card, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_card_description_common">Conduit মোবাইল অ্যাপ চালু করুন এবং বিনামূল্যে Psiphon এর সাথে সংযুক্ত থাকুন</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_update_title_common">Conduit আপডেট করুন</string>
+
+    <!-- Description for the 'Update' Action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_update_description_common">এই বৈশিষ্ট্য অ্যাক্সেস করতে Conduit এর সর্বশেষ ভার্সনে আপডেট করুন</string>
+
+    <!-- Clickable text label to open the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="launch_conduit_action_common">Conduit চালু করুন</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+        <string name="purchase_required_prompt_title_common">আপনার অঞ্চলে Psiphon-এ কীভাবে প্রবেশ করবেন।</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+        <string name="unlock_required_prompt_body_common">আপনার অঞ্চলে Psiphon-এ প্রবেশ এখন আপনার সহায়তা প্রয়োজন। সবচেয়ে বেশি প্রয়োজন এমন মানুষের জন্য Psiphon-কে প্রবেশযোগ্য রাখতে সাহায্য করুন, চালিয়ে যেতে একটি উপলব্ধ বিকল্প নির্বাচন করুন।</string>
+
+    <!-- Extra label that appears above the "Continue" button in the unlock required dialog in case of unlock required when unlock is not enforced -->
+        <string name="unlock_dismiss_button_extra_label_common">আমি সাহায্য করতে চাই না।</string>
+
+    <!--Title of button that disconnects the VPN. -->
+        <string name="btn_disconnect_common">সংযোগ বিচ্ছিন্ন করা</string>
+
+    <!-- Generic 'Continue' button label for dialogs and alerts -->
+        <string name="btn_label_continue_common">চালিয়ে যান</string>
 </resources>

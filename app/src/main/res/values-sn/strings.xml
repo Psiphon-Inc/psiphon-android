@@ -168,4 +168,56 @@
   
   <!-- Unlock required notification long text -->
   <string name="notification_text_unlock_required_common_long">Kupinda mahara kuPsiphon hakuchasisiri kuwanikwa mudunhu rako. Dzvanya kuona unlock options</string>
+
+
+
+    <!-- Title of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon UI features.
+    The %s will be replaced with the app name passed to the string resource. -->
+        <string name="install_app_to_unlock_title_common">Gadzira %s</string>
+
+    <!-- Description of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon UI features.
+    The %s will be replaced with the app name passed to the string resource. -->
+        <string name="install_app_to_unlock_description_common">Gadzira %s kubva kuPlay Store kuti ugare wakabatana nePsiphon mahara</string>
+
+    <!-- Header text above "Update Psiphon" action in the unlock required dialog. -->
+        <string name="update_psiphon_action_header_common">Kutanga, kwidzira Psiphon</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Psiphon app, do not translate or transliterate 'Psiphon'. -->
+        <string name="update_psiphon_action_title_common">Kwidzira Psiphon</string>
+
+    <!-- Description for the 'Update' action to open the Play Store page for the Psiphon app, do not translate or transliterate 'Psiphon'. -->
+        <string name="update_psiphon_action_description_common">Kwidzira kuvhezheni yekupedzisira yePsiphon kuti uwane iyi feature</string>
+
+    <!-- Icon description for the Google Play app icon, do not translate or transliterate 'Google Play'. -->
+        <string name="google_play_icon_description_common">Google Play icon</string>
+
+    <!-- Title for the Install Conduit action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_install_title_common">Gadzira Conduit</string>
+
+    <!-- Description text for the clickable Conduit app card, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_card_description_common">Mhanya Conduit mobile app uye ugare wakabatana nePsiphon mahara</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_update_title_common">Kwidzira Conduit</string>
+
+    <!-- Description for the 'Update' Action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_update_description_common">Kwidzira kuvhezheni yekupedzisira yeConduit kuti uwane iyi feature</string>
+
+    <!-- Clickable text label to open the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="launch_conduit_action_common">Tangisa Conduit</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+        <string name="purchase_required_prompt_title_common">Nzira yekuwana Psiphon mudunhu rako.</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+        <string name="unlock_required_prompt_body_common">Kuwana Psiphon mudunhu rako zvino kunoda rutsigiro rwako. Batsira kuchengetedza Psiphon ichipindika kune vanhu vanoda zvikuru nekusarudza nzira iripo yekuenderera mberi.</string>
+
+    <!-- Extra label that appears above the "Continue" button in the unlock required dialog in case of unlock required when unlock is not enforced -->
+        <string name="unlock_dismiss_button_extra_label_common">Handidi kubatsira.</string>
+
+    <!--Title of button that disconnects the VPN. -->
+        <string name="btn_disconnect_common">Paradzanisa</string>
+
+    <!-- Generic 'Continue' button label for dialogs and alerts -->
+        <string name="btn_label_continue_common">Endera mberi</string>
 </resources>

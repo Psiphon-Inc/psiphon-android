@@ -168,4 +168,56 @@
   
   <!-- Unlock required notification long text -->
   <string name="notification_text_unlock_required_common_long">ការចូលដំណើរការឥិតគិតថ្លៃទៅ Psiphon លែងមិនរក្សាទុកក្នុងតំបន់របស់អ្នកទីយតែហើយះ ប៉ះដើម្បីមើលជំរើសដោះសោ</string>
+
+
+
+    <!-- Title of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon UI features.
+    The %s will be replaced with the app name passed to the string resource. -->
+        <string name="install_app_to_unlock_title_common">ដំឡើង %s</string>
+
+    <!-- Description of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon UI features.
+    The %s will be replaced with the app name passed to the string resource. -->
+        <string name="install_app_to_unlock_description_common">ដំឡើង %s ពី Play Store ដើម្បីរក្សាការតភ្ជាប់ជាមួយ Psiphon ដោយឥតគិតថ្លៃ</string>
+
+    <!-- Header text above "Update Psiphon" action in the unlock required dialog. -->
+        <string name="update_psiphon_action_header_common">ជាមុនសិន សូមធ្វើបច្ចុប្បន្នភាព Psiphon</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Psiphon app, do not translate or transliterate 'Psiphon'. -->
+        <string name="update_psiphon_action_title_common">ធ្វើបច្ចុប្បន្នភាព Psiphon</string>
+
+    <!-- Description for the 'Update' action to open the Play Store page for the Psiphon app, do not translate or transliterate 'Psiphon'. -->
+        <string name="update_psiphon_action_description_common">ធ្វើបច្ចុប្បន្នភាពទៅកំណែចុងក្រោយបំផុតរបស់ Psiphon ដើម្បីចូលដំណើរការមុខងារនេះ</string>
+
+    <!-- Icon description for the Google Play app icon, do not translate or transliterate 'Google Play'. -->
+        <string name="google_play_icon_description_common">រូបតំណាង Google Play</string>
+
+    <!-- Title for the Install Conduit action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_install_title_common">ដំឡើង Conduit</string>
+
+    <!-- Description text for the clickable Conduit app card, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_card_description_common">ដំណើរការកម្មវិធីចល័ត Conduit ហើយរក្សាភ្ជាប់ទៅ Psiphon ដោយឥតគិតថ្លៃ</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_update_title_common">ធ្វើបច្ចុប្បន្នភាព Conduit</string>
+
+    <!-- Description for the 'Update' Action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_update_description_common">ធ្វើបច្ចុប្បន្នភាពទៅកំណែចុងក្រោយបំផុតរបស់ Conduit ដើម្បីចូលដំណើរការមុខងារនេះ</string>
+
+    <!-- Clickable text label to open the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="launch_conduit_action_common">ដំណើរការ Conduit</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+        <string name="purchase_required_prompt_title_common">របៀបចូលដំណើរការ Psiphon នៅក្នុងតំបន់របស់អ្នក។</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+        <string name="unlock_required_prompt_body_common">ការចូលដំណើរការ Psiphon នៅក្នុងតំបន់របស់អ្នកឥឡូវនេះទាមទារការគាំទ្ររបស់អ្នក។ ជួយរក្សា Psiphon ឱ្យអាចចូលដំណើរការបានសម្រាប់មនុស្សដែលត្រូវការវាបំផុតដោយជ្រើសរើសជម្រើសដែលមានដើម្បីបន្ត។</string>
+
+    <!-- Extra label that appears above the "Continue" button in the unlock required dialog in case of unlock required when unlock is not enforced -->
+        <string name="unlock_dismiss_button_extra_label_common">ខ្ញុំមិនចង់ជួយទេ។</string>
+
+    <!--Title of button that disconnects the VPN. -->
+        <string name="btn_disconnect_common">ផ្ដាច់</string>
+
+    <!-- Generic 'Continue' button label for dialogs and alerts -->
+        <string name="btn_label_continue_common">បន្ត</string>
 </resources>

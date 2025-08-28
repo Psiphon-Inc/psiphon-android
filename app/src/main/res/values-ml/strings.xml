@@ -168,4 +168,56 @@
   
   <!-- Unlock required notification long text -->
   <string name="notification_text_unlock_required_common_long">നിങ്ങളുടെ പ്രദേശത്ത് സൈഫോൺ ആക്‌സസ് ഇനി സൗജന്യമായി ലഭ്യമല്ല. അൺലോക്ക് ഓപ്‌ഷനുകൾ കാണാൻ ടാപ്പ് ചെയ്യുക</string>
+
+
+
+    <!-- Title of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon UI features.
+    The %s will be replaced with the app name passed to the string resource. -->
+        <string name="install_app_to_unlock_title_common">%s ഇൻസ്റ്റാൾ ചെയ്യുക</string>
+
+    <!-- Description of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon UI features.
+    The %s will be replaced with the app name passed to the string resource. -->
+        <string name="install_app_to_unlock_description_common">%s പ്ലേ സ്റ്റോറിൽ നിന്ന് ഇൻസ്റ്റാൾ ചെയ്യുക Psiphon‑യുമായി സൗജന്യമായി കണക്റ്റ്‌ഡായിരിക്കുവാൻ</string>
+
+    <!-- Header text above "Update Psiphon" action in the unlock required dialog. -->
+        <string name="update_psiphon_action_header_common">ആദ്യമായി Psiphon അപ്ഡേറ്റ് ചെയ്യുക</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Psiphon app, do not translate or transliterate 'Psiphon'. -->
+        <string name="update_psiphon_action_title_common">സൈഫോൺ പ്രോ അപ്‌ഡേറ്റ് ചെയ്യുക</string>
+
+    <!-- Description for the 'Update' action to open the Play Store page for the Psiphon app, do not translate or transliterate 'Psiphon'. -->
+        <string name="update_psiphon_action_description_common">ഈ ഫീച്ചർ ആക്‌സസ് ചെയ്യാൻ സൈഫോൺ പ്രോയുടെ പുതിയ പതിപ്പിലേക്ക് അപ്‌ഡേറ്റ് ചെയ്യുക</string>
+
+    <!-- Icon description for the Google Play app icon, do not translate or transliterate 'Google Play'. -->
+        <string name="google_play_icon_description_common">Google Play ഐക്കൺ</string>
+
+    <!-- Title for the Install Conduit action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_install_title_common">കണ്ട്യൂട്ട് ഇൻസ്റ്റാൾ ചെയ്യുക</string>
+
+    <!-- Description text for the clickable Conduit app card, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_card_description_common">കണ്ട്യൂട്ട് മൊബൈൽ ആപ്പ് പ്രവർത്തിപ്പിക്കുകയും സൗജന്യമായി സൈഫോൺ കണക്റ്റഡായി തുടരുകയും ചെയ്യുക</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_update_title_common">കണ്ട്യൂട്ട് അപ്‌ഡേറ്റ് ചെയ്യുക</string>
+
+    <!-- Description for the 'Update' Action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_update_description_common">ഈ ഫീച്ചർ ആക്‌സസ് ചെയ്യാൻ കണ്ട്യൂട്ടിന്റെ പുതിയ പതിപ്പിലേക്ക് അപ്‌ഡേറ്റ് ചെയ്യുക</string>
+
+    <!-- Clickable text label to open the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="launch_conduit_action_common">കണ്ട്യൂട്ട് ലോഞ്ച് ചെയ്യുക</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+        <string name="purchase_required_prompt_title_common">നിങ്ങളുടെ പ്രദേശത്ത് സൈഫോണിനെ എങ്ങനെ ആക്‌സസ് ചെയ്യാം.</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+        <string name="unlock_required_prompt_body_common">നിങ്ങളുടെ പ്രദേശത്ത് സൈഫോൺ ആക്‌സസ് ചെയ്യുന്നതിന് ഇപ്പോൾ നിങ്ങളുടെ പിന്തുണ ആവശ്യമാണ്. തുടരാൻ ലഭ്യമായ ഒരു ഓപ്‌ഷൻ തിരഞ്ഞെടുത്ത് ഏറ്റവും ആവശ്യമുള്ള ആളുകൾക്ക് സൈഫോൺ ആക്‌സസ്സിബിളാക്കാൻ സഹായിക്കുക.</string>
+
+    <!-- Extra label that appears above the "Continue" button in the unlock required dialog in case of unlock required when unlock is not enforced -->
+        <string name="unlock_dismiss_button_extra_label_common">എനിക്ക് സഹായിക്കണമെന്നില്ല.</string>
+
+    <!--Title of button that disconnects the VPN. -->
+        <string name="btn_disconnect_common">വിച്ഛേദിക്കുക</string>
+
+    <!-- Generic 'Continue' button label for dialogs and alerts -->
+        <string name="btn_label_continue_common">തുടരുക</string>
 </resources>
