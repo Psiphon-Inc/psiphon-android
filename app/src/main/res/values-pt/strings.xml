@@ -220,4 +220,7 @@ Com a caixa de diálogo do Psiphon Bump aberta no seu dispositivo e a aplicaçã
 
     <!-- Generic 'Continue' button label for dialogs and alerts -->
         <string name="btn_label_continue_common">Continuar</string>
+
+    <!-- Conduit active status indicator -->
+    <string name="conduit_active">Conduit: Ativo</string>
 </resources>

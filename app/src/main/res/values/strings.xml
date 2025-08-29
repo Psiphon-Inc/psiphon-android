@@ -270,4 +270,7 @@
 
     <!-- Generic toast message shown when an app update fails to download or install -->
     <string name="app_update_error">Update failed</string>
+
+    <!-- Conduit active status indicator -->
+    <string name="conduit_active">Conduit: Active</string>
 </resources>

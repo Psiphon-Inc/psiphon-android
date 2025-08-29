@@ -224,4 +224,7 @@
 
     <!-- Generic 'Continue' button label for dialogs and alerts -->
         <string name="btn_label_continue_common">ဆက်လုပ်မည်</string>
+
+    <!-- Conduit active status indicator -->
+    <string name="conduit_active">Conduit - အသုံးပြုနိုင်သော</string>
 </resources>

@@ -19,6 +19,9 @@
 
 package com.psiphon3;
 
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -37,9 +40,12 @@ import android.widget.ViewFlipper;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.psiphon3.log.MyLog;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 
@@ -55,12 +61,15 @@ public class HomeTabFragment extends Fragment {
     private MainActivityViewModel viewModel;
     private ViewFlipper sponsorViewFlipper;
     private ScrollView statusLayout;
+    private View statusContainer;
     private ImageButton statusViewImage;
     private View mainView;
     private SponsorHomePage sponsorHomePage;
     private boolean isWebViewLoaded = false;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private TextView lastLogEntryTv;
+    private TextView conduitIndicator;
+    private Drawable conduitAppIcon;
 
     @Nullable
     @Override
@@ -81,9 +90,12 @@ public class HomeTabFragment extends Fragment {
         sponsorViewFlipper.setOutAnimation(AnimationUtils.loadAnimation(requireContext(), android.R.anim.slide_out_right));
 
         statusLayout = view.findViewById(R.id.statusLayout);
+        // Get the FrameLayout that wraps the statusLayout for ViewFlipper comparisons
+        statusContainer = (View) statusLayout.getParent();
         statusViewImage = view.findViewById(R.id.statusViewImage);
 
         lastLogEntryTv = view.findViewById(R.id.lastlogline);
+        conduitIndicator = view.findViewById(R.id.conduitIndicator);
 
         viewModel = new ViewModelProvider(requireActivity(),
                 new ViewModelProvider.AndroidViewModelFactory(requireActivity().getApplication()))
@@ -121,7 +133,7 @@ public class HomeTabFragment extends Fragment {
                         if (sponsorHomePage != null) {
                             sponsorHomePage.stop();
                         }
-                        boolean isShowingWebView = sponsorViewFlipper.getCurrentView() != statusLayout;
+                        boolean isShowingWebView = sponsorViewFlipper.getCurrentView() != statusContainer;
                         if (isShowingWebView) {
                             sponsorViewFlipper.showNext();
                         }
@@ -151,6 +163,34 @@ public class HomeTabFragment extends Fragment {
                     return Flowable.just(url);
                 })
                 .doOnNext(this::loadEmbeddedWebView)
+                .subscribe());
+
+        // Observe Conduit running state to show/hide indicator
+        Flowable<Boolean> conduitIsRunningFlowable = ((LocalizedActivities.AppCompatActivity) requireActivity())
+                .getTunnelServiceInteractor().tunnelStateFlowable()
+                .switchMap(tunnelState -> {
+                    // If tunnel is running check if sponsor ID matches CONDUIT_RUNNING_SPONSOR_ID
+                    if (tunnelState.isRunning() && tunnelState.connectionData() != null) {
+                        return Flowable.just(tunnelState.connectionData().sponsorId().equals(BuildConfig.CONDUIT_RUNNING_SPONSOR_ID));
+                    } else {
+                        // If tunnel is not running, check if Conduit is running directly
+                        return ConduitStateManager.newManager(requireContext()).stateFlowable()
+                                .filter(state -> state.status() != ConduitState.Status.UNKNOWN)
+                                .doOnNext(state -> {
+                                            if (state.status() == ConduitState.Status.ERROR) {
+                                                // Log the error state
+                                                MyLog.e("HomeTabFragment: error getting Conduit state: " + state.message());
+                                            }
+                                        })
+                                .map(state -> state.status() == ConduitState.Status.RUNNING)
+                                .onErrorReturnItem(false); // Should never happen, but just in case
+                    }
+                })
+                .distinctUntilChanged();
+
+        compositeDisposable.add(conduitIsRunningFlowable
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext(this::renderConduitStatus)
                 .subscribe());
     }
 
@@ -183,9 +223,52 @@ public class HomeTabFragment extends Fragment {
         sponsorHomePage.load(url);
 
         // Flip to the web view if it is not showing
-        boolean isShowingWebView = sponsorViewFlipper.getCurrentView() != statusLayout;
+        boolean isShowingWebView = sponsorViewFlipper.getCurrentView() != statusContainer;
         if (!isShowingWebView) {
             sponsorViewFlipper.showNext();
+        }
+    }
+
+    private void renderConduitStatus(boolean conduitIsRunning) {
+        if (conduitIndicator == null) {
+            return;
+        }
+
+        if (conduitIsRunning) {
+            // Initialize conduitAppIcon only when needed
+            if (conduitAppIcon == null) {
+                try {
+                    PackageManager pm = requireContext().getPackageManager();
+                    ApplicationInfo appInfo = pm.getApplicationInfo("ca.psiphon.conduit", 0);
+                    conduitAppIcon = pm.getApplicationIcon(appInfo);
+                } catch (PackageManager.NameNotFoundException e) {
+                    conduitAppIcon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_conduit_default);
+                } catch (Exception e) {
+                    // Handle any other exceptions gracefully
+                    conduitAppIcon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_conduit_default);
+                }
+
+                if (conduitAppIcon != null) {
+                    // Use a fixed size instead of line height to avoid layout issues
+                    int size = (int) (conduitIndicator.getTextSize() * 1.2f);
+                    conduitAppIcon.setBounds(0, 0, size, size);
+                }
+            }
+
+            if (conduitAppIcon != null) {
+                conduitIndicator.setCompoundDrawablePadding(getResources().getDimensionPixelSize(R.dimen.padding_small));
+                if (ViewCompat.getLayoutDirection(conduitIndicator) == ViewCompat.LAYOUT_DIRECTION_RTL) {
+                    conduitIndicator.setCompoundDrawables(null, null, conduitAppIcon, null);
+                } else {
+                    conduitIndicator.setCompoundDrawables(conduitAppIcon, null, null, null);
+                }
+            }
+
+            conduitIndicator.setVisibility(View.VISIBLE);
+        } else {
+            // Hide indicator and clear drawable when Conduit is not running
+            conduitIndicator.setVisibility(View.GONE);
+            conduitIndicator.setCompoundDrawables(null, null, null, null);
         }
     }
 

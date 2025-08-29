@@ -222,4 +222,7 @@
 
     <!-- Generic 'Continue' button label for dialogs and alerts -->
         <string name="btn_label_continue_common">ቀጽል</string>
+
+    <!-- Conduit active status indicator -->
+    <string name="conduit_active">Conduit: ንቁህ</string>
 </resources>

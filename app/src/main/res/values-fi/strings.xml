@@ -225,4 +225,7 @@ Katso lokeista teknisiä tietoja.</string>
 
     <!-- Generic 'Continue' button label for dialogs and alerts -->
         <string name="btn_label_continue_common">Jatka</string>
+
+    <!-- Conduit active status indicator -->
+    <string name="conduit_active">Conduit: Aktiivinen</string>
 </resources>

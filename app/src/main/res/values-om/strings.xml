@@ -215,4 +215,7 @@
 
     <!-- Generic 'Continue' button label for dialogs and alerts -->
         <string name="btn_label_continue_common">Itti fufi</string>
+
+    <!-- Conduit active status indicator -->
+    <string name="conduit_active">Conduit: Ka'aa</string>
 </resources>
