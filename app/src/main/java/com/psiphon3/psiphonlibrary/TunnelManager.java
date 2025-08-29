@@ -52,6 +52,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.PermissionChecker;
 
 import com.jakewharton.rxrelay2.PublishRelay;
+import com.psiphon3.AppUpdatePolicy;
 import com.psiphon3.BuildConfig;
 import com.psiphon3.ConduitState;
 import com.psiphon3.ConduitStateManager;
@@ -2029,6 +2030,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
         processPxeParameters(params);
         processDeviceLocationPrecision(params);
         processUnlockOptions(params);
+        processAppUpdatePolicy(params);
         processTrustedApps(params);
         processVpnRules(params);
     }
@@ -2350,5 +2352,50 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
                         playStoreUrl
                 )
         );
+    }
+
+    private void processAppUpdatePolicy(JSONObject params) {
+        // If the "AppUpdatePolicy" is not present, the app uses default policy (see AppUpdatePolicy.java)
+        // Expected format supports app-specific policies with TTL
+        // Per-app fields are required; top-level ttlDays is optional.
+        // {
+        //     "AppUpdatePolicy": {
+        //         "ttlDays": 7,                            // Optional: policy expires after this many days (default: 7)
+        //         "com.some.app": {                        // App-specific policy by package name
+        //             "stalenessThresholdDays": 30,        // Required: days before staleness forces update
+        //             "cutoffVersion": 12345,              // Required: versions below this force update (0 = disabled)
+        //             "mustUpdateVersions": [12300, 12301] // Required: specific versions that must update (can be empty array)
+        //         },
+        //         "com.psiphon3": {                        // Different policy for Psiphon app
+        //             "stalenessThresholdDays": 7,         // More aggressive updates for Psiphon
+        //             "cutoffVersion": 15000,
+        //             "mustUpdateVersions": []
+        //         }
+        //     }
+        // }
+        //
+        // TTL: Policies automatically expire after the specified days and revert to defaults.
+        // This prevents stale/bad policies from persisting indefinitely if clients don't connect.
+        // Each app will load only its own policy based on package name. If the app's package
+        // is not found, any required field is missing/invalid, or policy has expired, the app falls back to default policy.
+        try {
+            JSONObject updatePolicyJson = params.optJSONObject("AppUpdatePolicy");
+
+            if (updatePolicyJson != null) {
+                // Validate policy for this app before saving
+                try {
+                    AppUpdatePolicy.fromJson(updatePolicyJson.toString(), getContext().getPackageName());
+                    int ttlDays = AppUpdatePolicy.getTtlDays(updatePolicyJson.toString());
+                    AppUpdatePolicy.saveAppUpdatePolicyToFile(getContext().getApplicationContext(),
+                            updatePolicyJson.toString(), System.currentTimeMillis());
+                    MyLog.i("TunnelManager: stored server update policy (" + updatePolicyJson.toString()
+                            .length() + " chars, TTL: " + ttlDays + " days)");
+                } catch (Exception validationError) {
+                    MyLog.e("TunnelManager: rejecting update policy, invalid for this app: " + validationError);
+                }
+            }
+        } catch (Exception e) {
+            MyLog.e("TunnelManager: failed to parse update policy: " + e);
+        }
     }
 }

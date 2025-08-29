@@ -44,4 +44,5 @@ ext {
     pagingVersion = '2.1.2'
     locationServicesVersion = '21.0.1'
     geoHashVersion = '0.22'
+    playAppUpdateVersion = '2.1.0'
 }

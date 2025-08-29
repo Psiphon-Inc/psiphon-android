@@ -177,5 +177,8 @@ dependencies {
     implementation "com.google.android.gms:play-services-location:$rootProject.ext.locationServicesVersion"
     implementation "com.github.drfonfon:android-geohash:$rootProject.ext.geoHashVersion"
 
+    // Play In-App Updates
+    implementation "com.google.android.play:app-update:$rootProject.ext.playAppUpdateVersion"
+
     coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:$rootProject.ext.coreLibraryDesugaringVersion"
 }
