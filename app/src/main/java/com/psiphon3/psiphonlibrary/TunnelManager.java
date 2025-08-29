@@ -1627,14 +1627,23 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
     // This observable emits a pair consisting of the latest NetworkConnectionState state and a
     // Boolean representing whether we are routing the traffic via tunnel.
     // Emits a new pair every time when either of the sources emits a new value.
+    // Note the lazy initialization and caching of the observable to emit the latest value
+    // immediately to the subscribers.
+    private Observable<Pair<TunnelState.ConnectionData.NetworkConnectionState, Boolean>> cachedConnectionObservable;
+
     private Observable<Pair<TunnelState.ConnectionData.NetworkConnectionState, Boolean>> connectionObservable() {
-        return Observable.combineLatest(m_networkConnectionStatePublishRelay,
+        if (cachedConnectionObservable != null) {
+            return cachedConnectionObservable;
+        }
+        cachedConnectionObservable =  Observable.combineLatest(m_networkConnectionStatePublishRelay,
                         m_vpnManager.routingThroughTunnelObservable(),
                         ((BiFunction<TunnelState.ConnectionData.NetworkConnectionState, Boolean,
                                 Pair<TunnelState.ConnectionData.NetworkConnectionState, Boolean>>) Pair::new))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .distinctUntilChanged();
+                .distinctUntilChanged()
+                .replay(1).refCount();
+        return cachedConnectionObservable;
     }
 
     /**
