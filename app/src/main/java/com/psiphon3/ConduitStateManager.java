@@ -168,8 +168,14 @@ public class ConduitStateManager {
             // - MAX_RETRIES_EXCEEDED: stop retrying and emit the error
             // - BINDING_ERROR: schedule a reconnect attempt
             switch (error.getType()) {
+                // Note that we cannot guarantee that updating the Conduit app will fix the trust error,
+                // or that the Conduit state service will be added in a future version of the app if missing,
+                // or that updating the app will fix a security error (e.g. if the new signing certificate was added in the new version),
+                // and unofficial Psiphon builds will never be trusted by Conduit,
+                // but it is the most likely solution, so we use the "incompatible version"
                 case PACKAGE_TRUST_ERROR:
                 case SERVICE_NOT_FOUND_ERROR:
+                case SECURITY_ERROR:
                     retryCount.set(MAX_RETRY_ATTEMPTS);
                     stateRelay.accept(ConduitState.incompatibleVersion(error.getMessage()));
                     break;
@@ -182,7 +188,6 @@ public class ConduitStateManager {
                             .build());
                     break;
 
-                case SECURITY_ERROR:
                 case MAX_RETRIES_EXCEEDED:
                     retryCount.set(MAX_RETRY_ATTEMPTS);
                     stateRelay.accept(ConduitState.error(error.getMessage()));
