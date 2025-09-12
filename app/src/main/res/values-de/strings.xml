@@ -166,4 +166,64 @@
   <string name="app_update_restart">Installieren</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Update fehlgeschlagen</string>
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">Psiphon-Zugang blockiert. Tippen Sie hier, um mehr zu erfahren</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">Kostenloser Zugang zu Psiphon ist in Ihrer Region nicht mehr verfügbar. Tippen Sie hier, um Freischaltoptionen zu sehen</string>
+
+
+
+    <!-- Title of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon UI features.
+    The %s will be replaced with the app name passed to the string resource. -->
+        <string name="install_app_to_unlock_title_common">%s installieren</string>
+
+    <!-- Description of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon UI features.
+    The %s will be replaced with the app name passed to the string resource. -->
+        <string name="install_app_to_unlock_description_common">Installiere %s aus dem Play Store, um Psiphon weiterhin kostenlos zu nutzen</string>
+
+    <!-- Header text above "Update Psiphon" action in the unlock required dialog. -->
+        <string name="update_psiphon_action_header_common">Zuerst Psiphon aktualisieren</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Psiphon app, do not translate or transliterate 'Psiphon'. -->
+        <string name="update_psiphon_action_title_common">Psiphon aktualisieren</string>
+
+    <!-- Description for the 'Update' action to open the Play Store page for the Psiphon app, do not translate or transliterate 'Psiphon'. -->
+        <string name="update_psiphon_action_description_common">Aktualisieren Sie auf die neueste Version von Psiphon, um auf diese Funktion zuzugreifen</string>
+
+    <!-- Icon description for the Google Play app icon, do not translate or transliterate 'Google Play'. -->
+        <string name="google_play_icon_description_common">Google Play-Symbol</string>
+
+    <!-- Title for the Install Conduit action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_install_title_common">Conduit installieren</string>
+
+    <!-- Description text for the clickable Conduit app card, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_card_description_common">Führen Sie die Conduit-App aus und bleiben Sie kostenlos mit Psiphon verbunden</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_update_title_common">Conduit aktualisieren</string>
+
+    <!-- Description for the 'Update' Action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_update_description_common">Aktualisieren Sie auf die neueste Version von Conduit, um auf diese Funktion zuzugreifen</string>
+
+    <!-- Clickable text label to open the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="launch_conduit_action_common">Conduit starten</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+        <string name="purchase_required_prompt_title_common">So greifen Sie auf Psiphon in Ihrer Region zu.</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+        <string name="unlock_required_prompt_body_common">Der Zugang zu Psiphon in Ihrer Region erfordert jetzt Ihre Unterstützung. Helfen Sie dabei, Psiphon für diejenigen zugänglich zu halten, die es am meisten brauchen, indem Sie eine verfügbare Option auswählen, um fortzufahren.</string>
+
+    <!-- Extra label that appears above the "Continue" button in the unlock required dialog in case of unlock required when unlock is not enforced -->
+        <string name="unlock_dismiss_button_extra_label_common">Ich möchte nicht helfen.</string>
+
+    <!--Title of button that disconnects the VPN. -->
+        <string name="btn_disconnect_common">Trennen</string>
+
+    <!-- Generic 'Continue' button label for dialogs and alerts -->
+        <string name="btn_label_continue_common">Weiter</string>
+
+    <!-- Conduit active status indicator -->
+    <string name="conduit_active">Conduit: Aktiv</string>
 </resources>

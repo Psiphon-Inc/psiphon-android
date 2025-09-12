@@ -80,10 +80,13 @@ android {
     compileOptions {
         sourceCompatibility = '1.8'
         targetCompatibility = '1.8'
+        // Flag to enable support for the new language APIs
+        coreLibraryDesugaringEnabled true
     }
 
     buildFeatures {
         buildConfig true
+        aidl true
     }
 
     if (propFile.canRead()) {
@@ -112,6 +115,24 @@ android {
         }
     }
 
+    buildTypes.each {
+        it.buildConfigField 'String', "CONDUIT_RUNNING_SPONSOR_ID", getBuildProperty('GP_CONDUIT_RUNNING_SPONSOR_ID')
+    }
+}
+
+def getBuildProperty(String propertyName) {
+    def propsFile = rootProject.file('build.properties')
+    if (propsFile.exists()) {
+        def props = new Properties()
+        props.load(new FileInputStream(propsFile))
+        if(props != null && props.containsKey(propertyName)) {
+            return props[propertyName];
+        } else {
+            return "";
+        }
+    } else {
+        throw new GradleException('File \'build.properties\' is missing! Please copy \'build.properties.stub\' to \'build.properties\' and edit the values.')
+    }
 }
 
 dependencies {
@@ -155,4 +176,9 @@ dependencies {
 
     implementation "com.google.android.gms:play-services-location:$rootProject.ext.locationServicesVersion"
     implementation "com.github.drfonfon:android-geohash:$rootProject.ext.geoHashVersion"
+
+    // Play In-App Updates
+    implementation "com.google.android.play:app-update:$rootProject.ext.playAppUpdateVersion"
+
+    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:$rootProject.ext.coreLibraryDesugaringVersion"
 }

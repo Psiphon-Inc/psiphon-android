@@ -296,14 +296,11 @@ public class FeedbackWorker extends RxWorker {
                         String feedbackJsonString = createFeedbackData(context, inputData);
 
                         // Build a temporary tunnel config to use
-                        TunnelManager.Config tunnelManagerConfig = new TunnelManager.Config();
-                        final AppPreferences multiProcessPreferences = new AppPreferences(context);
-                        tunnelManagerConfig.disableTimeouts = multiProcessPreferences.getBoolean(
-                                context.getString(R.string.disableTimeoutsPreference), false);
+                        TunnelConfigManager tunnelConfigManager = new TunnelConfigManager(context);
 
                         String tunnelCoreConfig = TunnelManager.buildTunnelCoreConfig(
                                 context,
-                                tunnelManagerConfig,
+                                tunnelConfigManager,
                                 tunnelState.isStopped(),
                                 null);
                         if (tunnelCoreConfig == null) {

@@ -1,0 +1,286 @@
+/*
+ * Copyright (c) 2025, Psiphon Inc.
+ * All rights reserved.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package com.psiphon3;
+
+import android.app.Dialog;
+import android.content.Context;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.cardview.widget.CardView;
+import androidx.lifecycle.DefaultLifecycleObserver;
+import androidx.lifecycle.LifecycleOwner;
+
+import com.psiphon3.log.MyLog;
+import com.psiphon3.psiphonlibrary.TunnelServiceInteractor;
+import com.psiphon3.unlockui.AppInstallUnlockHandler;
+import com.psiphon3.unlockui.ConduitUnlockHandler;
+import com.psiphon3.unlockui.UnlockOptionHandler;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+
+public class UnlockRequiredDialog implements DefaultLifecycleObserver {
+    boolean isDismissed = false;
+    private final Dialog dialog;
+    private final LinearLayout unlockOptionsContainer;
+    private final CardView dismissCardView;
+    private final TextView dismissButtonLabel;
+    private final TextView dismissButtonExtraLabel;
+
+    private UnlockOptions unlockOptions;
+    private final List<UnlockOptionHandler> handlers = new ArrayList<>();
+    private Runnable dismissListener;
+    private Runnable disconnectTunnelRunnable;
+
+    private UnlockRequiredDialog(Context context) {
+        View contentView = LayoutInflater.from(context).inflate(R.layout.unlock_required_dialog_layout, null);
+
+        // Initialize container and disconnect button
+        unlockOptionsContainer = contentView.findViewById(R.id.unlockOptionsContainer);
+        dismissCardView = contentView.findViewById(R.id.dismissCardView);
+        dismissButtonLabel = contentView.findViewById(R.id.dismissButtonLabel);
+        dismissButtonExtraLabel = contentView.findViewById(R.id.dismissButtonExtraLabel);
+
+        // Set click listeners
+        dismissCardView.setOnClickListener(v -> dismissWithAction());
+
+        dialog = new Dialog(context, R.style.Theme_NoTitleDialog);
+        dialog.setCancelable(false);
+        dialog.setContentView(contentView);
+        dialog.setOnShowListener(dialogInterface -> {
+            // Notify all handlers dialog is shown
+            for (UnlockOptionHandler handler : handlers) {
+                handler.onShowDialog();
+            }
+        });
+        dialog.setOnDismissListener(dialogInterface -> {
+            // Notify the service that the UI has been dismissed
+            sendUnlockDismissedToService(dialog.getContext().getApplicationContext());
+            if (dismissListener != null) {
+                dismissListener.run();
+            }
+        });
+    }
+
+    private void sendUnlockDismissedToService(Context context) {
+        // We use a fresh instance of TunnelServiceInteractor here to avoid any lifecycle issues
+        // with the one in MainActivity. At this point, the main activity's interactor might be unbound,
+        // and the message wouldn’t reach the service. This ensures the signal is delivered reliably.
+        MyLog.i("UnlockRequiredDialog: sending unlock dismissed message to service");
+        TunnelServiceInteractor tunnelServiceInteractor = new TunnelServiceInteractor(context, false);
+        tunnelServiceInteractor.onStart(context);
+        tunnelServiceInteractor.unlockRequiredUiDismissed();
+        tunnelServiceInteractor.onStop(context);
+        tunnelServiceInteractor.onDestroy(context);
+    }
+
+    private void registerLifecycleOwner(LifecycleOwner owner) {
+        owner.getLifecycle().addObserver(this);
+    }
+
+    private void setDisconnectTunnelRunnable(Runnable runnable) {
+        this.disconnectTunnelRunnable = runnable;
+    }
+
+    private void setDismissListener(Runnable dismissListener) {
+        this.dismissListener = dismissListener;
+    }
+
+    private void setUnlockOptions(UnlockOptions unlockOptions) {
+        this.unlockOptions = unlockOptions;
+    }
+
+    private boolean hasDisplayableEntries() {
+        return unlockOptions != null && unlockOptions.hasDisplayableEntries();
+    }
+
+    private void show() {
+        if (!hasDisplayableEntries()) {
+            MyLog.w("UnlockRequiredDialog: no displayable entries present, not showing dialog");
+            return;
+        }
+        // Set the dismiss / disconnect button text
+        if (unlockOptions != null && unlockOptions.isEnforce()) {
+            dismissButtonExtraLabel.setVisibility(View.GONE);
+            dismissButtonLabel.setText(R.string.btn_disconnect_common);
+        } else {
+            dismissButtonExtraLabel.setVisibility(View.VISIBLE);
+            dismissButtonLabel.setText(R.string.btn_label_continue_common);
+        }
+
+        createHandlers();
+        populateContainer();
+
+        dialog.show();
+        // Full screen resize
+        WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
+        lp.copyFrom(dialog.getWindow().getAttributes());
+        lp.width = WindowManager.LayoutParams.MATCH_PARENT;
+        lp.height = WindowManager.LayoutParams.MATCH_PARENT;
+        dialog.getWindow().setAttributes(lp);
+    }
+
+    private void createHandlers() {
+        handlers.clear();
+
+        if (unlockOptions == null) return;
+
+        Map<String, UnlockOptions.UnlockEntry> entries = unlockOptions.getAllEntries();
+
+        for (Map.Entry<String, UnlockOptions.UnlockEntry> entry : entries.entrySet()) {
+            String key = entry.getKey();
+            UnlockOptions.UnlockEntry unlockEntry = entry.getValue();
+
+            UnlockOptionHandler handler = createHandler(key, unlockEntry);
+            if (handler != null) {
+                handlers.add(handler);
+            }
+        }
+
+        // Sort by priority (lower number = higher priority = shown first)
+        handlers.sort(Comparator.comparingInt(UnlockOptionHandler::getPriority));
+    }
+
+    private UnlockOptionHandler createHandler(String key, UnlockOptions.UnlockEntry entry) {
+        if (key.equals(UnlockOptions.UNLOCK_ENTRY_CONDUIT)) {
+            if (entry instanceof UnlockOptions.ConduitUnlockEntry) {
+                return new ConduitUnlockHandler((UnlockOptions.ConduitUnlockEntry) entry,
+                        disconnectTunnelRunnable, this::dismiss);
+            } else {
+                MyLog.w("UnlockRequiredDialog: entry for key " + key + " is not a ConduitUnlockEntry");
+                return null;
+            }
+        } else if (key.startsWith(UnlockOptions.APP_INSTALL_PREFIX)) {
+            if (entry instanceof UnlockOptions.AppInstallUnlockEntry) {
+                return new AppInstallUnlockHandler(key, (UnlockOptions.AppInstallUnlockEntry) entry,
+                        disconnectTunnelRunnable, this::dismiss);
+            } else {
+                MyLog.w("UnlockRequiredDialog: entry for key " + key + " is not an AppInstallUnlockEntry");
+                return null;
+            }
+        }
+
+        MyLog.w("UnlockRequiredDialog: unknown unlock option type: " + key);
+        return null;
+    }
+
+    private void populateContainer() {
+        unlockOptionsContainer.removeAllViews();
+
+        for (int i = 0; i < handlers.size(); i++) {
+            UnlockOptionHandler handler = handlers.get(i);
+            View view = handler.getView(unlockOptionsContainer);
+            unlockOptionsContainer.addView(view);
+        }
+    }
+
+    public boolean isShowing() {
+        return dialog.isShowing();
+    }
+
+    public void dismiss() {
+        synchronized (this) {
+            if (isDismissed) {
+                MyLog.w("UnlockRequiredDialog: already dismissed, ignoring further dismiss calls");
+                return;
+            }
+            isDismissed = true;
+        }
+        // Notify handlers dialog is being dismissed
+        for (UnlockOptionHandler handler : handlers) {
+            handler.onDismissDialog();
+        }
+
+        if (dialog.getContext() instanceof LifecycleOwner) {
+            ((LifecycleOwner) dialog.getContext()).getLifecycle().removeObserver(this);
+        }
+        dialog.dismiss();
+    }
+
+    @Override
+    public void onResume(@NonNull LifecycleOwner owner) {
+        // Forward lifecycle events to all handlers
+        List<UnlockOptionHandler> handlersCopy = new ArrayList<>(handlers);
+        for (UnlockOptionHandler handler : handlersCopy) {
+            handler.onResume();
+        }
+    }
+
+    @Override
+    public void onPause(@NonNull LifecycleOwner owner) {
+        // Forward lifecycle events to all handlers
+        List<UnlockOptionHandler> handlersCopy = new ArrayList<>(handlers);
+        for (UnlockOptionHandler handler : handlersCopy) {
+            handler.onPause();
+        }
+    }
+
+    @Override
+    public void onDestroy(@NonNull LifecycleOwner owner) {
+        if (dialog.isShowing()) {
+            dismiss();
+        }
+    }
+
+    private void dismissWithAction() {
+        // If we are enforcing unlock, we need to stop the tunnel service, otherwise just dismiss
+        if (unlockOptions.isEnforce() && disconnectTunnelRunnable != null) {
+            disconnectTunnelRunnable.run();
+        }
+        dialog.dismiss();
+    }
+
+    public static class Builder {
+        private final UnlockRequiredDialog dialog;
+        private final LifecycleOwner lifecycleOwner;
+
+        public Builder(Context context, LifecycleOwner lifecycleOwner) {
+            this.dialog = new UnlockRequiredDialog(context);
+            this.lifecycleOwner = lifecycleOwner;
+        }
+
+        public Builder setDisconnectTunnelRunnable(Runnable runnable) {
+            dialog.setDisconnectTunnelRunnable(runnable);
+            return this;
+        }
+
+        public Builder setDismissListener(Runnable dismissListener) {
+            dialog.setDismissListener(dismissListener);
+            return this;
+        }
+
+        public Builder setUnlockOptions(UnlockOptions unlockOptions) {
+            dialog.setUnlockOptions(unlockOptions);
+            return this;
+        }
+
+        public UnlockRequiredDialog show() {
+            dialog.registerLifecycleOwner(lifecycleOwner);
+            dialog.show();
+            return dialog;
+        }
+    }
+}

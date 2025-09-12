@@ -162,4 +162,65 @@
   <string name="app_update_restart">설치</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">업데이트 실패</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">Psiphon 액세스가 차단되었습니다. 자세한 내용을 보려면 탭하세요</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">귀하의 지역에서 무료 Psiphon 액세스를 더 이상 사용할 수 없습니다. 잠금 해제 옵션을 보려면 탭하세요</string>
+
+
+
+    <!-- Title of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon UI features.
+    The %s will be replaced with the app name passed to the string resource. -->
+        <string name="install_app_to_unlock_title_common">%s 설치</string>
+
+    <!-- Description of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon UI features.
+    The %s will be replaced with the app name passed to the string resource. -->
+        <string name="install_app_to_unlock_description_common">무료로 Psiphon에 연결하려면 Play 스토어에서 %s 설치하세요</string>
+
+    <!-- Header text above "Update Psiphon" action in the unlock required dialog. -->
+        <string name="update_psiphon_action_header_common">먼저 Psiphon를 업데이트하세요</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Psiphon app, do not translate or transliterate 'Psiphon'. -->
+        <string name="update_psiphon_action_title_common">Psiphon 업데이트</string>
+
+    <!-- Description for the 'Update' action to open the Play Store page for the Psiphon app, do not translate or transliterate 'Psiphon'. -->
+        <string name="update_psiphon_action_description_common">이 기능에 액세스하려면 최신 버전의 Psiphon로 업데이트하세요</string>
+
+    <!-- Icon description for the Google Play app icon, do not translate or transliterate 'Google Play'. -->
+        <string name="google_play_icon_description_common">Google Play 아이콘</string>
+
+    <!-- Title for the Install Conduit action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_install_title_common">Conduit 설치</string>
+
+    <!-- Description text for the clickable Conduit app card, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_card_description_common">Conduit 모바일 앱을 실행하고 Psiphon에 무료로 연결 상태를 유지하세요</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_update_title_common">Conduit 업데이트</string>
+
+    <!-- Description for the 'Update' Action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_update_description_common">이 기능에 액세스하려면 최신 버전의 Conduit로 업데이트하세요</string>
+
+    <!-- Clickable text label to open the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="launch_conduit_action_common">Conduit 실행</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+        <string name="purchase_required_prompt_title_common">귀하의 지역에서 Psiphon에 액세스하는 방법.</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+        <string name="unlock_required_prompt_body_common">귀하의 지역에서 Psiphon 액세스는 이제 귀하의 지원이 필요합니다. 계속하려면 사용 가능한 옵션 중 하나를 선택하여 가장 필요한 사람들을 위해 Psiphon을 열어두는 데 도움을 주세요.</string>
+
+    <!-- Extra label that appears above the "Continue" button in the unlock required dialog in case of unlock required when unlock is not enforced -->
+        <string name="unlock_dismiss_button_extra_label_common">도움을 주고 싶지 않습니다.</string>
+
+    <!--Title of button that disconnects the VPN. -->
+        <string name="btn_disconnect_common">연결 끊기</string>
+
+    <!-- Generic 'Continue' button label for dialogs and alerts -->
+        <string name="btn_label_continue_common">계속하기</string>
+
+    <!-- Conduit active status indicator -->
+    <string name="conduit_active">Conduit: 활성</string>
 </resources>

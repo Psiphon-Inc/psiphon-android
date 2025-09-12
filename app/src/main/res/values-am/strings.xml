@@ -163,4 +163,65 @@
   <string name="app_update_restart">ይጫኑ</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">ማዘመን አልተሳካም</string>
+  
+  <!-- Unlock required notification short text -->
+  <string name="notification_text_unlock_required_common_short">የPsiphon መዳረሻ ታግዷል። ለተጨማሪ መረጃ ይንኩ</string>
+  
+  <!-- Unlock required notification long text -->
+  <string name="notification_text_unlock_required_common_long">በአካባቢዎ ውስጥ ነጻ የPsiphon መዳረሻ አልተገኘም። የመክፈቻ አማራጮችን ለማየት ይንኩ</string>
+
+
+
+    <!-- Title of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon UI features.
+    The %s will be replaced with the app name passed to the string resource. -->
+        <string name="install_app_to_unlock_title_common">%s አጫውት</string>
+
+    <!-- Description of the view shown when presenting the app unlock option to install an app in order to unlock Psiphon UI features.
+    The %s will be replaced with the app name passed to the string resource. -->
+        <string name="install_app_to_unlock_description_common">%s ከPlay Store ውስጥ ጫን እና Psiphon በነጻ ተገናኝተው ይቀጥሉ</string>
+
+    <!-- Header text above "Update Psiphon" action in the unlock required dialog. -->
+        <string name="update_psiphon_action_header_common">ከመጀመርያ ይህን Psiphon አዘምኑ</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Psiphon app, do not translate or transliterate 'Psiphon'. -->
+        <string name="update_psiphon_action_title_common">Psiphonን ያዘምኑ</string>
+
+    <!-- Description for the 'Update' action to open the Play Store page for the Psiphon app, do not translate or transliterate 'Psiphon'. -->
+        <string name="update_psiphon_action_description_common">ይህንን ባህሪ ለመጠቀም ወደ የቅርብ ጊዜው የPsiphon ሥሪት ያዘምኑ</string>
+
+    <!-- Icon description for the Google Play app icon, do not translate or transliterate 'Google Play'. -->
+        <string name="google_play_icon_description_common">የGoogle Play አዶ</string>
+
+    <!-- Title for the Install Conduit action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_install_title_common">Conduitን ጫን</string>
+
+    <!-- Description text for the clickable Conduit app card, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_card_description_common">የConduit ሞባይል መተግበሪያን ያስሩ እና ነጻ ሆነው ከPsiphon ጋር ቀጥለው ይሆዩ</string>
+
+    <!-- Title for the 'Update' action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_update_title_common">Conduitን ያዘምኑ</string>
+
+    <!-- Description for the 'Update' Action to open the Play Store page for the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="conduit_update_description_common">ይህንን ባህሪ ለመጠቀም ወደ የቅርብ ጊዜው የConduit ሥሪት ያዘምኑ</string>
+
+    <!-- Clickable text label to open the Conduit app, do not translate or transliterate 'Conduit'. -->
+        <string name="launch_conduit_action_common">Conduitን ክፈት</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. An alert dialog with this title is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+        <string name="purchase_required_prompt_title_common">እንዴት በአካባቢዎ ውስጥ Psiphon ማግኘት ይቻላል።</string>
+
+    <!--Do not translate or transliterate 'Psiphon'. Body of an alert which is shown when the user connects from a region where free service is no longer offered, asking the user to choose an option to continue using the app.-->
+        <string name="unlock_required_prompt_body_common">በአካባቢዎ ውስጥ Psiphon ማግኘት አሁን የእርስዎን ድጋፍ ይፈልጋል። Psiphon ለበጎ አሳሳቢዎች እንዲቀጥል በሚችሉበት መንገድ ይምረጡ።</string>
+
+    <!-- Extra label that appears above the "Continue" button in the unlock required dialog in case of unlock required when unlock is not enforced -->
+        <string name="unlock_dismiss_button_extra_label_common">መርዳት አልፈልግም።</string>
+
+    <!--Title of button that disconnects the VPN. -->
+        <string name="btn_disconnect_common">ግንኙነት አቋርጥ</string>
+
+    <!-- Generic 'Continue' button label for dialogs and alerts -->
+        <string name="btn_label_continue_common">ቀጥል</string>
+
+    <!-- Conduit active status indicator -->
+    <string name="conduit_active">Conduit፦ ሰራተኛ</string>
 </resources>

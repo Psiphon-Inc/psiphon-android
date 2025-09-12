@@ -52,12 +52,16 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.PermissionChecker;
 
 import com.jakewharton.rxrelay2.PublishRelay;
+import com.psiphon3.AppUpdatePolicy;
 import com.psiphon3.BuildConfig;
+import com.psiphon3.ConduitState;
+import com.psiphon3.ConduitStateManager;
 import com.psiphon3.Location;
 import com.psiphon3.PackageHelper;
 import com.psiphon3.PsiphonCrashService;
 import com.psiphon3.R;
 import com.psiphon3.TunnelState;
+import com.psiphon3.UnlockOptions;
 import com.psiphon3.VpnManager;
 import com.psiphon3.VpnRulesHelper;
 import com.psiphon3.log.MyLog;
@@ -79,11 +83,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import ca.psiphon.PsiphonTunnel;
 import io.reactivex.Completable;
+import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -104,6 +111,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
         CHANGED_LOCALE,
         NFC_CONNECTION_INFO_EXCHANGE_IMPORT,
         NFC_CONNECTION_INFO_EXCHANGE_EXPORT,
+        UNLOCK_REQUIRED_UI_DISMISSED,
     }
 
     // Service -> Client
@@ -152,19 +160,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
         postServiceNotification(false, m_tunnelState.networkConnectionState);
     }
 
-    // Tunnel config, received from the client.
-    static class Config {
-        String egressRegion = PsiphonConstants.REGION_CODE_ANY;
-        boolean disableTimeouts = false;
-        String sponsorId = EmbeddedValues.SPONSOR_ID;
-        String deviceLocation = "";
-    }
-
-    private Config m_tunnelConfig;
-
-    private void setTunnelConfig(Config config) {
-        m_tunnelConfig = config;
-    }
 
     // Shared tunnel state, sent to the client in the HANDSHAKE
     // intent and in the MSG_TUNNEL_CONNECTION_STATE service message.
@@ -206,15 +201,23 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
     private PendingIntent m_notificationPendingIntent;
 
     private PublishRelay<TunnelState.ConnectionData.NetworkConnectionState> m_networkConnectionStatePublishRelay = PublishRelay.create();
-    private final PublishRelay<Boolean> m_isRoutingThroughTunnelPublishRelay = PublishRelay.create();
     private PublishRelay<Object> m_newClientPublishRelay = PublishRelay.create();
     private CompositeDisposable m_compositeDisposable = new CompositeDisposable();
+    private Disposable conduitStateObserver;
     private VpnAppsUtils.VpnAppsExclusionSetting vpnAppsExclusionSetting = VpnAppsUtils.VpnAppsExclusionSetting.ALL_APPS;
     private int vpnAppsExclusionCount = 0;
     private ArrayList<String> unsafeTrafficSubjects;
 
     private String pxeUrl = null;
 
+    private TunnelConfigManager tunnelConfigManager;
+    private final UnlockOptions unlockOptions = new UnlockOptions();
+    // Flag to pin unlock options for the current session if they are valid
+    private boolean unlockOptionsPinnedForSession = false;
+
+    private final PublishRelay<Boolean> unlockUiDismissedPublishRelay = PublishRelay.create();
+    // Flag to track if we sent the landing page intent to the client activity during the current tunnel session.
+    private final AtomicBoolean homePageHandled = new AtomicBoolean(false);
 
     TunnelManager(Service parentService) {
         m_parentService = parentService;
@@ -268,6 +271,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
         // This service runs as a separate process, so it needs to initialize embedded values
         EmbeddedValues.initialize(getContext());
 
+        tunnelConfigManager = new TunnelConfigManager(getContext());
+
         // Load trusted signatures from storage
         PackageHelper.configureRuntimeTrustedSignatures(
                 PackageHelper.readTrustedSignaturesFromFile(getContext().getApplicationContext())
@@ -279,6 +284,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
         );
 
         m_compositeDisposable.add(connectionStatusUpdaterDisposable());
+
+        // Observe unlock options UI dismissed events and send the home page intent
+        // in case of NOT_ENFORCED unlock if not already handled.
+        m_compositeDisposable.add(unlockDismissHandlerDisposable());
     }
 
     // Implementation of android.app.Service.onStartCommand
@@ -298,22 +307,85 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
             m_firstStart = false;
             m_tunnelThreadStopSignal = new CountDownLatch(1);
             m_compositeDisposable.add(
-                    getTunnelConfigSingle()
+                    tunnelConfigManager.initConfiguration(conduitStateSingle(), deviceLocationSingle())
                             .doOnSuccess(config -> {
-                                setTunnelConfig(config);
+                                MyLog.i("TunnelManager: tunnel config initialized");
                                 m_tunnelThread = new Thread(this::runTunnel);
                                 m_tunnelThread.start();
                             })
                             .subscribe());
 
+
+            // Start a tunnel config observer to restart the tunnel when there is a new tunnel config
+            // This is the preferred method to restart the tunnel in all cases
+            m_compositeDisposable.add(
+                    tunnelConfigManager.observeTunnelConfig()
+                            .skip(1) // Skip the initial config value
+                            .doOnNext(config -> {
+                                // Perform a tunnel restart when a new tunnel config is received and we are not in the process of stopping
+                                if (!m_isStopping.get()) {
+                                    TunnelConfigManager.RestartType restartType = config.getRestartType();
+                                    // On full restart reset home page handled flag
+                                    if (restartType == TunnelConfigManager.RestartType.FULL_RESTART) {
+                                        homePageHandled.set(false);
+                                        MyLog.i("TunnelManager: tunnel config observer: full tunnel restart due to new tunnel config");
+                                    } else {
+                                        MyLog.i("TunnelManager: tunnel config observer: quiet tunnel restart due to new tunnel config");
+                                    }
+                                    // Reset unlock-related state for all restart types
+                                    unlockOptions.reset();
+                                    cachedUnlockUiDeliveryCompletable = null;
+                                    unlockOptionsPinnedForSession = false;
+
+                                    m_networkConnectionStatePublishRelay.accept(
+                                            TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
+                                    m_vpnManager.stopRouteThroughTunnel();
+                                    onRestartTunnel();
+                                }
+                            })
+                            .subscribe()
+            );
+
+            // Start Conduit state observer
+            setupConduitStateObserver();
+
             // Set the persistent service running flag to true.
             // This flag is used to determine whether the service should be automatically restarted
             // after an app update, upon receiving a package replaced broadcast in the PsiphonUpdateReceiver.
             new AppPreferences(getContext()).put(getContext().getString(R.string.serviceRunningPreference), true);
-
-
-        }
+       }
         return Service.START_REDELIVER_INTENT;
+    }
+
+    private void setupConduitStateObserver() {
+        if (conduitStateObserver != null && !conduitStateObserver.isDisposed()) {
+            conduitStateObserver.dispose();
+        }
+
+        // Configure runtime trusted signatures
+        PackageHelper.configureRuntimeTrustedSignatures(
+                PackageHelper.readTrustedSignaturesFromFile(getContext().getApplicationContext())
+        );
+
+        // Observe conduit state changes, update tunnel config manager accordingly
+        conduitStateObserver = ConduitStateManager.newManager(getContext()).stateFlowable()
+                .doOnNext(state -> MyLog.i("TunnelManager: Conduit state: " + state))
+                .filter(state -> state.status() != ConduitState.Status.UNKNOWN)
+                .map(state -> state.status() == ConduitState.Status.RUNNING)
+                .onErrorReturnItem(false) // Should not ever happen but just in case
+                .switchMap(isRunning ->
+                        unlockOptions.getEntriesSetFlowable()
+                                .map(ignored -> unlockOptions.hasConduitEntry())
+                                .distinctUntilChanged()
+                                .doOnNext(hasConduitUnlockOption -> {
+                                    MyLog.i("TunnelManager: Conduit is running: " + isRunning +
+                                            ", has conduit unlock option: " + hasConduitUnlockOption +
+                                            ", updating tunnel config manager");
+                                    tunnelConfigManager.updateConduitStateConditional(isRunning, hasConduitUnlockOption);
+                                }))
+                .subscribe();
+
+        m_compositeDisposable.add(conduitStateObserver);
     }
 
     IBinder onBind(Intent intent) {
@@ -328,40 +400,50 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
                     TunnelState.ConnectionData.NetworkConnectionState networkConnectionState = pair.first;
                     boolean isRoutingThroughTunnel = pair.second;
 
-                    // The tunnel is connected but we are not routing traffic through the tunnel yet,
-                    // check in the following order if:
-                    // a) we need to send a PXE intent,
-                    // b) or we need to send a landing page intent.
-                    if (networkConnectionState == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED && !isRoutingThroughTunnel) {
-                        if (shouldShowPxeUi()) {
-                            if (canSendIntentToActivity()) {
-                                m_vpnManager.routeThroughTunnel(m_tunnel.getLocalSocksProxyPort());
-                                sendPxeIntent();
-                                m_isRoutingThroughTunnelPublishRelay.accept(Boolean.TRUE);
-                                // Do not emit downstream if we are just started routing.
-                                return Observable.empty();
-                            }
-                            // Emit CONNECTING and start waiting for an activity to bind
-                            return waitSendIntentAndRouteThroughTunnelCompletable(this::sendPxeIntent)
-                                    .<TunnelState.ConnectionData.NetworkConnectionState>toObservable()
-                                    .startWith(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
+                    if (networkConnectionState == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED) {
+                        if (unlockOptions.unlockRequired() == UnlockOptions.UnlockType.ENFORCED) {
+                            // Command the service to stop immediately if enforced unlock is required.
+                            signalStopService();
+                            // Do not emit downstream, we are stopping the service.
+                            return Observable.empty();
+                        } else if (unlockOptions.unlockRequired() == UnlockOptions.UnlockType.NOT_REQUIRED) {
+                            // If there is no unlock required, we should cancel the unlock required notification
+                            // if it showing and continue
+                            cancelUnlockRequiredNotification();
                         }
-                        if (m_tunnelState.homePages != null && m_tunnelState.homePages.size() != 0) {
-                            if (canSendIntentToActivity()) {
-                                m_vpnManager.routeThroughTunnel(m_tunnel.getLocalSocksProxyPort());
-                                sendHandshakeIntent();
-                                m_isRoutingThroughTunnelPublishRelay.accept(Boolean.TRUE);
-                                // Do not emit downstream if we are just started routing.
-                                return Observable.empty();
-                            }
-                            // Emit CONNECTING and start waiting for an activity to bind
+                    }
+
+                    // The tunnel is connected but we are not routing traffic through the tunnel yet,
+                    if (networkConnectionState == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED && !isRoutingThroughTunnel) {
+                        // If the unlock options require unlock do not route through tunnel and bypass the
+                        // home page intent handling. In this case the home page intent will be handled
+                        // via unlockDismissHandlerDisposable when the unlock options UI is dismissed.
+                        if (unlockOptions.unlockRequired() != UnlockOptions.UnlockType.NOT_REQUIRED) {
+                            return ensureUnlockUIDelivered().andThen(Observable.empty());
+                        }
+
+                        // If the unlock options do not require unlock, then we can handle the home page intent
+                        // check in the following order if:
+                        // a) we need to send a PXE intent,
+                        // b) or we need to send a landing page intent.
+                        if (shouldShowPxeUi()) {
+                            // Do not emit downstream if we are handling PXE intent, once the
+                            // intent is sent connectionObservable emission will be triggered again
+                            // with the new isRoutingThroughTunnel state because sendPxeIntent
+                            // starts routing through tunnel.
+                            return waitSendIntentAndRouteThroughTunnelCompletable(this::sendPxeIntent)
+                                    .andThen(Observable.empty());
+                        }
+                        if (m_tunnelState.homePages != null && m_tunnelState.homePages.size() != 0 && !homePageHandled.get()) {
+                            // Do not emit downstream if we are handling home page intent, once the
+                            // intent is sent connectionObservable emission will be triggered again
+                            // with the new isRoutingThroughTunnel state because sendHandshakeIntent
+                            // starts routing through tunnel.
                             return waitSendIntentAndRouteThroughTunnelCompletable(this::sendHandshakeIntent)
-                                    .<TunnelState.ConnectionData.NetworkConnectionState>toObservable()
-                                    .startWith(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
+                                    .andThen(Observable.empty());
                         }
                         // No intents to send, just route through tunnel.
                         m_vpnManager.routeThroughTunnel(m_tunnel.getLocalSocksProxyPort());
-                        m_isRoutingThroughTunnelPublishRelay.accept(Boolean.TRUE);
                         // Do not emit downstream if we are just started routing.
                         return Observable.empty();
                     }
@@ -380,6 +462,14 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
     }
 
     private Completable waitSendIntentAndRouteThroughTunnelCompletable(Runnable runnable) {
+        if (canSendIntentToActivity()) {
+            // If we can send intent to activity, then just send the intent and route through tunnel.
+            return Completable.fromRunnable(() -> {
+                runnable.run();
+                m_vpnManager.routeThroughTunnel(m_tunnel.getLocalSocksProxyPort());
+            });
+        }
+
         return m_newClientPublishRelay
                 // Test the activity client(s) again by pinging, block until there's at least one live client
                 .filter(__ -> pingForActivity())
@@ -389,7 +479,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
                 .doOnComplete(() -> {
                     m_vpnManager.routeThroughTunnel(m_tunnel.getLocalSocksProxyPort());
                     runnable.run();
-                    m_isRoutingThroughTunnelPublishRelay.accept(Boolean.TRUE);
                 })
                 // Cancel "Open Psiphon to keep connecting" when completed or disposed
                 .doFinally(this::cancelOpenAppToFinishConnectingNotification);
@@ -403,6 +492,128 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
         if (mNotificationManager != null) {
             mNotificationManager.cancel(R.id.notification_id_open_app_to_keep_connecting);
         }
+    }
+
+    private void cancelUnlockRequiredNotification() {
+        if (mNotificationManager != null) {
+            mNotificationManager.cancel(R.id.notification_id_unlock_required);
+        }
+    }
+
+    private void showUnlockRequiredNotification() {
+        if (mNotificationManager == null) {
+            return;
+        }
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(getContext(), NOTIFICATION_SERVER_ALERT_CHANNEL_ID);
+        notificationBuilder
+                .setSmallIcon(R.drawable.ic_psiphon_alert_notification)
+                .setGroup(getContext().getString(R.string.alert_notification_group))
+                .setContentTitle(getContext().getString(R.string.notification_title_action_required))
+                .setContentText(getContext().getString(R.string.notification_text_unlock_required_common_short))
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .bigText(getContext().getString(R.string.notification_text_unlock_required_common_long)))
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setContentIntent(m_notificationPendingIntent);
+
+        mNotificationManager.notify(R.id.notification_id_unlock_required, notificationBuilder.build());
+    }
+
+    // Ensures that the unlock UI is delivered to the client if required.
+    // If the unlock options are not required, it completes immediately.
+    // The completable is cached to avoid multiple deliveries and can be called multiple times,
+    // like, for example, when the tunnel is fully connected.
+    private Completable cachedUnlockUiDeliveryCompletable = null;
+
+    Completable ensureUnlockUIDelivered() {
+        return Completable.defer(() -> {
+            // Always check current unlock requirements (fresh every time)
+            if (unlockOptions.unlockRequired() == UnlockOptions.UnlockType.NOT_REQUIRED) {
+                return Completable.complete();
+            }
+
+            // Return cached delivery execution (created once per session)
+            if (cachedUnlockUiDeliveryCompletable == null) {
+                cachedUnlockUiDeliveryCompletable = createDeliveryCompletable().cache();
+            }
+            return cachedUnlockUiDeliveryCompletable;
+        });
+    }
+
+    private Completable createDeliveryCompletable() {
+        return Completable.defer(() -> {
+            // persist the unlock options
+            unlockOptions.toFile(getContext());
+
+            if (canSendIntentToActivity()) {
+                try {
+                    m_notificationPendingIntent.send();
+                    return Completable.complete();
+                } catch (PendingIntent.CanceledException e) {
+                    MyLog.w("TunnelManager: createDeliveryCompletable: pending intent send failed: " + e);
+                    // Intent was cancelled, but we still complete
+                    return Completable.complete();
+                }
+            }
+
+            // Cannot send immediately - wait for client
+            return m_newClientPublishRelay
+                    .filter(__ -> pingForActivity())
+                    .take(1)
+                    .ignoreElements()
+                    .doOnSubscribe(__ -> {
+                        m_vpnManager.stopRouteThroughTunnel();
+                        showUnlockRequiredNotification();
+                    })
+                    .doOnComplete(() -> {
+                        try {
+                            m_notificationPendingIntent.send();
+                        } catch (PendingIntent.CanceledException e) {
+                            MyLog.w("TunnelManager: createDeliveryCompletable: pending intent send failed: " + e);
+                        }
+                    });
+        });
+    }
+
+    private boolean shouldSendHandshakeIntent() {
+        return unlockOptions.unlockRequired() == UnlockOptions.UnlockType.NOT_ENFORCED
+                && !homePageHandled.get()
+                && m_tunnelState.homePages != null
+                && !m_tunnelState.homePages.isEmpty();
+    }
+
+    private Disposable unlockDismissHandlerDisposable() {
+        return unlockUiDismissedPublishRelay.startWith(false)
+                .switchMapSingle(this::waitForTunnelConditions)
+                .switchMapCompletable(this::handleUnlockAction)
+                .subscribe();
+    }
+
+    private Single<Boolean> waitForTunnelConditions(boolean dismissed) {
+        return connectionObservable()
+                .map(connectionState -> {
+                    return dismissed && areTunnelConditionsMet(connectionState);
+                })
+                .distinctUntilChanged()
+                .filter(result -> result)
+                .firstOrError();
+    }
+
+    private boolean areTunnelConditionsMet(Pair<TunnelState.ConnectionData.NetworkConnectionState, Boolean> state) {
+        return state.first == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED
+                && !state.second;
+    }
+
+    private Completable handleUnlockAction(boolean conditionsMet) {
+        if (shouldSendHandshakeIntent()) {
+            return waitSendIntentAndRouteThroughTunnelCompletable(this::sendHandshakeIntent);
+        }
+
+        // Handle edge case: a quiet restart does not reset homePageHandled. If the NOT_ENFORCED
+        // unlock UI is triggered, the call to waitSendIntentAndRouteThroughTunnelCompletable above
+        // will be skipped. In that case, start routing now.
+        m_vpnManager.routeThroughTunnel(m_tunnel.getLocalSocksProxyPort());
+
+        return Completable.complete();
     }
 
     private void showOpenAppToFinishConnectingNotification() {
@@ -571,36 +782,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
                         PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
-    private Single<Config> getTunnelConfigSingle() {
-        final AppPreferences multiProcessPreferences = new AppPreferences(getContext());
-
-        Single<Config> configSingle = Single.fromCallable(() -> {
-            Config tunnelConfig = new Config();
-            tunnelConfig.egressRegion = multiProcessPreferences
-                    .getString(getContext().getString(R.string.egressRegionPreference),
-                            PsiphonConstants.REGION_CODE_ANY);
-            tunnelConfig.disableTimeouts = multiProcessPreferences
-                    .getBoolean(getContext().getString(R.string.disableTimeoutsPreference),
-                            false);
-            return tunnelConfig;
-        });
-
-        int deviceLocationPrecision = multiProcessPreferences
-                .getInt(getContext().getString(R.string.deviceLocationPrecisionParameter),
-                        0);
-
-        Single<String> geoHashSingle =
-                Location.getGeoHashSingle(getContext(), deviceLocationPrecision, 1000)
-                        .onErrorReturnItem("");
-
-        BiFunction<Config, String, Config> zipper =
-                (config, deviceLocation) -> {
-                    config.deviceLocation = deviceLocation;
-                    return config;
-                };
-
-        return Single.zip(configSingle, geoHashSingle, zipper);
-    }
 
     private Notification createNotification(
             boolean alert,
@@ -708,7 +889,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
     }
 
     private boolean isSelectedEgressRegionAvailable(List<String> availableRegions) {
-        String selectedEgressRegion = m_tunnelConfig.egressRegion;
+        String selectedEgressRegion = tunnelConfigManager.getEgressRegion();
         if (selectedEgressRegion == null || selectedEgressRegion.equals(PsiphonConstants.REGION_CODE_ANY)) {
             // User region is either not set or set to 'Best Performance', do nothing
             return true;
@@ -811,17 +992,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
                             return;
                         }
 
-                        // TODO: notify client that the tunnel is going to restart
-                        //  rather than reporting tunnel is not connected?
-                        manager.m_networkConnectionStatePublishRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
+                        // On a restart, a new tunnel configuration is created and emitted via tunnelConfigManager.observeTunnelConfig()
+                        // This emission automatically triggers a tunnel restart through the Rx subscription in the onStartCommand() method.
+                        MyLog.i("TunnelManager: received restart tunnel message");
                         manager.m_compositeDisposable.add(
-                                manager.getTunnelConfigSingle()
-                                        .doOnSuccess(config -> {
-                                            manager.m_vpnManager.stopRouteThroughTunnel();
-                                            manager.m_isRoutingThroughTunnelPublishRelay.accept(Boolean.FALSE);
-                                            manager.setTunnelConfig(config);
-                                            manager.onRestartTunnel();
-                                        })
+                                manager.tunnelConfigManager.initConfiguration(manager.conduitStateSingle(),
+                                                manager.deviceLocationSingle())
                                         .subscribe());
                     }
                     break;
@@ -862,10 +1038,54 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
                         }
                         break;
 
+                case UNLOCK_REQUIRED_UI_DISMISSED:
+                    if (manager != null) {
+                        // Ignore the message if the sender is not registered
+                        if (manager.mClients.get(msg.replyTo.hashCode()) == null) {
+                            return;
+                        }
+
+                        manager.unlockUiDismissedPublishRelay.accept(true);
+                    }
+                    break;
+
                 default:
                     super.handleMessage(msg);
             }
         }
+    }
+
+    // Get the initial conduit state and return a boolean indicating whether the conduit is running
+    // Note that we are not using a member variable for the conduit state single because
+    // ConduitStateManager.stateFlowable() should not be reused across multiple calls.
+    private Single<Boolean> conduitStateSingle() {
+        return ConduitStateManager.newManager(getContext()).stateFlowable()
+                // Filter out UNKNOWN states
+                .filter(state -> state.status() != ConduitState.Status.UNKNOWN)
+                // Wait for up to 1 second for the first state, explicit timeout error
+                .timeout(1000, java.util.concurrent.TimeUnit.MILLISECONDS,
+                        Flowable.error(new TimeoutException("Conduit state timeout")))
+                .firstOrError()
+                .doOnSuccess(state -> MyLog.i("TunnelManager: initial Conduit state: " + state))
+                // Any state other than RUNNING is considered not running
+                .map(state -> state.status() == ConduitState.Status.RUNNING ? Boolean.TRUE : Boolean.FALSE)
+                // If there is an error, log it and treat it as Conduit not running
+                .onErrorReturn(e -> {
+                    MyLog.e("TurnelManager: error getting initial Conduit state: " + e);
+                    return Boolean.FALSE;
+                });
+    }
+
+    // Get persisted device location precision and return a GeoHash string for the device location
+    // with the given precision
+    private Single <String> deviceLocationSingle() {
+        return Single.fromCallable(() -> {
+                    AppPreferences preferences = new AppPreferences(getContext());
+                    return preferences.getInt(getContext().getString(R.string.deviceLocationPrecisionParameter), 0);
+                })
+                .flatMap(deviceLocationPrecision -> Location.getGeoHashSingle(getContext(), deviceLocationPrecision, 1000))
+                .doOnError(e -> MyLog.e("Error getting device location: " + e))
+                .onErrorReturnItem("");
     }
 
     private static void setLocale(TunnelManager manager) {
@@ -926,16 +1146,13 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
     }
 
     private Bundle getTunnelStateBundle() {
-        // Update with the latest sponsorId from the tunnel config
-        m_tunnelState.sponsorId = m_tunnelConfig != null ? m_tunnelConfig.sponsorId : "";
-
         Bundle data = new Bundle();
         data.putBoolean(DATA_TUNNEL_STATE_IS_RUNNING, m_tunnelState.isRunning);
         data.putInt(DATA_TUNNEL_STATE_LISTENING_LOCAL_SOCKS_PROXY_PORT, m_tunnelState.listeningLocalSocksProxyPort);
         data.putInt(DATA_TUNNEL_STATE_LISTENING_LOCAL_HTTP_PROXY_PORT, m_tunnelState.listeningLocalHttpProxyPort);
         data.putSerializable(DATA_TUNNEL_STATE_NETWORK_CONNECTION_STATE, m_tunnelState.networkConnectionState);
         data.putString(DATA_TUNNEL_STATE_CLIENT_REGION, m_tunnelState.clientRegion);
-        data.putString(DATA_TUNNEL_STATE_SPONSOR_ID, m_tunnelState.sponsorId);
+        data.putString(DATA_TUNNEL_STATE_SPONSOR_ID, tunnelConfigManager.getSponsorId());
         data.putStringArrayList(DATA_TUNNEL_STATE_HOME_PAGES, m_tunnelState.homePages);
         data.putSerializable(DATA_TUNNEL_STATE_VPN_MODE, m_tunnelState.vpnMode);
         data.putStringArrayList(DATA_TUNNEL_STATE_VPN_APPS, m_tunnelState.vpnApps);
@@ -990,7 +1207,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
 
         m_isStopping.set(false);
         m_networkConnectionStatePublishRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
-        m_isRoutingThroughTunnelPublishRelay.accept(Boolean.FALSE);
 
         MyLog.i(R.string.starting_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
 
@@ -1025,7 +1241,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
 
             m_isStopping.set(true);
             m_networkConnectionStatePublishRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
-            m_isRoutingThroughTunnelPublishRelay.accept(false);
             m_vpnManager.vpnTeardown();
             m_tunnel.stop();
 
@@ -1279,7 +1494,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
      * tunnel, the UpgradeChecker temp tunnel and the FeedbackWorker upload operation).
      *
      * @param context
-     * @param tunnelConfig     Config values to be set in the tunnel core config.
+     * @param tunnelConfigManager Config manager to get the sponsor ID and egress region and other config values.
      * @param useUpstreamProxy If an upstream proxy has been configured, include it in the returned
      *                         config. Used to omit the proxy from the returned config when network
      *                         operations will already be tunneled over a connection which uses the
@@ -1289,7 +1504,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
      */
     public static String buildTunnelCoreConfig(
             Context context,
-            Config tunnelConfig,
+            TunnelConfigManager tunnelConfigManager,
             boolean useUpstreamProxy,
             String tempTunnelName) {
         boolean temporaryTunnel = tempTunnelName != null && !tempTunnelName.isEmpty();
@@ -1302,7 +1517,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
 
             json.put("PropagationChannelId", EmbeddedValues.PROPAGATION_CHANNEL_ID);
 
-            json.put("SponsorId", tunnelConfig.sponsorId);
+            json.put("SponsorId", tunnelConfigManager.getSponsorId());
 
             json.put("RemoteServerListURLs", new JSONArray(EmbeddedValues.REMOTE_SERVER_LIST_URLS_JSON));
 
@@ -1366,12 +1581,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
                 json.put("TunnelWholeDevice", 0);
                 json.put("EgressRegion", "");
             } else {
-                String egressRegion = tunnelConfig.egressRegion;
+                String egressRegion = tunnelConfigManager.getEgressRegion();
                 MyLog.i("EgressRegion", "regionCode", egressRegion);
                 json.put("EgressRegion", egressRegion);
             }
 
-            if (tunnelConfig.disableTimeouts) {
+            if (tunnelConfigManager.isDisableTimeouts()) {
                 //disable timeouts
                 MyLog.i("DisableTimeouts", "disableTimeouts", true);
                 json.put("NetworkLatencyMultiplierLambda", 0.1);
@@ -1398,8 +1613,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
 
             json.put("DNSResolverAlternateServers", new JSONArray("[\"1.1.1.1\", \"1.0.0.1\", \"8.8.8.8\", \"8.8.4.4\"]"));
 
-            if (!TextUtils.isEmpty(tunnelConfig.deviceLocation)) {
-                json.put("DeviceLocation", tunnelConfig.deviceLocation);
+            if (!TextUtils.isEmpty(tunnelConfigManager.getDeviceLocation())) {
+                json.put("DeviceLocation", tunnelConfigManager.getDeviceLocation());
             }
 
             json.put("EmitBytesTransferred", true);
@@ -1413,14 +1628,23 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
     // This observable emits a pair consisting of the latest NetworkConnectionState state and a
     // Boolean representing whether we are routing the traffic via tunnel.
     // Emits a new pair every time when either of the sources emits a new value.
+    // Note the lazy initialization and caching of the observable to emit the latest value
+    // immediately to the subscribers.
+    private Observable<Pair<TunnelState.ConnectionData.NetworkConnectionState, Boolean>> cachedConnectionObservable;
+
     private Observable<Pair<TunnelState.ConnectionData.NetworkConnectionState, Boolean>> connectionObservable() {
-        return Observable.combineLatest(m_networkConnectionStatePublishRelay,
-                        m_isRoutingThroughTunnelPublishRelay,
+        if (cachedConnectionObservable != null) {
+            return cachedConnectionObservable;
+        }
+        cachedConnectionObservable =  Observable.combineLatest(m_networkConnectionStatePublishRelay,
+                        m_vpnManager.routingThroughTunnelObservable(),
                         ((BiFunction<TunnelState.ConnectionData.NetworkConnectionState, Boolean,
                                 Pair<TunnelState.ConnectionData.NetworkConnectionState, Boolean>>) Pair::new))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .distinctUntilChanged();
+                .distinctUntilChanged()
+                .replay(1).refCount();
+        return cachedConnectionObservable;
     }
 
     /**
@@ -1445,7 +1669,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
     @Override
     public String getPsiphonConfig() {
         setPlatformAffixes(m_tunnel, null);
-        String config = buildTunnelCoreConfig(getContext(), m_tunnelConfig, true, null);
+        String config = buildTunnelCoreConfig(getContext(), tunnelConfigManager, true, null);
         return config == null ? "" : config;
     }
 
@@ -1796,14 +2020,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
 
     @Override
     public void onApplicationParameters(@NonNull Object o) {
-        pxeUrl = ((JSONObject) o).optString("PsiphonExperimentEngineURL");
-        long completedPxeNextPeriodMillis = ((JSONObject) o).optLong("CompletedPxeNextPeriodMillis", PxeWebDialog.COMPLETED_PXE_NEXT_PERIOD_MILLIS);
-        long incompletePxeNextPeriodMillis = ((JSONObject) o).optLong("IncompletePxeNextPeriodMillis", PxeWebDialog.INCOMPLETE_PXE_NEXT_PERIOD_MILLIS);
-
-        final AppPreferences mp = new AppPreferences(getContext());
-        mp.put(m_parentService.getString(R.string.completedPxeNextPeriodMillis), completedPxeNextPeriodMillis);
-        mp.put(m_parentService.getString(R.string.incompletePxeNextPeriodMillis), incompletePxeNextPeriodMillis);
-
         if (!(o instanceof JSONObject)) {
             MyLog.e("TunnelManager::onApplicationParameters: invalid parameter type. Expected JSONObject, got: " + o.getClass().getName());
             return;
@@ -1811,9 +2027,25 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
         JSONObject params = (JSONObject) o;
 
         // Process the application parameters
+        processPxeParameters(params);
         processDeviceLocationPrecision(params);
+        processUnlockOptions(params);
+        processAppUpdatePolicy(params);
         processTrustedApps(params);
         processVpnRules(params);
+    }
+
+    private void processPxeParameters(JSONObject params) {
+        // Parse PXE (Psiphon Experiment Engine) parameters from the server
+        pxeUrl = params.optString("PsiphonExperimentEngineURL");
+        
+        long completedPxeNextPeriodMillis = params.optLong("CompletedPxeNextPeriodMillis", PxeWebDialog.COMPLETED_PXE_NEXT_PERIOD_MILLIS);
+        long incompletePxeNextPeriodMillis = params.optLong("IncompletePxeNextPeriodMillis", PxeWebDialog.INCOMPLETE_PXE_NEXT_PERIOD_MILLIS);
+
+        // Store PXE timing configuration in app preferences
+        final AppPreferences mp = new AppPreferences(getContext());
+        mp.put(m_parentService.getString(R.string.completedPxeNextPeriodMillis), completedPxeNextPeriodMillis);
+        mp.put(m_parentService.getString(R.string.incompletePxeNextPeriodMillis), incompletePxeNextPeriodMillis);
     }
 
     private void processDeviceLocationPrecision(JSONObject params) {
@@ -1861,6 +2093,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
 
             // Save the trusted signatures to file
             PackageHelper.saveTrustedSignaturesToFile(getContext().getApplicationContext(), trustedSignatures);
+
+            // Restart the Conduit state observer to pick up new signatures
+            setupConduitStateObserver();
+
+            MyLog.i("TunnelManager: Restarted Conduit state observer after updating trusted signatures");
             // Make the runtime trusted signatures available to the PackageHelper ASAP
             PackageHelper.configureRuntimeTrustedSignatures(trustedSignatures);
         } catch (JSONException e) {
@@ -1979,6 +2216,186 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
 
         } catch (PackageManager.NameNotFoundException e) {
             return false;
+        }
+    }
+
+    private void processUnlockOptions(JSONObject params) {
+        // Expected format:
+        // {
+        //     "UnlockOptions": {
+        //         "enforce": true, // Optional flag controlling unlock enforcement (defaults to true if not present)
+        //         "Conduit": {"display": false, "priority": 10, "referrer": "utm_source%3Dpsiphon_pro%26utm_campaign%3Dpro_reg"},  // The "referrer" field is optional
+        //         "AppInstall.YouTube": {
+        //             "priority": 20, // Empty or missing priority is defaulted according to type, see UnlockOptions.java
+        //             "display": true,
+        //             "appId": "com.google.android.youtube",
+        //             "appName": "YouTube",
+        //             "playStoreUrl": "https://play.google.com/store/apps/details?id=com.google.android.youtube"
+        //         }
+        //     }
+        // }
+        //
+        // ENFORCE FLAG: Controls whether unlock requirements are enforced or just tracked.
+        // - true (default): unlock requirements are enforced (ENFORCED state) - will stop the tunnel once connected
+        // - false: unlock requirements are tracked but not enforced (NOT_ENFORCED state) - tunnel will not stop
+        //
+        // PRIORITY SETTING: If using priorities, set them for ALL unlock entries to avoid
+        // mixing explicit priorities with defaults. For example, don't do:
+        // "Conduit": {"priority": 5}, "AppInstall": {} <- AppInstall will get default priority 20
+        // This creates confusing ordering. Either use priorities everywhere or not at all.
+        //
+        // REFERRER PARAMETER: The optional "referrer" field for Conduit should be pre-URL-encoded.
+        // This parameter will be appended to the Play Store URL for tracking app install attribution.
+
+        if (unlockOptionsPinnedForSession) {
+            MyLog.i("TunnelManager: unlock options already pinned for this session, skipping");
+            return;
+        }
+
+        Map<String, UnlockOptions.UnlockEntry> entries = new ConcurrentHashMap<>();
+        boolean enforce = true; // Default to true
+
+        try {
+            JSONObject unlockOptionsJson = params.optJSONObject("UnlockOptions");
+            enforce = unlockOptionsJson == null || unlockOptionsJson.optBoolean("enforce", true);
+
+            if (unlockOptionsJson != null) {
+                // Process each key in the JSON
+                Iterator<String> keys = unlockOptionsJson.keys();
+                while (keys.hasNext()) {
+                    String entryKey = keys.next();
+                    // Skip the "enforce" field as it's not an unlock entry
+                    if ("enforce".equals(entryKey)) {
+                        continue;
+                    }
+                    JSONObject entryObject = unlockOptionsJson.optJSONObject(entryKey);
+                    Boolean display = entryObject != null && entryObject.has("display")
+                            ? entryObject.optBoolean("display")
+                            : null;
+                    // Parse priority if present, otherwise use default values
+                    Integer priority = (entryObject != null && entryObject.has("priority"))
+                            ? entryObject.optInt("priority")
+                            : null;
+                    if (entryKey.startsWith(UnlockOptions.APP_INSTALL_PREFIX)) {
+                        processAppInstallUnlockEntry(entryKey, entryObject, entries, display, priority);
+                    } else if (entryKey.equals(UnlockOptions.UNLOCK_ENTRY_CONDUIT)) {
+                        processConduitUnlockEntry(entryKey, entryObject, entries, display, priority);
+                    }
+                    // Note: processStandardUnlockEntry is not included as it only handles subscription-related entries
+                    // which are not supported in this branch
+                }
+            }
+        } catch (Exception e) {
+            MyLog.e("TunnelManager: failed to parse UnlockOptions: " + e);
+        } finally {
+            unlockOptions.setEntries(entries);
+            unlockOptions.setEnforce(enforce);
+
+            // Pin unlock options if we have any displayable entries
+            if (unlockOptions.hasDisplayableEntries()) {
+                unlockOptionsPinnedForSession = true;
+                MyLog.i("TunnelManager: pinning unlock options for session with displayable entries");
+            }
+
+            // Try to deliver the unlock UI ASAP if required
+            m_compositeDisposable.add(ensureUnlockUIDelivered().subscribe());
+        }
+    }
+
+    private void processConduitUnlockEntry(String entryKey,
+                                           JSONObject entryObject,
+                                           Map<String, UnlockOptions.UnlockEntry> entries,
+                                           Boolean display,
+                                           Integer priority) {
+        // Extract referrer from JSON object (optional field)
+        String referrer = (entryObject != null && entryObject.has("referrer"))
+                ? entryObject.optString("referrer")
+                : "";
+
+        entries.put(
+                entryKey,
+                new UnlockOptions.ConduitUnlockEntry(
+                        tunnelConfigManager::isConduitRunningActive,
+                        display,
+                        priority == null ? UnlockOptions.DEFAULT_CONDUIT_PRIORITY : priority,
+                        referrer
+                )
+        );
+    }
+
+    private void processAppInstallUnlockEntry(String entryKey,
+                                              JSONObject entryObject,
+                                              Map<String, UnlockOptions.UnlockEntry> entries,
+                                              Boolean display,
+                                              Integer priority) {
+        if (entryObject == null) {
+            MyLog.w("TunnelManager: No config object for app install entry: " + entryKey);
+            return;
+        }
+        String appId = entryObject.optString("appId", "");
+        String appName = entryObject.optString("appName", "");
+        String playStoreUrl = entryObject.optString("playStoreUrl", "");
+        if (appId.isEmpty() || appName.isEmpty() || playStoreUrl.isEmpty()) {
+            MyLog.w("TunnelManager: Missing required fields for app install entry: " + entryKey);
+            return;
+        }
+        // Capture the appId to avoid potential issues with lambda capture
+        final String finalAppId = appId;
+        entries.put(
+                entryKey,
+                new UnlockOptions.AppInstallUnlockEntry(
+                        () -> PackageHelper.isPackageInstalled(m_parentService.getPackageManager(), finalAppId),
+                        display,
+                        priority == null ? UnlockOptions.DEFAULT_APP_INSTALL_PRIORITY : priority,
+                        appId,
+                        appName,
+                        playStoreUrl
+                )
+        );
+    }
+
+    private void processAppUpdatePolicy(JSONObject params) {
+        // If the "AppUpdatePolicy" is not present, the app uses default policy (see AppUpdatePolicy.java)
+        // Expected format supports app-specific policies with TTL
+        // Per-app fields are required; top-level ttlDays is optional.
+        // {
+        //     "AppUpdatePolicy": {
+        //         "ttlDays": 7,                            // Optional: policy expires after this many days (default: 7)
+        //         "com.some.app": {                        // App-specific policy by package name
+        //             "stalenessThresholdDays": 30,        // Required: days before staleness forces update
+        //             "cutoffVersion": 12345,              // Required: versions below this force update (0 = disabled)
+        //             "mustUpdateVersions": [12300, 12301] // Required: specific versions that must update (can be empty array)
+        //         },
+        //         "com.psiphon3": {                        // Different policy for Psiphon app
+        //             "stalenessThresholdDays": 7,         // More aggressive updates for Psiphon
+        //             "cutoffVersion": 15000,
+        //             "mustUpdateVersions": []
+        //         }
+        //     }
+        // }
+        //
+        // TTL: Policies automatically expire after the specified days and revert to defaults.
+        // This prevents stale/bad policies from persisting indefinitely if clients don't connect.
+        // Each app will load only its own policy based on package name. If the app's package
+        // is not found, any required field is missing/invalid, or policy has expired, the app falls back to default policy.
+        try {
+            JSONObject updatePolicyJson = params.optJSONObject("AppUpdatePolicy");
+
+            if (updatePolicyJson != null) {
+                // Validate policy for this app before saving
+                try {
+                    AppUpdatePolicy.fromJson(updatePolicyJson.toString(), getContext().getPackageName());
+                    int ttlDays = AppUpdatePolicy.getTtlDays(updatePolicyJson.toString());
+                    AppUpdatePolicy.saveAppUpdatePolicyToFile(getContext().getApplicationContext(),
+                            updatePolicyJson.toString(), System.currentTimeMillis());
+                    MyLog.i("TunnelManager: stored server update policy (" + updatePolicyJson.toString()
+                            .length() + " chars, TTL: " + ttlDays + " days)");
+                } catch (Exception validationError) {
+                    MyLog.e("TunnelManager: rejecting update policy, invalid for this app: " + validationError);
+                }
+            }
+        } catch (Exception e) {
+            MyLog.e("TunnelManager: failed to parse update policy: " + e);
         }
     }
 }
