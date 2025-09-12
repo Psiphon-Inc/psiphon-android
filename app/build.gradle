@@ -116,7 +116,7 @@ android {
     }
 
     buildTypes.each {
-        it.buildConfigField 'String', "CONDUIT_RUNNING_SPONSOR_ID", getBuildProperty('CONDUIT_RUNNING_SPONSOR_ID')
+        it.buildConfigField 'String', "CONDUIT_RUNNING_SPONSOR_ID", getBuildProperty('GP_CONDUIT_RUNNING_SPONSOR_ID')
     }
 }
 
