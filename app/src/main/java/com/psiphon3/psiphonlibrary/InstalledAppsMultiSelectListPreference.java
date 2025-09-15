@@ -19,7 +19,6 @@
 
 package com.psiphon3.psiphonlibrary;
 
-import android.Manifest;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
@@ -146,11 +145,22 @@ class InstalledAppsMultiSelectListPreference extends AlertDialog.Builder impleme
         );
         PackageManager pm = context.getPackageManager();
 
+        // Get currently selected apps so we can show them even if they lack
+        // INTERNET permission, see below for details
+        Set<String> currentlySelected = whitelist ?
+                VpnAppsUtils.getPendingAppsIncludedInVpn(context) :
+                VpnAppsUtils.getPendingAppsExcludedFromVpn(context);
+
         List<AppEntry> apps = new ArrayList<>();
         List<PackageInfo> packages = pm.getInstalledPackages(PackageManager.GET_PERMISSIONS);
 
         for (PackageInfo p : packages) {
-            if (isInternetPermissionGranted(p)) {
+            // Always show currently selected apps even if they lack INTERNET permission
+            // This allows users to see them in the UI and unselect, making sure
+            // they don't get stuck in the VPN exclusion/inclusion list forever
+            // if they got there by some other means (e.g. adb, old app version, etc)
+            if (VpnAppsUtils.hasInternetPermission(p) ||
+                    currentlySelected.contains(p.packageName)) {
                 // This takes a bit of time, but since we want the apps sorted by displayed name
                 // its best to do synchronously
                 String appName = p.applicationInfo.loadLabel(pm).toString();
@@ -180,17 +190,6 @@ class InstalledAppsMultiSelectListPreference extends AlertDialog.Builder impleme
 
         // Hide apps that match any VPN rules for their installed version
         return VpnRulesHelper.matchesAnyVpnRule(packageId, versionCode);
-    }
-
-    private boolean isInternetPermissionGranted(PackageInfo pkgInfo) {
-        if (pkgInfo.requestedPermissions != null) {
-            for (String permission : pkgInfo.requestedPermissions) {
-                if (Manifest.permission.INTERNET.equals(permission)) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     private Single<Drawable> getIconLoader(final ApplicationInfo applicationInfo, final PackageManager packageManager) {

@@ -1364,8 +1364,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
                             } catch (PackageManager.NameNotFoundException e) {
                                 MyLog.w("TunnelManager: VpnBuilder: failed to add " + packageId + " to allowed VPN applications, package not found");
                             }
-                        } else {
-                            MyLog.w("TunnelManager: VpnBuilder: failed to add " + packageId + " to allowed VPN applications, version rules or trust verification failed");
                         }
                     }
 
@@ -1437,8 +1435,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
                             } catch (PackageManager.NameNotFoundException e) {
                                 MyLog.w("TunnelManager: VpnBuilder: failed to add " + packageId + " to disallowed VPN applications, package not found");
                             }
-                        } else {
-                            MyLog.w("TunnelManager: VpnBuilder: failed to add " + packageId + " to disallowed VPN applications, version rules or trust verification failed");
                         }
                     }
                 } else {
@@ -1475,8 +1471,6 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
                             } catch (PackageManager.NameNotFoundException e) {
                                 MyLog.w("TunnelManager: VpnBuilder: failed to add " + packageId + " to disallowed VPN applications, package not found");
                             }
-                        } else {
-                            MyLog.w("TunnelManager: VpnBuilder: failed to add " + packageId + " to disallowed VPN applications, version rules or trust verification failed");
                         }
                     }
                 }
@@ -2161,6 +2155,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
     private boolean shouldAlwaysExcludeFromVpn(PackageManager pm, String packageId) {
         // First check if the app is installed
         if (!PackageHelper.isPackageInstalled(pm, packageId)) {
+            MyLog.i("TunnelManager: VpnBuilder: " + packageId + " not installed, skipping exclusion");
             return false;
         }
 
@@ -2177,13 +2172,20 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
 
             // Check if version matches always-exclude rules
             if (!VpnRulesHelper.matchesAlwaysExcludeRule(packageId, versionCode)) {
+                MyLog.i("TunnelManager: VpnBuilder: " + packageId + " version does not match exclusion rules, skipping");
                 return false; // Version doesn't match always-exclude rules
             }
 
             // Finally check signature verification
-            return PackageHelper.verifyTrustedPackage(pm, packageId);
+            if (!PackageHelper.verifyTrustedPackage(pm, packageId)) {
+                MyLog.w("TunnelManager: VpnBuilder: " + packageId + " failed trust verification, skipping exclusion");
+                return false;
+            }
+
+            return true;
 
         } catch (PackageManager.NameNotFoundException e) {
+            MyLog.i("TunnelManager: VpnBuilder: " + packageId + " package not found, skipping exclusion");
             return false;
         }
     }
@@ -2192,6 +2194,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
     private boolean shouldAlwaysIncludeInVpn(PackageManager pm, String packageId) {
         // First check if the app is installed
         if (!PackageHelper.isPackageInstalled(pm, packageId)) {
+            MyLog.i("TunnelManager: VpnBuilder: " + packageId + " not installed, skipping inclusion");
             return false;
         }
 
@@ -2208,13 +2211,20 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
 
             // Check if version matches always-include rules
             if (!VpnRulesHelper.matchesAlwaysIncludeRule(packageId, versionCode)) {
+                MyLog.i("TunnelManager: VpnBuilder: " + packageId + " version does not match inclusion rules, skipping");
                 return false; // Version doesn't match always-include rules
             }
 
             // Finally check signature verification
-            return PackageHelper.verifyTrustedPackage(pm, packageId);
+            if (!PackageHelper.verifyTrustedPackage(pm, packageId)) {
+                MyLog.w("TunnelManager: VpnBuilder: " + packageId + " failed trust verification, skipping inclusion");
+                return false;
+            }
+
+            return true;
 
         } catch (PackageManager.NameNotFoundException e) {
+            MyLog.i("TunnelManager: VpnBuilder: " + packageId + " package not found, skipping inclusion");
             return false;
         }
     }
