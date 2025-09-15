@@ -163,7 +163,7 @@
   <!--Snack bar message shown when an app update is downloaded and ready to be installed-->
   <string name="app_update_ready_to_install">Uygulama güncellemesi hazır</string>
   <!--Snack bar action button text to install the downloaded app update-->
-  <string name="app_update_restart">Yükle</string>
+  <string name="app_update_restart">Kur</string>
   <!--Generic toast message shown when an app update fails to download or install-->
-  <string name="app_update_error">Güncelleme başarısız</string>
+  <string name="app_update_error">Güncellenemedi</string>
 </resources>

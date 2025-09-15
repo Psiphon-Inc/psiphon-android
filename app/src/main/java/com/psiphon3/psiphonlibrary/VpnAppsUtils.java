@@ -19,9 +19,11 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
@@ -251,16 +253,45 @@ public class VpnAppsUtils {
         // Try and put default package ID first by matching DEFAULT_ONLY
         List<ResolveInfo> matchingActivities = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
         for (ResolveInfo info : matchingActivities) {
-            packageIds.add(info.activityInfo.packageName);
+            String packageName = info.activityInfo.packageName;
+            // Only add if app has INTERNET permission to match UI filtering
+            if (hasInternetPermission(packageManager, packageName)) {
+                packageIds.add(packageName);
+            }
         }
 
         // Next add all other packages able to handle the intent by matching ALL
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             matchingActivities = packageManager.queryIntentActivities(intent, PackageManager.MATCH_ALL);
             for (ResolveInfo info : matchingActivities) {
-                packageIds.add(info.activityInfo.packageName);
+                String packageName = info.activityInfo.packageName;
+                // Only add if app has INTERNET permission to match UI filtering
+                if (hasInternetPermission(packageManager, packageName)) {
+                    packageIds.add(packageName);
+                }
             }
         }
         return packageIds;
+    }
+
+    private static boolean hasInternetPermission(PackageManager pm, String packageName) {
+        try {
+            PackageInfo packageInfo = pm.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS);
+            return hasInternetPermission(packageInfo);
+        } catch (PackageManager.NameNotFoundException e) {
+            // App not found
+            return false;
+        }
+    }
+
+    public static boolean hasInternetPermission(PackageInfo packageInfo) {
+        if (packageInfo.requestedPermissions != null) {
+            for (String permission : packageInfo.requestedPermissions) {
+                if (Manifest.permission.INTERNET.equals(permission)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
