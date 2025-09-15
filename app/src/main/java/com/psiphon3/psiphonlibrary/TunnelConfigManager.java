@@ -61,11 +61,11 @@ public class TunnelConfigManager {
             this.isConduitRunning = builder.isConduitRunning;
         }
 
-        public String getSponsorId() {
+        public String getSponsorId(Context context) {
             // Evaluate the sponsor ID based on the current state of the sponsorship
-            // 1. If the user is running conduit, use the conduit sponsor ID
-            // 2. Otherwise, use the embedded sponsor ID (fallback and default)
-            if (isConduitRunning) {
+            // 1. If the user is running conduit AND the app has never been sideloaded, use the conduit sponsor ID
+            // 2. Otherwise, use the default sponsor ID (fallback and default)
+            if (isConduitRunning && !EmbeddedValues.hasEverBeenSideLoaded(context.getApplicationContext())) {
                 return BuildConfig.CONDUIT_RUNNING_SPONSOR_ID;
             }
             return EmbeddedValues.SPONSOR_ID;
@@ -150,8 +150,8 @@ public class TunnelConfigManager {
             }
         }
 
-        public String getSponsorId() {
-            return sponsorshipState.getSponsorId();
+        public String getSponsorId(Context context) {
+            return sponsorshipState.getSponsorId(context);
         }
 
         public RestartType getRestartType() {
@@ -170,7 +170,7 @@ public class TunnelConfigManager {
 
     public String getSponsorId() {
         TunnelConfig config = getCurrentConfig();
-        return config != null ? config.getSponsorId() : EmbeddedValues.SPONSOR_ID;
+        return config != null ? config.getSponsorId(this.context) : EmbeddedValues.SPONSOR_ID;
     }
 
     public boolean isDisableTimeouts() {
@@ -193,19 +193,13 @@ public class TunnelConfigManager {
                 .hide();
     }
 
-    // Conduit-specific update method
-    public void updateConduitState(boolean isRunning) {
-        updateConfigWithRestartType(currentState -> new SponsorshipState.Builder()
-                .withConduit(isRunning)
-                .build(), RestartType.QUIET_RESTART);
-    }
-
     // Conduit-specific update method that chooses restart type based on enforcement
-    // In Google Play version, we don't have unlock enforcement, so always use QUIET_RESTART
     public void updateConduitStateConditional(boolean isRunning, boolean hasConduitEnforcement) {
+        RestartType restartType = hasConduitEnforcement ? RestartType.FULL_RESTART : RestartType.QUIET_RESTART;
+
         updateConfigWithRestartType(currentState -> new SponsorshipState.Builder()
                 .withConduit(isRunning)
-                .build(), RestartType.QUIET_RESTART);
+                .build(), restartType);
     }
 
     // Initializes the tunnel configuration with externally provided states.
@@ -231,7 +225,8 @@ public class TunnelConfigManager {
                 })
                 .subscribeOn(Schedulers.io())
                 .doOnSuccess(config -> {
-                    MyLog.i("TunnelConfigManager: initial config created with sponsor ID: " + config.getSponsorId());
+                    MyLog.i("TunnelConfigManager: initial config created with sponsor ID: " +
+                            config.getSponsorId(context));
                     tunnelConfigBehaviorRelay.accept(config);
                 });
     }
@@ -254,7 +249,8 @@ public class TunnelConfigManager {
         }).subscribeOn(Schedulers.io());
     }
 
-    private void updateConfigWithRestartType(java.util.function.Function<SponsorshipState, SponsorshipState> updater, RestartType restartType) {
+    private void updateConfigWithRestartType(java.util.function.Function<SponsorshipState, SponsorshipState> updater,
+                                             RestartType restartType) {
         TunnelConfig currentConfig = getCurrentConfig();
         if (currentConfig == null) {
             MyLog.w("TunnelConfigManager: cannot update config, no current config available");
@@ -262,9 +258,14 @@ public class TunnelConfigManager {
         }
 
         SponsorshipState newSponsorshipState = updater.apply(currentConfig.sponsorshipState);
-        
-        // Only emit a new config if the sponsorship state has actually changed
-        if (!newSponsorshipState.equals(currentConfig.sponsorshipState)) {
+        // Only emit a new config if the sponsor ID has changed.
+        // This avoids unnecessary restarts when the conduit running state changes
+        // but the effective sponsor ID remains the same (e.g., sideloaded apps).
+        //
+        // Note: Unlike the Pro version where different subscription levels share the same
+        // sponsor ID and require SponsorshipState-based restart logic, here we only
+        // care about actual sponsor ID changes that affect the tunnel core config.
+        if (!newSponsorshipState.getSponsorId(context).equals(currentConfig.getSponsorId(context))) {
             TunnelConfig newConfig = new TunnelConfig.Builder()
                     .egressRegion(currentConfig.egressRegion)
                     .disableTimeouts(currentConfig.disableTimeouts)
@@ -272,8 +273,8 @@ public class TunnelConfigManager {
                     .sponsorshipState(newSponsorshipState)
                     .restartType(restartType)
                     .build();
-
-            MyLog.i("TunnelConfigManager: config updated with sponsor ID: " + newConfig.getSponsorId() + ", restart type: " + restartType);
+            MyLog.i("TunnelConfigManager: config updated with sponsor ID: " + newConfig.getSponsorId(context) +
+                    ", restart type: " + restartType);
             tunnelConfigBehaviorRelay.accept(newConfig);
         }
     }
