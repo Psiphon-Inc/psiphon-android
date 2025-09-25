@@ -1137,6 +1137,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
     }
 
     private void sendHandshakeIntent() {
+        if (!homePageHandled.compareAndSet(false, true)) {
+            MyLog.i("TunnelManager: handshake intent already sent, skipping");
+            return;
+        }
         PendingIntent handshakePendingIntent = getPendingIntent(m_parentService, INTENT_ACTION_HANDSHAKE, getTunnelStateBundle());
         try {
             handshakePendingIntent.send();
