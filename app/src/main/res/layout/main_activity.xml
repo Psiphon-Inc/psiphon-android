@@ -91,13 +91,33 @@
                 android:orientation="horizontal"
                 android:weightSum="2.0">
 
-                <Button
-                    android:id="@+id/toggleButton"
+                <FrameLayout
+                    android:id="@+id/start_button_container"
                     android:layout_width="fill_parent"
-                    android:layout_height="fill_parent"
-                    android:layout_weight="1.0"
-                    android:text="@string/start"
-                    android:textAppearance="?android:attr/textAppearanceSmall" />
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1.0">
+
+                    <Button
+                        android:id="@+id/toggleButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:text="@string/start"
+                        android:textAppearance="?android:attr/textAppearanceSmall" />
+
+                    <ProgressBar
+                        android:id="@+id/start_ad_progress"
+                        style="?android:attr/progressBarStyle"
+                        android:alpha=".5"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_gravity="center"
+                        android:visibility="gone"
+                        android:clickable="false"
+                        android:focusable="false"
+                        android:indeterminate="true"
+                        android:elevation="8dp"/>
+
+                </FrameLayout>
 
                 <Button
                     android:id="@+id/openBrowserButton"

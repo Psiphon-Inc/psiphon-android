@@ -238,6 +238,9 @@
     <!-- Preference title for managing ads consent -->
     <string name="adsConsentManagementTitle">Manage Ad Preferences</string>
 
+    <!-- Start button ad-loading countdown label. %1$s = preformatted number with one decimal (dot). Shown as just the number. -->
+    <string name="start_ad_loading_countdown">%1$s</string>
+
     <!-- Preference summary for managing ads consent -->
     <string name="adsConsentManagementSummary">Control how your data is used for personalized advertising</string>
 

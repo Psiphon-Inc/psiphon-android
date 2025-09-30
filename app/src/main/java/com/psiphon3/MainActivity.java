@@ -71,9 +71,8 @@ import androidx.viewpager.widget.ViewPager;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
-import com.psiphon3.VpnRulesHelper;
 import com.psiphon3.ads.AdManager;
-import com.psiphon3.ads.ColdStartFlowHelper;
+import com.psiphon3.ads.AdFlowHelper;
 import com.psiphon3.billing.GooglePlayBillingHelper;
 import com.psiphon3.billing.SubscriptionState;
 import com.psiphon3.log.LogsMaintenanceWorker;
@@ -157,7 +156,11 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     private boolean isFirstAppStartEver;
     private FrameLayout overlayContainer;
     private ProgressBar overlayProgress;
+    private ProgressBar startAdProgress;
+    private int startAdTimeoutSeconds = 0;
     private final AdManager adManager = new AdManager();
+    private Disposable startInterstitialFlowDisposable;
+    private boolean shouldStartTunnelOnResume = false;
 
     private AdManager.AdLoadingCallback createAdLoadingCallback() {
         return new AdManager.AdLoadingCallback() {
@@ -173,12 +176,12 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             }
 
             @Override
-            public void updateLoadingProgress(float remainingSeconds) {
+            public void updateLoadingProgress(float elapsedSeconds) {
                 runOnUiThread(() -> {
                     if (overlayProgress != null) {
-                        // Update progress bar with remaining seconds (in tenths)
+                        // Update progress bar with elapsed seconds (in tenths)
                         // Convert seconds to tenths of a second
-                        int tenths = (int) (remainingSeconds * 10);
+                        int tenths = (int) (elapsedSeconds * 10);
                         overlayProgress.setProgress(tenths);
                     }
                 });
@@ -214,6 +217,65 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             overlayContainer.setVisibility(View.GONE);
         }
     }
+
+    private AdManager.AdLoadingCallback createStartAdLoadingCallback() {
+        return new AdManager.AdLoadingCallback() {
+            // Mirror App Open style: store timeout once
+            @Override
+            public void startedLoading(int timeoutSeconds) {
+                runOnUiThread(() -> {
+                    startAdTimeoutSeconds = timeoutSeconds;
+                    // Update button label with countdown number (one decimal)
+                    String formatted = String.format(java.util.Locale.US, "%.1f", (float) timeoutSeconds);
+                    toggleButton.setText(getString(R.string.start_ad_loading_countdown, formatted));
+                    // Spinner overlay visibility managed by the outer chain
+                });
+            }
+
+            @Override
+            public void updateLoadingProgress(float elapsedSeconds) {
+                runOnUiThread(() -> {
+                    float remaining = startAdTimeoutSeconds - elapsedSeconds;
+                    String formatted = String.format(java.util.Locale.US, "%.1f", remaining);
+                    toggleButton.setText(getString(R.string.start_ad_loading_countdown, formatted));
+                });
+            }
+        };
+    }
+
+    private void showStartAdOverlay() {
+        if (isFinishing() || isDestroyed()) {
+            return;
+        }
+        if (startAdProgress == null) {
+            startAdProgress = findViewById(R.id.start_ad_progress);
+        }
+        if (startAdProgress != null) {
+            startAdProgress.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void hideStartAdOverlay() {
+        if (isFinishing() || isDestroyed()) {
+            return;
+        }
+        if (startAdProgress != null) {
+            startAdProgress.setVisibility(View.GONE);
+        }
+    }
+
+    private void deferStartTunnelUntilResumed() {
+        if (isFinishing() || isDestroyed()) {
+            return;
+        }
+
+        if (getLifecycle().getCurrentState().isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) {
+            startTunnel();
+        } else {
+            shouldStartTunnelOnResume = true;
+        }
+    }
+
 
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
@@ -320,23 +382,51 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         // Schedule db maintenance
         LogsMaintenanceWorker.schedule(getApplicationContext());
 
+        // Set up ad manager lifecycle observation
+        adManager.register(this);
+
         toggleButton = findViewById(R.id.toggleButton);
         connectionProgressBar = findViewById(R.id.connectionProgressBar);
         connectionWaitingNetworkIndicator = findViewById(R.id.connectionWaitingNetworkIndicator);
         ((AnimationDrawable) connectionWaitingNetworkIndicator.getBackground()).start();
         openBrowserButton = findViewById(R.id.openBrowserButton);
-        toggleButton.setOnClickListener(v ->
-                compositeDisposable.add(getTunnelServiceInteractor().tunnelStateFlowable()
+        toggleButton.setOnClickListener(v -> {
+            if (startInterstitialFlowDisposable != null && !startInterstitialFlowDisposable.isDisposed()) {
+                // Already running; ignore additional taps
+                return;
+            }
+            startInterstitialFlowDisposable = getTunnelServiceInteractor().tunnelStateFlowable()
                         .filter(state -> !state.isUnknown())
                         .take(1)
-                        .doOnNext(state -> {
+                        .flatMapCompletable(state -> {
                             if (state.isRunning()) {
                                 getTunnelServiceInteractor().stopTunnelService();
-                            } else {
-                                startTunnel();
+                                return Completable.complete();
                             }
+
+                            // Not running: attempt start-interstitial flow, then start tunnel
+                            if (!shouldShowAds()) {
+                                startTunnel();
+                                return Completable.complete();
+                            }
+
+                            // Use AdFlowHelper for toggle button ad flow
+                            // executeToggleButtonFlow handles errors internally and always completes
+                            return Completable.complete()
+                                    .observeOn(AndroidSchedulers.mainThread())
+                                    .doOnComplete(this::showStartAdOverlay)
+                                    .andThen(AdFlowHelper.executeToggleButtonFlow(
+                                            this,
+                                            googlePlayBillingHelper,
+                                            adManager,
+                                            getTunnelServiceInteractor().tunnelStateFlowable(),
+                                            createStartAdLoadingCallback(),
+                                            this::deferStartTunnelUntilResumed
+                                    ))
+                                    .doFinally(this::hideStartAdOverlay);
                         })
-                        .subscribe()));
+                        .subscribe();
+        });
         tabLayout = findViewById(R.id.main_activity_tablayout);
         tabLayout.addTab(tabLayout.newTab().setTag("home").setText(R.string.home_tab_name));
         tabLayout.addTab(tabLayout.newTab().setTag("statistics").setText(R.string.statistics_tab_name));
@@ -397,12 +487,21 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     public void onDestroy() {
         compositeDisposable.dispose();
         googlePlayBillingHelper.stopObservePurchasesUpdates();
+
         if (onResumeFlowDisposable != null) {
             onResumeFlowDisposable.dispose();
         }
+
+        if (startInterstitialFlowDisposable != null) {
+            startInterstitialFlowDisposable.dispose();
+        }
+
         if (appUpdateHelper != null) {
             appUpdateHelper.onDestroy();
         }
+
+        adManager.dispose();
+
         super.onDestroy();
     }
 
@@ -445,6 +544,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(this::updateServiceStateUI)
                 .subscribe());
+
 
         // If device supports Psiphon Bump observe tunnel state and update NFC UI and HCE state accordingly
         if (Utils.supportsPsiphonBump(this)) {
@@ -607,16 +707,15 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         MyLog.i("MainActivity: starting cold start ads flow");
 
         // Show ads and update state when complete
+        // executeColdStartFlow handles errors internally and always completes
         return Completable.fromAction(this::showAdsOverlay)
-                .andThen(ColdStartFlowHelper.executeColdStartFlow(
+                .andThen(AdFlowHelper.executeColdStartFlow(
                         this,
                         googlePlayBillingHelper,
                         adManager,
                         getTunnelServiceInteractor().tunnelStateFlowable(),
                         createAdLoadingCallback()
                 ))
-                .doOnError(error -> MyLog.e("MainActivity: cold start ads flow error: " + error))
-                .onErrorComplete()  // Continue even if ads fail
                 .doFinally(this::hideAdsOverlay)
                 .andThen(Single.just(state.withAdsShown()));
     }
@@ -680,6 +779,13 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     }
 
     private Single<ResumeFlowState> handleAutoStart(ResumeFlowState state) {
+        // First check if we have a deferred start pending from the interstitial flow
+        if (shouldStartTunnelOnResume) {
+            shouldStartTunnelOnResume = false;
+            startTunnel();
+            return Single.just(state);
+        }
+
         if (state.shouldSkipAutoStart()) {
             return Single.just(state);
         }
@@ -1403,4 +1509,3 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         }
     }
 }
-

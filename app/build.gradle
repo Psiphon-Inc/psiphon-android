@@ -139,8 +139,9 @@ android {
         it.buildConfigField 'String', "CONDUIT_RUNNING_SPONSOR_ID", getBuildProperty('CONDUIT_RUNNING_SPONSOR_ID')
         it.buildConfigField 'String', 'IAB_PUBLIC_KEY', getBuildProperty('IAB_PUBLIC_KEY')
 
-        // Set AdMob app ID and App Open ad unit ID for disconnected mode.
+        // Set AdMob app ID and ad unit IDs for disconnected mode.
         it.buildConfigField 'String', 'APP_OPEN_DISCONNECTED_ID', getBuildProperty('APP_OPEN_DISCONNECTED_ID')
+        it.buildConfigField 'String', 'INTERSTITIAL_DISCONNECTED_ID', getBuildProperty('INTERSTITIAL_DISCONNECTED_ID')
         it.manifestPlaceholders = [
                 ADMOB_APP_ID: getBuildProperty('PRO_ADMOB_APP_ID').replaceAll("\"", "")
         ]
