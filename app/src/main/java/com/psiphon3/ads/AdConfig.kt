@@ -29,10 +29,20 @@ data class AppOpenAdConfig(
     val adUnitId: String,
 )
 
+data class InterstitialAdConfig(
+    val requiredTunnelState: TunnelState.Status,
+    val adUnitId: String,
+)
+
 object AdConfig {
 
     val APP_OPEN_DISCONNECTED = AppOpenAdConfig(
         requiredTunnelState = TunnelState.Status.STOPPED,
         adUnitId = BuildConfig.APP_OPEN_DISCONNECTED_ID
+    )
+
+    val INTERSTITIAL_DISCONNECTED = InterstitialAdConfig(
+        requiredTunnelState = TunnelState.Status.STOPPED,
+        adUnitId = BuildConfig.INTERSTITIAL_DISCONNECTED_ID
     )
 }
