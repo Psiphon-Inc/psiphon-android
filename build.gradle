@@ -52,7 +52,7 @@ ext {
     pagingVersion = '2.1.2'
     locationServicesVersion = '21.0.1'
     geoHashVersion = '0.22'
-    playServicesAdsVersion = '24.4.0'
+    playServicesAdsVersion = '24.6.0'
     userMessagingPlatformVersion = '3.1.0'
     coreKtxVersion = '1.16.0'
     playAppUpdateVersion = '2.1.0'
