@@ -92,13 +92,33 @@
                 android:orientation="horizontal"
                 android:weightSum="2.0">
 
-                <Button
-                    android:id="@+id/toggleButton"
+                <FrameLayout
+                    android:id="@+id/start_button_container"
                     android:layout_width="fill_parent"
-                    android:layout_height="fill_parent"
-                    android:layout_weight="1.0"
-                    android:text="@string/start"
-                    android:textAppearance="?android:attr/textAppearanceSmall" />
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1.0">
+
+                    <Button
+                        android:id="@+id/toggleButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:text="@string/start"
+                        android:textAppearance="?android:attr/textAppearanceSmall" />
+
+                    <ProgressBar
+                        android:id="@+id/start_ad_progress"
+                        style="?android:attr/progressBarStyle"
+                        android:alpha=".5"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_gravity="center"
+                        android:visibility="gone"
+                        android:clickable="false"
+                        android:focusable="false"
+                        android:indeterminate="true"
+                        android:elevation="8dp"/>
+
+                </FrameLayout>
 
                 <Button
                     android:id="@+id/openBrowserButton"
@@ -117,16 +137,50 @@
                 android:background="@drawable/connection_waiting_network_animation_drawable"
                 android:orientation="horizontal"
                 android:visibility="invisible" />
+
             <ProgressBar
                 android:id="@+id/connectionProgressBar"
                 style="?android:attr/progressBarStyleHorizontal"
                 android:layout_width="match_parent"
                 android:layout_height="8dp"
                 android:layout_alignTop="@+id/buttonPanel"
-                android:visibility="invisible"
-                android:indeterminate="true" />
+                android:indeterminate="true"
+                android:visibility="invisible" />
 
         </RelativeLayout>
     </LinearLayout>
+    <!-- Ad overlay on top of everything -->
+    <FrameLayout
+        android:id="@+id/overlay_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/overlay_background"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone">
+
+        <!-- App logo centered like default splash -->
+        <ImageView
+            android:id="@+id/overlay_logo"
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="48dp"
+            android:src="@mipmap/ic_launcher"
+            android:contentDescription="@string/app_name" />
+
+        <!-- Progress bar below logo -->
+        <ProgressBar
+            android:id="@+id/overlay_progress"
+            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+            android:layout_width="200dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center"
+            android:layout_marginTop="48dp"
+            android:indeterminate="true"
+            android:indeterminateTint="@color/progress_color"
+            android:progressTint="@color/progress_color" />
+
+    </FrameLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.android'
 
 android {
     namespace 'com.psiphon3'
@@ -117,6 +118,22 @@ android {
 
     buildTypes.each {
         it.buildConfigField 'String', "CONDUIT_RUNNING_SPONSOR_ID", getBuildProperty('GP_CONDUIT_RUNNING_SPONSOR_ID')
+
+        // Set AdMob app ID and ad unit IDs for disconnected mode.
+        it.buildConfigField 'String', 'APP_OPEN_DISCONNECTED_ID', getBuildProperty('GP_APP_OPEN_DISCONNECTED_ID')
+        it.buildConfigField 'String', 'INTERSTITIAL_DISCONNECTED_ID', getBuildProperty('GP_INTERSTITIAL_DISCONNECTED_ID')
+        it.manifestPlaceholders = [
+                ADMOB_APP_ID: getBuildProperty('GP_ADMOB_APP_ID').replaceAll("\"", "")
+        ]
+    }
+
+    // Fix `More than one file found with OS dependent path' compilation error, see
+    // https://issuetracker.google.com/issues/152898926 for more info.
+    packagingOptions {
+        exclude 'META-INF/*.kotlin_module'
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
     }
 }
 
@@ -177,8 +194,16 @@ dependencies {
     implementation "com.google.android.gms:play-services-location:$rootProject.ext.locationServicesVersion"
     implementation "com.github.drfonfon:android-geohash:$rootProject.ext.geoHashVersion"
 
+    // Ads and consent management
+    implementation "com.google.android.gms:play-services-ads:$rootProject.ext.playServicesAdsVersion"
+    implementation "com.google.android.ump:user-messaging-platform:$rootProject.ext.userMessagingPlatformVersion"
+
     // Play In-App Updates
     implementation "com.google.android.play:app-update:$rootProject.ext.playAppUpdateVersion"
+
+    // Need Guava because adding Google Play Services Ads dependency messes up the ListenableFuture, see
+    // https://github.com/google/ExoPlayer/issues/7993 for more info.
+    implementation 'com.google.guava:guava:31.1-android'
 
     coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:$rootProject.ext.coreLibraryDesugaringVersion"
 }

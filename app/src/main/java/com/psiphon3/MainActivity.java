@@ -24,6 +24,7 @@ import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -48,6 +49,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -68,7 +70,10 @@ import androidx.viewpager.widget.ViewPager;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
+import com.psiphon3.ads.AdFlowHelper;
+import com.psiphon3.ads.AdManager;
 import com.psiphon3.log.LogsMaintenanceWorker;
+import com.psiphon3.log.MyLog;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.psiphonlibrary.TunnelManager;
@@ -149,6 +154,131 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         ENABLED
     }
 
+    // Ads related fields
+    private boolean adsHandledThisSession = false;
+    private boolean isFirstAppStartEver;
+    private FrameLayout overlayContainer;
+    private ProgressBar overlayProgress;
+    private ProgressBar startAdProgress;
+    private int startAdTimeoutSeconds = 0;
+    private final AdManager adManager = new AdManager();
+    private Disposable startInterstitialFlowDisposable;
+    private boolean shouldStartTunnelOnResume = false;
+
+    private AdManager.AdLoadingCallback createAdLoadingCallback() {
+        return new AdManager.AdLoadingCallback() {
+            @Override
+            public void startedLoading(int timeoutSeconds) {
+                runOnUiThread(() -> {
+                    if (overlayProgress != null) {
+                        overlayProgress.setIndeterminate(false);
+                        overlayProgress.setMax(timeoutSeconds * 10); // Max = 100 (tenths)
+                        overlayProgress.setProgress(0);
+                    }
+                });
+            }
+
+            @Override
+            public void updateLoadingProgress(float elapsedSeconds) {
+                runOnUiThread(() -> {
+                    if (overlayProgress != null) {
+                        // Update progress bar with elapsed seconds (in tenths)
+                        // Convert seconds to tenths of a second
+                        int tenths = (int) (elapsedSeconds * 10);
+                        overlayProgress.setProgress(tenths);
+                    }
+                });
+            }
+
+            @Override
+            public void done() {
+                hideAdsOverlay();
+            }
+        };
+    }
+
+    private void showAdsOverlay() {
+        if (isFinishingOrDestroyedCompat()) {
+            return;
+        }
+
+        if (overlayContainer == null) {
+            overlayContainer = findViewById(R.id.overlay_container);
+            overlayProgress = findViewById(R.id.overlay_progress);
+        }
+
+        overlayContainer.setVisibility(View.VISIBLE);
+        overlayProgress.setIndeterminate(true);
+    }
+
+    private void hideAdsOverlay() {
+        if (isFinishingOrDestroyedCompat()) {
+            return;
+        }
+
+        if (overlayContainer != null) {
+            overlayContainer.setVisibility(View.GONE);
+        }
+    }
+
+    private AdManager.AdLoadingCallback createStartAdLoadingCallback() {
+        return new AdManager.AdLoadingCallback() {
+            // Mirror App Open style: store timeout once
+            @Override
+            public void startedLoading(int timeoutSeconds) {
+                runOnUiThread(() -> {
+                    startAdTimeoutSeconds = timeoutSeconds;
+                    // Update button label with countdown number (one decimal)
+                    String formatted = String.format(java.util.Locale.US, "%.1f", (float) timeoutSeconds);
+                    toggleButton.setText(getString(R.string.start_ad_loading_countdown_common, formatted));
+                    // Spinner overlay visibility managed by the outer chain
+                });
+            }
+
+            @Override
+            public void updateLoadingProgress(float elapsedSeconds) {
+                runOnUiThread(() -> {
+                    float remaining = startAdTimeoutSeconds - elapsedSeconds;
+                    String formatted = String.format(java.util.Locale.US, "%.1f", remaining);
+                    toggleButton.setText(getString(R.string.start_ad_loading_countdown_common, formatted));
+                });
+            }
+        };
+    }
+
+    private void showStartAdOverlay() {
+        if (isFinishingOrDestroyedCompat()) {
+            return;
+        }
+        if (startAdProgress == null) {
+            startAdProgress = findViewById(R.id.start_ad_progress);
+        }
+        if (startAdProgress != null) {
+            startAdProgress.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void hideStartAdOverlay() {
+        if (isFinishingOrDestroyedCompat()) {
+            return;
+        }
+        if (startAdProgress != null) {
+            startAdProgress.setVisibility(View.GONE);
+        }
+    }
+
+    private void deferStartTunnelUntilResumed() {
+        if (isFinishingOrDestroyedCompat()) {
+            return;
+        }
+
+        if (getLifecycle().getCurrentState().isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) {
+            startTunnel();
+        } else {
+            shouldStartTunnelOnResume = true;
+        }
+    }
+
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         outState.putBoolean("isFirstRun", isFirstRun);
@@ -221,6 +351,13 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
         setContentView(R.layout.main_activity);
 
+        // Track first app start for ads logic
+        SharedPreferences prefs = getSharedPreferences("main_activity", MODE_PRIVATE);
+        isFirstAppStartEver = prefs.getBoolean("is_first_start", true);
+        if (isFirstAppStartEver) {
+            prefs.edit().putBoolean("is_first_start", false).apply();
+        }
+
         helpConnectFab = findViewById(R.id.help_connect_fab);
 
         EmbeddedValues.initialize(getApplicationContext());
@@ -240,6 +377,9 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         // Schedule db maintenance
         LogsMaintenanceWorker.schedule(getApplicationContext());
 
+        // Set up ad manager lifecycle observation
+        adManager.register(this);
+
         banner = findViewById(R.id.banner);
         setUpBanner();
 
@@ -248,18 +388,42 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         connectionWaitingNetworkIndicator = findViewById(R.id.connectionWaitingNetworkIndicator);
         ((AnimationDrawable) connectionWaitingNetworkIndicator.getBackground()).start();
         openBrowserButton = findViewById(R.id.openBrowserButton);
-        toggleButton.setOnClickListener(v ->
-                compositeDisposable.add(getTunnelServiceInteractor().tunnelStateFlowable()
-                        .filter(state -> !state.isUnknown())
-                        .take(1)
-                        .doOnNext(state -> {
-                            if (state.isRunning()) {
-                                getTunnelServiceInteractor().stopTunnelService();
-                            } else {
-                                startTunnel();
-                            }
-                        })
-                        .subscribe()));
+        toggleButton.setOnClickListener(v -> {
+            if (startInterstitialFlowDisposable != null && !startInterstitialFlowDisposable.isDisposed()) {
+                // Already running; ignore additional taps
+                return;
+            }
+            startInterstitialFlowDisposable = getTunnelServiceInteractor().tunnelStateFlowable()
+                    .filter(state -> !state.isUnknown())
+                    .take(1)
+                    .flatMapCompletable(state -> {
+                        if (state.isRunning()) {
+                            getTunnelServiceInteractor().stopTunnelService();
+                            return Completable.complete();
+                        }
+
+                        // Not running: attempt start-interstitial flow, then start tunnel
+                        if (!shouldShowAds()) {
+                            startTunnel();
+                            return Completable.complete();
+                        }
+
+                        // Use AdFlowHelper for toggle button ad flow
+                        // executeToggleButtonFlow handles errors internally and always completes
+                        return Completable.complete()
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .doOnComplete(this::showStartAdOverlay)
+                                .andThen(AdFlowHelper.executeToggleButtonFlow(
+                                        this,
+                                        adManager,
+                                        getTunnelServiceInteractor().tunnelStateFlowable(),
+                                        createStartAdLoadingCallback(),
+                                        this::deferStartTunnelUntilResumed
+                                ))
+                                .doFinally(this::hideStartAdOverlay);
+                    })
+                    .subscribe();
+        });
         tabLayout = findViewById(R.id.main_activity_tablayout);
         tabLayout.addTab(tabLayout.newTab().setTag("home").setText(R.string.home_tab_name));
         tabLayout.addTab(tabLayout.newTab().setTag("statistics").setText(R.string.statistics_tab_name));
@@ -319,15 +483,21 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     @Override
     public void onDestroy() {
         compositeDisposable.dispose();
-        if (pxeWebDialog != null) {
-            pxeWebDialog.close();
-        }
+
         if (onResumeFlowDisposable != null) {
             onResumeFlowDisposable.dispose();
         }
+
+        if (startInterstitialFlowDisposable != null) {
+            startInterstitialFlowDisposable.dispose();
+        }
+
         if (appUpdateHelper != null) {
             appUpdateHelper.onDestroy();
         }
+
+        adManager.dispose();
+
         super.onDestroy();
     }
 
@@ -423,6 +593,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                         .andThen(Single.just(ResumeFlowState.initial()))
                         .flatMap(this::handleStartupPrompts)
                         .flatMap(this::handleUnlockDialog)
+                        .flatMap(this::handleAds)
                         .flatMap(this::handleUpdateDownloadState)
                         .flatMap(this::handleUpdateAvailabilityCheck)
                         .flatMap(this::handleAutoStart)
@@ -506,6 +677,41 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         }).subscribeOn(AndroidSchedulers.mainThread());
     }
 
+    private Single<ResumeFlowState> handleAds(ResumeFlowState state) {
+        if (adsHandledThisSession) {
+            return Single.just(state);
+        }
+        adsHandledThisSession = true;
+
+        if (state.shouldSkipAds()) {
+            return Single.just(state);
+        }
+
+        if (!shouldShowAds()) {
+            return Single.just(state);
+        }
+
+        MyLog.i("MainActivity: starting cold start ads flow");
+
+        // Show ads and update state when complete
+        // executeColdStartFlow handles errors internally and always completes
+        return Completable.fromAction(this::showAdsOverlay)
+                .andThen(AdFlowHelper.executeColdStartFlow(
+                        this,
+                        adManager,
+                        getTunnelServiceInteractor().tunnelStateFlowable(),
+                        createAdLoadingCallback()
+                ))
+                .doFinally(this::hideAdsOverlay)
+                .andThen(Single.just(state.withAdsShown()));
+    }
+
+    private boolean shouldShowAds() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&  // Need SDK 23+ for ads
+                !isFirstAppStartEver; // Skip on very first app launch
+    }
+
+
     private Single<ResumeFlowState> handleUpdateDownloadState(ResumeFlowState state) {
         if (appUpdateHelper == null) {
             return Single.just(state);
@@ -560,6 +766,19 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     }
 
     private Single<ResumeFlowState> handleAutoStart(ResumeFlowState state) {
+        // First check if we have a deferred start pending from the interstitial flow
+        if (shouldStartTunnelOnResume) {
+            shouldStartTunnelOnResume = false;
+            startTunnel();
+            return Single.just(state);
+        }
+
+        // Ads: if we are showing ads, skip auto-start
+        if (shouldShowAds()) {
+            preventAutoStart();
+            return Single.just(state);
+        }
+
         if (state.shouldSkipAutoStart()) {
             return Single.just(state);
         }
@@ -1232,6 +1451,11 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         });
     }
 
+
+    private boolean isFinishingOrDestroyedCompat() {
+        return isFinishing() ||
+                (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed());
+    }
 
     static class PageAdapter extends FragmentPagerAdapter {
         private int numOfTabs;

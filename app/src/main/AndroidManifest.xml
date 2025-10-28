@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:installLocation="auto">
-    <uses-sdk tools:overrideLibrary="ca.psiphon"></uses-sdk>
+    <uses-sdk tools:overrideLibrary="ca.psiphon,com.google.android.gms.ads.impl,com.google.android.gms.ads,com.google.android.gms.tasks,com.google.android.ads.consent,com.google.android.gms.measurement.sdk.api,com.google.android.gms.measurement_base,com.google.android.gms.common,androidx.webkit,androidx.annotation.experimental"/>
 
     <supports-screens
                   android:smallScreens="true"
@@ -42,6 +42,11 @@
         android:usesCleartextTraffic="false"
         tools:ignore="GoogleAppIndexingWarning"
         tools:replace="android:fullBackupContent">
+
+        <!-- AdMob App ID, set via build.properties, see the build.properties.stub -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="${ADMOB_APP_ID}"/>
 
         <activity
             android:name=".MainActivity"

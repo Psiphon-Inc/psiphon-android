@@ -273,4 +273,8 @@
 
     <!-- Conduit active status indicator -->
     <string name="conduit_active">Conduit: Active</string>
+
+    <!-- Start button ad-loading countdown label. %1$s = preformatted number with one decimal (dot). Shown as just the number. -->
+    <string name="start_ad_loading_countdown_common" translatable="false">%1$s</string>
+
 </resources>
