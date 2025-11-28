@@ -159,6 +159,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     private ProgressBar startAdProgress;
     private int startAdTimeoutSeconds = 0;
     private final AdManager adManager = new AdManager();
+    private Disposable bannerFlowDisposable;
     private Disposable startInterstitialFlowDisposable;
     private boolean shouldStartTunnelOnResume = false;
 
@@ -461,6 +462,21 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         View anchor = findViewById(R.id.root_container);
         appUpdateHelper = new AppUpdateHelper(this, anchor);
 
+        // Banner and banner ad views
+        FrameLayout bannerAdContainer = findViewById(R.id.banner_ad_container);
+        View bannerPlaceholder = findViewById(R.id.banner);
+
+        // Set up reactive banner flow
+        bannerFlowDisposable =
+                AdFlowHelper.subscribeBannerFlow(
+                        this,
+                        googlePlayBillingHelper,
+                        adManager,
+                        getTunnelServiceInteractor().tunnelStateFlowable(),
+                        bannerAdContainer,
+                        bannerPlaceholder,
+                        this::shouldShowAds);
+
         // Switch to last tab when view pager is ready
         viewPager.post(() ->
                 viewPager.setCurrentItem(multiProcessPreferences.getInt(CURRENT_TAB, 0), false));
@@ -487,6 +503,10 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     public void onDestroy() {
         compositeDisposable.dispose();
         googlePlayBillingHelper.stopObservePurchasesUpdates();
+
+        if (bannerFlowDisposable != null) {
+            bannerFlowDisposable.dispose();
+        }
 
         if (onResumeFlowDisposable != null) {
             onResumeFlowDisposable.dispose();
