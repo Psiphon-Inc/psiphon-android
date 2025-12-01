@@ -22,6 +22,8 @@ package com.psiphon3.ads
 import android.app.Activity
 import android.content.Context
 import android.os.Build
+import android.view.View
+import android.widget.FrameLayout
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -42,6 +44,7 @@ class AdManager : DefaultLifecycleObserver {
     @Volatile private var cachedInitializeCompletable: Completable? = null
     @Volatile private var lifecycleOwner: LifecycleOwner? = null
     private val resumedSubject = BehaviorSubject.createDefault(false)
+    @Volatile private var bannerAdHelper: BannerAdHelper? = null
 
 
     interface AdLoadingCallback {
@@ -64,6 +67,7 @@ class AdManager : DefaultLifecycleObserver {
         lifecycleOwner?.lifecycle?.removeObserver(this)
         lifecycleOwner = null
         resumedSubject.onNext(false)
+        clearBannerAdHelper()
     }
 
     override fun onResume(owner: LifecycleOwner) {
@@ -105,8 +109,11 @@ class AdManager : DefaultLifecycleObserver {
             }
 
             val init = Completable.create { emitter ->
-                MobileAds.initialize(context) { status ->
-                    MyLog.i("$TAG: MobileAds initialized with status: $status")
+                MobileAds.initialize(context) { initStatus ->
+                    val summary = initStatus.adapterStatusMap.entries.joinToString { (adapter, status) ->
+                        "${adapter}:${status.initializationState}"
+                    }
+                    MyLog.i("$TAG: MobileAds initialized: $summary")
                     if (!emitter.isDisposed) {
                         emitter.onComplete()
                     }
@@ -251,9 +258,49 @@ class AdManager : DefaultLifecycleObserver {
             }
     }
 
+    fun attachDisconnectedBannerAd(
+        activity: Activity,
+        bannerContainer: FrameLayout,
+        placeholder: View,
+        tunnelStateFlowable: Flowable<TunnelState>
+    ) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || !canRequestAds(activity)) {
+            placeholder.visibility = View.VISIBLE
+            clearBannerAdHelper()
+            return
+        }
+
+        synchronized(this) {
+            val helper = bannerAdHelper ?: BannerAdHelper.create(
+                activity = activity,
+                config = AdConfig.BANNER_DISCONNECTED,
+                tunnelStateFlowable = tunnelStateFlowable,
+                container = bannerContainer,
+                placeholder = placeholder
+            ).also { bannerAdHelper = it }
+
+            helper.start()
+        }
+    }
+
+    private fun clearBannerAdHelper() {
+        synchronized(this) {
+            bannerAdHelper?.dispose()
+            bannerAdHelper = null
+        }
+    }
+
     private fun requireLifecycleRegistered() {
         if (lifecycleOwner == null) {
             throw IllegalStateException("AdManager lifecycle not registered; call register() with a LifecycleOwner")
         }
+    }
+
+    override fun onDestroy(owner: LifecycleOwner) {
+        clearBannerAdHelper()
+    }
+
+    fun disposeBannerAd() {
+        clearBannerAdHelper()
     }
 }

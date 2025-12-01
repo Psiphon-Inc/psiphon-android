@@ -20,12 +20,16 @@
 package com.psiphon3.ads
 
 import android.app.Activity
+import android.view.View
+import android.widget.FrameLayout
 import com.psiphon3.TunnelState
 import com.psiphon3.billing.GooglePlayBillingHelper
 import com.psiphon3.billing.SubscriptionState
 import com.psiphon3.log.MyLog
 import io.reactivex.Completable
 import io.reactivex.Flowable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
 
 class AdFlowHelper {
     companion object {
@@ -136,7 +140,7 @@ class AdFlowHelper {
                                     return@flatMapCompletable Completable.complete()
                                 }
 
-                                MyLog.i("$TAG: User is not a subscriber, proceeding with ads")
+                                MyLog.i("$TAG: User is not a subscriber, proceeding with app open ad")
                                 // Initialize ads then run app open ad and preloading in parallel
                                 adManager.initializeAds(activity)
                                     .andThen(
@@ -171,6 +175,77 @@ class AdFlowHelper {
                 .onErrorComplete()
                 .doOnComplete { MyLog.i("$TAG: Cold start ad flow complete") }
                 .cache()
+        }
+
+        @JvmStatic
+        fun subscribeBannerFlow(
+            activity: Activity,
+            billingHelper: GooglePlayBillingHelper,
+            adManager: AdManager,
+            tunnelStateFlowable: Flowable<TunnelState>,
+            bannerContainer: FrameLayout,
+            bannerPlaceholder: View,
+            shouldShowAds: () -> Boolean
+        ): Disposable {
+            return billingHelper.subscriptionStateFlowable()
+                .map(SubscriptionState::hasValidPurchase)
+                .distinctUntilChanged()
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnError { error ->
+                    MyLog.w("$TAG: Error getting subscription state", error)
+                }
+                // Treat subscription flow errors as non-subscription state
+                .onErrorReturn { false }
+                .switchMapCompletable { hasValidPurchase ->
+                    if (activity.isFinishing || activity.isDestroyed) {
+                        return@switchMapCompletable Completable.complete()
+                    }
+
+                    if (!shouldShowAds()) {
+                        MyLog.i("$TAG: shouldShowAds=false, disposing banner")
+                        return@switchMapCompletable Completable.fromAction {
+                            adManager.disposeBannerAd()
+                            bannerPlaceholder.visibility = View.VISIBLE
+                        }
+                    }
+
+                    if (hasValidPurchase) {
+                        MyLog.i("$TAG: User has valid purchase, hiding banner")
+                        return@switchMapCompletable Completable.fromAction {
+                            adManager.disposeBannerAd()
+                            bannerPlaceholder.visibility = View.VISIBLE
+                        }
+                    }
+
+                    MyLog.i("$TAG: User is not a subscriber, attaching banner ad")
+                    adManager.initializeAds(activity)
+                        .andThen(
+                            Completable.fromAction {
+                                adManager.attachDisconnectedBannerAd(
+                                    activity,
+                                    bannerContainer,
+                                    bannerPlaceholder,
+                                    tunnelStateFlowable
+                                )
+                            }
+                        )
+                        .doOnError { error ->
+                            MyLog.w("$TAG: Error attaching banner", error)
+                            adManager.disposeBannerAd()
+                            bannerPlaceholder.visibility = View.VISIBLE
+                         }
+                        // Do not dispose of the flow on ad SDK errors
+                        .onErrorComplete()
+                }
+                // Shouldn't happen, but if it does, log and cleanly cancel the flow
+                .doOnError { error -> MyLog.w("$TAG: Unexpected banner flow error", error) }
+                .onErrorComplete()
+                // Dispose of the ad and restore placeholder visibility on flow termination
+                .doFinally {
+                    adManager.disposeBannerAd()
+                    bannerPlaceholder.visibility = View.VISIBLE
+                }
+                .subscribe()
         }
     }
 }

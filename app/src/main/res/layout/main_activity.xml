@@ -31,19 +31,36 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <LinearLayout
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="150dp"
             android:background="@android:color/transparent">
 
             <ImageView
                 android:id="@+id/banner"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:src="@drawable/top_banner" />
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                app:layout_constraintWidth_max="640dp"
+                app:layout_constraintWidth_default="percent"
+                app:layout_constraintWidth_percent="1"
+                android:scaleType="centerCrop"
+                android:src="@drawable/top_banner"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
 
-        </LinearLayout>
+            <FrameLayout
+                android:id="@+id/banner_ad_container"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:background="@android:color/transparent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
 
+        </androidx.constraintlayout.widget.ConstraintLayout>
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"

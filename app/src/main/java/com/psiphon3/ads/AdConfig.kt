@@ -34,6 +34,11 @@ data class InterstitialAdConfig(
     val adUnitId: String,
 )
 
+data class BannerAdConfig(
+    val requiredTunnelState: TunnelState.Status,
+    val adUnitId: String,
+)
+
 object AdConfig {
 
     val APP_OPEN_DISCONNECTED = AppOpenAdConfig(
@@ -44,5 +49,10 @@ object AdConfig {
     val INTERSTITIAL_DISCONNECTED = InterstitialAdConfig(
         requiredTunnelState = TunnelState.Status.STOPPED,
         adUnitId = BuildConfig.INTERSTITIAL_DISCONNECTED_ID
+    )
+
+    val BANNER_DISCONNECTED = BannerAdConfig(
+        requiredTunnelState = TunnelState.Status.STOPPED,
+        adUnitId = BuildConfig.BANNER_DISCONNECTED_ID
     )
 }
