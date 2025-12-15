@@ -51,6 +51,7 @@
 
         <activity
             android:name="com.psiphon3.MainActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize"
             android:label="@string/app_name"
             android:exported="true"
             android:launchMode="singleTask">
