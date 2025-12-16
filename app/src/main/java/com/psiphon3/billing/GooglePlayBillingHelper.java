@@ -321,12 +321,27 @@ public class GooglePlayBillingHelper {
             // After your app has granted entitlement to the user and notified them about the successful transaction, your app needs to notify
             // Google that the purchase was successfully processed. This is done by acknowledging the purchase and must be done within three
             // days to ensure the purchase isn't automatically refunded and entitlement revoked.
-            compositeDisposable.add(acknowledgePurchase(purchase).subscribe());
+            compositeDisposable.add(
+                    acknowledgePurchase(purchase)
+                            // Don't crash the app if we fail to acknowledge the purchase.
+                            // We call processPurchases() often enough to ensure that the
+                            // purchases are eventually acknowledged.
+                            .onErrorComplete()
+                            .subscribe()
+            );
 
             // Check if this purchase is an expired timepass which needs to be consumed
             if (IAB_TIMEPASS_SKUS_TO_DAYS.containsKey(purchase.getProducts().get(0))) {
                 if (!isValidTimePass(purchase)) {
-                    compositeDisposable.add(consumePurchase(purchase).subscribe());
+                    compositeDisposable.add(
+                            // Don't crash the app if we fail to consume the purchase.
+                            // We call processPurchases() often enough to ensure that the
+                            // purchases are eventually consumed.
+                            consumePurchase(purchase)
+                                    .ignoreElement()
+                                    .onErrorComplete()
+                                    .subscribe()
+                    );
                 }
             }
         }
