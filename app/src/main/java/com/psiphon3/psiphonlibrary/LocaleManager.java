@@ -6,7 +6,7 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Build;
-import android.preference.Preference;
+import android.os.LocaleList;
 import android.preference.PreferenceManager;
 
 import androidx.core.os.ConfigurationCompat;
@@ -121,6 +121,7 @@ public class LocaleManager {
             locale = fromLanguageCode(language);
         }
 
+        updatePlatformLocales(context, language);
         Locale.setDefault(locale);
 
         Resources resources = context.getResources();
@@ -134,6 +135,26 @@ public class LocaleManager {
         }
 
         return context;
+    }
+
+    private static void updatePlatformLocales(Context context, String language) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return;
+        }
+        // Android 13+ syncs activity resources from the platform LocaleManager.
+        // Without this, our manual locale update gets reset to system language.
+        android.app.LocaleManager platformLocaleManager = context.getSystemService(android.app.LocaleManager.class);
+        if (platformLocaleManager == null) {
+            return;
+        }
+        LocaleList localeList;
+        if (language == null || language.isEmpty() || USE_SYSTEM_LANGUAGE_VAL.equals(language)) {
+            // Empty list clears the per-app override and follows system locale.
+            localeList = LocaleList.getEmptyLocaleList();
+        } else {
+            localeList = LocaleList.forLanguageTags(language);
+        }
+        platformLocaleManager.setApplicationLocales(localeList);
     }
 
     private class ApplicationContextWrapper extends ContextWrapper {
