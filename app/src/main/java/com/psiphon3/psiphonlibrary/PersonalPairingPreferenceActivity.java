@@ -138,7 +138,8 @@ public class PersonalPairingPreferenceActivity extends LocalizedActivities.AppCo
                             // Also enable the feature automatically
                             enabledPref.setChecked(true);
                         } catch (IllegalArgumentException e) {
-                            showToast(R.string.personal_pairing_invalid_url, Toast.LENGTH_LONG);
+                            showToast(getPairingImportErrorString(
+                                    PersonalPairingHelper.validationErrorFromException(e)), Toast.LENGTH_LONG);
                         }
                     })
                     .setNegativeButton(android.R.string.cancel, null)
@@ -252,6 +253,17 @@ public class PersonalPairingPreferenceActivity extends LocalizedActivities.AppCo
             }
             currentToast = Toast.makeText(getContext(), messageId, toastLength);
             currentToast.show();
+        }
+
+        @StringRes
+        private int getPairingImportErrorString(PersonalPairingHelper.ImportValidationError validationError) {
+            if (validationError == PersonalPairingHelper.ImportValidationError.UNSUPPORTED_VERSION) {
+                return R.string.personal_pairing_unsupported_version;
+            }
+            if (validationError == PersonalPairingHelper.ImportValidationError.INVALID_INPUT_FORMAT) {
+                return R.string.personal_pairing_invalid_url;
+            }
+            return R.string.personal_pairing_invalid_data;
         }
 
         @Override

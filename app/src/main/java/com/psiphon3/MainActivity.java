@@ -34,6 +34,9 @@ import android.nfc.NfcAdapter;
 import android.nfc.cardemulation.CardEmulation;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
 import android.provider.Settings;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
@@ -94,6 +97,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
@@ -137,6 +141,13 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     private View personalPairingToggleContainer;
     private SwitchCompat personalPairingToggle;
     private TextView personalPairingLabel;
+    private Button personalPairingTurnOffButton;
+    private boolean personalPairingEnabled;
+    private TunnelState latestTunnelState;
+    private long personalPairingConnectingSinceMs = -1;
+    private static final long PERSONAL_PAIRING_TURN_OFF_PROMPT_DELAY_MS = TimeUnit.MINUTES.toMillis(2);
+    private final Handler personalPairingPromptHandler = new Handler(Looper.getMainLooper());
+    private final Runnable personalPairingPromptRunnable = this::updatePersonalPairingTurnOffPrompt;
 
     enum PsiphonBumpHelpState {
         DISABLED,
@@ -224,6 +235,14 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 viewModel.setPersonalParingEnabled(isChecked));
 
         personalPairingLabel = findViewById(R.id.personalPairingLabel);
+        personalPairingTurnOffButton = findViewById(R.id.personalPairingTurnOffButton);
+        personalPairingTurnOffButton.setOnClickListener(v -> {
+            if (personalPairingToggle.isChecked()) {
+                personalPairingToggle.setChecked(false);
+            } else {
+                viewModel.setPersonalParingEnabled(false);
+            }
+        });
 
 
         EmbeddedValues.initialize(getApplicationContext());
@@ -319,6 +338,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
     @Override
     public void onDestroy() {
+        personalPairingPromptHandler.removeCallbacks(personalPairingPromptRunnable);
         compositeDisposable.dispose();
         super.onDestroy();
     }
@@ -327,6 +347,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     protected void onPause() {
         super.onPause();
         cancelInvalidProxySettingsToast();
+        personalPairingPromptHandler.removeCallbacks(personalPairingPromptRunnable);
         compositeDisposable.clear();
     }
 
@@ -426,6 +447,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 viewModel.personalPairingStateFlowable()
                         .observeOn(AndroidSchedulers.mainThread())
                         .doOnNext(state -> {
+                            personalPairingEnabled = state.enabled;
+
                             if (state.data == null || state.data.compartmentId == null || state.data.compartmentId.isEmpty()) {
                                 // Hide the personal pairing toggle layout if there is no data
                                 personalPairingToggleContainer.setVisibility(View.GONE);
@@ -447,6 +470,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                                 personalPairingToggle.setChecked(false);
                                 personalPairingLabel.setVisibility(View.INVISIBLE); // Not GONE, we want to keep the space
                             }
+
+                            updatePersonalPairingTurnOffPrompt();
                         })
                         .subscribe());
     }
@@ -636,7 +661,47 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         HandleCurrentIntent(intent);
     }
 
+    private boolean shouldShowPersonalPairingTurnOffPrompt() {
+        if (!personalPairingEnabled || latestTunnelState == null || !latestTunnelState.isRunning()) {
+            return false;
+        }
+
+        TunnelState.ConnectionData connectionData = latestTunnelState.connectionData();
+        return connectionData != null
+                && connectionData.networkConnectionState() == TunnelState.ConnectionData.NetworkConnectionState.CONNECTING;
+    }
+
+    private void hidePersonalPairingTurnOffPrompt() {
+        personalPairingConnectingSinceMs = -1;
+        personalPairingPromptHandler.removeCallbacks(personalPairingPromptRunnable);
+        personalPairingTurnOffButton.setVisibility(View.GONE);
+    }
+
+    private void updatePersonalPairingTurnOffPrompt() {
+        if (!shouldShowPersonalPairingTurnOffPrompt()) {
+            hidePersonalPairingTurnOffPrompt();
+            return;
+        }
+
+        if (personalPairingConnectingSinceMs < 0) {
+            personalPairingConnectingSinceMs = SystemClock.elapsedRealtime();
+        }
+
+        long elapsed = SystemClock.elapsedRealtime() - personalPairingConnectingSinceMs;
+        long remaining = PERSONAL_PAIRING_TURN_OFF_PROMPT_DELAY_MS - elapsed;
+
+        personalPairingPromptHandler.removeCallbacks(personalPairingPromptRunnable);
+        if (remaining <= 0) {
+            personalPairingTurnOffButton.setVisibility(View.VISIBLE);
+        } else {
+            personalPairingTurnOffButton.setVisibility(View.GONE);
+            personalPairingPromptHandler.postDelayed(personalPairingPromptRunnable, remaining);
+        }
+    }
+
     private void updateServiceStateUI(final TunnelState tunnelState) {
+        latestTunnelState = tunnelState;
+
         if (tunnelState.isUnknown()) {
             openBrowserButton.setEnabled(false);
             toggleButton.setEnabled(false);
@@ -680,6 +745,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             connectionProgressBar.setVisibility(View.INVISIBLE);
             connectionWaitingNetworkIndicator.setVisibility(View.INVISIBLE);
         }
+
+        updatePersonalPairingTurnOffPrompt();
     }
 
     // update NFC UI
@@ -959,14 +1026,12 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         String host = intentUri.getHost();
         String path = intentUri.getPath();
 
-        // Handle Personal Pairing app links (https://hextempulant.net/pair/<base-64-encoded-data>) first
+        // Handle Personal Pairing app links (https://hextempulant.net/pair/<token>) first
         if (HTTPS_SCHEME.equals(scheme) && APP_LINK_HOST.equals(host)) {
             // Only process paths that start with /pair/
             if (path != null && path.startsWith(PAIR_PATH_PREFIX + FWD_SLASH)) {
-                // Extract everything after /pair/
-                String pairingData = path.substring(PAIR_PATH_PREFIX.length() + 1).split(FWD_SLASH)[0];
-                if (!pairingData.isEmpty()) {
-                    handlePersonalPairingData(pairingData);
+                if (!intentUri.getPathSegments().isEmpty() && intentUri.getPathSegments().size() > 1) {
+                    handlePersonalPairingData(intentUri.toString());
                     // Intent was handled
                     return true;
                 }
@@ -976,7 +1041,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             }
         }
 
-        // Handle Personal Pairing deep links (psiphon://pair/<base-64-encoded-data>) next
+        // Handle Personal Pairing deep links (psiphon://pair/<token>) next
         if (PSIPHON_SCHEME.equals(scheme) && PAIR_HOST.equals(host)) {
             // Return false if path is missing or invalid
             if (path == null || path.length() <= 1) {
@@ -984,14 +1049,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 return false;
             }
 
-            // Remove leading slash and get the first path segment
-            String pathWithoutLeadingSlash = path.substring(1);
-            String[] pathSegments = pathWithoutLeadingSlash.split(FWD_SLASH);
-            String pairingData = pathSegments[0];
-
-            // Only handle if we have a non-empty pair code
-            if (!pairingData.isEmpty()) {
-                handlePersonalPairingData(pairingData);
+            if (!intentUri.getPathSegments().isEmpty()) {
+                handlePersonalPairingData(intentUri.toString());
                 // Intent was handled
                 return true;
             }
@@ -1041,7 +1100,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                                     showToast(R.string.personal_pairing_data_already_exists);
                                     break;
                                 case SHOW_ERROR:
-                                    showToast(R.string.personal_pairing_invalid_data);
+                                    showToast(getPairingImportErrorString(result.validationError));
                                     break;
                                 case PROMPT_ENABLE:
                                     showEnableConfirmationDialog(result.data);
@@ -1050,8 +1109,20 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                                     showUpdateConfirmationDialog(result.data, result.existingCompartmentId, result.existingEnabled);
                                     break;
                             }
-                        }, error -> showToast(R.string.personal_pairing_invalid_data))
+                        }, error -> showToast(getPairingImportErrorString(
+                                PersonalPairingHelper.validationErrorFromException(error))))
         );
+    }
+
+    @StringRes
+    private int getPairingImportErrorString(PersonalPairingHelper.ImportValidationError validationError) {
+        if (validationError == PersonalPairingHelper.ImportValidationError.UNSUPPORTED_VERSION) {
+            return R.string.personal_pairing_unsupported_version;
+        }
+        if (validationError == PersonalPairingHelper.ImportValidationError.INVALID_INPUT_FORMAT) {
+            return R.string.personal_pairing_invalid_url;
+        }
+        return R.string.personal_pairing_invalid_data;
     }
 
     // Keeps track of any import pairing data toast to cancel if we need to show a new one

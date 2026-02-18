@@ -23,6 +23,9 @@ import android.content.Context;
 
 import androidx.annotation.NonNull;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.psiphon3.R;
 import com.psiphon3.TunnelState;
@@ -30,9 +33,11 @@ import com.psiphon3.log.MyLog;
 
 import net.grandcentrix.tray.AppPreferences;
 
-import org.json.JSONObject;
-
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
@@ -44,12 +49,40 @@ import io.reactivex.Single;
  * handle user imports, and manage storage and relay mechanisms for state changes.
  */
 public class PersonalPairingHelper {
-    private static final String HTTPS_PREFIX = "https://hextempulant.net/pair/";
+    private static final String PSIPHON_SCHEME = "psiphon";
+    private static final String PSIPHON_PAIR_HOST = "pair";
+    private static final String HTTP_SCHEME = "http";
+    private static final String HTTPS_SCHEME = "https";
+    private static final String PAIR_PATH_SEGMENT = "pair";
     private static final String SUPPORTED_VERSION = "1";
     private static final String VERSION_KEY = "v";
     private static final String DATA_KEY = "data";
     private static final String ID_KEY = "id";
     private static final String NAME_KEY = "name";
+    private static final Pattern BASE64URL_PATTERN = Pattern.compile("^[A-Za-z0-9_-]+$");
+    private static final Pattern BASE64_PATTERN = Pattern.compile("^[A-Za-z0-9+/]+={0,2}$");
+    private static final Pattern COMPARTMENT_ID_PATTERN = Pattern.compile("^[A-Za-z0-9_-]{43}$");
+    private static final JsonFactory JSON_FACTORY = new JsonFactory();
+
+    public enum ImportValidationError {
+        INVALID_INPUT_FORMAT,
+        MALFORMED_TOKEN,
+        UNSUPPORTED_VERSION
+    }
+
+    public static class PersonalPairingImportException extends IllegalArgumentException {
+        public final ImportValidationError validationError;
+
+        public PersonalPairingImportException(ImportValidationError validationError) {
+            super(validationError.name());
+            this.validationError = validationError;
+        }
+
+        public PersonalPairingImportException(ImportValidationError validationError, Throwable cause) {
+            super(validationError.name(), cause);
+            this.validationError = validationError;
+        }
+    }
 
     public static class PersonalPairingState {
         public final boolean enabled;
@@ -172,63 +205,285 @@ public class PersonalPairingHelper {
         public final PersonalPairingData data;
         public final String existingCompartmentId;
         public final Boolean existingEnabled;
+        public final ImportValidationError validationError;
 
-        private ImportResult(Action action, PersonalPairingData data, String existingCompartmentId, Boolean existingEnabled) {
+        private ImportResult(Action action,
+                             PersonalPairingData data,
+                             String existingCompartmentId,
+                             Boolean existingEnabled,
+                             ImportValidationError validationError) {
             this.action = action;
             this.data = data;
             this.existingCompartmentId = existingCompartmentId;
             this.existingEnabled = existingEnabled;
+            this.validationError = validationError;
         }
 
         public static ImportResult success(PersonalPairingData data) {
-            return new ImportResult(Action.SHOW_SUCCESS, data, null, null);
+            return new ImportResult(Action.SHOW_SUCCESS, data, null, null, null);
         }
 
         public static ImportResult alreadyExists(PersonalPairingData data) {
-            return new ImportResult(Action.SHOW_ALREADY_EXISTS, data, null, null);
+            return new ImportResult(Action.SHOW_ALREADY_EXISTS, data, null, null, null);
         }
 
-        public static ImportResult error() {
-            return new ImportResult(Action.SHOW_ERROR, null, null, null);
+        public static ImportResult error(ImportValidationError validationError) {
+            return new ImportResult(Action.SHOW_ERROR, null, null, null, validationError);
         }
 
         public static ImportResult promptEnable(PersonalPairingData data) {
-            return new ImportResult(Action.PROMPT_ENABLE, data, null, null);
+            return new ImportResult(Action.PROMPT_ENABLE, data, null, null, null);
         }
 
         public static ImportResult needsUpdate(PersonalPairingData data, String existingId, Boolean existingEnabled) {
-            return new ImportResult(Action.PROMPT_UPDATE, data, existingId, existingEnabled);
+            return new ImportResult(Action.PROMPT_UPDATE, data, existingId, existingEnabled, null);
         }
     }
 
-    // Extract personal pairing data from a base64-encoded string
-    public static PersonalPairingData extractPersonalPairingData(String input) throws IllegalArgumentException {
-        if (input == null || input.isEmpty()) {
-            throw new IllegalArgumentException("Input cannot be empty");
+    public static ImportValidationError validationErrorFromException(Throwable throwable) {
+        if (throwable instanceof PersonalPairingImportException) {
+            return ((PersonalPairingImportException) throwable).validationError;
+        }
+        return ImportValidationError.MALFORMED_TOKEN;
+    }
+
+    private static PersonalPairingImportException invalidInputFormat() {
+        return new PersonalPairingImportException(ImportValidationError.INVALID_INPUT_FORMAT);
+    }
+
+    private static PersonalPairingImportException malformedToken() {
+        return new PersonalPairingImportException(ImportValidationError.MALFORMED_TOKEN);
+    }
+
+    private static PersonalPairingImportException malformedToken(Throwable cause) {
+        return new PersonalPairingImportException(ImportValidationError.MALFORMED_TOKEN, cause);
+    }
+
+    private static PersonalPairingImportException unsupportedVersion() {
+        return new PersonalPairingImportException(ImportValidationError.UNSUPPORTED_VERSION);
+    }
+
+    private static String normalizeTokenInput(String input) {
+        if (input == null) {
+            throw invalidInputFormat();
         }
 
-        String base64Data = input;
-        if (input.startsWith(HTTPS_PREFIX)) {
-            base64Data = input.substring(HTTPS_PREFIX.length());
+        String trimmedInput = input.trim();
+        if (trimmedInput.isEmpty()) {
+            throw invalidInputFormat();
+        }
+
+        if (!trimmedInput.contains("://")) {
+            return trimmedInput;
+        }
+
+        URI uri;
+        try {
+            uri = new URI(trimmedInput);
+        } catch (URISyntaxException e) {
+            throw invalidInputFormat();
+        }
+
+        String scheme = uri.getScheme();
+        if (scheme == null || scheme.isEmpty()) {
+            throw invalidInputFormat();
+        }
+
+        String[] segments = getRawPathSegments(uri.getRawPath());
+
+        if (PSIPHON_SCHEME.equals(scheme)) {
+            if (!PSIPHON_PAIR_HOST.equals(uri.getHost())) {
+                throw invalidInputFormat();
+            }
+            if (segments.length != 1) {
+                throw invalidInputFormat();
+            }
+            String token = segments[0];
+            if (token == null || token.isEmpty()) {
+                throw invalidInputFormat();
+            }
+            return token;
+        }
+
+        if (HTTP_SCHEME.equals(scheme) || HTTPS_SCHEME.equals(scheme)) {
+            return extractTokenFromPairPath(segments);
+        }
+
+        throw invalidInputFormat();
+    }
+
+    private static String extractTokenFromPairPath(String[] segments) {
+        for (int i = segments.length - 2; i >= 0; i--) {
+            if (PAIR_PATH_SEGMENT.equals(segments[i])) {
+                if (i + 2 != segments.length) {
+                    throw invalidInputFormat();
+                }
+                String token = segments[i + 1];
+                if (token == null || token.isEmpty()) {
+                    throw invalidInputFormat();
+                }
+                return token;
+            }
+        }
+        throw invalidInputFormat();
+    }
+
+    private static String[] getRawPathSegments(String rawPath) {
+        if (rawPath == null || rawPath.isEmpty() || "/".equals(rawPath)) {
+            return new String[0];
+        }
+        if (!rawPath.startsWith("/")) {
+            throw invalidInputFormat();
+        }
+        String[] segments = rawPath.substring(1).split("/", -1);
+        for (String segment : segments) {
+            if (segment.isEmpty()) {
+                throw invalidInputFormat();
+            }
+        }
+        return segments;
+    }
+
+    private static byte[] decodeToken(String token) {
+        if (token == null || token.isEmpty()) {
+            throw malformedToken();
+        }
+
+        if (BASE64URL_PATTERN.matcher(token).matches()) {
+            try {
+                return decodeUrlSafeBase64(token);
+            } catch (IllegalArgumentException e) {
+                throw malformedToken(e);
+            }
+        }
+
+        if (BASE64_PATTERN.matcher(token).matches() && token.length() % 4 == 0) {
+            try {
+                return Utils.Base64.decode(token);
+            } catch (IllegalArgumentException e) {
+                throw malformedToken(e);
+            }
+        }
+
+        throw malformedToken();
+    }
+
+    private static String requireNonEmptyString(JsonParser parser) throws IOException {
+        if (parser.getCurrentToken() != JsonToken.VALUE_STRING) {
+            throw malformedToken();
+        }
+        String stringValue = parser.getValueAsString();
+        if (stringValue.isEmpty()) {
+            throw malformedToken();
+        }
+        return stringValue;
+    }
+
+    private static PersonalPairingData parsePayload(byte[] decodedToken) {
+        try (JsonParser parser = JSON_FACTORY.createParser(decodedToken)) {
+            if (parser.nextToken() != JsonToken.START_OBJECT) {
+                throw malformedToken();
+            }
+
+            String version = null;
+            String compartmentId = null;
+            String alias = null;
+            int topLevelFieldCount = 0;
+
+            while (parser.nextToken() != JsonToken.END_OBJECT) {
+                if (parser.getCurrentToken() != JsonToken.FIELD_NAME) {
+                    throw malformedToken();
+                }
+
+                String fieldName = parser.getCurrentName();
+                topLevelFieldCount++;
+                parser.nextToken();
+
+                if (VERSION_KEY.equals(fieldName)) {
+                    version = requireNonEmptyString(parser);
+                } else if (DATA_KEY.equals(fieldName)) {
+                    if (parser.getCurrentToken() != JsonToken.START_OBJECT) {
+                        throw malformedToken();
+                    }
+
+                    int dataFieldCount = 0;
+                    while (parser.nextToken() != JsonToken.END_OBJECT) {
+                        if (parser.getCurrentToken() != JsonToken.FIELD_NAME) {
+                            throw malformedToken();
+                        }
+
+                        String dataFieldName = parser.getCurrentName();
+                        dataFieldCount++;
+                        parser.nextToken();
+
+                        if (ID_KEY.equals(dataFieldName)) {
+                            compartmentId = requireNonEmptyString(parser);
+                        } else if (NAME_KEY.equals(dataFieldName)) {
+                            alias = requireNonEmptyString(parser);
+                        } else {
+                            throw malformedToken();
+                        }
+                    }
+
+                    if (dataFieldCount != 2 || compartmentId == null || alias == null) {
+                        throw malformedToken();
+                    }
+                } else {
+                    throw malformedToken();
+                }
+            }
+
+            if (topLevelFieldCount != 2 || version == null) {
+                throw malformedToken();
+            }
+
+            if (!SUPPORTED_VERSION.equals(version)) {
+                throw unsupportedVersion();
+            }
+
+            validateCompartmentId(compartmentId);
+            return new PersonalPairingData(compartmentId, alias);
+        } catch (PersonalPairingImportException e) {
+            throw e;
+        } catch (IOException | RuntimeException e) {
+            throw malformedToken(e);
+        }
+    }
+
+    private static void validateCompartmentId(String compartmentId) {
+        if (!COMPARTMENT_ID_PATTERN.matcher(compartmentId).matches()) {
+            throw malformedToken();
         }
 
         try {
-            String jsonStr = new String(Utils.Base64.decode(base64Data));
-            JSONObject json = new JSONObject(jsonStr);
-
-            // Verify version
-            if (!SUPPORTED_VERSION.equals(json.getString(VERSION_KEY))) {
-                throw new IllegalArgumentException("Unsupported version");
+            byte[] decoded = decodeUrlSafeBase64(compartmentId);
+            if (decoded.length != 32) {
+                throw malformedToken();
             }
+        } catch (IllegalArgumentException e) {
+            throw malformedToken(e);
+        }
+    }
 
-            // Extract data
-            JSONObject data = json.getJSONObject(DATA_KEY);
-            return new PersonalPairingData(
-                    data.getString(ID_KEY),
-                    data.getString(NAME_KEY)
-            );
+    private static byte[] decodeUrlSafeBase64(String token) {
+        int padLength = (4 - (token.length() % 4)) % 4;
+        String paddedToken = token + "====".substring(0, padLength);
+        String normalized = paddedToken
+                .replace('-', '+')
+                .replace('_', '/');
+        return Utils.Base64.decode(normalized);
+    }
+
+    // Extract personal pairing data from a token string, deep link, or wrapper URL
+    public static PersonalPairingData extractPersonalPairingData(String input) throws IllegalArgumentException {
+        String token = normalizeTokenInput(input);
+        try {
+            byte[] decodedToken = decodeToken(token);
+            return parsePayload(decodedToken);
+        } catch (PersonalPairingImportException e) {
+            throw e;
         } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid pairing data", e);
+            throw malformedToken(e);
         }
     }
 
@@ -246,8 +501,9 @@ public class PersonalPairingHelper {
                 return ImportResult.needsUpdate(personalPairingData, storedCompartmentId, storedEnabled);
             }
         } catch (IllegalArgumentException e) {
-            MyLog.e("PersonalPairingHelper::validatePersonalPairingData error: " + e.getMessage());
-            return ImportResult.error();
+            ImportValidationError validationError = validationErrorFromException(e);
+            MyLog.e("PersonalPairingHelper::validatePersonalPairingData error: " + validationError.name());
+            return ImportResult.error(validationError);
         }
     }
 

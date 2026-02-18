@@ -112,6 +112,15 @@
                     android:textSize="12sp"
                     android:alpha="0.8"
                     android:visibility="visible" />
+
+                <Button
+                    android:id="@+id/personalPairingTurnOffButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/personal_pairing_turn_off_prompt"
+                    android:textAppearance="?android:attr/textAppearanceSmall"
+                    android:visibility="gone" />
             </LinearLayout>
 
             <LinearLayout

@@ -225,6 +225,9 @@
     <!-- Personal Pairing invalid Data Format error message -->
     <string name="personal_pairing_invalid_data">Invalid pairing data format</string>
 
+    <!-- Personal Pairing unsupported token version error message -->
+    <string name="personal_pairing_unsupported_version">Unsupported pairing token version</string>
+
     <!-- A warning message shown when the user tries to ebable Personal Pairing while the pairing compartment ID is not set -->
     <string name="personal_pairing_need_compartment_id">Please import a pairing URL first</string>
 
@@ -245,6 +248,9 @@
 
     <!-- Label for the Personal Pairing preference in the app settings -->
     <string name="label_personal_pairing_settings">Personal Pairing</string>
+
+    <!-- Prompt button shown on main screen when Personal Pairing is enabled and connection is taking too long -->
+    <string name="personal_pairing_turn_off_prompt">Trouble connecting? Turn off Personal Pairing</string>
 
     <!-- Personal Pairing data import success message -->
     <string name="personal_pairing_data_import_success">Personal Pairing configuration saved</string>
