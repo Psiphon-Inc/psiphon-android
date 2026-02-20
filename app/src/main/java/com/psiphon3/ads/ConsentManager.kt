@@ -21,6 +21,7 @@ package com.psiphon3.ads
 
 import android.app.Activity
 import android.content.Context
+import android.os.Build
 import com.google.android.ump.ConsentInformation
 import com.google.android.ump.ConsentRequestParameters
 import com.google.android.ump.UserMessagingPlatform
@@ -41,9 +42,15 @@ class ConsentManager private constructor(context: Context) {
         }
     }
 
-    private val consentInformation = UserMessagingPlatform.getConsentInformation(context)
+    // UMP requires API >= 23; on pre-M this is null and all methods become no-ops.
+    private val consentInformation: ConsentInformation? =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+            UserMessagingPlatform.getConsentInformation(context)
+        else null
 
     fun gatherConsent(activity: Activity): Completable {
+        val info = consentInformation ?: return Completable.complete()
+
         return Completable.create { emitter ->
             if (activity.isFinishing || activity.isDestroyed) {
                 if (!emitter.isDisposed) {
@@ -57,7 +64,7 @@ class ConsentManager private constructor(context: Context) {
             val params = ConsentRequestParameters.Builder()
                 .build()
 
-            consentInformation.requestConsentInfoUpdate(
+            info.requestConsentInfoUpdate(
                 activity,
                 params,
                 {
@@ -92,6 +99,8 @@ class ConsentManager private constructor(context: Context) {
     }
 
     fun showPrivacyOptionsForm(activity: Activity): Completable {
+        consentInformation ?: return Completable.complete()
+
         return Completable.create { emitter ->
             if (activity.isFinishing || activity.isDestroyed) {
                 if (!emitter.isDisposed) {
@@ -114,10 +123,10 @@ class ConsentManager private constructor(context: Context) {
         }
     }
 
-    fun canRequestAds(): Boolean = consentInformation.canRequestAds()
+    fun canRequestAds(): Boolean = consentInformation?.canRequestAds() ?: false
 
     fun isPrivacyOptionsRequired(): Boolean {
-        return consentInformation.privacyOptionsRequirementStatus ==
+        return consentInformation?.privacyOptionsRequirementStatus ==
                 ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
     }
 }
