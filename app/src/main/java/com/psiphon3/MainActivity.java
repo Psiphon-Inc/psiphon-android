@@ -791,6 +791,11 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             return Single.just(state);
         }
 
+        if (isDeepLinkIntent(getIntent())) {
+            MyLog.i("MainActivity: skipping app open ad for deep link launch");
+            return Single.just(state);
+        }
+
         if (!shouldShowAds()) {
             return Single.just(state);
         }
@@ -813,6 +818,14 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     private boolean shouldShowAds() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&  // Need SDK 23+ for ads
                 !isFirstAppStartEver; // Skip on very first app launch
+    }
+
+    private boolean isDeepLinkIntent(@Nullable Intent intent) {
+        if (intent == null || !Intent.ACTION_VIEW.equals(intent.getAction())) {
+            return false;
+        }
+        Uri data = intent.getData();
+        return data != null;
     }
 
 
@@ -901,7 +914,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
     private boolean shouldAutoStart() {
         Intent intent = getIntent();
-        boolean isDeepLink = Intent.ACTION_VIEW.equals(intent.getAction()) && intent.getData() != null;
+        boolean isDeepLink = isDeepLinkIntent(intent);
 
         return isFirstRun &&
                 !intent.getBooleanExtra(INTENT_EXTRA_PREVENT_AUTO_START, false) &&
@@ -1090,6 +1103,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        setIntent(intent);
         HandleCurrentIntent(intent);
     }
 
