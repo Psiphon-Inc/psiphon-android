@@ -50,6 +50,12 @@
     <string name="vpnServiceDataCollectionDisclosureAccepted" translatable="false">vpnServiceDataCollectionDisclosureAccepted</string>
     <string name="deviceLocationPrecisionParameter" translatable="false">deviceLocationPrecision</string>
     <string name="serviceRunningPreference" translatable="false">serviceRunningPreference</string>
+    <string name="personalPairingPreferenceKey" translatable="false">personalPairingPreferenceKey</string>
+    <string name="personalPairingEnabledPreference" translatable="false">personalPairingEnabledPreference</string>
+    <string name="personalPairingImportPreference" translatable="false">personalPairingImportPreference</string>
+    <string name="personalPairingCompartmentIdPreference" translatable="false">personalPairingCompartmentIdPreference</string>
+    <string name="personalPairingAliasPreference" translatable="false">personalPairingAliasPreference</string>
+    <string name="personalPairingResetPreference" translatable="false">personalPairingResetPreference</string>
 
     <string-array name="languages">
         <item>English,en</item>

@@ -62,6 +62,8 @@ public abstract class TunnelState {
         @Nullable
         public abstract ArrayList<String> vpnApps();
 
+        public abstract boolean personalPairingEnabled();
+
         public static Builder builder() {
             return new AutoValue_TunnelState_ConnectionData.Builder()
                     .setNetworkConnectionState(NetworkConnectionState.CONNECTING)
@@ -72,7 +74,8 @@ public abstract class TunnelState {
                     .setHttpPort(0)
                     .setHomePages(null)
                     .setVpnMode(com.psiphon3.psiphonlibrary.VpnAppsUtils.VpnAppsExclusionSetting.ALL_APPS)
-                    .setVpnApps(null);
+                    .setVpnApps(null)
+                    .setPersonalPairingEnabled(false);
         }
 
         @AutoValue.Builder
@@ -94,6 +97,8 @@ public abstract class TunnelState {
             public abstract Builder setVpnMode(com.psiphon3.psiphonlibrary.VpnAppsUtils.VpnAppsExclusionSetting vpnMode);
 
             public abstract Builder setVpnApps(@Nullable ArrayList<String> vpnApps);
+
+            public abstract Builder setPersonalPairingEnabled(boolean value);
 
             public abstract ConnectionData build();
         }

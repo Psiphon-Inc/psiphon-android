@@ -47,10 +47,12 @@ public class TunnelConfigManager {
     private static class BaseConfig {
         private final String egressRegion;
         private final boolean disableTimeouts;
+        private final String personalPairingCompartmentId;
 
-        BaseConfig(String egressRegion, boolean disableTimeouts) {
+        BaseConfig(String egressRegion, boolean disableTimeouts, String personalPairingCompartmentId) {
             this.egressRegion = egressRegion;
             this.disableTimeouts = disableTimeouts;
+            this.personalPairingCompartmentId = personalPairingCompartmentId;
         }
     }
 
@@ -102,6 +104,7 @@ public class TunnelConfigManager {
         private final String egressRegion;
         private final boolean disableTimeouts;
         private final String deviceLocation;
+        private final String personalPairingCompartmentId;
         private final SponsorshipState sponsorshipState;
         private final RestartType restartType;
 
@@ -109,6 +112,7 @@ public class TunnelConfigManager {
             this.egressRegion = builder.egressRegion;
             this.disableTimeouts = builder.disableTimeouts;
             this.deviceLocation = builder.deviceLocation;
+            this.personalPairingCompartmentId = builder.personalPairingCompartmentId;
             this.sponsorshipState = builder.sponsorshipState;
             this.restartType = builder.restartType != null ? builder.restartType : RestartType.FULL_RESTART;
         }
@@ -117,6 +121,7 @@ public class TunnelConfigManager {
             private String egressRegion;
             private boolean disableTimeouts;
             private String deviceLocation;
+            private String personalPairingCompartmentId;
             private SponsorshipState sponsorshipState;
             private RestartType restartType;
 
@@ -132,6 +137,11 @@ public class TunnelConfigManager {
 
             Builder deviceLocation(String location) {
                 this.deviceLocation = location;
+                return this;
+            }
+
+            Builder personalPairingCompartmentId(String personalPairingCompartmentId) {
+                this.personalPairingCompartmentId = personalPairingCompartmentId;
                 return this;
             }
 
@@ -183,6 +193,11 @@ public class TunnelConfigManager {
         return config != null ? config.deviceLocation : "";
     }
 
+    public String getPersonalPairingCompartmentId() {
+        TunnelConfig config = getCurrentConfig();
+        return config != null ? config.personalPairingCompartmentId : "";
+    }
+
     public boolean isConduitRunningActive() {
         TunnelConfig config = getCurrentConfig();
         return config != null && config.sponsorshipState.isConduitRunning;
@@ -219,6 +234,7 @@ public class TunnelConfigManager {
                             .egressRegion(baseConfig.egressRegion)
                             .disableTimeouts(baseConfig.disableTimeouts)
                             .deviceLocation(deviceLocation)
+                            .personalPairingCompartmentId(baseConfig.personalPairingCompartmentId)
                             .sponsorshipState(sponsorshipState)
                             .restartType(RestartType.FULL_RESTART)
                             .build();
@@ -244,8 +260,21 @@ public class TunnelConfigManager {
             boolean disableTimeouts = appPreferences.getBoolean(
                     context.getString(R.string.disableTimeoutsPreference),
                     false);
-            
-            return new BaseConfig(egressRegion, disableTimeouts);
+            boolean personalPairingEnabled = appPreferences.getBoolean(
+                    context.getString(R.string.personalPairingEnabledPreference), false);
+
+            String personalPairingCompartmentId = "";
+            if (personalPairingEnabled) {
+                personalPairingCompartmentId = appPreferences.getString(
+                        context.getString(R.string.personalPairingCompartmentIdPreference), "");
+                personalPairingCompartmentId = PersonalPairingHelper.toStandardBase64CompartmentId(
+                        personalPairingCompartmentId);
+                if (personalPairingCompartmentId.isEmpty()) {
+                    MyLog.w("TunnelConfigManager: personal pairing enabled but compartment ID is empty.");
+                }
+            }
+
+            return new BaseConfig(egressRegion, disableTimeouts, personalPairingCompartmentId);
         }).subscribeOn(Schedulers.io());
     }
 
@@ -270,6 +299,7 @@ public class TunnelConfigManager {
                     .egressRegion(currentConfig.egressRegion)
                     .disableTimeouts(currentConfig.disableTimeouts)
                     .deviceLocation(currentConfig.deviceLocation)
+                    .personalPairingCompartmentId(currentConfig.personalPairingCompartmentId)
                     .sponsorshipState(newSponsorshipState)
                     .restartType(restartType)
                     .build();

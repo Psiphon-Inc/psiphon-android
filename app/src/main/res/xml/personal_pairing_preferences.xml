@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <Preference
+        android:selectable="false"
+        android:summary="@string/personal_pairing_screen_title"
+        android:layout="@layout/preference_category_title"/>
+
+    <CheckBoxPreference
+        android:key="@string/personalPairingEnabledPreference"
+        android:title="@string/personal_pairing_enable_title"
+        android:summary="@string/personal_pairing_enable_summary"
+        android:defaultValue="false" />
+
+    <Preference
+        android:key="@string/personalPairingImportPreference"
+        android:title="@string/personal_pairing_import_title"
+        android:layout="@layout/preference_button_layout"/>
+
+    <EditTextPreference
+        android:key="@string/personalPairingCompartmentIdPreference"
+        android:title="@string/personal_pairing_compartment_id_title"
+        android:summary="@string/personal_pairing_compartment_id_summary"
+        android:selectable="false" />
+
+    <EditTextPreference
+        android:key="@string/personalPairingAliasPreference"
+        android:title="@string/personal_pairing_alias_title"
+        android:summary="@string/personal_pairing_alias_summary" />
+
+    <Preference
+        android:key="@string/personalPairingResetPreference"
+        android:title="@string/personal_pairing_reset_title"
+        android:summary="@string/personal_pairing_reset_summary"/>
+</PreferenceScreen>

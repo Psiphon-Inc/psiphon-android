@@ -142,6 +142,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
     public static final String DATA_TUNNEL_STATE_HOME_PAGES = "homePages";
     public static final String DATA_TUNNEL_STATE_VPN_MODE = "vpnMode";
     public static final String DATA_TUNNEL_STATE_VPN_APPS = "vpnApps";
+    public static final String DATA_TUNNEL_STATE_IS_PERSONAL_PAIRING_MODE = "isPersonalPairingMode";
     static final String DATA_TRANSFER_STATS_CONNECTED_TIME = "dataTransferStatsConnectedTime";
     static final String DATA_TRANSFER_STATS_TOTAL_BYTES_SENT = "dataTransferStatsTotalBytesSent";
     static final String DATA_TRANSFER_STATS_TOTAL_BYTES_RECEIVED = "dataTransferStatsTotalBytesReceived";
@@ -174,6 +175,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
         ArrayList<String> homePages = new ArrayList<>();
         VpnAppsUtils.VpnAppsExclusionSetting vpnMode = VpnAppsUtils.VpnAppsExclusionSetting.ALL_APPS;
         ArrayList<String> vpnApps = new ArrayList<>();
+        public boolean isPersonalPairingMode;
 
         boolean isConnected() {
             return networkConnectionState == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED;
@@ -792,7 +794,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
         int defaults = 0;
 
         if (networkConnectionState == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED) {
-            iconID = R.drawable.notification_icon_connected;
+            iconID = isPersonalPairingMode()
+                    ? R.drawable.notification_icon_connected_pp
+                    : R.drawable.notification_icon_connected;
             switch (vpnAppsExclusionSetting) {
                 case INCLUDE_APPS:
                     contentText = getContext().getResources()
@@ -814,7 +818,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
             contentText = getContext().getString(R.string.waiting_for_network_connectivity);
             ticker = getContext().getText(R.string.waiting_for_network_connectivity);
         } else {
-            iconID = R.drawable.notification_icon_connecting_animation;
+            iconID = isPersonalPairingMode()
+                    ? R.drawable.notification_icon_connecting_animation_pp
+                    : R.drawable.notification_icon_connecting_animation;
             contentText = getContext().getString(R.string.psiphon_service_notification_message_connecting);
             ticker = getContext().getText(R.string.psiphon_service_notification_message_connecting);
         }
@@ -886,6 +892,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
                 }
             });
         }
+    }
+
+    private boolean isPersonalPairingMode() {
+        return tunnelConfigManager != null
+                && !TextUtils.isEmpty(tunnelConfigManager.getPersonalPairingCompartmentId());
     }
 
     private boolean isSelectedEgressRegionAvailable(List<String> availableRegions) {
@@ -1160,6 +1171,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
         data.putStringArrayList(DATA_TUNNEL_STATE_HOME_PAGES, m_tunnelState.homePages);
         data.putSerializable(DATA_TUNNEL_STATE_VPN_MODE, m_tunnelState.vpnMode);
         data.putStringArrayList(DATA_TUNNEL_STATE_VPN_APPS, m_tunnelState.vpnApps);
+        data.putBoolean(DATA_TUNNEL_STATE_IS_PERSONAL_PAIRING_MODE, isPersonalPairingMode());
         return data;
     }
 
@@ -1616,6 +1628,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
             }
 
             json.put("EmitBytesTransferred", true);
+
+            String personalPairingCompartmentId = tunnelConfigManager.getPersonalPairingCompartmentId();
+            if (!TextUtils.isEmpty(personalPairingCompartmentId)) {
+                json.put("InproxyClientPersonalCompartmentID", personalPairingCompartmentId);
+            }
 
             return json.toString();
         } catch (JSONException e) {
