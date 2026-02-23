@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:installLocation="auto">
 
-    <uses-sdk tools:overrideLibrary="ca.psiphon,com.google.android.gms.ads.impl,com.google.android.gms.ads"/>
+    <uses-sdk tools:overrideLibrary="ca.psiphon,com.google.android.gms.ads.impl,com.google.android.gms.ads,com.vungle.mediation,com.google.android.ads.consent,com.google.android.gms.common"/>
     <supports-screens
                   android:smallScreens="true"
                   android:normalScreens="true"
