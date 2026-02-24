@@ -17,6 +17,8 @@ import androidx.preference.Preference;
 
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
 import com.psiphon3.psiphonlibrary.MoreOptionsPreferenceActivity;
+import com.psiphon3.psiphonlibrary.PersonalPairingHelper;
+import com.psiphon3.psiphonlibrary.PersonalPairingPreferenceActivity;
 import com.psiphon3.psiphonlibrary.ProxyOptionsPreferenceActivity;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.PsiphonPreferenceFragmentCompat;
@@ -42,10 +44,12 @@ public class OptionsTabFragment extends PsiphonPreferenceFragmentCompat {
     private static final int REQUEST_CODE_VPN_PREFERENCES = 100;
     private static final int REQUEST_CODE_PROXY_PREFERENCES = 101;
     private static final int REQUEST_CODE_MORE_PREFERENCES = 102;
+    private static final int REQUEST_CODE_PERSONAL_PAIRING = 103;
 
     private RegionListPreference regionListPreference;
     private Preference vpnOptionsPreference;
     private Preference proxyOptionsPreference;
+    private Preference personalPairingPreference;
     private AppPreferences multiProcessPreferences;
     private MainActivityViewModel viewModel;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
@@ -102,6 +106,15 @@ public class OptionsTabFragment extends PsiphonPreferenceFragmentCompat {
             if (activity != null && !activity.isFinishing()) {
                 startActivityForResult(new Intent(getActivity(),
                         ProxyOptionsPreferenceActivity.class), REQUEST_CODE_PROXY_PREFERENCES);
+            }
+            return true;
+        });
+        personalPairingPreference = findPreference(getContext().getString(R.string.personalPairingPreferenceKey));
+        personalPairingPreference.setOnPreferenceClickListener(__ -> {
+            final FragmentActivity activity = getActivity();
+            if (activity != null && !activity.isFinishing()) {
+                startActivityForResult(new Intent(getActivity(),
+                        PersonalPairingPreferenceActivity.class), REQUEST_CODE_PERSONAL_PAIRING);
             }
             return true;
         });
@@ -167,6 +180,13 @@ public class OptionsTabFragment extends PsiphonPreferenceFragmentCompat {
                     }
                 })
                 .subscribe());
+
+        // Observe 'Personal Pairing` signal from deep link intent handler
+        // and update the preference summary
+        compositeDisposable.add(viewModel.personalPairingStateFlowable()
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext(this::setPersonalPairingSummary)
+                .subscribe());
     }
 
     private void onRegionSelected(String selectedRegionCode) {
@@ -218,6 +238,21 @@ public class OptionsTabFragment extends PsiphonPreferenceFragmentCompat {
         }
     }
 
+    private void setPersonalPairingSummary(PersonalPairingHelper.PersonalPairingState personalPairingState) {
+        if (personalPairingState.enabled) {
+            String alias = personalPairingState.data == null ? null : personalPairingState.data.alias;
+            if (alias == null || alias.isEmpty()) {
+                // If no alias show just Enabled
+                personalPairingPreference.setSummary(R.string.preference_summary_personal_pairing_enabled);
+            } else {
+                // If alias then show the alias
+                personalPairingPreference.setSummary(getString(R.string.preference_summary_personal_pairing_enabled_with_alias, alias));
+            }
+        } else {
+            personalPairingPreference.setSummary(R.string.preference_summary_personal_pairing_disabled);
+        }
+    }
+
     @Override
     public void onActivityResult(int request, int result, Intent data) {
         final @NonNull RestartMode restartMode;
@@ -235,6 +270,14 @@ public class OptionsTabFragment extends PsiphonPreferenceFragmentCompat {
             case REQUEST_CODE_MORE_PREFERENCES:
                 restartMode = moreSettingsRestartRequired() ? RestartMode.TUNNEL : RestartMode.NONE;
                 updateMoreSettingsFromPreferences();
+                break;
+
+            case REQUEST_CODE_PERSONAL_PAIRING:
+                // Note: we are not checking for restart requirements here
+                // because the personal pairing settings may be changed from the main screen or by importing data from a deep link as well as from the personal pairing settings screen
+                // and we will be taking care of the restart requirements centrally
+                restartMode = RestartMode.NONE;
+                updatePersonalPairingFromPreferences();
                 break;
 
             default:
@@ -449,5 +492,18 @@ public class OptionsTabFragment extends PsiphonPreferenceFragmentCompat {
                 new SharedPreferencesImport(requireContext(), prefName, getString(R.string.disableTimeoutsPreference), getString(R.string.disableTimeoutsPreference)),
                 new SharedPreferencesImport(requireContext(), prefName, getString(R.string.nfcBumpPreference), getString(R.string.nfcBumpPreference))
         );
+    }
+
+    private void updatePersonalPairingFromPreferences() {
+        String prefName = getString(R.string.moreOptionsPreferencesName);
+        boolean isEnabled = requireContext().getSharedPreferences(prefName, MODE_PRIVATE)
+                .getBoolean(getString(R.string.personalPairingEnabledPreference), false);
+        String compartmentId = requireContext().getSharedPreferences(prefName, MODE_PRIVATE)
+                .getString(getString(R.string.personalPairingCompartmentIdPreference), "");
+        String alias = requireContext().getSharedPreferences(prefName, MODE_PRIVATE)
+                .getString(getString(R.string.personalPairingAliasPreference), "");
+
+        PersonalPairingHelper.PersonalPairingData data = new PersonalPairingHelper.PersonalPairingData(compartmentId, alias);
+        viewModel.setPersonalPairingState(isEnabled, data);
     }
 }

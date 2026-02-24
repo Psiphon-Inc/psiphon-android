@@ -223,4 +223,44 @@
 
     <!-- Conduit active status indicator -->
     <string name="conduit_active">Conduit៖ សកម្ម</string>
+
+  <string name="preference_summary_personal_pairing_enabled">បានបើក</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">តាមរយៈ %1$s</string>
+  <string name="preference_summary_personal_pairing_disabled">ពិការ</string>
+  <string name="personal_pairing_screen_title">ភ្ជាប់តាមរយៈស្ថានីយ៍ Conduit របស់មិត្តភ័ក្តិដែលជឿទុកចិត្តសម្រាប់ភាពឯកជន និងការចូលប្រើប្រាស់កាន់តែប្រសើរឡើង។ អ្នកនឹងត្រូវការតំណផ្គូផ្គងដើម្បីចាប់ផ្តើម។</string>
+  <string name="personal_pairing_enable_title">បើកការផ្គូផ្គងផ្ទាល់ខ្លួន</string>
+  <string name="personal_pairing_enable_summary">ភ្ជាប់តាមរយៈស្ថានីយ៍បំពង់</string>
+  <string name="personal_pairing_import_title">នាំចូល URL ផ្គូផ្គង</string>
+  <string name="personal_pairing_import_dialog_title">ការផ្គូផ្គង URL</string>
+  <string name="personal_pairing_url_hint">បិទភ្ជាប់ URL ដែលផ្គូផ្គងនៅទីនេះ</string>
+  <string name="personal_pairing_invalid_url">ទម្រង់ URL ការផ្គូផ្គងមិនត្រឹមត្រូវ</string>
+  <string name="personal_pairing_invalid_data">ទម្រង់ទិន្នន័យផ្គូផ្គងមិនត្រឹមត្រូវ</string>
+  <string name="personal_pairing_unsupported_version">កំណែនិមិត្តសញ្ញាផ្គូផ្គងមិនគាំទ្រ</string>
+  <string name="personal_pairing_need_compartment_id">សូមនាំចូល URL ដែលផ្គូផ្គងជាមុនសិន</string>
+  <string name="personal_pairing_compartment_id_title">លេខសម្គាល់ការផ្គូផ្គង</string>
+  <string name="personal_pairing_compartment_id_summary">ឧបករណ៍សម្គាល់ការផ្គូផ្គងតែមួយគត់របស់អ្នក។</string>
+  <string name="personal_pairing_alias_title">ការផ្គូផ្គងឈ្មោះក្លែងក្លាយ</string>
+  <string name="personal_pairing_alias_summary">ឈ្មោះដែលងាយស្រួលសម្រាប់ការកំណត់រចនាសម្ព័ន្ធផ្គូផ្គងនេះ។</string>
+  <string name="import_button">នាំចូល</string>
+  <string name="label_personal_pairing_settings">ការផ្គូផ្គងផ្ទាល់ខ្លួន</string>
+  <string name="personal_pairing_turn_off_prompt">មានបញ្ហាក្នុងការតភ្ជាប់? បិទការផ្គូផ្គងផ្ទាល់ខ្លួន</string>
+  <string name="personal_pairing_data_import_success">បានរក្សាទុកការកំណត់ការផ្គូផ្គងផ្ទាល់ខ្លួន</string>
+  <string name="personal_pairing_data_update_success">បានធ្វើបច្ចុប្បន្នភាពការកំណត់រចនាសម្ព័ន្ធការផ្គូផ្គងផ្ទាល់ខ្លួន</string>
+  <string name="personal_pairing_data_already_exists">ការកំណត់រចនាសម្ព័ន្ធការផ្គូផ្គងផ្ទាល់ខ្លួនមានរួចហើយ</string>
+  <string name="personal_pairing_update_title">ធ្វើបច្ចុប្បន្នភាពទិន្នន័យការផ្គូផ្គងផ្ទាល់ខ្លួន</string>
+  <string name="personal_pairing_update_current_id_label">លេខសម្គាល់ការផ្គូផ្គងផ្ទាល់ខ្លួនបច្ចុប្បន្ន៖</string>
+  <string name="personal_pairing_update_new_id_label">លេខសម្គាល់ការផ្គូផ្គងផ្ទាល់ខ្លួនថ្មី៖</string>
+  <string name="personal_pairing_update_positive_button">ធ្វើបច្ចុប្បន្នភាព</string>
+  <string name="personal_pairing_update_negative_button">បោះបង់</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">បើកការផ្គូផ្គងផ្ទាល់ខ្លួន</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">បើកការផ្គូផ្គងផ្ទាល់ខ្លួនឥឡូវនេះ? វានឹងចាប់ផ្តើមផ្លូវរូងក្រោមដីសកម្មឡើងវិញ។ បើមិនដូច្នោះទេ ការកំណត់នឹងត្រូវបាននាំចូល ហើយនៅតែបិទរហូតដល់បើកដំណើរការដោយដៃនៅក្នុងការកំណត់កម្មវិធី។</string>
+  <string name="personal_pairing_reset_title">កំណត់ការផ្គូផ្គងផ្ទាល់ខ្លួនឡើងវិញ</string>
+  <string name="personal_pairing_reset_summary">លុបការកំណត់ការផ្គូផ្គងផ្ទាល់ខ្លួននេះចេញជាអចិន្ត្រៃយ៍</string>
+  <string name="personal_pairing_reset_dialog_title">កំណត់ការផ្គូផ្គងផ្ទាល់ខ្លួនឡើងវិញ</string>
+  <string name="personal_pairing_delete_hint">បញ្ចូលនិមិត្តសញ្ញាដើម្បីបញ្ជាក់</string>
+  <string name="personal_pairing_delete_message">ដើម្បីលុបការកំណត់ការផ្គូផ្គងផ្ទាល់ខ្លួននេះ បញ្ចូលនិមិត្តសញ្ញា %d ចុងក្រោយនៃលេខសម្គាល់ការផ្គូផ្គង៖</string>
+  <string name="personal_pairing_reset_error">មិនអាចកំណត់ការកំណត់ឡើងវិញបានទេ។</string>
+  <string name="personal_pairing_reset_invalid">សូមបញ្ចូលនិមិត្តសញ្ញាបញ្ជាក់ត្រឹមត្រូវ។</string>
+  <string name="personal_pairing_reset_success">កំណត់រចនាសម្ព័ន្ធឡើងវិញ</string>
+  <string name="reset_button">កំណត់ឡើងវិញ</string>
 </resources>

@@ -35,6 +35,9 @@ import android.nfc.NfcAdapter;
 import android.nfc.cardemulation.CardEmulation;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
 import android.provider.Settings;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
@@ -42,6 +45,7 @@ import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.style.BulletSpan;
 import android.text.util.Linkify;
+import android.util.Pair;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -57,7 +61,9 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
@@ -76,6 +82,7 @@ import com.psiphon3.log.LogsMaintenanceWorker;
 import com.psiphon3.log.MyLog;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
 import com.psiphon3.psiphonlibrary.LocalizedActivities;
+import com.psiphon3.psiphonlibrary.PersonalPairingHelper;
 import com.psiphon3.psiphonlibrary.TunnelManager;
 import com.psiphon3.psiphonlibrary.Utils;
 import com.psiphon3.psiphonlibrary.VpnAppsUtils;
@@ -96,12 +103,15 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Completable;
+import io.reactivex.Flowable;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.CompletableSubject;
 
 public class MainActivity extends LocalizedActivities.AppCompatActivity {
@@ -147,6 +157,16 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     private FloatingActionButton helpConnectFab;
     // Keeps track of the Psiphon Bump help state
     private PsiphonBumpHelpState psiphonBumpHelpState = PsiphonBumpHelpState.DISABLED;
+    private View personalPairingToggleContainer;
+    private SwitchCompat personalPairingToggle;
+    private TextView personalPairingLabel;
+    private Button personalPairingTurnOffButton;
+    private boolean personalPairingEnabled;
+    private TunnelState latestTunnelState;
+    private long personalPairingConnectingSinceMs = -1;
+    private static final long PERSONAL_PAIRING_TURN_OFF_PROMPT_DELAY_MS = TimeUnit.MINUTES.toMillis(2);
+    private final Handler personalPairingPromptHandler = new Handler(Looper.getMainLooper());
+    private final Runnable personalPairingPromptRunnable = this::updatePersonalPairingTurnOffPrompt;
 
     enum PsiphonBumpHelpState {
         DISABLED,
@@ -359,6 +379,19 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         }
 
         helpConnectFab = findViewById(R.id.help_connect_fab);
+        personalPairingToggleContainer = findViewById(R.id.personalPairingToggleContainer);
+        personalPairingToggle = findViewById(R.id.personalPairingToggle);
+        personalPairingToggle.setOnCheckedChangeListener((buttonView, isChecked) ->
+                viewModel.setPersonalParingEnabled(isChecked));
+        personalPairingLabel = findViewById(R.id.personalPairingLabel);
+        personalPairingTurnOffButton = findViewById(R.id.personalPairingTurnOffButton);
+        personalPairingTurnOffButton.setOnClickListener(v -> {
+            if (personalPairingToggle.isChecked()) {
+                personalPairingToggle.setChecked(false);
+            } else {
+                viewModel.setPersonalParingEnabled(false);
+            }
+        });
 
         EmbeddedValues.initialize(getApplicationContext());
 
@@ -482,6 +515,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
     @Override
     public void onDestroy() {
+        personalPairingPromptHandler.removeCallbacks(personalPairingPromptRunnable);
         compositeDisposable.dispose();
 
         if (onResumeFlowDisposable != null) {
@@ -505,6 +539,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     protected void onPause() {
         super.onPause();
         cancelInvalidProxySettingsToast();
+        personalPairingPromptHandler.removeCallbacks(personalPairingPromptRunnable);
         compositeDisposable.clear();
     }
 
@@ -538,19 +573,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 .doOnNext(this::updateServiceStateUI)
                 .subscribe());
 
-        // If device supports Psiphon Bump observe tunnel state and update NFC UI and HCE state accordingly
-        if (Utils.supportsPsiphonBump(this)) {
-            compositeDisposable.add(getTunnelServiceInteractor().tunnelStateFlowable()
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .doOnNext(this::updatePsiphonBumpState)
-                    // disable Psiphon Bump HCE and hide help connect FAB when this subscription is
-                    // disposed.
-                    .doOnCancel(() -> {
-                        updatePsiphonBumpHceState(false);
-                        helpConnectFab.setVisibility(View.GONE);
-                    })
-                    .subscribe());
-        }
+        // Set up Psiphon Bump state handling
+        setupPsiphonBumpHandling();
 
         // Observe custom proxy validation results to show a toast for invalid ones
         compositeDisposable.add(viewModel.customProxyValidationResultFlowable()
@@ -581,6 +605,53 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                 })
                 .subscribe());
 
+        // Observe personal pairing state changes and restart the tunnel if needed
+        compositeDisposable.add(
+                viewModel.pairingStateRestartTunnelFlowable()
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .switchMap(__ -> getTunnelServiceInteractor().tunnelStateFlowable()
+                                .filter(tunnelState -> !tunnelState.isUnknown())
+                                .take(1)
+                                .doOnNext(tunnelState -> {
+                                    if (tunnelState.isRunning()) {
+                                        getTunnelServiceInteractor().commandTunnelRestart();
+                                    }
+                                })
+                        )
+                        .subscribe());
+
+        // Observe personal pairing state and update the UI
+        compositeDisposable.add(
+                viewModel.personalPairingStateFlowable()
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnNext(state -> {
+                            personalPairingEnabled = state.enabled;
+                            boolean hasPairingData = state.data != null
+                                    && state.data.compartmentId != null
+                                    && !state.data.compartmentId.isEmpty();
+
+                            personalPairingToggleContainer.setVisibility(hasPairingData ? View.VISIBLE : View.GONE);
+
+                            if (state.enabled && hasPairingData) {
+                                String alias = state.data.alias;
+                                personalPairingToggle.setChecked(true);
+                                if (alias != null && !alias.isEmpty()) {
+                                    personalPairingLabel.setText(
+                                            getString(R.string.preference_summary_personal_pairing_enabled_with_alias, alias));
+                                } else {
+                                    personalPairingLabel.setText(R.string.preference_summary_personal_pairing_enabled);
+                                }
+                                personalPairingLabel.setVisibility(View.VISIBLE);
+                            } else {
+                                personalPairingToggle.setChecked(false);
+                                // Keep layout spacing stable when disabled.
+                                personalPairingLabel.setVisibility(View.INVISIBLE);
+                            }
+
+                            updatePersonalPairingTurnOffPrompt();
+                        })
+                        .subscribe());
+
         // Handle potentially disruptive actions on resume, such as showing unlock dialog,
         // startup prompts, auto start, etc.
         if (onResumeFlowDisposable != null && !onResumeFlowDisposable.isDisposed()) {
@@ -598,6 +669,39 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                         .flatMap(this::handleUpdateAvailabilityCheck)
                         .flatMap(this::handleAutoStart)
                         .subscribe();
+    }
+
+    private void setupPsiphonBumpHandling() {
+        if (!Utils.supportsPsiphonBump(this)) {
+            updatePsiphonBumpHceState(false);
+            helpConnectFab.setVisibility(View.GONE);
+            helpConnectFab.setOnClickListener(null);
+            return;
+        }
+
+        compositeDisposable.add(
+                Flowable.combineLatest(
+                                getTunnelServiceInteractor().tunnelStateFlowable(),
+                                viewModel.personalPairingStateFlowable(),
+                                Pair::new)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnNext(statePair -> {
+                            TunnelState tunnelState = statePair.first;
+                            PersonalPairingHelper.PersonalPairingState personalPairingState = statePair.second;
+
+                            if (personalPairingState.enabled) {
+                                updatePsiphonBumpHceState(false);
+                                helpConnectFab.setVisibility(View.GONE);
+                                helpConnectFab.setOnClickListener(null);
+                            } else {
+                                updatePsiphonBumpState(tunnelState);
+                            }
+                        })
+                        .doOnCancel(() -> {
+                            updatePsiphonBumpHceState(false);
+                            helpConnectFab.setVisibility(View.GONE);
+                        })
+                        .subscribe());
     }
 
     private Completable waitForPermissions() {
@@ -687,6 +791,11 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             return Single.just(state);
         }
 
+        if (isDeepLinkIntent(getIntent())) {
+            MyLog.i("MainActivity: skipping app open ad for deep link launch");
+            return Single.just(state);
+        }
+
         if (!shouldShowAds()) {
             return Single.just(state);
         }
@@ -709,6 +818,14 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     private boolean shouldShowAds() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&  // Need SDK 23+ for ads
                 !isFirstAppStartEver; // Skip on very first app launch
+    }
+
+    private boolean isDeepLinkIntent(@Nullable Intent intent) {
+        if (intent == null || !Intent.ACTION_VIEW.equals(intent.getAction())) {
+            return false;
+        }
+        Uri data = intent.getData();
+        return data != null;
     }
 
 
@@ -796,8 +913,12 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     }
 
     private boolean shouldAutoStart() {
+        Intent intent = getIntent();
+        boolean isDeepLink = isDeepLinkIntent(intent);
+
         return isFirstRun &&
-                !getIntent().getBooleanExtra(INTENT_EXTRA_PREVENT_AUTO_START, false);
+                !intent.getBooleanExtra(INTENT_EXTRA_PREVENT_AUTO_START, false) &&
+                !isDeepLink;
     }
 
     private void preventAutoStart() {
@@ -982,10 +1103,51 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        setIntent(intent);
         HandleCurrentIntent(intent);
     }
 
+    private boolean shouldShowPersonalPairingTurnOffPrompt() {
+        if (!personalPairingEnabled || latestTunnelState == null || !latestTunnelState.isRunning()) {
+            return false;
+        }
+
+        TunnelState.ConnectionData connectionData = latestTunnelState.connectionData();
+        return connectionData != null
+                && connectionData.networkConnectionState() == TunnelState.ConnectionData.NetworkConnectionState.CONNECTING;
+    }
+
+    private void hidePersonalPairingTurnOffPrompt() {
+        personalPairingConnectingSinceMs = -1;
+        personalPairingPromptHandler.removeCallbacks(personalPairingPromptRunnable);
+        personalPairingTurnOffButton.setVisibility(View.GONE);
+    }
+
+    private void updatePersonalPairingTurnOffPrompt() {
+        if (!shouldShowPersonalPairingTurnOffPrompt()) {
+            hidePersonalPairingTurnOffPrompt();
+            return;
+        }
+
+        if (personalPairingConnectingSinceMs < 0) {
+            personalPairingConnectingSinceMs = SystemClock.elapsedRealtime();
+        }
+
+        long elapsed = SystemClock.elapsedRealtime() - personalPairingConnectingSinceMs;
+        long remaining = PERSONAL_PAIRING_TURN_OFF_PROMPT_DELAY_MS - elapsed;
+
+        personalPairingPromptHandler.removeCallbacks(personalPairingPromptRunnable);
+        if (remaining <= 0) {
+            personalPairingTurnOffButton.setVisibility(View.VISIBLE);
+        } else {
+            personalPairingTurnOffButton.setVisibility(View.GONE);
+            personalPairingPromptHandler.postDelayed(personalPairingPromptRunnable, remaining);
+        }
+    }
+
     private void updateServiceStateUI(final TunnelState tunnelState) {
+        latestTunnelState = tunnelState;
+
         if (tunnelState.isUnknown()) {
             openBrowserButton.setEnabled(false);
             toggleButton.setEnabled(false);
@@ -1029,6 +1191,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
             connectionProgressBar.setVisibility(View.INVISIBLE);
             connectionWaitingNetworkIndicator.setVisibility(View.INVISIBLE);
         }
+
+        updatePersonalPairingTurnOffPrompt();
     }
 
     // update NFC UI
@@ -1300,6 +1464,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         final String SETTINGS_PATH_VPN = "/vpn";
         final String SETTINGS_PATH_PROXY = "/proxy";
         final String SETTINGS_PATH_MORE_OPTIONS = "/more-options";
+        final String PAIR_HOST = "pair";
 
         Uri intentUri = intent.getData();
         // Check if this is a deep link intent we can handle
@@ -1311,8 +1476,17 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         }
 
         String path = intentUri.getPath();
+        String host = intentUri.getHost();
 
-        switch (intentUri.getHost()) {
+        if (PAIR_HOST.equals(host)) {
+            if (path == null || path.length() <= 1 || intentUri.getPathSegments().isEmpty()) {
+                return false;
+            }
+            handlePersonalPairingData(intentUri.toString());
+            return true;
+        }
+
+        switch (host) {
             case SETTINGS_HOST:
                 selectTabByTag("settings");
                 if (path != null) {
@@ -1332,6 +1506,107 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         }
         // intent not handled
         return false;
+    }
+
+    private void handlePersonalPairingData(String input) {
+        Flowable<TunnelState> tunnelStateFlowable = getTunnelServiceInteractor()
+                .tunnelStateFlowable()
+                .filter(state -> !state.isUnknown());
+
+        compositeDisposable.add(
+                viewModel.handlePersonalPairingData(input, tunnelStateFlowable)
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(result -> {
+                            switch (result.action) {
+                                case SHOW_SUCCESS:
+                                    showToast(R.string.personal_pairing_data_import_success);
+                                    break;
+                                case SHOW_ALREADY_EXISTS:
+                                    showToast(R.string.personal_pairing_data_already_exists);
+                                    break;
+                                case SHOW_ERROR:
+                                    showToast(getPairingImportErrorString(result.validationError));
+                                    break;
+                                case PROMPT_ENABLE:
+                                    showEnableConfirmationDialog(result.data);
+                                    break;
+                                case PROMPT_UPDATE:
+                                    showUpdateConfirmationDialog(result.data, result.existingCompartmentId, result.existingEnabled);
+                                    break;
+                            }
+                        }, error -> showToast(getPairingImportErrorString(
+                                PersonalPairingHelper.validationErrorFromException(error))))
+        );
+    }
+
+    @StringRes
+    private int getPairingImportErrorString(PersonalPairingHelper.ImportValidationError validationError) {
+        if (validationError == PersonalPairingHelper.ImportValidationError.UNSUPPORTED_VERSION) {
+            return R.string.personal_pairing_unsupported_version;
+        }
+        if (validationError == PersonalPairingHelper.ImportValidationError.INVALID_INPUT_FORMAT) {
+            return R.string.personal_pairing_invalid_url;
+        }
+        return R.string.personal_pairing_invalid_data;
+    }
+
+    private Toast importPairingDataToast;
+
+    private void showToast(@StringRes int messageId) {
+        if (importPairingDataToast != null) {
+            importPairingDataToast.cancel();
+        }
+        importPairingDataToast = Toast.makeText(MainActivity.this, messageId, Toast.LENGTH_LONG);
+        importPairingDataToast.show();
+    }
+
+    private AlertDialog updateConfirmationDialog;
+
+    private void showUpdateConfirmationDialog(PersonalPairingHelper.PersonalPairingData newData, String existingId, boolean enabled) {
+        if (updateConfirmationDialog != null && updateConfirmationDialog.isShowing()) {
+            updateConfirmationDialog.dismiss();
+        }
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_pairing_update, null);
+        TextView oldIdView = dialogView.findViewById(R.id.old_compartment_id);
+        TextView newIdView = dialogView.findViewById(R.id.new_compartment_id);
+        oldIdView.setText(existingId);
+        newIdView.setText(newData.compartmentId);
+
+        updateConfirmationDialog = new AlertDialog.Builder(this)
+                .setIcon(R.drawable.ic_psiphon_alert_notification)
+                .setTitle(R.string.personal_pairing_update_title)
+                .setView(dialogView)
+                .setPositiveButton(R.string.personal_pairing_update_positive_button,
+                        (dialog, which) -> {
+                            viewModel.confirmPersonalPairingImport(newData, enabled);
+                            showToast(R.string.personal_pairing_data_update_success);
+                        })
+                .setNegativeButton(R.string.personal_pairing_update_negative_button, null)
+                .show();
+    }
+
+    private AlertDialog enableConfirmationDialog;
+
+    private void showEnableConfirmationDialog(PersonalPairingHelper.PersonalPairingData data) {
+        if (enableConfirmationDialog != null && enableConfirmationDialog.isShowing()) {
+            enableConfirmationDialog.dismiss();
+        }
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_pairing_enable, null);
+
+        enableConfirmationDialog = new AlertDialog.Builder(this)
+                .setIcon(R.drawable.ic_psiphon_alert_notification)
+                .setTitle(R.string.personal_pairing_enable_confirmation_dialog_title)
+                .setView(dialogView)
+                .setPositiveButton(R.string.lbl_yes, (dialog, which) -> {
+                    viewModel.confirmPersonalPairingImport(data, true);
+                    showToast(R.string.personal_pairing_data_import_success);
+                })
+                .setNegativeButton(R.string.lbl_no, (dialog, which) -> {
+                    viewModel.confirmPersonalPairingImport(data, false);
+                    showToast(R.string.personal_pairing_data_import_success);
+                })
+                .show();
     }
 
     @Override
