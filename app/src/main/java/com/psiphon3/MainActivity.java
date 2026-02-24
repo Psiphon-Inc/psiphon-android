@@ -955,8 +955,12 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     }
 
     private boolean shouldAutoStart() {
+        Intent intent = getIntent();
+        boolean isDeepLink = isDeepLinkIntent(intent);
+
         return isFirstRun &&
-                !getIntent().getBooleanExtra(INTENT_EXTRA_PREVENT_AUTO_START, false);
+                !intent.getBooleanExtra(INTENT_EXTRA_PREVENT_AUTO_START, false) &&
+                !isDeepLink;
     }
 
     private void preventAutoStart() {
