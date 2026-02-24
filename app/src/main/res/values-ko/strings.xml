@@ -162,4 +162,44 @@
   <string name="app_update_restart">설치</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">업데이트 실패</string>
+
+  <string name="preference_summary_personal_pairing_enabled">활성화됨</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">%1$s을(를) 통해</string>
+  <string name="preference_summary_personal_pairing_disabled">장애가 있는</string>
+  <string name="personal_pairing_screen_title">향상된 개인 정보 보호 및 액세스를 위해 신뢰할 수 있는 피어의 Conduit 스테이션을 통해 연결하세요. 시작하려면 페어링 링크가 필요합니다.</string>
+  <string name="personal_pairing_enable_title">개인 페어링 활성화</string>
+  <string name="personal_pairing_enable_summary">Conduit 스테이션을 통해 연결</string>
+  <string name="personal_pairing_import_title">페어링 URL 가져오기</string>
+  <string name="personal_pairing_import_dialog_title">페어링 URL</string>
+  <string name="personal_pairing_url_hint">여기에 페어링 URL을 붙여넣으세요.</string>
+  <string name="personal_pairing_invalid_url">잘못된 페어링 URL 형식</string>
+  <string name="personal_pairing_invalid_data">잘못된 페어링 데이터 형식</string>
+  <string name="personal_pairing_unsupported_version">지원되지 않는 페어링 토큰 버전</string>
+  <string name="personal_pairing_need_compartment_id">먼저 페어링 URL을 가져오세요.</string>
+  <string name="personal_pairing_compartment_id_title">페어링 ID</string>
+  <string name="personal_pairing_compartment_id_summary">귀하의 고유한 페어링 식별자</string>
+  <string name="personal_pairing_alias_title">페어링 별칭</string>
+  <string name="personal_pairing_alias_summary">이 페어링 구성에 대한 표시 이름</string>
+  <string name="import_button">수입</string>
+  <string name="label_personal_pairing_settings">개인 페어링</string>
+  <string name="personal_pairing_turn_off_prompt">연결하는 데 문제가 있나요? 개인 페어링 끄기</string>
+  <string name="personal_pairing_data_import_success">개인 페어링 구성이 저장되었습니다.</string>
+  <string name="personal_pairing_data_update_success">개인 페어링 구성이 업데이트되었습니다.</string>
+  <string name="personal_pairing_data_already_exists">개인 페어링 구성이 이미 존재합니다.</string>
+  <string name="personal_pairing_update_title">개인 페어링 데이터 업데이트</string>
+  <string name="personal_pairing_update_current_id_label">현재 개인 페어링 ID:</string>
+  <string name="personal_pairing_update_new_id_label">새 개인 페어링 ID:</string>
+  <string name="personal_pairing_update_positive_button">업데이트</string>
+  <string name="personal_pairing_update_negative_button">취소</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">개인 페어링 활성화</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">지금 개인 페어링을 활성화하시겠습니까? 그러면 활성 터널이 다시 시작됩니다. 그렇지 않으면 설정을 가져오고 애플리케이션 설정에서 수동으로 활성화할 때까지 비활성화된 상태로 유지됩니다.</string>
+  <string name="personal_pairing_reset_title">개인 페어링 재설정</string>
+  <string name="personal_pairing_reset_summary">이 개인 페어링 구성을 영구적으로 제거</string>
+  <string name="personal_pairing_reset_dialog_title">개인 페어링 재설정</string>
+  <string name="personal_pairing_delete_hint">확인하려면 기호를 입력하세요.</string>
+  <string name="personal_pairing_delete_message">이 개인 페어링 구성을 제거하려면 페어링 ID의 마지막 %d 기호를 입력하세요.</string>
+  <string name="personal_pairing_reset_error">구성을 재설정할 수 없습니다.</string>
+  <string name="personal_pairing_reset_invalid">올바른 확인 기호를 입력하세요.</string>
+  <string name="personal_pairing_reset_success">구성 재설정</string>
+  <string name="reset_button">다시 놓기</string>
 </resources>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/personal_pairing_update_current_id_label"
+        android:layout_marginBottom="8dp"/>
+
+    <TextView
+        android:id="@+id/old_compartment_id"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="4dp"
+        app:fontFamily="monospace"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/personal_pairing_update_new_id_label"
+        android:layout_marginBottom="8dp"/>
+
+    <TextView
+        android:id="@+id/new_compartment_id"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="4dp"
+        app:fontFamily="monospace"
+        android:textStyle="bold"/>
+</LinearLayout>

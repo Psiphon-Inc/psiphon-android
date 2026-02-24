@@ -160,4 +160,44 @@
   <string name="app_update_restart">Орнату</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Жаңарту сәтсіз</string>
+
+  <string name="preference_summary_personal_pairing_enabled">Қосылған</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">%1$s арқылы</string>
+  <string name="preference_summary_personal_pairing_disabled">Өшірілген</string>
+  <string name="personal_pairing_screen_title">Жетілдірілген құпиялылық пен қолжетімділік үшін сенімді құрдастың Conduit станциясы арқылы қосылыңыз. Жұмысты бастау үшін сізге жұптастыру сілтемесі қажет.</string>
+  <string name="personal_pairing_enable_title">Жеке жұптастыруды қосыңыз</string>
+  <string name="personal_pairing_enable_summary">Conduit станциясы арқылы қосылыңыз</string>
+  <string name="personal_pairing_import_title">Жұптау URL мекенжайын импорттау</string>
+  <string name="personal_pairing_import_dialog_title">Жұпталуда URL</string>
+  <string name="personal_pairing_url_hint">Жұптау URL мекенжайын осы жерге қойыңыз</string>
+  <string name="personal_pairing_invalid_url">Жарамсыз жұптастыру URL форматы</string>
+  <string name="personal_pairing_invalid_data">Жұптау деректерінің пішімі жарамсыз</string>
+  <string name="personal_pairing_unsupported_version">Жұптастыру белгісінің нұсқасына қолдау көрсетілмейді</string>
+  <string name="personal_pairing_need_compartment_id">Алдымен жұптастыру URL мекенжайын импорттаңыз</string>
+  <string name="personal_pairing_compartment_id_title">Жұптау идентификаторы</string>
+  <string name="personal_pairing_compartment_id_summary">Бірегей жұптау идентификаторыңыз</string>
+  <string name="personal_pairing_alias_title">Жұптау бүркеншік ат</string>
+  <string name="personal_pairing_alias_summary">Бұл жұптау конфигурациясына ыңғайлы атау</string>
+  <string name="import_button">Импорттау</string>
+  <string name="label_personal_pairing_settings">Жеке жұптастыру</string>
+  <string name="personal_pairing_turn_off_prompt">Қосылу мүмкін емес пе? Жеке жұптастыруды өшіріңіз</string>
+  <string name="personal_pairing_data_import_success">Жеке жұптау конфигурациясы сақталды</string>
+  <string name="personal_pairing_data_update_success">Жеке жұптау конфигурациясы жаңартылды</string>
+  <string name="personal_pairing_data_already_exists">Жеке жұптау конфигурациясы бұрыннан бар</string>
+  <string name="personal_pairing_update_title">Жеке жұптау деректерін жаңартыңыз</string>
+  <string name="personal_pairing_update_current_id_label">Ағымдағы жеке жұптау идентификаторы:</string>
+  <string name="personal_pairing_update_new_id_label">Жаңа жеке жұптау идентификаторы:</string>
+  <string name="personal_pairing_update_positive_button">Жаңарту</string>
+  <string name="personal_pairing_update_negative_button">Бас тарту</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Жеке жұптастыруды қосыңыз</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">Жеке жұптастыруды қазір қосу керек пе? Бұл белсенді туннельді қайта іске қосады. Әйтпесе, параметрлер импортталады және қолданба параметрлерінде қолмен қосылғанша өшірілген күйде қалады.</string>
+  <string name="personal_pairing_reset_title">Жеке жұптастыруды қалпына келтіріңіз</string>
+  <string name="personal_pairing_reset_summary">Осы Жеке жұптау конфигурациясын біржола жойыңыз</string>
+  <string name="personal_pairing_reset_dialog_title">Жеке жұптастыруды қалпына келтіріңіз</string>
+  <string name="personal_pairing_delete_hint">Растау үшін таңбаларды енгізіңіз</string>
+  <string name="personal_pairing_delete_message">Осы жеке жұптау конфигурациясын жою үшін жұптау идентификаторының соңғы %d таңбаларын енгізіңіз:</string>
+  <string name="personal_pairing_reset_error">Конфигурацияны қалпына келтіру мүмкін емес</string>
+  <string name="personal_pairing_reset_invalid">Растау таңбаларын дұрыс енгізіңіз</string>
+  <string name="personal_pairing_reset_success">Конфигурацияны қалпына келтіру</string>
+  <string name="reset_button">Қалпына келтіру</string>
 </resources>

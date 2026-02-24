@@ -167,4 +167,44 @@ Katso lokeista teknisiä tietoja.</string>
   <string name="app_update_restart">Asenna</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Päivitys epäonnistui</string>
+
+  <string name="preference_summary_personal_pairing_enabled">Käytössä</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">%1$s:n kautta</string>
+  <string name="preference_summary_personal_pairing_disabled">Pois käytöstä</string>
+  <string name="personal_pairing_screen_title">Yhdistä luotettavan vertaiskanavan kautta parantaaksesi yksityisyyttä ja pääsyä. Tarvitset pariliitoslinkin aloittaaksesi.</string>
+  <string name="personal_pairing_enable_title">Ota käyttöön henkilökohtainen pariliitos</string>
+  <string name="personal_pairing_enable_summary">Yhdistä Conduit-aseman kautta</string>
+  <string name="personal_pairing_import_title">Tuo laiteparin URL-osoite</string>
+  <string name="personal_pairing_import_dialog_title">Pariliitoksen URL-osoite</string>
+  <string name="personal_pairing_url_hint">Liitä pariliitoksen URL-osoite tähän</string>
+  <string name="personal_pairing_invalid_url">Virheellinen pariliitoksen URL-muoto</string>
+  <string name="personal_pairing_invalid_data">Virheellinen pariliitostietojen muoto</string>
+  <string name="personal_pairing_unsupported_version">Pariliitostunnuksen versiota ei tueta</string>
+  <string name="personal_pairing_need_compartment_id">Tuo pariliitoksen URL-osoite ensin</string>
+  <string name="personal_pairing_compartment_id_title">Pariliitostunnus</string>
+  <string name="personal_pairing_compartment_id_summary">Ainutlaatuinen pariliitostunnuksesi</string>
+  <string name="personal_pairing_alias_title">Parinmuodostus alias</string>
+  <string name="personal_pairing_alias_summary">Ystävällinen nimi tälle pariliitoskokoonpanolle</string>
+  <string name="import_button">Tuoda</string>
+  <string name="label_personal_pairing_settings">Henkilökohtainen pariliitos</string>
+  <string name="personal_pairing_turn_off_prompt">Onko yhteyden muodostamisessa ongelmia? Poista henkilökohtainen pariliitos käytöstä</string>
+  <string name="personal_pairing_data_import_success">Henkilökohtaisen pariliitoksen määritys tallennettu</string>
+  <string name="personal_pairing_data_update_success">Henkilökohtaisen pariliitoksen määritys päivitetty</string>
+  <string name="personal_pairing_data_already_exists">Henkilökohtainen pariliitosmääritys on jo olemassa</string>
+  <string name="personal_pairing_update_title">Päivitä henkilökohtaiset pariliitostiedot</string>
+  <string name="personal_pairing_update_current_id_label">Nykyinen henkilökohtainen pariliitostunnus:</string>
+  <string name="personal_pairing_update_new_id_label">Uusi henkilökohtainen pariliitostunnus:</string>
+  <string name="personal_pairing_update_positive_button">Päivittää</string>
+  <string name="personal_pairing_update_negative_button">Peruuttaa</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Ota käyttöön henkilökohtainen pariliitos</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">Otetaanko henkilökohtainen pariliitos käyttöön nyt? Tämä käynnistää aktiivisen tunnelin uudelleen. Muussa tapauksessa asetukset tuodaan ja pysyvät poissa käytöstä, kunnes ne otetaan manuaalisesti käyttöön sovelluksen asetuksissa.</string>
+  <string name="personal_pairing_reset_title">Nollaa henkilökohtainen pariliitos</string>
+  <string name="personal_pairing_reset_summary">Poista tämä henkilökohtaisen pariliitoksen määritys pysyvästi</string>
+  <string name="personal_pairing_reset_dialog_title">Nollaa henkilökohtainen pariliitos</string>
+  <string name="personal_pairing_delete_hint">Vahvista syöttämällä symbolit</string>
+  <string name="personal_pairing_delete_message">Voit poistaa tämän henkilökohtaisen pariliitoksen määrityksen kirjoittamalla pariliitostunnuksen viimeiset %d-symbolit:</string>
+  <string name="personal_pairing_reset_error">Määritystä ei voi nollata</string>
+  <string name="personal_pairing_reset_invalid">Anna oikeat vahvistussymbolit</string>
+  <string name="personal_pairing_reset_success">Kokoonpanon nollaus</string>
+  <string name="reset_button">Nollaa</string>
 </resources>

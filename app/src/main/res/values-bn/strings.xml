@@ -159,4 +159,44 @@
   <string name="app_update_restart">ইনস্টল</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">আপডেট ব্যর্থ</string>
+
+  <string name="preference_summary_personal_pairing_enabled">সক্রিয়</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">%1$s এর মাধ্যমে</string>
+  <string name="preference_summary_personal_pairing_disabled">অক্ষম</string>
+  <string name="personal_pairing_screen_title">বর্ধিত গোপনীয়তা এবং অ্যাক্সেসের জন্য একটি বিশ্বস্ত পিয়ারের কন্ডুইট স্টেশনের মাধ্যমে সংযোগ করুন৷ শুরু করার জন্য আপনার একটি পেয়ারিং লিঙ্কের প্রয়োজন হবে।</string>
+  <string name="personal_pairing_enable_title">ব্যক্তিগত পেয়ারিং সক্ষম করুন৷</string>
+  <string name="personal_pairing_enable_summary">কন্ডুইট স্টেশনের মাধ্যমে সংযোগ করুন</string>
+  <string name="personal_pairing_import_title">পেয়ারিং URL আমদানি করুন৷</string>
+  <string name="personal_pairing_import_dialog_title">পেয়ারিং ইউআরএল</string>
+  <string name="personal_pairing_url_hint">পেয়ারিং ইউআরএল এখানে পেস্ট করুন</string>
+  <string name="personal_pairing_invalid_url">অবৈধ পেয়ারিং URL বিন্যাস৷</string>
+  <string name="personal_pairing_invalid_data">অবৈধ পেয়ারিং ডেটা ফর্ম্যাট৷</string>
+  <string name="personal_pairing_unsupported_version">অসমর্থিত পেয়ারিং টোকেন সংস্করণ</string>
+  <string name="personal_pairing_need_compartment_id">অনুগ্রহ করে প্রথমে একটি পেয়ারিং URL আমদানি করুন৷</string>
+  <string name="personal_pairing_compartment_id_title">পেয়ারিং আইডি</string>
+  <string name="personal_pairing_compartment_id_summary">আপনার অনন্য জোড়া শনাক্তকারী</string>
+  <string name="personal_pairing_alias_title">পেয়ারিং উপনাম</string>
+  <string name="personal_pairing_alias_summary">এই পেয়ারিং কনফিগারেশনের জন্য একটি বন্ধুত্বপূর্ণ নাম</string>
+  <string name="import_button">আমদানি</string>
+  <string name="label_personal_pairing_settings">ব্যক্তিগত জুটি</string>
+  <string name="personal_pairing_turn_off_prompt">সংযোগ করতে সমস্যা হচ্ছে? ব্যক্তিগত পেয়ারিং বন্ধ করুন</string>
+  <string name="personal_pairing_data_import_success">ব্যক্তিগত জোড়া কনফিগারেশন সংরক্ষিত</string>
+  <string name="personal_pairing_data_update_success">ব্যক্তিগত পেয়ারিং কনফিগারেশন আপডেট করা হয়েছে</string>
+  <string name="personal_pairing_data_already_exists">ব্যক্তিগত পেয়ারিং কনফিগারেশন ইতিমধ্যেই বিদ্যমান</string>
+  <string name="personal_pairing_update_title">ব্যক্তিগত পেয়ারিং ডেটা আপডেট করুন</string>
+  <string name="personal_pairing_update_current_id_label">বর্তমান ব্যক্তিগত পেয়ারিং আইডি:</string>
+  <string name="personal_pairing_update_new_id_label">নতুন ব্যক্তিগত পেয়ারিং আইডি:</string>
+  <string name="personal_pairing_update_positive_button">আপডেট</string>
+  <string name="personal_pairing_update_negative_button">বাতিল করুন</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">ব্যক্তিগত পেয়ারিং সক্ষম করুন৷</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">এখন ব্যক্তিগত পেয়ারিং সক্ষম করবেন? এটি সক্রিয় টানেলটি পুনরায় চালু করবে। অন্যথায়, সেটিংস আমদানি করা হবে এবং অ্যাপ্লিকেশন সেটিংসে ম্যানুয়ালি সক্ষম না হওয়া পর্যন্ত অক্ষম থাকবে৷</string>
+  <string name="personal_pairing_reset_title">ব্যক্তিগত পেয়ারিং রিসেট করুন</string>
+  <string name="personal_pairing_reset_summary">এই ব্যক্তিগত জোড়া কনফিগারেশন স্থায়ীভাবে সরান</string>
+  <string name="personal_pairing_reset_dialog_title">ব্যক্তিগত পেয়ারিং রিসেট করুন</string>
+  <string name="personal_pairing_delete_hint">নিশ্চিত করতে প্রতীক লিখুন</string>
+  <string name="personal_pairing_delete_message">এই ব্যক্তিগত পেয়ারিং কনফিগারেশনটি সরাতে, পেয়ারিং আইডির শেষ %d চিহ্নগুলি লিখুন:</string>
+  <string name="personal_pairing_reset_error">কনফিগারেশন রিসেট করতে অক্ষম</string>
+  <string name="personal_pairing_reset_invalid">সঠিক নিশ্চিতকরণ চিহ্ন লিখুন</string>
+  <string name="personal_pairing_reset_success">কনফিগারেশন রিসেট</string>
+  <string name="reset_button">রিসেট করুন</string>
 </resources>

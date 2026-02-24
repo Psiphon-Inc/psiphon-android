@@ -163,4 +163,44 @@
   <string name="app_update_restart">ይጫኑ</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">ማዘመን አልተሳካም</string>
+
+  <string name="preference_summary_personal_pairing_enabled">ነቅቷል</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">በ%1$s በኩል</string>
+  <string name="preference_summary_personal_pairing_disabled">ተሰናክሏል።</string>
+  <string name="personal_pairing_screen_title">ለተሻሻለ ግላዊነት እና ተደራሽነት በታመነ የአቻ መተላለፊያ ጣቢያ በኩል ይገናኙ። ለመጀመር የማጣመሪያ አገናኝ ያስፈልግዎታል።</string>
+  <string name="personal_pairing_enable_title">የግል ማጣመርን አንቃ</string>
+  <string name="personal_pairing_enable_summary">በኮንዱይት ጣቢያ በኩል ይገናኙ</string>
+  <string name="personal_pairing_import_title">ማጣመር URL አስመጣ</string>
+  <string name="personal_pairing_import_dialog_title">ዩአርኤል ማጣመር</string>
+  <string name="personal_pairing_url_hint">የማጣመሪያ URL እዚህ ለጥፍ</string>
+  <string name="personal_pairing_invalid_url">ልክ ያልሆነ ማጣመር URL ቅርጸት</string>
+  <string name="personal_pairing_invalid_data">የተሳሳተ የማጣመር የውሂብ ቅርጸት</string>
+  <string name="personal_pairing_unsupported_version">የማይደገፍ የማጣመሪያ ማስመሰያ ሥሪት</string>
+  <string name="personal_pairing_need_compartment_id">እባክዎ መጀመሪያ የማጣመጃ ዩአርኤል ያስመጡ</string>
+  <string name="personal_pairing_compartment_id_title">የማጣመሪያ መታወቂያ</string>
+  <string name="personal_pairing_compartment_id_summary">የእርስዎ ልዩ የማጣመሪያ መለያ</string>
+  <string name="personal_pairing_alias_title">ተለዋጭ ስም ማጣመር</string>
+  <string name="personal_pairing_alias_summary">ለዚህ የማጣመሪያ ውቅር ተስማሚ ስም</string>
+  <string name="import_button">አስመጣ</string>
+  <string name="label_personal_pairing_settings">የግል ማጣመር</string>
+  <string name="personal_pairing_turn_off_prompt">መገናኘት ላይ ችግር አለ? Turn off Personal Pairing</string>
+  <string name="personal_pairing_data_import_success">የግል ማጣመሪያ ውቅር ተቀምጧል</string>
+  <string name="personal_pairing_data_update_success">የግል ማጣመሪያ ውቅር ተዘምኗል</string>
+  <string name="personal_pairing_data_already_exists">የግል ማጣመሪያ ውቅር አስቀድሞ አለ።</string>
+  <string name="personal_pairing_update_title">የግል ማጣመሪያ ውሂብን ያዘምኑ</string>
+  <string name="personal_pairing_update_current_id_label">የአሁኑ የግል ማጣመሪያ መታወቂያ፡-</string>
+  <string name="personal_pairing_update_new_id_label">አዲስ የግል ማጣመሪያ መታወቂያ፡-</string>
+  <string name="personal_pairing_update_positive_button">አዘምን</string>
+  <string name="personal_pairing_update_negative_button">ሰርዝ</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">የግል ማጣመርን አንቃ</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">አሁን የግል ማጣመር ይንቃ? ይህ ንቁ ዋሻውን እንደገና ያስጀምረዋል. ያለበለዚያ፣ በመተግበሪያው ቅንብሮች ውስጥ በእጅ እስኪነቃ ድረስ ቅንጅቶች ከውጭ ይመጣሉ እና እንደተሰናከሉ ይቆያሉ።</string>
+  <string name="personal_pairing_reset_title">የግል ማጣመርን ዳግም ያስጀምሩ</string>
+  <string name="personal_pairing_reset_summary">ይህንን የግል ማጣመሪያ ውቅር እስከመጨረሻው ያስወግዱት።</string>
+  <string name="personal_pairing_reset_dialog_title">የግል ማጣመርን ዳግም ያስጀምሩ</string>
+  <string name="personal_pairing_delete_hint">ለማረጋገጥ ምልክቶችን አስገባ</string>
+  <string name="personal_pairing_delete_message">ይህንን የግል ማጣመሪያ ውቅር ለማስወገድ የማጣመሪያ መታወቂያ የመጨረሻዎቹን %d ምልክቶች ያስገቡ፡-</string>
+  <string name="personal_pairing_reset_error">ውቅረትን ዳግም ማስጀመር አልተቻለም</string>
+  <string name="personal_pairing_reset_invalid">እባክዎ ትክክለኛ የማረጋገጫ ምልክቶችን ያስገቡ</string>
+  <string name="personal_pairing_reset_success">የማዋቀር ዳግም ማስጀመር</string>
+  <string name="reset_button">ዳግም አስጀምር</string>
 </resources>

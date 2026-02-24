@@ -160,4 +160,44 @@
   <string name="app_update_restart">Насб кардан</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Навсозӣ бо нокомӣ анҷом ёфт</string>
+
+  <string name="preference_summary_personal_pairing_enabled">Фаъол</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">Тавассути %1$s</string>
+  <string name="preference_summary_personal_pairing_disabled">Маъюб</string>
+  <string name="personal_pairing_screen_title">Барои махфият ва дастрасии мукаммал тавассути истгоҳи Conduit-и боэътимод пайваст шавед. Барои оғоз кардан ба шумо пайванди ҷуфткунӣ лозим аст.</string>
+  <string name="personal_pairing_enable_title">Пайвасткунии шахсиро фаъол созед</string>
+  <string name="personal_pairing_enable_summary">Ба воситаи истгоҳи Conduit пайваст шавед</string>
+  <string name="personal_pairing_import_title">URL-и пайвасткуниро ворид кунед</string>
+  <string name="personal_pairing_import_dialog_title">URL пайваст</string>
+  <string name="personal_pairing_url_hint">URL-и ҷуфтро дар ин ҷо гузоред</string>
+  <string name="personal_pairing_invalid_url">Формати URL пайвасткунии нодуруст</string>
+  <string name="personal_pairing_invalid_data">Формати ҷуфткунии маълумот нодуруст</string>
+  <string name="personal_pairing_unsupported_version">Версияи аломати ҷуфткунӣ дастгирӣнашаванда</string>
+  <string name="personal_pairing_need_compartment_id">Лутфан аввал URL-и пайвасткуниро ворид кунед</string>
+  <string name="personal_pairing_compartment_id_title">ID-и ҷуфтшавӣ</string>
+  <string name="personal_pairing_compartment_id_summary">Муайянкунандаи ҷуфткунии беназири шумо</string>
+  <string name="personal_pairing_alias_title">Ҷуфт кардани тахаллус</string>
+  <string name="personal_pairing_alias_summary">Номи дӯстона барои ин конфигуратсияи ҷуфтшавӣ</string>
+  <string name="import_button">Воридот</string>
+  <string name="label_personal_pairing_settings">Ҷуфти шахсӣ</string>
+  <string name="personal_pairing_turn_off_prompt">Мушкилоти пайвастшавӣ? Пайвасткунии шахсиро хомӯш кунед</string>
+  <string name="personal_pairing_data_import_success">Конфигуратсияи ҷуфткунии шахсӣ захира карда шуд</string>
+  <string name="personal_pairing_data_update_success">Конфигуратсияи ҷуфткунии шахсӣ нав карда шуд</string>
+  <string name="personal_pairing_data_already_exists">Конфигуратсияи ҷуфткунии шахсӣ аллакай вуҷуд дорад</string>
+  <string name="personal_pairing_update_title">Навсозии маълумоти ҷуфткунии шахсӣ</string>
+  <string name="personal_pairing_update_current_id_label">ID-и ҳозираи ҷуфткунии шахсӣ:</string>
+  <string name="personal_pairing_update_new_id_label">ID-и нави ҷуфткунии шахсӣ:</string>
+  <string name="personal_pairing_update_positive_button">Навсозӣ</string>
+  <string name="personal_pairing_update_negative_button">Бекор кардан</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Пайвасткунии шахсиро фаъол созед</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">Ҷуфти шахсиро ҳоло фаъол созед? Ин нақби фаъолро аз нав оғоз мекунад. Дар акси ҳол, танзимот ворид карда мешаванд ва то он даме, ки дар танзимоти барнома дастӣ фаъол карда шавад, ғайрифаъол мемонанд.</string>
+  <string name="personal_pairing_reset_title">Аз нав танзимкунии ҷуфткунии шахсӣ</string>
+  <string name="personal_pairing_reset_summary">Ин конфигуратсияи ҷуфткунии шахсиро ба таври доимӣ нест кунед</string>
+  <string name="personal_pairing_reset_dialog_title">Аз нав танзимкунии ҷуфткунии шахсӣ</string>
+  <string name="personal_pairing_delete_hint">Барои тасдиқ рамзҳоро ворид кунед</string>
+  <string name="personal_pairing_delete_message">Барои нест кардани ин конфигуратсияи Ҷуфти шахсӣ, рамзҳои охирини %d-и ID-и ҷуфтро ворид кунед:</string>
+  <string name="personal_pairing_reset_error">Конфигуратсияро аз нав барқарор кардан ғайриимкон аст</string>
+  <string name="personal_pairing_reset_invalid">Лутфан аломатҳои тасдиқи дурустро ворид кунед</string>
+  <string name="personal_pairing_reset_success">Аз нав танзимкунии конфигуратсия</string>
+  <string name="reset_button">Бозсозӣ</string>
 </resources>

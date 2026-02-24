@@ -163,4 +163,44 @@
   <string name="app_update_restart">Instaliraj</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Ažuriranje nije uspjelo</string>
+
+  <string name="preference_summary_personal_pairing_enabled">Omogućeno</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">Preko %1$s</string>
+  <string name="preference_summary_personal_pairing_disabled">Onesposobljeno</string>
+  <string name="personal_pairing_screen_title">Povežite se putem Conduit stanice pouzdanog peer-a za poboljšanu privatnost i pristup. Trebat će vam veza za uparivanje da biste započeli.</string>
+  <string name="personal_pairing_enable_title">Omogući osobno uparivanje</string>
+  <string name="personal_pairing_enable_summary">Povežite se preko stanice Conduit</string>
+  <string name="personal_pairing_import_title">Uvezi URL za uparivanje</string>
+  <string name="personal_pairing_import_dialog_title">URL za uparivanje</string>
+  <string name="personal_pairing_url_hint">Ovdje zalijepite URL za uparivanje</string>
+  <string name="personal_pairing_invalid_url">Nevažeći format URL-a za uparivanje</string>
+  <string name="personal_pairing_invalid_data">Nevažeći format podataka za uparivanje</string>
+  <string name="personal_pairing_unsupported_version">Nepodržana verzija tokena za uparivanje</string>
+  <string name="personal_pairing_need_compartment_id">Prvo uvezite URL za uparivanje</string>
+  <string name="personal_pairing_compartment_id_title">ID uparivanja</string>
+  <string name="personal_pairing_compartment_id_summary">Vaš jedinstveni identifikator uparivanja</string>
+  <string name="personal_pairing_alias_title">Pseudonim za uparivanje</string>
+  <string name="personal_pairing_alias_summary">Prijateljski naziv za ovu konfiguraciju uparivanja</string>
+  <string name="import_button">Uvoz</string>
+  <string name="label_personal_pairing_settings">Osobno uparivanje</string>
+  <string name="personal_pairing_turn_off_prompt">Problemi s povezivanjem? Isključite osobno uparivanje</string>
+  <string name="personal_pairing_data_import_success">Osobna konfiguracija uparivanja je spremljena</string>
+  <string name="personal_pairing_data_update_success">Konfiguracija osobnog uparivanja ažurirana</string>
+  <string name="personal_pairing_data_already_exists">Osobna konfiguracija uparivanja već postoji</string>
+  <string name="personal_pairing_update_title">Ažurirajte podatke o osobnom uparivanju</string>
+  <string name="personal_pairing_update_current_id_label">Trenutačni osobni ID uparivanja:</string>
+  <string name="personal_pairing_update_new_id_label">Novi osobni ID uparivanja:</string>
+  <string name="personal_pairing_update_positive_button">Ažurirati</string>
+  <string name="personal_pairing_update_negative_button">Otkazati</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Omogući osobno uparivanje</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">Omogućiti osobno uparivanje sada? Ovo će ponovno pokrenuti aktivni tunel. U suprotnom, postavke će se uvesti i ostati onemogućene dok se ručno ne omoguće u postavkama aplikacije.</string>
+  <string name="personal_pairing_reset_title">Poništi osobno uparivanje</string>
+  <string name="personal_pairing_reset_summary">Trajno uklonite ovu konfiguraciju osobnog uparivanja</string>
+  <string name="personal_pairing_reset_dialog_title">Poništi osobno uparivanje</string>
+  <string name="personal_pairing_delete_hint">Unesite simbole za potvrdu</string>
+  <string name="personal_pairing_delete_message">Za uklanjanje ove konfiguracije osobnog uparivanja unesite zadnjih %d simbola ID-a uparivanja:</string>
+  <string name="personal_pairing_reset_error">Nije moguće poništiti konfiguraciju</string>
+  <string name="personal_pairing_reset_invalid">Unesite ispravne simbole za potvrdu</string>
+  <string name="personal_pairing_reset_success">Poništavanje konfiguracije</string>
+  <string name="reset_button">Resetiraj</string>
 </resources>

@@ -158,4 +158,44 @@
   <string name="app_update_restart">O\'rnatish</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Yangilanish muvaffaqiyatsiz</string>
+
+  <string name="preference_summary_personal_pairing_enabled">Yoqilgan</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">%1$s orqali</string>
+  <string name="preference_summary_personal_pairing_disabled">Oʻchirilgan</string>
+  <string name="personal_pairing_screen_title">Kengaytirilgan maxfiylik va kirish uchun ishonchli peer\'s Conduit stantsiyasi orqali ulaning. Boshlash uchun sizga ulash havolasi kerak bo\'ladi.</string>
+  <string name="personal_pairing_enable_title">Shaxsiy ulanishni yoqing</string>
+  <string name="personal_pairing_enable_summary">Conduit stantsiyasi orqali ulang</string>
+  <string name="personal_pairing_import_title">Ulanish URL manzilini import qiling</string>
+  <string name="personal_pairing_import_dialog_title">Ulanish URL</string>
+  <string name="personal_pairing_url_hint">Ulanish URL manzilini shu yerga qo‘ying</string>
+  <string name="personal_pairing_invalid_url">Ulanish URL formati noto‘g‘ri</string>
+  <string name="personal_pairing_invalid_data">Ulanish maʼlumotlar formati notoʻgʻri</string>
+  <string name="personal_pairing_unsupported_version">Ulanish tokeni versiyasi qo‘llab-quvvatlanmaydi</string>
+  <string name="personal_pairing_need_compartment_id">Iltimos, avval ulanish URL manzilini import qiling</string>
+  <string name="personal_pairing_compartment_id_title">Ulanish identifikatori</string>
+  <string name="personal_pairing_compartment_id_summary">Sizning noyob juftlik identifikatoringiz</string>
+  <string name="personal_pairing_alias_title">Ulanish taxallus</string>
+  <string name="personal_pairing_alias_summary">Ushbu ulanish konfiguratsiyasi uchun qulay nom</string>
+  <string name="import_button">Import</string>
+  <string name="label_personal_pairing_settings">Shaxsiy juftlik</string>
+  <string name="personal_pairing_turn_off_prompt">Ulanishda muammo bormi? Shaxsiy ulanishni o\'chiring</string>
+  <string name="personal_pairing_data_import_success">Shaxsiy ulanish konfiguratsiyasi saqlandi</string>
+  <string name="personal_pairing_data_update_success">Shaxsiy ulanish konfiguratsiyasi yangilandi</string>
+  <string name="personal_pairing_data_already_exists">Shaxsiy juftlik konfiguratsiyasi allaqachon mavjud</string>
+  <string name="personal_pairing_update_title">Shaxsiy ulanish maʼlumotlarini yangilang</string>
+  <string name="personal_pairing_update_current_id_label">Joriy shaxsiy juftlik identifikatori:</string>
+  <string name="personal_pairing_update_new_id_label">Yangi shaxsiy juftlik identifikatori:</string>
+  <string name="personal_pairing_update_positive_button">Yangilash</string>
+  <string name="personal_pairing_update_negative_button">Bekor qilish</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Shaxsiy ulanishni yoqing</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">Shaxsiy ulanish hozir yoqilsinmi? Bu faol tunnelni qayta ishga tushiradi. Aks holda, sozlamalar import qilinadi va ilova sozlamalarida qo\'lda yoqilmaguncha o\'chirilgan bo\'lib qoladi.</string>
+  <string name="personal_pairing_reset_title">Shaxsiy ulanishni tiklash</string>
+  <string name="personal_pairing_reset_summary">Ushbu shaxsiy juftlik konfiguratsiyasini butunlay olib tashlang</string>
+  <string name="personal_pairing_reset_dialog_title">Shaxsiy ulanishni tiklash</string>
+  <string name="personal_pairing_delete_hint">Tasdiqlash uchun belgilarni kiriting</string>
+  <string name="personal_pairing_delete_message">Ushbu Shaxsiy Ulanish konfiguratsiyasini olib tashlash uchun Ulanish identifikatorining oxirgi %d belgilarini kiriting:</string>
+  <string name="personal_pairing_reset_error">Konfiguratsiyani qayta o‘rnatib bo‘lmadi</string>
+  <string name="personal_pairing_reset_invalid">Iltimos, tasdiqlovchi belgilarni toʻgʻri kiriting</string>
+  <string name="personal_pairing_reset_success">Konfiguratsiyani tiklash</string>
+  <string name="reset_button">Qayta tiklash</string>
 </resources>

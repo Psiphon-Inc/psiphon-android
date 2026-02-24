@@ -162,4 +162,44 @@
   <string name="app_update_restart">ഇൻസ്റ്റാൾ ചെയ്യുക</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">അപ്‌ഡേറ്റ് പരാജയപ്പെട്ടു</string>
+
+  <string name="preference_summary_personal_pairing_enabled">പ്രവർത്തനക്ഷമമാക്കി</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">%1$s വഴി</string>
+  <string name="preference_summary_personal_pairing_disabled">അപ്രാപ്തമാക്കി</string>
+  <string name="personal_pairing_screen_title">മെച്ചപ്പെടുത്തിയ സ്വകാര്യതയ്ക്കും ആക്‌സസ്സിനുമായി ഒരു വിശ്വസ്ത പിയേഴ്‌സ് കൺഡ്യൂറ്റ് സ്റ്റേഷനിലൂടെ കണക്റ്റുചെയ്യുക. ആരംഭിക്കുന്നതിന് നിങ്ങൾക്ക് ഒരു ജോടിയാക്കൽ ലിങ്ക് ആവശ്യമാണ്.</string>
+  <string name="personal_pairing_enable_title">വ്യക്തിഗത ജോടിയാക്കൽ പ്രവർത്തനക്ഷമമാക്കുക</string>
+  <string name="personal_pairing_enable_summary">Conduit സ്റ്റേഷൻ വഴി ബന്ധിപ്പിക്കുക</string>
+  <string name="personal_pairing_import_title">ജോടിയാക്കൽ URL ഇറക്കുമതി ചെയ്യുക</string>
+  <string name="personal_pairing_import_dialog_title">ജോടിയാക്കൽ URL</string>
+  <string name="personal_pairing_url_hint">ജോടിയാക്കൽ URL ഇവിടെ ഒട്ടിക്കുക</string>
+  <string name="personal_pairing_invalid_url">ജോടിയാക്കൽ URL ഫോർമാറ്റ് അസാധുവാണ്</string>
+  <string name="personal_pairing_invalid_data">ജോടിയാക്കൽ ഡാറ്റ ഫോർമാറ്റ് അസാധുവാണ്</string>
+  <string name="personal_pairing_unsupported_version">പിന്തുണയ്ക്കാത്ത ജോടിയാക്കൽ ടോക്കൺ പതിപ്പ്</string>
+  <string name="personal_pairing_need_compartment_id">ആദ്യം ഒരു ജോടിയാക്കൽ URL ഇറക്കുമതി ചെയ്യുക</string>
+  <string name="personal_pairing_compartment_id_title">ജോടിയാക്കൽ ഐഡി</string>
+  <string name="personal_pairing_compartment_id_summary">നിങ്ങളുടെ അദ്വിതീയ ജോടിയാക്കൽ ഐഡൻ്റിഫയർ</string>
+  <string name="personal_pairing_alias_title">ജോടിയാക്കൽ അപരനാമം</string>
+  <string name="personal_pairing_alias_summary">ഈ ജോടിയാക്കൽ കോൺഫിഗറേഷനുള്ള ഒരു സൗഹൃദ നാമം</string>
+  <string name="import_button">ഇറക്കുമതി ചെയ്യുക</string>
+  <string name="label_personal_pairing_settings">വ്യക്തിഗത ജോടിയാക്കൽ</string>
+  <string name="personal_pairing_turn_off_prompt">ബന്ധിപ്പിക്കുന്നതിൽ പ്രശ്‌നമുണ്ടോ? വ്യക്തിഗത ജോടിയാക്കൽ ഓഫാക്കുക</string>
+  <string name="personal_pairing_data_import_success">വ്യക്തിഗത ജോടിയാക്കൽ കോൺഫിഗറേഷൻ സംരക്ഷിച്ചു</string>
+  <string name="personal_pairing_data_update_success">വ്യക്തിഗത ജോടിയാക്കൽ കോൺഫിഗറേഷൻ അപ്ഡേറ്റ് ചെയ്തു</string>
+  <string name="personal_pairing_data_already_exists">വ്യക്തിഗത ജോടിയാക്കൽ കോൺഫിഗറേഷൻ ഇതിനകം നിലവിലുണ്ട്</string>
+  <string name="personal_pairing_update_title">വ്യക്തിഗത ജോടിയാക്കൽ ഡാറ്റ അപ്ഡേറ്റ് ചെയ്യുക</string>
+  <string name="personal_pairing_update_current_id_label">നിലവിലെ വ്യക്തിഗത ജോടിയാക്കൽ ഐഡി:</string>
+  <string name="personal_pairing_update_new_id_label">പുതിയ വ്യക്തിഗത ജോടിയാക്കൽ ഐഡി:</string>
+  <string name="personal_pairing_update_positive_button">അപ്ഡേറ്റ്</string>
+  <string name="personal_pairing_update_negative_button">റദ്ദാക്കുക</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">വ്യക്തിഗത ജോടിയാക്കൽ പ്രവർത്തനക്ഷമമാക്കുക</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">വ്യക്തിഗത ജോടിയാക്കൽ ഇപ്പോൾ പ്രവർത്തനക്ഷമമാക്കണോ? ഇത് സജീവമായ തുരങ്കം പുനരാരംഭിക്കും. അല്ലെങ്കിൽ, ആപ്ലിക്കേഷൻ ക്രമീകരണങ്ങളിൽ സ്വമേധയാ പ്രവർത്തനക്ഷമമാകുന്നതുവരെ ക്രമീകരണങ്ങൾ ഇറക്കുമതി ചെയ്യുകയും പ്രവർത്തനരഹിതമായി തുടരുകയും ചെയ്യും.</string>
+  <string name="personal_pairing_reset_title">വ്യക്തിഗത ജോടിയാക്കൽ പുനഃസജ്ജമാക്കുക</string>
+  <string name="personal_pairing_reset_summary">ഈ വ്യക്തിഗത ജോടിയാക്കൽ കോൺഫിഗറേഷൻ ശാശ്വതമായി നീക്കം ചെയ്യുക</string>
+  <string name="personal_pairing_reset_dialog_title">വ്യക്തിഗത ജോടിയാക്കൽ പുനഃസജ്ജമാക്കുക</string>
+  <string name="personal_pairing_delete_hint">സ്ഥിരീകരിക്കാൻ ചിഹ്നങ്ങൾ നൽകുക</string>
+  <string name="personal_pairing_delete_message">ഈ വ്യക്തിഗത ജോടിയാക്കൽ കോൺഫിഗറേഷൻ നീക്കം ചെയ്യാൻ, ജോടിയാക്കൽ ഐഡിയുടെ അവസാനത്തെ %d ചിഹ്നങ്ങൾ നൽകുക:</string>
+  <string name="personal_pairing_reset_error">കോൺഫിഗറേഷൻ പുനഃസജ്ജമാക്കാനായില്ല</string>
+  <string name="personal_pairing_reset_invalid">ശരിയായ സ്ഥിരീകരണ ചിഹ്നങ്ങൾ നൽകുക</string>
+  <string name="personal_pairing_reset_success">കോൺഫിഗറേഷൻ റീസെറ്റ്</string>
+  <string name="reset_button">പുനഃസജ്ജമാക്കുക</string>
 </resources>

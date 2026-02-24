@@ -166,4 +166,44 @@
   <string name="app_update_restart">Installieren</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Update fehlgeschlagen</string>
+
+  <string name="preference_summary_personal_pairing_enabled">Ermöglicht</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">Über %1$s</string>
+  <string name="preference_summary_personal_pairing_disabled">Deaktiviert</string>
+  <string name="personal_pairing_screen_title">Stellen Sie eine Verbindung über die Conduit-Station eines vertrauenswürdigen Peers her, um die Privatsphäre und den Zugriff zu verbessern. Um loszulegen, benötigen Sie einen Kopplungslink.</string>
+  <string name="personal_pairing_enable_title">Aktivieren Sie die persönliche Kopplung</string>
+  <string name="personal_pairing_enable_summary">Verbindung über Conduit-Station</string>
+  <string name="personal_pairing_import_title">Kopplungs-URL importieren</string>
+  <string name="personal_pairing_import_dialog_title">Kopplungs-URL</string>
+  <string name="personal_pairing_url_hint">Fügen Sie hier die Kopplungs-URL ein</string>
+  <string name="personal_pairing_invalid_url">Ungültiges Pairing-URL-Format</string>
+  <string name="personal_pairing_invalid_data">Ungültiges Paarungsdatenformat</string>
+  <string name="personal_pairing_unsupported_version">Nicht unterstützte Pairing-Token-Version</string>
+  <string name="personal_pairing_need_compartment_id">Bitte importieren Sie zuerst eine Kopplungs-URL</string>
+  <string name="personal_pairing_compartment_id_title">Pairing-ID</string>
+  <string name="personal_pairing_compartment_id_summary">Ihre eindeutige Kopplungskennung</string>
+  <string name="personal_pairing_alias_title">Pairing-Alias</string>
+  <string name="personal_pairing_alias_summary">Ein benutzerfreundlicher Name für diese Paarungskonfiguration</string>
+  <string name="import_button">Import</string>
+  <string name="label_personal_pairing_settings">Persönliches Pairing</string>
+  <string name="personal_pairing_turn_off_prompt">Probleme beim Verbinden? Deaktivieren Sie die persönliche Kopplung</string>
+  <string name="personal_pairing_data_import_success">Persönliche Kopplungskonfiguration gespeichert</string>
+  <string name="personal_pairing_data_update_success">Persönliche Kopplungskonfiguration aktualisiert</string>
+  <string name="personal_pairing_data_already_exists">Die persönliche Kopplungskonfiguration ist bereits vorhanden</string>
+  <string name="personal_pairing_update_title">Persönliche Kopplungsdaten aktualisieren</string>
+  <string name="personal_pairing_update_current_id_label">Aktuelle persönliche Pairing-ID:</string>
+  <string name="personal_pairing_update_new_id_label">Neue persönliche Pairing-ID:</string>
+  <string name="personal_pairing_update_positive_button">Aktualisieren</string>
+  <string name="personal_pairing_update_negative_button">Stornieren</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Aktivieren Sie die persönliche Kopplung</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">Persönliches Pairing jetzt aktivieren? Dadurch wird der aktive Tunnel neu gestartet. Andernfalls werden die Einstellungen importiert und bleiben deaktiviert, bis sie manuell in den Anwendungseinstellungen aktiviert werden.</string>
+  <string name="personal_pairing_reset_title">Persönliche Kopplung zurücksetzen</string>
+  <string name="personal_pairing_reset_summary">Entfernen Sie diese persönliche Kopplungskonfiguration dauerhaft</string>
+  <string name="personal_pairing_reset_dialog_title">Persönliche Kopplung zurücksetzen</string>
+  <string name="personal_pairing_delete_hint">Geben Sie zur Bestätigung Symbole ein</string>
+  <string name="personal_pairing_delete_message">Um diese persönliche Kopplungskonfiguration zu entfernen, geben Sie die letzten %d-Symbole der Kopplungs-ID ein:</string>
+  <string name="personal_pairing_reset_error">Konfiguration kann nicht zurückgesetzt werden</string>
+  <string name="personal_pairing_reset_invalid">Bitte geben Sie die korrekten Bestätigungssymbole ein</string>
+  <string name="personal_pairing_reset_success">Konfiguration zurückgesetzt</string>
+  <string name="reset_button">Zurücksetzen</string>
 </resources>

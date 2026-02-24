@@ -159,4 +159,44 @@
   <string name="app_update_restart">Gurnamak</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Täzelenme şowsuz boldy</string>
+
+  <string name="preference_summary_personal_pairing_enabled">Işledilen</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">%1$s arkaly</string>
+  <string name="preference_summary_personal_pairing_disabled">Maýyp</string>
+  <string name="personal_pairing_screen_title">Giňeldilen şahsy durmuşyň eldegrilmesizligi we elýeterliligi üçin ynamdar deň-duşlaryň geçiriji stansiýasy arkaly birikdiriň. Başlamak üçin jübüt baglanyşyk gerek bolar.</string>
+  <string name="personal_pairing_enable_title">Şahsy jübütlemegi işjeňleşdiriň</string>
+  <string name="personal_pairing_enable_summary">Geçiriji stansiýasy arkaly birikdiriň</string>
+  <string name="personal_pairing_import_title">Jübütleme URL-ni import ediň</string>
+  <string name="personal_pairing_import_dialog_title">Jübütlemek URL</string>
+  <string name="personal_pairing_url_hint">Jübütlemek URL-ni şu ýere goýuň</string>
+  <string name="personal_pairing_invalid_url">Nädogry jübütlenen URL formaty</string>
+  <string name="personal_pairing_invalid_data">Nädogry jübüt maglumat formaty</string>
+  <string name="personal_pairing_unsupported_version">Goldaw berilmeýän jübütlik token wersiýasy</string>
+  <string name="personal_pairing_need_compartment_id">Ilki bilen jübütlenen URL import ediň</string>
+  <string name="personal_pairing_compartment_id_title">Jübüt ID</string>
+  <string name="personal_pairing_compartment_id_summary">Özboluşly jübüt kesgitleýjiňiz</string>
+  <string name="personal_pairing_alias_title">Jübüt lakamy</string>
+  <string name="personal_pairing_alias_summary">Bu jübüt konfigurasiýa üçin dostlukly at</string>
+  <string name="import_button">Import</string>
+  <string name="label_personal_pairing_settings">Şahsy jübütlik</string>
+  <string name="personal_pairing_turn_off_prompt">Birikdirmekde kynçylyk çekýärsiňizmi? Şahsy jübütligi öçüriň</string>
+  <string name="personal_pairing_data_import_success">Şahsy jübütleme konfigurasiýasy ýatda saklandy</string>
+  <string name="personal_pairing_data_update_success">Şahsy jübütleme konfigurasiýasy täzelendi</string>
+  <string name="personal_pairing_data_already_exists">Şahsy jübütleme konfigurasiýasy eýýäm bar</string>
+  <string name="personal_pairing_update_title">Şahsy jübüt maglumatlary täzeläň</string>
+  <string name="personal_pairing_update_current_id_label">Häzirki şahsy jübütleme belgisi:</string>
+  <string name="personal_pairing_update_new_id_label">Täze şahsy jübütleme belgisi:</string>
+  <string name="personal_pairing_update_positive_button">Täzelen</string>
+  <string name="personal_pairing_update_negative_button">Elatyr</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Şahsy jübütlemegi işjeňleşdiriň</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">Şahsy jübütlemäni indi açyp bilersiňizmi? Bu işjeň tuneli täzeden başlar. Otherwiseogsam, sazlamalar import ediler we programma sazlamalarynda el bilen işleýänçä ýapyk bolar.</string>
+  <string name="personal_pairing_reset_title">Şahsy jübütlemäni täzeden düzmek</string>
+  <string name="personal_pairing_reset_summary">Bu Şahsy jübütleme konfigurasiýasyny hemişelik aýyryň</string>
+  <string name="personal_pairing_reset_dialog_title">Şahsy jübütlemäni täzeden düzmek</string>
+  <string name="personal_pairing_delete_hint">Tassyklamak üçin nyşanlary giriziň</string>
+  <string name="personal_pairing_delete_message">Bu Şahsy jübütleme konfigurasiýasyny aýyrmak üçin Jübüt ID-iň soňky %d nyşanlaryny giriziň:</string>
+  <string name="personal_pairing_reset_error">Sazlamany täzeden düzüp bolmaýar</string>
+  <string name="personal_pairing_reset_invalid">Dogry tassyklama nyşanlaryny giriziň</string>
+  <string name="personal_pairing_reset_success">Sazlama täzeden düzmek</string>
+  <string name="reset_button">Täzeden düzmek</string>
 </resources>

@@ -166,4 +166,44 @@
   <string name="app_update_restart">Kur</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Güncellenemedi</string>
+
+  <string name="preference_summary_personal_pairing_enabled">Etkinleştirilmiş</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">%1$s aracılığıyla</string>
+  <string name="preference_summary_personal_pairing_disabled">Engelli</string>
+  <string name="personal_pairing_screen_title">Gelişmiş gizlilik ve erişim için güvenilir bir eşin Conduit istasyonu aracılığıyla bağlanın. Başlamak için bir eşleştirme bağlantısına ihtiyacınız olacak.</string>
+  <string name="personal_pairing_enable_title">Kişisel Eşleştirmeyi Etkinleştir</string>
+  <string name="personal_pairing_enable_summary">Conduit istasyonu aracılığıyla bağlanın</string>
+  <string name="personal_pairing_import_title">Eşleştirme URL\'sini içe aktar</string>
+  <string name="personal_pairing_import_dialog_title">Eşleştirme URL\'si</string>
+  <string name="personal_pairing_url_hint">Eşleştirme URL\'sini buraya yapıştırın</string>
+  <string name="personal_pairing_invalid_url">Geçersiz eşleştirme URL\'si biçimi</string>
+  <string name="personal_pairing_invalid_data">Geçersiz eşleştirme veri biçimi</string>
+  <string name="personal_pairing_unsupported_version">Desteklenmeyen eşleştirme jetonu sürümü</string>
+  <string name="personal_pairing_need_compartment_id">Lütfen önce bir eşleştirme URL\'sini içe aktarın</string>
+  <string name="personal_pairing_compartment_id_title">Eşleştirme Kimliği</string>
+  <string name="personal_pairing_compartment_id_summary">Benzersiz eşleştirme tanımlayıcınız</string>
+  <string name="personal_pairing_alias_title">Takma ad eşleniyor</string>
+  <string name="personal_pairing_alias_summary">Bu eşleştirme yapılandırması için kolay bir ad</string>
+  <string name="import_button">İçe aktarmak</string>
+  <string name="label_personal_pairing_settings">Kişisel Eşleştirme</string>
+  <string name="personal_pairing_turn_off_prompt">Bağlantıda sorun mu yaşıyorsunuz? Kişisel Eşleştirmeyi kapat</string>
+  <string name="personal_pairing_data_import_success">Kişisel Eşleştirme yapılandırması kaydedildi</string>
+  <string name="personal_pairing_data_update_success">Kişisel Eşleştirme yapılandırması güncellendi</string>
+  <string name="personal_pairing_data_already_exists">Kişisel Eşleştirme yapılandırması zaten mevcut</string>
+  <string name="personal_pairing_update_title">Kişisel Eşleştirme verilerini güncelleyin</string>
+  <string name="personal_pairing_update_current_id_label">Mevcut Kişisel Eşleştirme Kimliği:</string>
+  <string name="personal_pairing_update_new_id_label">Yeni Kişisel Eşleştirme Kimliği:</string>
+  <string name="personal_pairing_update_positive_button">Güncelleme</string>
+  <string name="personal_pairing_update_negative_button">İptal etmek</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Kişisel Eşleştirmeyi Etkinleştir</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">Kişisel eşleştirme şimdi etkinleştirilsin mi? Bu, aktif tüneli yeniden başlatacaktır. Aksi takdirde ayarlar içe aktarılacak ve uygulama ayarlarında manuel olarak etkinleştirilene kadar devre dışı kalacaktır.</string>
+  <string name="personal_pairing_reset_title">Kişisel Eşleştirmeyi Sıfırla</string>
+  <string name="personal_pairing_reset_summary">Bu Kişisel Eşleştirme yapılandırmasını kalıcı olarak kaldır</string>
+  <string name="personal_pairing_reset_dialog_title">Kişisel Eşleştirmeyi Sıfırla</string>
+  <string name="personal_pairing_delete_hint">Onaylamak için sembolleri girin</string>
+  <string name="personal_pairing_delete_message">Bu Kişisel Eşleştirme yapılandırmasını kaldırmak için Eşleştirme Kimliğinin son %d sembollerini girin:</string>
+  <string name="personal_pairing_reset_error">Yapılandırma sıfırlanamıyor</string>
+  <string name="personal_pairing_reset_invalid">Lütfen doğru onay sembollerini girin</string>
+  <string name="personal_pairing_reset_success">Yapılandırma sıfırlama</string>
+  <string name="reset_button">Sıfırla</string>
 </resources>

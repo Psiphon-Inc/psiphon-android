@@ -165,4 +165,44 @@
   <string name="app_update_restart">Installeren</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Update mislukt</string>
+
+  <string name="preference_summary_personal_pairing_enabled">Ingeschakeld</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">Via %1$s</string>
+  <string name="preference_summary_personal_pairing_disabled">Gehandicapt</string>
+  <string name="personal_pairing_screen_title">Maak verbinding via een vertrouwd Conduit-station van een peer voor verbeterde privacy en toegang. Je hebt een koppelingslink nodig om aan de slag te gaan.</string>
+  <string name="personal_pairing_enable_title">Schakel persoonlijk koppelen in</string>
+  <string name="personal_pairing_enable_summary">Verbinding maken via Conduit-station</string>
+  <string name="personal_pairing_import_title">Koppelings-URL importeren</string>
+  <string name="personal_pairing_import_dialog_title">Koppelings-URL</string>
+  <string name="personal_pairing_url_hint">Plak de koppelings-URL hier</string>
+  <string name="personal_pairing_invalid_url">Ongeldige koppelings-URL-indeling</string>
+  <string name="personal_pairing_invalid_data">Ongeldig indeling van koppelingsgegevens</string>
+  <string name="personal_pairing_unsupported_version">Niet-ondersteunde koppelingstokenversie</string>
+  <string name="personal_pairing_need_compartment_id">Importeer eerst een koppelings-URL</string>
+  <string name="personal_pairing_compartment_id_title">Koppelings-ID</string>
+  <string name="personal_pairing_compartment_id_summary">Uw unieke koppelings-ID</string>
+  <string name="personal_pairing_alias_title">Koppelalias</string>
+  <string name="personal_pairing_alias_summary">Een beschrijvende naam voor deze koppelingsconfiguratie</string>
+  <string name="import_button">Importeren</string>
+  <string name="label_personal_pairing_settings">Persoonlijk koppelen</string>
+  <string name="personal_pairing_turn_off_prompt">Problemen met verbinden? Schakel Persoonlijk koppelen uit</string>
+  <string name="personal_pairing_data_import_success">Persoonlijke koppelingsconfiguratie opgeslagen</string>
+  <string name="personal_pairing_data_update_success">Persoonlijke koppelingsconfiguratie bijgewerkt</string>
+  <string name="personal_pairing_data_already_exists">Er bestaat al een persoonlijke koppelingsconfiguratie</string>
+  <string name="personal_pairing_update_title">Update persoonlijke koppelingsgegevens</string>
+  <string name="personal_pairing_update_current_id_label">Huidige persoonlijke koppelings-ID:</string>
+  <string name="personal_pairing_update_new_id_label">Nieuwe persoonlijke koppelings-ID:</string>
+  <string name="personal_pairing_update_positive_button">Update</string>
+  <string name="personal_pairing_update_negative_button">Annuleren</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Schakel persoonlijk koppelen in</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">Persoonlijk koppelen nu inschakelen? Hierdoor wordt de actieve tunnel opnieuw gestart. Anders worden de instellingen geïmporteerd en blijven ze uitgeschakeld totdat ze handmatig worden ingeschakeld in de applicatie-instellingen.</string>
+  <string name="personal_pairing_reset_title">Persoonlijke koppeling resetten</string>
+  <string name="personal_pairing_reset_summary">Verwijder deze persoonlijke koppelingsconfiguratie permanent</string>
+  <string name="personal_pairing_reset_dialog_title">Persoonlijke koppeling resetten</string>
+  <string name="personal_pairing_delete_hint">Voer symbolen in om te bevestigen</string>
+  <string name="personal_pairing_delete_message">Om deze persoonlijke koppelingsconfiguratie te verwijderen, voert u de laatste %d-symbolen van de koppelings-ID in:</string>
+  <string name="personal_pairing_reset_error">Kan de configuratie niet resetten</string>
+  <string name="personal_pairing_reset_invalid">Voer de juiste bevestigingssymbolen in</string>
+  <string name="personal_pairing_reset_success">Configuratie opnieuw ingesteld</string>
+  <string name="reset_button">Opnieuw instellen</string>
 </resources>

@@ -165,4 +165,44 @@
   <string name="app_update_restart">Instal</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Update gagal</string>
+
+  <string name="preference_summary_personal_pairing_enabled">Diaktifkan</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">Melalui %1$s</string>
+  <string name="preference_summary_personal_pairing_disabled">Dengan disabilitas</string>
+  <string name="personal_pairing_screen_title">Terhubung melalui stasiun Conduit rekan tepercaya untuk meningkatkan privasi dan akses. Anda memerlukan tautan penyandingan untuk memulai.</string>
+  <string name="personal_pairing_enable_title">Aktifkan Pemasangan Pribadi</string>
+  <string name="personal_pairing_enable_summary">Terhubung melalui stasiun Conduit</string>
+  <string name="personal_pairing_import_title">Impor URL penyandingan</string>
+  <string name="personal_pairing_import_dialog_title">URL penyandingan</string>
+  <string name="personal_pairing_url_hint">Tempelkan URL penyandingan di sini</string>
+  <string name="personal_pairing_invalid_url">Format URL penyandingan tidak valid</string>
+  <string name="personal_pairing_invalid_data">Format data penyandingan tidak valid</string>
+  <string name="personal_pairing_unsupported_version">Versi token penyandingan tidak didukung</string>
+  <string name="personal_pairing_need_compartment_id">Harap impor URL penyandingan terlebih dahulu</string>
+  <string name="personal_pairing_compartment_id_title">ID penyandingan</string>
+  <string name="personal_pairing_compartment_id_summary">Pengidentifikasi pasangan unik Anda</string>
+  <string name="personal_pairing_alias_title">Alias ​​berpasangan</string>
+  <string name="personal_pairing_alias_summary">Nama yang bersahabat untuk konfigurasi pemasangan ini</string>
+  <string name="import_button">Impor</string>
+  <string name="label_personal_pairing_settings">Pasangan Pribadi</string>
+  <string name="personal_pairing_turn_off_prompt">Ada masalah saat menyambung? Matikan Pemasangan Pribadi</string>
+  <string name="personal_pairing_data_import_success">Konfigurasi Pemasangan Pribadi disimpan</string>
+  <string name="personal_pairing_data_update_success">Konfigurasi Pemasangan Pribadi diperbarui</string>
+  <string name="personal_pairing_data_already_exists">Konfigurasi Personal Pairing sudah ada</string>
+  <string name="personal_pairing_update_title">Perbarui data Pemasangan Pribadi</string>
+  <string name="personal_pairing_update_current_id_label">ID Pasangan Pribadi Saat Ini:</string>
+  <string name="personal_pairing_update_new_id_label">ID Pasangan Pribadi Baru:</string>
+  <string name="personal_pairing_update_positive_button">Memperbarui</string>
+  <string name="personal_pairing_update_negative_button">Membatalkan</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Aktifkan Pemasangan Pribadi</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">Aktifkan penyandingan pribadi sekarang? Ini akan memulai ulang terowongan aktif. Jika tidak, pengaturan akan diimpor dan tetap dinonaktifkan hingga diaktifkan secara manual di pengaturan aplikasi.</string>
+  <string name="personal_pairing_reset_title">Setel Ulang Pemasangan Pribadi</string>
+  <string name="personal_pairing_reset_summary">Hapus konfigurasi Personal Pairing ini secara permanen</string>
+  <string name="personal_pairing_reset_dialog_title">Setel Ulang Pemasangan Pribadi</string>
+  <string name="personal_pairing_delete_hint">Masukkan simbol untuk mengonfirmasi</string>
+  <string name="personal_pairing_delete_message">Untuk menghapus konfigurasi Personal Pairing ini, masukkan simbol %d terakhir dari ID Pairing:</string>
+  <string name="personal_pairing_reset_error">Tidak dapat mengatur ulang konfigurasi</string>
+  <string name="personal_pairing_reset_invalid">Silakan masukkan simbol konfirmasi yang benar</string>
+  <string name="personal_pairing_reset_success">Penyetelan ulang konfigurasi</string>
+  <string name="reset_button">Mengatur ulang</string>
 </resources>

@@ -160,4 +160,44 @@
   <string name="app_update_restart">Instalar</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Atualização falhou</string>
+
+  <string name="preference_summary_personal_pairing_enabled">Habilitado</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">Via %1$s</string>
+  <string name="preference_summary_personal_pairing_disabled">Desabilitado</string>
+  <string name="personal_pairing_screen_title">Conecte-se através de uma estação de conduíte de ponto confiável para maior privacidade e acesso. Você precisará de um link de pareamento para começar.</string>
+  <string name="personal_pairing_enable_title">Ativar emparelhamento pessoal</string>
+  <string name="personal_pairing_enable_summary">Conecte-se via estação de conduíte</string>
+  <string name="personal_pairing_import_title">URL de pareamento de importação</string>
+  <string name="personal_pairing_import_dialog_title">URL de pareamento</string>
+  <string name="personal_pairing_url_hint">Cole o URL de pareamento aqui</string>
+  <string name="personal_pairing_invalid_url">Formato de URL de pareamento inválido</string>
+  <string name="personal_pairing_invalid_data">Formato de dados de pareamento inválido</string>
+  <string name="personal_pairing_unsupported_version">Versão do token de pareamento incompatível</string>
+  <string name="personal_pairing_need_compartment_id">Importe primeiro um URL de pareamento</string>
+  <string name="personal_pairing_compartment_id_title">ID de pareamento</string>
+  <string name="personal_pairing_compartment_id_summary">Seu identificador de pareamento exclusivo</string>
+  <string name="personal_pairing_alias_title">Alias ​​de emparelhamento</string>
+  <string name="personal_pairing_alias_summary">Um nome amigável para esta configuração de emparelhamento</string>
+  <string name="import_button">Importar</string>
+  <string name="label_personal_pairing_settings">Emparelhamento Pessoal</string>
+  <string name="personal_pairing_turn_off_prompt">Problemas para conectar? Desative o emparelhamento pessoal</string>
+  <string name="personal_pairing_data_import_success">Configuração de emparelhamento pessoal salva</string>
+  <string name="personal_pairing_data_update_success">Configuração de emparelhamento pessoal atualizada</string>
+  <string name="personal_pairing_data_already_exists">A configuração de emparelhamento pessoal já existe</string>
+  <string name="personal_pairing_update_title">Atualizar dados de emparelhamento pessoal</string>
+  <string name="personal_pairing_update_current_id_label">ID de emparelhamento pessoal atual:</string>
+  <string name="personal_pairing_update_new_id_label">Novo ID de emparelhamento pessoal:</string>
+  <string name="personal_pairing_update_positive_button">Atualizar</string>
+  <string name="personal_pairing_update_negative_button">Cancelar</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Ativar emparelhamento pessoal</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">Ativar o emparelhamento pessoal agora? Isto irá reiniciar o túnel ativo. Caso contrário, as configurações serão importadas e permanecerão desativadas até serem ativadas manualmente nas configurações do aplicativo.</string>
+  <string name="personal_pairing_reset_title">Redefinir emparelhamento pessoal</string>
+  <string name="personal_pairing_reset_summary">Remova esta configuração de emparelhamento pessoal permanentemente</string>
+  <string name="personal_pairing_reset_dialog_title">Redefinir emparelhamento pessoal</string>
+  <string name="personal_pairing_delete_hint">Insira símbolos para confirmar</string>
+  <string name="personal_pairing_delete_message">Para remover esta configuração de emparelhamento pessoal, insira os últimos símbolos %d do ID de emparelhamento:</string>
+  <string name="personal_pairing_reset_error">Não foi possível redefinir a configuração</string>
+  <string name="personal_pairing_reset_invalid">Insira os símbolos de confirmação corretos</string>
+  <string name="personal_pairing_reset_success">Redefinição de configuração</string>
+  <string name="reset_button">Reiniciar</string>
 </resources>

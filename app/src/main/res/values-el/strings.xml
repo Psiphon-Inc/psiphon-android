@@ -166,4 +166,44 @@
   <string name="app_update_restart">Εγκατάσταση</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Η ενημέρωση απέτυχε</string>
+
+  <string name="preference_summary_personal_pairing_enabled">Ενεργοποιημένο</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">Μέσω %1$s</string>
+  <string name="preference_summary_personal_pairing_disabled">Ανάπηρος</string>
+  <string name="personal_pairing_screen_title">Συνδεθείτε μέσω ενός αξιόπιστου σταθμού αγωγού για βελτιωμένο απόρρητο και πρόσβαση. Θα χρειαστείτε έναν σύνδεσμο σύζευξης για να ξεκινήσετε.</string>
+  <string name="personal_pairing_enable_title">Ενεργοποίηση Personal Pairing</string>
+  <string name="personal_pairing_enable_summary">Σύνδεση μέσω σταθμού Conduit</string>
+  <string name="personal_pairing_import_title">Εισαγωγή διεύθυνσης URL σύζευξης</string>
+  <string name="personal_pairing_import_dialog_title">Διεύθυνση URL σύζευξης</string>
+  <string name="personal_pairing_url_hint">Επικολλήστε εδώ τη διεύθυνση URL σύζευξης</string>
+  <string name="personal_pairing_invalid_url">Μη έγκυρη μορφή URL σύζευξης</string>
+  <string name="personal_pairing_invalid_data">Μη έγκυρη μορφή δεδομένων σύζευξης</string>
+  <string name="personal_pairing_unsupported_version">Μη υποστηριζόμενη έκδοση διακριτικού σύζευξης</string>
+  <string name="personal_pairing_need_compartment_id">Εισαγάγετε πρώτα μια διεύθυνση URL σύζευξης</string>
+  <string name="personal_pairing_compartment_id_title">Αναγνωριστικό ζεύξης</string>
+  <string name="personal_pairing_compartment_id_summary">Το μοναδικό σας αναγνωριστικό σύζευξης</string>
+  <string name="personal_pairing_alias_title">Ψευδώνυμο ζεύξης</string>
+  <string name="personal_pairing_alias_summary">Ένα φιλικό όνομα για αυτήν τη διαμόρφωση σύζευξης</string>
+  <string name="import_button">Εισαγωγή</string>
+  <string name="label_personal_pairing_settings">Προσωπικό Pairing</string>
+  <string name="personal_pairing_turn_off_prompt">Πρόβλημα σύνδεσης; Απενεργοποιήστε το Personal Pairing</string>
+  <string name="personal_pairing_data_import_success">Η διαμόρφωση Personal Pairing αποθηκεύτηκε</string>
+  <string name="personal_pairing_data_update_success">Η διαμόρφωση Personal Pairing ενημερώθηκε</string>
+  <string name="personal_pairing_data_already_exists">Υπάρχει ήδη διαμόρφωση Personal Pairing</string>
+  <string name="personal_pairing_update_title">Ενημερώστε τα προσωπικά δεδομένα σύζευξης</string>
+  <string name="personal_pairing_update_current_id_label">Τρέχον αναγνωριστικό προσωπικής σύζευξης:</string>
+  <string name="personal_pairing_update_new_id_label">Νέο προσωπικό αναγνωριστικό σύζευξης:</string>
+  <string name="personal_pairing_update_positive_button">Εκσυγχρονίζω</string>
+  <string name="personal_pairing_update_negative_button">Ματαίωση</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Ενεργοποίηση Personal Pairing</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">Ενεργοποίηση προσωπικής σύζευξης τώρα; Αυτό θα επανεκκινήσει το ενεργό τούνελ. Διαφορετικά, οι ρυθμίσεις θα εισαχθούν και θα παραμείνουν απενεργοποιημένες μέχρι να ενεργοποιηθούν μη αυτόματα στις ρυθμίσεις της εφαρμογής.</string>
+  <string name="personal_pairing_reset_title">Επαναφορά προσωπικής σύζευξης</string>
+  <string name="personal_pairing_reset_summary">Καταργήστε οριστικά αυτήν τη διαμόρφωση Personal Pairing</string>
+  <string name="personal_pairing_reset_dialog_title">Επαναφορά προσωπικής σύζευξης</string>
+  <string name="personal_pairing_delete_hint">Εισαγάγετε σύμβολα για επιβεβαίωση</string>
+  <string name="personal_pairing_delete_message">Για να καταργήσετε αυτήν τη διαμόρφωση Personal Pairing, εισαγάγετε τα τελευταία %d σύμβολα του αναγνωριστικού ζεύξης:</string>
+  <string name="personal_pairing_reset_error">Δεν είναι δυνατή η επαναφορά της διαμόρφωσης</string>
+  <string name="personal_pairing_reset_invalid">Εισαγάγετε τα σωστά σύμβολα επιβεβαίωσης</string>
+  <string name="personal_pairing_reset_success">Επαναφορά διαμόρφωσης</string>
+  <string name="reset_button">Επαναφορά</string>
 </resources>

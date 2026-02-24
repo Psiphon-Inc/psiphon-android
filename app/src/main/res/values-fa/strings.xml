@@ -172,4 +172,44 @@
   <string name="app_update_restart">نصب</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">به‌روزرسانی ناموفق</string>
+
+  <string name="preference_summary_personal_pairing_enabled">فعال</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">از طریق %1$s</string>
+  <string name="preference_summary_personal_pairing_disabled">غیرفعال</string>
+  <string name="personal_pairing_screen_title">برای افزایش حریم خصوصی و دسترسی، از طریق ایستگاه Conduit یک همتای قابل اعتماد متصل شوید. برای شروع به یک لینک جفت‌سازی نیاز دارید.</string>
+  <string name="personal_pairing_enable_title">فعال کردن جفت‌سازی شخصی</string>
+  <string name="personal_pairing_enable_summary">اتصال از طریق ایستگاه Conduit</string>
+  <string name="personal_pairing_import_title">وارد کردن لینک جفت‌سازی</string>
+  <string name="personal_pairing_import_dialog_title">لینک جفت‌سازی</string>
+  <string name="personal_pairing_url_hint">لینک جفت‌سازی را اینجا وارد کنید</string>
+  <string name="personal_pairing_invalid_url">قالب لینک جفت‌سازی نامعتبر است</string>
+  <string name="personal_pairing_invalid_data">قالب داده جفت‌سازی نامعتبر است</string>
+  <string name="personal_pairing_unsupported_version">نسخه توکن جفت‌سازی پشتیبانی نمی‌شود</string>
+  <string name="personal_pairing_need_compartment_id">لطفاً ابتدا یک لینک جفت‌سازی وارد کنید</string>
+  <string name="personal_pairing_compartment_id_title">شناسه جفت‌سازی</string>
+  <string name="personal_pairing_compartment_id_summary">شناسه یکتای جفت‌سازی شما</string>
+  <string name="personal_pairing_alias_title">نام مستعار جفت‌سازی</string>
+  <string name="personal_pairing_alias_summary">یک نام ساده برای این پیکربندی جفت‌سازی</string>
+  <string name="import_button">وارد کردن</string>
+  <string name="label_personal_pairing_settings">جفت‌سازی شخصی</string>
+  <string name="personal_pairing_turn_off_prompt">در اتصال مشکل دارید؟ جفت‌سازی شخصی را خاموش کنید</string>
+  <string name="personal_pairing_data_import_success">پیکربندی جفت‌سازی شخصی ذخیره شد</string>
+  <string name="personal_pairing_data_update_success">پیکربندی جفت‌سازی شخصی به‌روزرسانی شد</string>
+  <string name="personal_pairing_data_already_exists">پیکربندی جفت‌سازی شخصی از قبل وجود دارد</string>
+  <string name="personal_pairing_update_title">به‌روزرسانی داده‌های جفت‌سازی شخصی</string>
+  <string name="personal_pairing_update_current_id_label">شناسه فعلی جفت‌سازی شخصی:</string>
+  <string name="personal_pairing_update_new_id_label">شناسه جدید جفت‌سازی شخصی:</string>
+  <string name="personal_pairing_update_positive_button">به‌روزرسانی</string>
+  <string name="personal_pairing_update_negative_button">لغو</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">فعال کردن جفت‌سازی شخصی</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">اکنون جفت‌سازی شخصی فعال شود؟ این کار تونل فعال را بازراه‌اندازی می‌کند. در غیر این صورت، تنظیمات وارد می‌شوند و تا زمانی که در تنظیمات برنامه به‌صورت دستی فعال شوند، غیرفعال می‌مانند.</string>
+  <string name="personal_pairing_reset_title">بازنشانی جفت‌سازی شخصی</string>
+  <string name="personal_pairing_reset_summary">این پیکربندی جفت‌سازی شخصی را برای همیشه حذف کنید</string>
+  <string name="personal_pairing_reset_dialog_title">بازنشانی جفت‌سازی شخصی</string>
+  <string name="personal_pairing_delete_hint">برای تأیید، کاراکترها را وارد کنید</string>
+  <string name="personal_pairing_delete_message">برای حذف این پیکربندی جفت‌سازی شخصی، آخرین %d کاراکتر از شناسه جفت‌سازی را وارد کنید:</string>
+  <string name="personal_pairing_reset_error">بازنشانی پیکربندی ممکن نیست</string>
+  <string name="personal_pairing_reset_invalid">لطفاً کاراکترهای تأیید درست را وارد کنید</string>
+  <string name="personal_pairing_reset_success">پیکربندی بازنشانی شد</string>
+  <string name="reset_button">بازنشانی</string>
 </resources>

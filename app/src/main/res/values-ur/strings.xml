@@ -165,4 +165,44 @@
   <string name="app_update_restart">انسٹال</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">اپڈیٹ ناکام</string>
+
+  <string name="preference_summary_personal_pairing_enabled">فعال</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">%1$s کے ذریعے</string>
+  <string name="preference_summary_personal_pairing_disabled">معذور</string>
+  <string name="personal_pairing_screen_title">بہتر رازداری اور رسائی کے لیے ایک بھروسہ مند ساتھی کے کنڈیوٹ اسٹیشن کے ذریعے جڑیں۔ شروع کرنے کے لیے آپ کو جوڑا بنانے کے لنک کی ضرورت ہوگی۔</string>
+  <string name="personal_pairing_enable_title">ذاتی جوڑی کو فعال کریں۔</string>
+  <string name="personal_pairing_enable_summary">نالی اسٹیشن کے ذریعے جڑیں۔</string>
+  <string name="personal_pairing_import_title">جوڑا بنانے کا URL درآمد کریں۔</string>
+  <string name="personal_pairing_import_dialog_title">جوڑا یو آر ایل</string>
+  <string name="personal_pairing_url_hint">جوڑا بنانے کا URL یہاں چسپاں کریں۔</string>
+  <string name="personal_pairing_invalid_url">جوڑا بنانے کا URL غلط فارمیٹ</string>
+  <string name="personal_pairing_invalid_data">غلط جوڑی ڈیٹا فارمیٹ</string>
+  <string name="personal_pairing_unsupported_version">غیر تعاون یافتہ پیئرنگ ٹوکن ورژن</string>
+  <string name="personal_pairing_need_compartment_id">براہ کرم پہلے جوڑا بنانے والا URL درآمد کریں۔</string>
+  <string name="personal_pairing_compartment_id_title">جوڑا بنانے والی ID</string>
+  <string name="personal_pairing_compartment_id_summary">آپ کا منفرد جوڑا شناخت کنندہ</string>
+  <string name="personal_pairing_alias_title">جوڑا بنانے کا عرف</string>
+  <string name="personal_pairing_alias_summary">اس جوڑا بنانے کی ترتیب کے لیے ایک دوستانہ نام</string>
+  <string name="import_button">درآمد کریں۔</string>
+  <string name="label_personal_pairing_settings">ذاتی جوڑا</string>
+  <string name="personal_pairing_turn_off_prompt">منسلک ہونے میں دشواری؟ ذاتی جوڑا بند کریں۔</string>
+  <string name="personal_pairing_data_import_success">ذاتی جوڑا بنانے کی ترتیب محفوظ ہو گئی۔</string>
+  <string name="personal_pairing_data_update_success">ذاتی جوڑا بنانے کی ترتیب کو اپ ڈیٹ کر دیا گیا۔</string>
+  <string name="personal_pairing_data_already_exists">ذاتی جوڑا بنانے کی ترتیب پہلے سے موجود ہے۔</string>
+  <string name="personal_pairing_update_title">ذاتی جوڑا بنانے کا ڈیٹا اپ ڈیٹ کریں۔</string>
+  <string name="personal_pairing_update_current_id_label">موجودہ ذاتی جوڑا ID:</string>
+  <string name="personal_pairing_update_new_id_label">نئی ذاتی جوڑی ID:</string>
+  <string name="personal_pairing_update_positive_button">اپڈیٹ کریں۔</string>
+  <string name="personal_pairing_update_negative_button">منسوخ کریں۔</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">ذاتی جوڑی کو فعال کریں۔</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">ذاتی جوڑا بنانے کو ابھی فعال کریں؟ اس سے فعال سرنگ دوبارہ شروع ہو جائے گی۔ بصورت دیگر، ترتیبات درآمد کی جائیں گی اور ایپلیکیشن کی ترتیبات میں دستی طور پر فعال ہونے تک غیر فعال رہیں گی۔</string>
+  <string name="personal_pairing_reset_title">ذاتی جوڑا دوبارہ ترتیب دیں۔</string>
+  <string name="personal_pairing_reset_summary">اس ذاتی جوڑی کی ترتیب کو مستقل طور پر ہٹا دیں۔</string>
+  <string name="personal_pairing_reset_dialog_title">ذاتی جوڑا دوبارہ ترتیب دیں۔</string>
+  <string name="personal_pairing_delete_hint">تصدیق کے لیے علامتیں درج کریں۔</string>
+  <string name="personal_pairing_delete_message">اس ذاتی جوڑی کی ترتیب کو ہٹانے کے لیے، جوڑا بنانے والے ID کے آخری %d علامتیں درج کریں:</string>
+  <string name="personal_pairing_reset_error">کنفیگریشن ری سیٹ کرنے سے قاصر</string>
+  <string name="personal_pairing_reset_invalid">براہ کرم درست تصدیقی علامتیں درج کریں۔</string>
+  <string name="personal_pairing_reset_success">کنفیگریشن ری سیٹ</string>
+  <string name="reset_button">دوبارہ ترتیب دیں۔</string>
 </resources>

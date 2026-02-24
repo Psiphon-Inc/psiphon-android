@@ -166,4 +166,44 @@
   <string name="app_update_restart">Установить</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Обновление не удалось</string>
+
+  <string name="preference_summary_personal_pairing_enabled">Включено</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">Через %1$s</string>
+  <string name="preference_summary_personal_pairing_disabled">Отключено</string>
+  <string name="personal_pairing_screen_title">Подключайтесь через станцию Conduit доверенного узла для повышения конфиденциальности и улучшения доступа. Чтобы начать, вам понадобится ссылка для сопряжения.</string>
+  <string name="personal_pairing_enable_title">Включить личное сопряжение</string>
+  <string name="personal_pairing_enable_summary">Подключение через станцию Conduit</string>
+  <string name="personal_pairing_import_title">Импортировать ссылку сопряжения</string>
+  <string name="personal_pairing_import_dialog_title">Ссылка сопряжения</string>
+  <string name="personal_pairing_url_hint">Вставьте ссылку сопряжения сюда</string>
+  <string name="personal_pairing_invalid_url">Неверный формат ссылки сопряжения</string>
+  <string name="personal_pairing_invalid_data">Неверный формат данных сопряжения</string>
+  <string name="personal_pairing_unsupported_version">Неподдерживаемая версия токена сопряжения</string>
+  <string name="personal_pairing_need_compartment_id">Сначала импортируйте ссылку сопряжения</string>
+  <string name="personal_pairing_compartment_id_title">ID сопряжения</string>
+  <string name="personal_pairing_compartment_id_summary">Ваш уникальный идентификатор сопряжения</string>
+  <string name="personal_pairing_alias_title">Псевдоним сопряжения</string>
+  <string name="personal_pairing_alias_summary">Удобное имя для этой конфигурации сопряжения</string>
+  <string name="import_button">Импортировать</string>
+  <string name="label_personal_pairing_settings">Личное сопряжение</string>
+  <string name="personal_pairing_turn_off_prompt">Проблемы с подключением? Отключите личное сопряжение</string>
+  <string name="personal_pairing_data_import_success">Конфигурация личного сопряжения сохранена</string>
+  <string name="personal_pairing_data_update_success">Конфигурация личного сопряжения обновлена</string>
+  <string name="personal_pairing_data_already_exists">Конфигурация личного сопряжения уже существует</string>
+  <string name="personal_pairing_update_title">Обновить данные личного сопряжения</string>
+  <string name="personal_pairing_update_current_id_label">Текущий ID личного сопряжения:</string>
+  <string name="personal_pairing_update_new_id_label">Новый ID личного сопряжения:</string>
+  <string name="personal_pairing_update_positive_button">Обновить</string>
+  <string name="personal_pairing_update_negative_button">Отмена</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Включить личное сопряжение</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">Включить личное сопряжение сейчас? Это перезапустит активный туннель. В противном случае настройки будут импортированы и останутся отключёнными, пока вы не включите их вручную в настройках приложения.</string>
+  <string name="personal_pairing_reset_title">Сбросить личное сопряжение</string>
+  <string name="personal_pairing_reset_summary">Удалить эту конфигурацию личного сопряжения навсегда</string>
+  <string name="personal_pairing_reset_dialog_title">Сбросить личное сопряжение</string>
+  <string name="personal_pairing_delete_hint">Введите символы для подтверждения</string>
+  <string name="personal_pairing_delete_message">Чтобы удалить эту конфигурацию личного сопряжения, введите последние %d символов ID сопряжения:</string>
+  <string name="personal_pairing_reset_error">Не удалось сбросить конфигурацию</string>
+  <string name="personal_pairing_reset_invalid">Введите правильные символы подтверждения</string>
+  <string name="personal_pairing_reset_success">Конфигурация сброшена</string>
+  <string name="reset_button">Сбросить</string>
 </resources>

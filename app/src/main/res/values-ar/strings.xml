@@ -167,4 +167,44 @@
   <string name="app_update_restart">تثبيت</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">فشل التحديث</string>
+
+  <string name="preference_summary_personal_pairing_enabled">مفعّل</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">عبر %1$s</string>
+  <string name="preference_summary_personal_pairing_disabled">معطّل</string>
+  <string name="personal_pairing_screen_title">اتصل عبر محطة Conduit لنظير موثوق لتعزيز الخصوصية وسهولة الوصول. ستحتاج إلى رابط إقران للبدء.</string>
+  <string name="personal_pairing_enable_title">تفعيل الاقتران الشخصي</string>
+  <string name="personal_pairing_enable_summary">الاتصال عبر محطة Conduit</string>
+  <string name="personal_pairing_import_title">استيراد رابط الإقران</string>
+  <string name="personal_pairing_import_dialog_title">رابط الإقران</string>
+  <string name="personal_pairing_url_hint">الصق رابط الإقران هنا</string>
+  <string name="personal_pairing_invalid_url">تنسيق رابط الإقران غير صالح</string>
+  <string name="personal_pairing_invalid_data">تنسيق بيانات الإقران غير صالح</string>
+  <string name="personal_pairing_unsupported_version">إصدار رمز الإقران غير مدعوم</string>
+  <string name="personal_pairing_need_compartment_id">يرجى استيراد رابط إقران أولاً</string>
+  <string name="personal_pairing_compartment_id_title">معرّف الإقران</string>
+  <string name="personal_pairing_compartment_id_summary">معرّف الإقران الفريد الخاص بك</string>
+  <string name="personal_pairing_alias_title">اسم مستعار للإقران</string>
+  <string name="personal_pairing_alias_summary">اسم سهل لهذه الإعدادات</string>
+  <string name="import_button">استيراد</string>
+  <string name="label_personal_pairing_settings">الاقتران الشخصي</string>
+  <string name="personal_pairing_turn_off_prompt">تواجه مشكلة في الاتصال؟ عطّل الاقتران الشخصي</string>
+  <string name="personal_pairing_data_import_success">تم حفظ إعدادات الاقتران الشخصي</string>
+  <string name="personal_pairing_data_update_success">تم تحديث إعدادات الاقتران الشخصي</string>
+  <string name="personal_pairing_data_already_exists">إعدادات الاقتران الشخصي موجودة بالفعل</string>
+  <string name="personal_pairing_update_title">تحديث بيانات الاقتران الشخصي</string>
+  <string name="personal_pairing_update_current_id_label">معرّف الاقتران الشخصي الحالي:</string>
+  <string name="personal_pairing_update_new_id_label">معرّف الاقتران الشخصي الجديد:</string>
+  <string name="personal_pairing_update_positive_button">تحديث</string>
+  <string name="personal_pairing_update_negative_button">إلغاء</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">تفعيل الاقتران الشخصي</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">هل تريد تفعيل الاقتران الشخصي الآن؟ سيؤدي ذلك إلى إعادة تشغيل النفق النشط. بخلاف ذلك، سيتم استيراد الإعدادات وستبقى معطّلة حتى تفعّلها يدويًا في إعدادات التطبيق.</string>
+  <string name="personal_pairing_reset_title">إعادة تعيين الاقتران الشخصي</string>
+  <string name="personal_pairing_reset_summary">إزالة إعدادات الاقتران الشخصي هذه نهائيًا</string>
+  <string name="personal_pairing_reset_dialog_title">إعادة تعيين الاقتران الشخصي</string>
+  <string name="personal_pairing_delete_hint">أدخل الرموز للتأكيد</string>
+  <string name="personal_pairing_delete_message">لإزالة إعدادات الاقتران الشخصي هذه، أدخل آخر %d رموز من معرّف الإقران:</string>
+  <string name="personal_pairing_reset_error">تعذّرت إعادة تعيين الإعدادات</string>
+  <string name="personal_pairing_reset_invalid">يرجى إدخال رموز التأكيد الصحيحة</string>
+  <string name="personal_pairing_reset_success">تمت إعادة تعيين الإعدادات</string>
+  <string name="reset_button">إعادة تعيين</string>
 </resources>

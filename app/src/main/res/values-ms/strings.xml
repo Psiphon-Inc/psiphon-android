@@ -158,4 +158,44 @@
   <string name="app_update_restart">Pasang</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Kemas kini gagal</string>
+
+  <string name="preference_summary_personal_pairing_enabled">Didayakan</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">Melalui %1$s</string>
+  <string name="preference_summary_personal_pairing_disabled">Dilumpuhkan</string>
+  <string name="personal_pairing_screen_title">Berhubung melalui stesen Conduit rakan sebaya yang dipercayai untuk privasi dan akses yang dipertingkatkan. Anda memerlukan pautan berpasangan untuk bermula.</string>
+  <string name="personal_pairing_enable_title">Dayakan Gandingan Peribadi</string>
+  <string name="personal_pairing_enable_summary">Sambung melalui stesen Conduit</string>
+  <string name="personal_pairing_import_title">Import URL gandingan</string>
+  <string name="personal_pairing_import_dialog_title">URL berpasangan</string>
+  <string name="personal_pairing_url_hint">Tampalkan URL gandingan di sini</string>
+  <string name="personal_pairing_invalid_url">Format URL gandingan tidak sah</string>
+  <string name="personal_pairing_invalid_data">Format data gandingan tidak sah</string>
+  <string name="personal_pairing_unsupported_version">Versi token gandingan tidak disokong</string>
+  <string name="personal_pairing_need_compartment_id">Sila import URL gandingan dahulu</string>
+  <string name="personal_pairing_compartment_id_title">ID berpasangan</string>
+  <string name="personal_pairing_compartment_id_summary">Pengecam gandingan unik anda</string>
+  <string name="personal_pairing_alias_title">Menggandingkan alias</string>
+  <string name="personal_pairing_alias_summary">Nama mesra untuk konfigurasi gandingan ini</string>
+  <string name="import_button">Import</string>
+  <string name="label_personal_pairing_settings">Pasangan Peribadi</string>
+  <string name="personal_pairing_turn_off_prompt">Masalah menyambung? Matikan Gandingan Peribadi</string>
+  <string name="personal_pairing_data_import_success">Konfigurasi Gandingan Peribadi disimpan</string>
+  <string name="personal_pairing_data_update_success">Konfigurasi Gandingan Peribadi dikemas kini</string>
+  <string name="personal_pairing_data_already_exists">Konfigurasi Gandingan Peribadi sudah wujud</string>
+  <string name="personal_pairing_update_title">Kemas kini data Gandingan Peribadi</string>
+  <string name="personal_pairing_update_current_id_label">ID Pasangan Peribadi Semasa:</string>
+  <string name="personal_pairing_update_new_id_label">ID Gandingan Peribadi Baharu:</string>
+  <string name="personal_pairing_update_positive_button">Kemas kini</string>
+  <string name="personal_pairing_update_negative_button">Batal</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Dayakan Gandingan Peribadi</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">Dayakan gandingan peribadi sekarang? Ini akan memulakan semula terowong aktif. Jika tidak, tetapan akan diimport dan kekal dilumpuhkan sehingga didayakan secara manual dalam tetapan aplikasi.</string>
+  <string name="personal_pairing_reset_title">Tetapkan semula Gandingan Peribadi</string>
+  <string name="personal_pairing_reset_summary">Alih keluar konfigurasi Pasangan Peribadi ini secara kekal</string>
+  <string name="personal_pairing_reset_dialog_title">Tetapkan semula Gandingan Peribadi</string>
+  <string name="personal_pairing_delete_hint">Masukkan simbol untuk mengesahkan</string>
+  <string name="personal_pairing_delete_message">Untuk mengalih keluar konfigurasi Pasangan Peribadi ini, masukkan %d simbol terakhir ID Berpasangan:</string>
+  <string name="personal_pairing_reset_error">Tidak dapat menetapkan semula konfigurasi</string>
+  <string name="personal_pairing_reset_invalid">Sila masukkan simbol pengesahan yang betul</string>
+  <string name="personal_pairing_reset_success">Tetapan semula konfigurasi</string>
+  <string name="reset_button">Tetapkan semula</string>
 </resources>

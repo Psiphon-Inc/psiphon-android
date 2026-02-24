@@ -157,4 +157,44 @@
   <string name="app_update_restart">Kuusi</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Haaromsi hin milkoofne</string>
+
+  <string name="preference_summary_personal_pairing_enabled">Dandeessifameera</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">Karaa %1$s</string>
+  <string name="preference_summary_personal_pairing_disabled">Miidhamaa</string>
+  <string name="personal_pairing_screen_title">Iccitii fi qaqqabummaa fooyya\'aa argachuuf karaa buufata Conduit hiriyaa amanamaa ta\'een wal qunnamsiisaa. Jalqabuuf hidhaa wal-fuudhii (pairing link) si barbaachisa.</string>
+  <string name="personal_pairing_enable_title">Wal-qunnamtii Dhuunfaa dandeessisi</string>
+  <string name="personal_pairing_enable_summary">Karaa buufata Conduit tiin wal qunnamsiisa</string>
+  <string name="personal_pairing_import_title">URL wal-faana galchuu galchi</string>
+  <string name="personal_pairing_import_dialog_title">URL wal-qabsiisuu</string>
+  <string name="personal_pairing_url_hint">URL wal-qabsiisuu asitti maxxansi</string>
+  <string name="personal_pairing_invalid_url">Akkaataa URL wal-fuudhii sirrii hin taane</string>
+  <string name="personal_pairing_invalid_data">Akkaataa deetaa wal-fuudhii sirrii hin taane</string>
+  <string name="personal_pairing_unsupported_version">Vershinii mallattoo wal-fuudhii hin deeggaramne</string>
+  <string name="personal_pairing_need_compartment_id">Maaloo dursa URL wal-fuudhii galchi</string>
+  <string name="personal_pairing_compartment_id_title">ID wal-fuudhii</string>
+  <string name="personal_pairing_compartment_id_summary">Adda baastuu wal-fuudhii addaa kee</string>
+  <string name="personal_pairing_alias_title">Maqaa biraa wal-qabsiisuu</string>
+  <string name="personal_pairing_alias_summary">Maqaa michuu qindeessaa wal-fuudhii kanaaf</string>
+  <string name="import_button">Biyya alaatii galchuu</string>
+  <string name="label_personal_pairing_settings">Wal-fuudhii Dhuunfaa</string>
+  <string name="personal_pairing_turn_off_prompt">Rakkoon wal qunnamsiisuu? Wal-qunnamtii Dhuunfaa (Personal Pairing) cufi</string>
+  <string name="personal_pairing_data_import_success">Qindaa\'inni Wal-qabsiisummaa Dhuunfaa qusatameera</string>
+  <string name="personal_pairing_data_update_success">Qindaa\'inni Wal-qabsiisummaa Dhuunfaa haaromfameera</string>
+  <string name="personal_pairing_data_already_exists">Qindaa\'inni Wal-qabsiisuu Dhuunfaa duraan jira</string>
+  <string name="personal_pairing_update_title">Daataa Wal-qabsiisummaa Dhuunfaa haaromsi</string>
+  <string name="personal_pairing_update_current_id_label">ID Wal-fuudhii Dhuunfaa Ammaa:</string>
+  <string name="personal_pairing_update_new_id_label">ID Wal-fuudhii Dhuunfaa Haaraa:</string>
+  <string name="personal_pairing_update_positive_button">Odeeffannoo dhiyeenyaa</string>
+  <string name="personal_pairing_update_negative_button">Haquu</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Wal-qunnamtii Dhuunfaa dandeessisi</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">Amma wal-fuudhii dhuunfaa dandeessisi? Kunis tuneela socho\'aa deebisee jalqaba. Yoo kana hin taane, qindaa\'inoota ni galfama, hanga qindaa\'inoota aplikeeshinii keessatti harkaan dandeessifamutti ni cufama.</string>
+  <string name="personal_pairing_reset_title">Wal-qunnamtii Dhuunfaa Irra Deebi\'i</string>
+  <string name="personal_pairing_reset_summary">Qindaa\'ina Wal-qunnamtii Dhuunfaa kana dhaabbataadhaan haqi</string>
+  <string name="personal_pairing_reset_dialog_title">Wal-qunnamtii Dhuunfaa Irra Deebi\'i</string>
+  <string name="personal_pairing_delete_hint">Mallattoolee mirkaneessuuf galchi</string>
+  <string name="personal_pairing_delete_message">Qindaa\'ina Wal-qunnamtii Dhuunfaa kana haquuf, mallattoolee %d dhumaa ID Wal-qabsiisuu galchi:</string>
+  <string name="personal_pairing_reset_error">Qindaa\'ina deebisanii saaguu hin dandeenye</string>
+  <string name="personal_pairing_reset_invalid">Maaloo mallattoolee mirkaneessaa sirrii galchi</string>
+  <string name="personal_pairing_reset_success">Qindeessituu irra deebi\'ii saagi</string>
+  <string name="reset_button">Reset gochuu</string>
 </resources>

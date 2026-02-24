@@ -162,4 +162,44 @@
   <string name="app_update_restart">Isa</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Kuvandudzwa kwatadza</string>
+
+  <string name="preference_summary_personal_pairing_enabled">Yagoneswa</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">Via %1$s</string>
+  <string name="preference_summary_personal_pairing_disabled">Yakaremara</string>
+  <string name="personal_pairing_screen_title">Batanidza kuburikidza neakavimbika peer\'s Conduit chiteshi kuti uwedzere kuvanzika uye kuwana. Unozoda chinongedzo chekubatanidza kuti utange.</string>
+  <string name="personal_pairing_enable_title">Gonesa Personal Pairing</string>
+  <string name="personal_pairing_enable_summary">Batanidza neConduit station</string>
+  <string name="personal_pairing_import_title">Pinza maURL ekubatanidza</string>
+  <string name="personal_pairing_import_dialog_title">Kubatanidza URL</string>
+  <string name="personal_pairing_url_hint">Namata URL yekubatanidza pano</string>
+  <string name="personal_pairing_invalid_url">Mafomati ekubatanidza URL haasiriyo</string>
+  <string name="personal_pairing_invalid_data">Fomati yedata yekubatanidza haikodzeri</string>
+  <string name="personal_pairing_unsupported_version">Haisi kutsigirwa pairing token version</string>
+  <string name="personal_pairing_need_compartment_id">Tapota unzai URL yepeyi kutanga</string>
+  <string name="personal_pairing_compartment_id_title">Pairing ID</string>
+  <string name="personal_pairing_compartment_id_summary">Chiziviso chako chekubatanidza</string>
+  <string name="personal_pairing_alias_title">Pairing alias</string>
+  <string name="personal_pairing_alias_summary">Zita rehushamwari rezvigadziriso zvekubatanidza izvi</string>
+  <string name="import_button">Import</string>
+  <string name="label_personal_pairing_settings">Personal Pairing</string>
+  <string name="personal_pairing_turn_off_prompt">Dambudziko rekubatanidza? Dzima Personal Pairing</string>
+  <string name="personal_pairing_data_import_success">Personal Pairing gadziriro yachengetwa</string>
+  <string name="personal_pairing_data_update_success">Personal Pairing gadziriso yakagadziridzwa</string>
+  <string name="personal_pairing_data_already_exists">Personal Pairing gadziriso yatovepo</string>
+  <string name="personal_pairing_update_title">Gadziridza Personal Pairing data</string>
+  <string name="personal_pairing_update_current_id_label">Iyezvino Personal Pairing ID:</string>
+  <string name="personal_pairing_update_new_id_label">New Personal Pairing ID:</string>
+  <string name="personal_pairing_update_positive_button">Update</string>
+  <string name="personal_pairing_update_negative_button">Cancel</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Gonesa Personal Pairing</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">Bvisa pairing yako izvozvi? Izvi zvichatangazve mugero unoshanda. Zvikasadaro, marongero anozounzwa kunze uye oramba akaremara kusvika agoneswa nemaoko muzvirongwa zvekushandisa.</string>
+  <string name="personal_pairing_reset_title">Reset Personal Pairing</string>
+  <string name="personal_pairing_reset_summary">Bvisa iyi Personal Pairing configuration zvachose</string>
+  <string name="personal_pairing_reset_dialog_title">Reset Personal Pairing</string>
+  <string name="personal_pairing_delete_hint">Isa zviratidzo kuti usimbise</string>
+  <string name="personal_pairing_delete_message">Kuti ubvise iyi Yemunhu Pairing gadziriso, isa yekupedzisira %d zviratidzo zvePairing ID:</string>
+  <string name="personal_pairing_reset_error">Hatina kukwanisa kuseta patsva</string>
+  <string name="personal_pairing_reset_invalid">Ndokumbira uise zviratidzo zvekusimbisa</string>
+  <string name="personal_pairing_reset_success">Configuration reset</string>
+  <string name="reset_button">Reset</string>
 </resources>

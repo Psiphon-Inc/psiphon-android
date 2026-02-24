@@ -166,4 +166,44 @@
   <string name="app_update_restart">ထည့်သွင်းမည်</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">အပ်ဒိတ် မအောင်မြင်ပါ</string>
+
+  <string name="preference_summary_personal_pairing_enabled">ဖွင့်ထားသည်။</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">%1$s မှတဆင့်</string>
+  <string name="preference_summary_personal_pairing_disabled">မသန်စွမ်း</string>
+  <string name="personal_pairing_screen_title">ပိုမိုကောင်းမွန်သော ကိုယ်ရေးကိုယ်တာနှင့် ဝင်ရောက်နိုင်မှုအတွက် ယုံကြည်စိတ်ချရသောရွယ်တူချင်း၏ Conduit ဘူတာရုံမှတဆင့် ချိတ်ဆက်ပါ။ စတင်ရန် တွဲချိတ်လင့်ခ်တစ်ခု လိုအပ်ပါမည်။</string>
+  <string name="personal_pairing_enable_title">Personal Pairing ကိုဖွင့်ပါ။</string>
+  <string name="personal_pairing_enable_summary">Conduit station မှတဆင့် ချိတ်ဆက်ပါ။</string>
+  <string name="personal_pairing_import_title">တွဲချိတ်ခြင်း URL ကို တင်သွင်းပါ။</string>
+  <string name="personal_pairing_import_dialog_title">URL တွဲချိတ်ခြင်း။</string>
+  <string name="personal_pairing_url_hint">တွဲချိတ်ခြင်း URL ကို ဤနေရာတွင် ကူးထည့်ပါ။</string>
+  <string name="personal_pairing_invalid_url">တွဲချိတ်ခြင်း URL ဖော်မတ် မမှန်ကန်ပါ။</string>
+  <string name="personal_pairing_invalid_data">မမှန်ကန်သောတွဲချိတ်ဒေတာဖော်မတ်</string>
+  <string name="personal_pairing_unsupported_version">တွဲချိတ်ခြင်း တိုကင်ဗားရှင်းကို ပံ့ပိုးမထားပါ။</string>
+  <string name="personal_pairing_need_compartment_id">ကျေးဇူးပြု၍ တွဲချိတ်ခြင်း URL ကို ဦးစွာ ထည့်သွင်းပါ။</string>
+  <string name="personal_pairing_compartment_id_title">တွဲချိတ်ခြင်း ID</string>
+  <string name="personal_pairing_compartment_id_summary">သင်၏ထူးခြားသောတွဲချိတ်မှုအမှတ်အသား</string>
+  <string name="personal_pairing_alias_title">နာမည်တူတွဲ</string>
+  <string name="personal_pairing_alias_summary">ဤတွဲချိတ်မှုဖွဲ့စည်းပုံအတွက် အဆင်ပြေသောအမည်</string>
+  <string name="import_button">သွင်းကုန်</string>
+  <string name="label_personal_pairing_settings">Personal Pairing</string>
+  <string name="personal_pairing_turn_off_prompt">ချိတ်ဆက်ရာတွင် ပြဿနာရှိပါသလား။ Personal Pairing ကို ပိတ်ပါ။</string>
+  <string name="personal_pairing_data_import_success">Personal Pairing configuration ကို သိမ်းပြီးပါပြီ။</string>
+  <string name="personal_pairing_data_update_success">ပုဂ္ဂိုလ်ရေးဆိုင်ရာ တွဲချိတ်မှုပုံစံကို အပ်ဒိတ်လုပ်ထားသည်။</string>
+  <string name="personal_pairing_data_already_exists">Personal Pairing ဖွဲ့စည်းမှု ရှိနှင့်ပြီးဖြစ်သည်။</string>
+  <string name="personal_pairing_update_title">Personal Pairing Data ကို အပ်ဒိတ်လုပ်ပါ။</string>
+  <string name="personal_pairing_update_current_id_label">လက်ရှိ ကိုယ်ရေးကိုယ်တာ တွဲချိတ်ခြင်း ID-</string>
+  <string name="personal_pairing_update_new_id_label">ကိုယ်ပိုင်တွဲချိတ်ခြင်း ID အသစ်-</string>
+  <string name="personal_pairing_update_positive_button">အပ်ဒိတ်</string>
+  <string name="personal_pairing_update_negative_button">မလုပ်တော့</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Personal Pairing ကိုဖွင့်ပါ။</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">ကိုယ်ရေးကိုယ်တာတွဲချိတ်ခြင်းကို ယခုဖွင့်မလား။ ၎င်းသည် အသုံးပြုနေသော ဥမင်ကို ပြန်လည်စတင်မည်ဖြစ်သည်။ မဟုတ်ပါက ဆက်တင်များကို ထည့်သွင်းပြီး အပလီကေးရှင်းဆက်တင်များတွင် ကိုယ်တိုင်မဖွင့်မချင်း ဆက်လက်ပိတ်ထားပါမည်။</string>
+  <string name="personal_pairing_reset_title">Personal Pairing ကို ပြန်လည်သတ်မှတ်ပါ။</string>
+  <string name="personal_pairing_reset_summary">ဤကိုယ်ရေးကိုယ်တာတွဲချိတ်မှုပုံစံကို အပြီးတိုင်ဖယ်ရှားပါ။</string>
+  <string name="personal_pairing_reset_dialog_title">Personal Pairing ကို ပြန်လည်သတ်မှတ်ပါ။</string>
+  <string name="personal_pairing_delete_hint">အတည်ပြုရန် သင်္ကေတများထည့်ပါ။</string>
+  <string name="personal_pairing_delete_message">ဤကိုယ်ရေးကိုယ်တာ တွဲချိတ်မှုပုံစံကို ဖယ်ရှားရန်၊ တွဲချိတ်ခြင်း ID ၏ နောက်ဆုံး %d သင်္ကေတများကို ထည့်ပါ-</string>
+  <string name="personal_pairing_reset_error">ဖွဲ့စည်းမှုပုံစံကို ပြန်လည်သတ်မှတ်၍မရပါ။</string>
+  <string name="personal_pairing_reset_invalid">ကျေးဇူးပြု၍ မှန်ကန်သော အတည်ပြုသင်္ကေတများကို ထည့်သွင်းပါ။</string>
+  <string name="personal_pairing_reset_success">ပြင်ဆင်သတ်မှတ်မှု ပြန်လည်သတ်မှတ်ခြင်း။</string>
+  <string name="reset_button">ပြန်လည်သတ်မှတ်ပါ။</string>
 </resources>
