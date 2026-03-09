@@ -149,7 +149,7 @@ class AdManager : DefaultLifecycleObserver {
         // load -> wait for resume -> show -> cleanup
         return Completable.complete()
             .observeOn(AndroidSchedulers.mainThread())
-            .andThen(helper.loadAd())
+            .andThen(Completable.defer { helper.loadAd() })
             .andThen(waitForResumed())
             .andThen(helper.showAd())
             .doFinally {
@@ -248,7 +248,7 @@ class AdManager : DefaultLifecycleObserver {
         // load -> wait for resume -> show -> cleanup
         return Completable.complete()
             .observeOn(AndroidSchedulers.mainThread())
-            .andThen(helper.loadAd())
+            .andThen(Completable.defer { helper.loadAd() })
             .andThen(waitForResumed())
             .andThen(helper.showAd())
             .doFinally {

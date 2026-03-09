@@ -102,9 +102,47 @@
             android:layout_height="wrap_content">
 
             <LinearLayout
+                android:id="@+id/personalPairingToggleContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:visibility="gone"
+                android:layout_marginBottom="16dp">
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/personalPairingToggle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/label_personal_pairing_settings"
+                    android:textSize="16sp"
+                    android:padding="8dp" />
+
+                <TextView
+                    android:id="@+id/personalPairingLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/preference_summary_personal_pairing_enabled"
+                    android:textSize="12sp"
+                    android:alpha="0.8"
+                    android:visibility="invisible" />
+
+                <Button
+                    android:id="@+id/personalPairingTurnOffButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/personal_pairing_turn_off_prompt"
+                    android:textAppearance="?android:attr/textAppearanceSmall"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <LinearLayout
                 android:id="@+id/buttonPanel"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
+                android:layout_below="@id/personalPairingToggleContainer"
                 android:orientation="horizontal"
                 android:weightSum="2.0">
 

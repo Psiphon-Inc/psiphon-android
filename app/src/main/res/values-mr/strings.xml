@@ -162,4 +162,44 @@
   <string name="app_update_restart">स्थापित करा</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">अपडेट अयशस्वी</string>
+
+  <string name="preference_summary_personal_pairing_enabled">सक्षम केले</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">%1$s द्वारे</string>
+  <string name="preference_summary_personal_pairing_disabled">अक्षम</string>
+  <string name="personal_pairing_screen_title">वर्धित गोपनीयता आणि प्रवेशासाठी विश्वासू समवयस्कांच्या कंड्युट स्टेशनद्वारे कनेक्ट व्हा. सुरू करण्यासाठी तुम्हाला जोडणी दुव्याची आवश्यकता असेल.</string>
+  <string name="personal_pairing_enable_title">वैयक्तिक जोडणी सक्षम करा</string>
+  <string name="personal_pairing_enable_summary">कंड्युट स्टेशनद्वारे कनेक्ट करा</string>
+  <string name="personal_pairing_import_title">पेअरिंग URL इंपोर्ट करा</string>
+  <string name="personal_pairing_import_dialog_title">पेअरिंग URL</string>
+  <string name="personal_pairing_url_hint">पेअरिंग URL येथे पेस्ट करा</string>
+  <string name="personal_pairing_invalid_url">अवैध जोडणी URL स्वरूप</string>
+  <string name="personal_pairing_invalid_data">अवैध जोडणी डेटा स्वरूप</string>
+  <string name="personal_pairing_unsupported_version">असमर्थित पेअरिंग टोकन आवृत्ती</string>
+  <string name="personal_pairing_need_compartment_id">कृपया प्रथम एक जोडणी URL आयात करा</string>
+  <string name="personal_pairing_compartment_id_title">पेअरिंग आयडी</string>
+  <string name="personal_pairing_compartment_id_summary">तुमचा युनिक पेअरिंग आयडेंटिफायर</string>
+  <string name="personal_pairing_alias_title">पेअरिंग उपनाव</string>
+  <string name="personal_pairing_alias_summary">या जोडणी कॉन्फिगरेशनसाठी अनुकूल नाव</string>
+  <string name="import_button">आयात करा</string>
+  <string name="label_personal_pairing_settings">वैयक्तिक जोडणी</string>
+  <string name="personal_pairing_turn_off_prompt">कनेक्ट करण्यात अडचण येत आहे? वैयक्तिक जोडणी बंद करा</string>
+  <string name="personal_pairing_data_import_success">वैयक्तिक पेअरिंग कॉन्फिगरेशन जतन केले</string>
+  <string name="personal_pairing_data_update_success">वैयक्तिक पेअरिंग कॉन्फिगरेशन अपडेट केले</string>
+  <string name="personal_pairing_data_already_exists">वैयक्तिक पेअरिंग कॉन्फिगरेशन आधीपासून अस्तित्वात आहे</string>
+  <string name="personal_pairing_update_title">वैयक्तिक जोडणी डेटा अद्यतनित करा</string>
+  <string name="personal_pairing_update_current_id_label">सध्याचा वैयक्तिक पेअरिंग आयडी:</string>
+  <string name="personal_pairing_update_new_id_label">नवीन वैयक्तिक पेअरिंग आयडी:</string>
+  <string name="personal_pairing_update_positive_button">अपडेट करा</string>
+  <string name="personal_pairing_update_negative_button">रद्द करा</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">वैयक्तिक जोडणी सक्षम करा</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">आता वैयक्तिक जोडणी सक्षम करायची? हे सक्रिय बोगदा रीस्टार्ट करेल. अन्यथा, सेटिंग्ज आयात केल्या जातील आणि ऍप्लिकेशन सेटिंग्जमध्ये व्यक्तिचलितपणे सक्षम होईपर्यंत अक्षम राहतील.</string>
+  <string name="personal_pairing_reset_title">वैयक्तिक जोडणी रीसेट करा</string>
+  <string name="personal_pairing_reset_summary">हे वैयक्तिक पेअरिंग कॉन्फिगरेशन कायमचे काढून टाका</string>
+  <string name="personal_pairing_reset_dialog_title">वैयक्तिक जोडणी रीसेट करा</string>
+  <string name="personal_pairing_delete_hint">पुष्टी करण्यासाठी चिन्हे प्रविष्ट करा</string>
+  <string name="personal_pairing_delete_message">हे वैयक्तिक पेअरिंग कॉन्फिगरेशन काढण्यासाठी, पेअरिंग आयडीचे शेवटचे %d चिन्ह प्रविष्ट करा:</string>
+  <string name="personal_pairing_reset_error">कॉन्फिगरेशन रीसेट करण्यात अक्षम</string>
+  <string name="personal_pairing_reset_invalid">कृपया योग्य पुष्टीकरण चिन्हे प्रविष्ट करा</string>
+  <string name="personal_pairing_reset_success">कॉन्फिगरेशन रीसेट</string>
+  <string name="reset_button">रीसेट करा</string>
 </resources>

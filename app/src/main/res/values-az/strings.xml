@@ -163,4 +163,44 @@
   <string name="app_update_restart">Quraşdır</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Yeniləmə uğursuz oldu</string>
+
+  <string name="preference_summary_personal_pairing_enabled">Aktivdir</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">%1$s vasitəsilə</string>
+  <string name="preference_summary_personal_pairing_disabled">Əlil</string>
+  <string name="personal_pairing_screen_title">Təkmil məxfilik və giriş üçün etibarlı həmyaşıdların Conduit stansiyası vasitəsilə qoşulun. Başlamaq üçün cütləşmə linkinə ehtiyacınız olacaq.</string>
+  <string name="personal_pairing_enable_title">Şəxsi Qoşulmanı aktivləşdirin</string>
+  <string name="personal_pairing_enable_summary">Conduit stansiyası vasitəsilə qoşulun</string>
+  <string name="personal_pairing_import_title">Cütləşmə URL-sini idxal edin</string>
+  <string name="personal_pairing_import_dialog_title">URL cütlənir</string>
+  <string name="personal_pairing_url_hint">Cütləşmə URL-sini bura yerləşdirin</string>
+  <string name="personal_pairing_invalid_url">Yanlış qoşulma URL formatı</string>
+  <string name="personal_pairing_invalid_data">Yanlış cütləşmə data formatı</string>
+  <string name="personal_pairing_unsupported_version">Dəstəklənməyən cütləşmə nişanı versiyası</string>
+  <string name="personal_pairing_need_compartment_id">Lütfən, əvvəlcə qoşalaşma URL-ni import edin</string>
+  <string name="personal_pairing_compartment_id_title">Cütləşmə ID</string>
+  <string name="personal_pairing_compartment_id_summary">Unikal cütləşmə identifikatorunuz</string>
+  <string name="personal_pairing_alias_title">Cütləşmə ləqəbi</string>
+  <string name="personal_pairing_alias_summary">Bu cütləşdirmə konfiqurasiyası üçün dost ad</string>
+  <string name="import_button">İdxal</string>
+  <string name="label_personal_pairing_settings">Şəxsi cütləşmə</string>
+  <string name="personal_pairing_turn_off_prompt">Qoşulmaqda problem var? Şəxsi Qoşulmanı söndürün</string>
+  <string name="personal_pairing_data_import_success">Şəxsi Qoşulma konfiqurasiyası yadda saxlanıldı</string>
+  <string name="personal_pairing_data_update_success">Şəxsi Qoşulma konfiqurasiyası yeniləndi</string>
+  <string name="personal_pairing_data_already_exists">Şəxsi Qoşulma konfiqurasiyası artıq mövcuddur</string>
+  <string name="personal_pairing_update_title">Şəxsi Qoşulma məlumatlarını yeniləyin</string>
+  <string name="personal_pairing_update_current_id_label">Cari Şəxsi Qoşulma ID:</string>
+  <string name="personal_pairing_update_new_id_label">Yeni Şəxsi Qoşulma ID:</string>
+  <string name="personal_pairing_update_positive_button">Yeniləyin</string>
+  <string name="personal_pairing_update_negative_button">Ləğv et</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Şəxsi Qoşulmanı aktivləşdirin</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">Şəxsi cütləşmə indi aktiv edilsin? Bu, aktiv tuneli yenidən işə salacaq. Əks halda, parametrlər idxal ediləcək və proqram parametrlərində əl ilə aktivləşdirilənə qədər qeyri-aktiv olaraq qalacaq.</string>
+  <string name="personal_pairing_reset_title">Şəxsi Qoşulmanı Sıfırlayın</string>
+  <string name="personal_pairing_reset_summary">Bu Şəxsi Qoşulma konfiqurasiyasını həmişəlik silin</string>
+  <string name="personal_pairing_reset_dialog_title">Şəxsi Qoşulmanı Sıfırlayın</string>
+  <string name="personal_pairing_delete_hint">Təsdiq etmək üçün simvolları daxil edin</string>
+  <string name="personal_pairing_delete_message">Bu Şəxsi Qoşulma konfiqurasiyasını silmək üçün Qoşulma ID-sinin son %d simvollarını daxil edin:</string>
+  <string name="personal_pairing_reset_error">Konfiqurasiyanı sıfırlamaq mümkün deyil</string>
+  <string name="personal_pairing_reset_invalid">Zəhmət olmasa düzgün təsdiq simvollarını daxil edin</string>
+  <string name="personal_pairing_reset_success">Konfiqurasiya sıfırlanır</string>
+  <string name="reset_button">Sıfırlayın</string>
 </resources>

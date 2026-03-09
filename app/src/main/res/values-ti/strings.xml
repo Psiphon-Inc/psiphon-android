@@ -164,4 +164,44 @@
   <string name="app_update_restart">ኣትክል</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">ምምሕያሽ ኣይሰለጠን</string>
+
+  <string name="preference_summary_personal_pairing_enabled">ተኸፊቱ</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">ብመንገዲ %1$s</string>
+  <string name="preference_summary_personal_pairing_disabled">ስንኩል</string>
+  <string name="personal_pairing_screen_title">ንዝተዓጻጸፈ ብሕትውናን ተበጻሕነትን ብመንገዲ ናይ ሓደ እሙን መዛኑ ኮንዱይት ጣብያ ምትእስሳር። ንኽትጅምር ናይ ምጽምባር መላግቦ ከድልየካ እዩ።</string>
+  <string name="personal_pairing_enable_title">ውልቃዊ ምጽምባር ኣንቅሕ</string>
+  <string name="personal_pairing_enable_summary">ብመንገዲ ጣብያ ኮንዱይት ምትእስሳር</string>
+  <string name="personal_pairing_import_title">ናይ ምጽምባር URL ኣእቱ</string>
+  <string name="personal_pairing_import_dialog_title">ምጽምባር URL</string>
+  <string name="personal_pairing_url_hint">ናይ ምጽምባር URL ኣብዚ ለጥፍ</string>
+  <string name="personal_pairing_invalid_url">ዘይሕጋዊ ናይ ምጽምባር URL ቅርጺ</string>
+  <string name="personal_pairing_invalid_data">ዘይሕጋዊ ናይ ምጽምባር ዳታ ቅርጺ</string>
+  <string name="personal_pairing_unsupported_version">ዘይተደገፈ ናይ ምጽምባር ቶከን ስሪት።</string>
+  <string name="personal_pairing_need_compartment_id">በጃኹም መጀመርታ ናይ ምጽምባር URL ኣእትዉ</string>
+  <string name="personal_pairing_compartment_id_title">ናይ ምጽምባር መለለዪ</string>
+  <string name="personal_pairing_compartment_id_summary">ፍሉይ ናይ ምጽምባር መለለዪኻ</string>
+  <string name="personal_pairing_alias_title">ምጽምባር ቅጽል ስም</string>
+  <string name="personal_pairing_alias_summary">ነዚ ናይ ምጽምባር ውቅር ምሕዝነታዊ ስም</string>
+  <string name="import_button">ናብ ዓዲ ውሽጢ ኣቕሓ ምእታው</string>
+  <string name="label_personal_pairing_settings">ውልቃዊ ምጽምባር</string>
+  <string name="personal_pairing_turn_off_prompt">ጸገም ምትእስሳር? ውልቃዊ ምጽምባር ኣጥፍእዎ።</string>
+  <string name="personal_pairing_data_import_success">ውልቃዊ ምጽምባር ውቅር ተዓቂቡ።</string>
+  <string name="personal_pairing_data_update_success">ውልቃዊ ምጽምባር ውቅር ተሓዲሱ</string>
+  <string name="personal_pairing_data_already_exists">ውልቃዊ ምጽምባር ውቅር ድሮ ኣሎ።</string>
+  <string name="personal_pairing_update_title">ውልቃዊ ምጽምባር ዳታ ምዕራፍ</string>
+  <string name="personal_pairing_update_current_id_label">ናይ ሕጂ ውልቃዊ ምጽምባር መለለዪ፤</string>
+  <string name="personal_pairing_update_new_id_label">ሓድሽ ውልቃዊ ምጽምባር መለለዪ:</string>
+  <string name="personal_pairing_update_positive_button">ኣዘምን</string>
+  <string name="personal_pairing_update_negative_button">ሰርዝ</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">ውልቃዊ ምጽምባር ኣንቅሕ</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">ሕጂ ውልቃዊ ምጽምባር ኣኽእሎ? እዚ ድማ ነቲ ንጡፍ ታንከር ዳግማይ ክጅምሮ እዩ። እንተዘይኮይኑ ቅጥዕታት ካብ ወጻኢ ክኣትዉን ኣብቲ ናይ መተግበሪ ቅጥዕታት ብኢድ ክሳብ ዝኽፈቱ ስንኩላን ኮይኖም ክጸንሑ እዮም።</string>
+  <string name="personal_pairing_reset_title">ውልቃዊ ምጽምባር ዳግማይ ምትካል</string>
+  <string name="personal_pairing_reset_summary">ነዚ ናይ ውልቃዊ ምጽምባር ውቅር ንሓዋሩ ኣውጽእዎ።</string>
+  <string name="personal_pairing_reset_dialog_title">ውልቃዊ ምጽምባር ዳግማይ ምትካል</string>
+  <string name="personal_pairing_delete_hint">ንምርግጋጽ ምልክታት ኣእቱ</string>
+  <string name="personal_pairing_delete_message">ነዚ ውልቃዊ ምጽምባር ውቅር ንምእላይ፡ ናይ መወዳእታ %d ምልክታት ናይ ምጽምባር መለለዪ ኣእቱ፤</string>
+  <string name="personal_pairing_reset_error">ውቅር ዳግማይ ምትካል ኣይከኣለን</string>
+  <string name="personal_pairing_reset_invalid">በጃኹም ቅኑዕ ናይ ምርግጋጽ ምልክታት ኣእትዉ</string>
+  <string name="personal_pairing_reset_success">ናይ ውቅር ዳግመ ምትዕርራይ</string>
+  <string name="reset_button">ዳግማይ ምትካል</string>
 </resources>

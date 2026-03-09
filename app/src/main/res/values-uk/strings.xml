@@ -166,4 +166,44 @@
   <string name="app_update_restart">Встановити</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Оновлення не вдалося</string>
+
+  <string name="preference_summary_personal_pairing_enabled">Увімкнено</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">Через %1$s</string>
+  <string name="preference_summary_personal_pairing_disabled">Вимкнено</string>
+  <string name="personal_pairing_screen_title">Підключайтеся через станцію Conduit надійного однорангового пристрою для покращеної конфіденційності та доступу. Щоб почати, вам знадобиться посилання для створення пари.</string>
+  <string name="personal_pairing_enable_title">Увімкнути персональне підключення</string>
+  <string name="personal_pairing_enable_summary">Підключіться через станцію Conduit</string>
+  <string name="personal_pairing_import_title">Імпортувати URL-адресу підключення</string>
+  <string name="personal_pairing_import_dialog_title">URL-адреса сполучення</string>
+  <string name="personal_pairing_url_hint">Вставте тут URL-адресу підключення</string>
+  <string name="personal_pairing_invalid_url">Недійсний формат URL-адреси підключення</string>
+  <string name="personal_pairing_invalid_data">Недійсний формат даних сполучення</string>
+  <string name="personal_pairing_unsupported_version">Непідтримувана версія маркера сполучення</string>
+  <string name="personal_pairing_need_compartment_id">Спочатку імпортуйте URL-адресу для створення пари</string>
+  <string name="personal_pairing_compartment_id_title">Ідентифікатор з’єднання</string>
+  <string name="personal_pairing_compartment_id_summary">Ваш унікальний ідентифікатор пари</string>
+  <string name="personal_pairing_alias_title">Псевдонім створення пари</string>
+  <string name="personal_pairing_alias_summary">Зручна назва для цієї конфігурації сполучення</string>
+  <string name="import_button">Імпорт</string>
+  <string name="label_personal_pairing_settings">Персональне сполучення</string>
+  <string name="personal_pairing_turn_off_prompt">Проблеми з підключенням? Вимкніть Personal Pairing</string>
+  <string name="personal_pairing_data_import_success">Персональну конфігурацію сполучення збережено</string>
+  <string name="personal_pairing_data_update_success">Оновлено конфігурацію особистої пари</string>
+  <string name="personal_pairing_data_already_exists">Особиста конфігурація створення пари вже існує</string>
+  <string name="personal_pairing_update_title">Оновіть персональні дані сполучення</string>
+  <string name="personal_pairing_update_current_id_label">Поточний особистий ідентифікатор пари:</string>
+  <string name="personal_pairing_update_new_id_label">Новий особистий ідентифікатор пари:</string>
+  <string name="personal_pairing_update_positive_button">оновлення</string>
+  <string name="personal_pairing_update_negative_button">Скасувати</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Увімкнути персональне підключення</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">Увімкнути особисте підключення зараз? Це перезапустить активний тунель. В іншому випадку налаштування буде імпортовано та залишатиметься вимкненим, доки не буде ввімкнено вручну в налаштуваннях програми.</string>
+  <string name="personal_pairing_reset_title">Скинути особисте сполучення</string>
+  <string name="personal_pairing_reset_summary">Видаліть цю персональну конфігурацію з’єднання назавжди</string>
+  <string name="personal_pairing_reset_dialog_title">Скинути особисте сполучення</string>
+  <string name="personal_pairing_delete_hint">Введіть символи для підтвердження</string>
+  <string name="personal_pairing_delete_message">Щоб видалити цю особисту конфігурацію з’єднання, введіть останні символи %d ідентифікатора з’єднання:</string>
+  <string name="personal_pairing_reset_error">Не вдалося скинути конфігурацію</string>
+  <string name="personal_pairing_reset_invalid">Введіть правильні символи підтвердження</string>
+  <string name="personal_pairing_reset_success">Скидання конфігурації</string>
+  <string name="reset_button">Скинути</string>
 </resources>

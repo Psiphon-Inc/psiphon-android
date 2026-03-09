@@ -159,4 +159,44 @@
   <string name="app_update_restart">སྒྲིག་སྦྱོར</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">གསར་བཟོ་ཕམ</string>
+
+  <string name="preference_summary_personal_pairing_enabled">སྤྱོད་བཞིན་ཡོད།</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">%1$s བརྒྱུད་ནས།</string>
+  <string name="preference_summary_personal_pairing_disabled">སྤྱོད་མེད།</string>
+  <string name="personal_pairing_screen_title">སྒེར་གྱི་གཉིས་སྦྲེལ་བརྒྱུད་ནས་གསང་བ་དང་འཛུལ་སྤྱོད་ལ་ལེགས་བཅོས་བྱེད། འགོ་འཛུགས་ཀྱི་ཆེད pairing link ཞིག་དགོས།</string>
+  <string name="personal_pairing_enable_title">སྒེར་གྱི་གཉིས་སྦྲེལ་ཁ་ཕྱེས།</string>
+  <string name="personal_pairing_enable_summary">Conduit station བརྒྱུད་ནས་འབྲེལ་མཐུད།</string>
+  <string name="personal_pairing_import_title">pairing URL ནང་འཇུག</string>
+  <string name="personal_pairing_import_dialog_title">Pairing URL</string>
+  <string name="personal_pairing_url_hint">འདིར pairing URL སྦྱོར།</string>
+  <string name="personal_pairing_invalid_url">pairing URL རྣམ་པ་ནོར་འདུག</string>
+  <string name="personal_pairing_invalid_data">pairing གཞི་གྲངས་རྣམ་པ་ནོར་འདུག</string>
+  <string name="personal_pairing_unsupported_version">རྒྱབ་སྐྱོར་མེད་པའི pairing token པར་གཞི།</string>
+  <string name="personal_pairing_need_compartment_id">སྔོན་ལ pairing URL ཞིག་ནང་འཇུག་གནང་།</string>
+  <string name="personal_pairing_compartment_id_title">Pairing ID</string>
+  <string name="personal_pairing_compartment_id_summary">ཁྱེད་རང་གི་མི་འདྲ་བའི pairing ངོས་འཛིན།</string>
+  <string name="personal_pairing_alias_title">Pairing alias</string>
+  <string name="personal_pairing_alias_summary">pairing སྒྲིག་བཀོད་འདིའི་མཐུན་པའི་མིང་།</string>
+  <string name="import_button">ནང་འཇུག</string>
+  <string name="label_personal_pairing_settings">སྒེར་གྱི་གཉིས་སྦྲེལ།</string>
+  <string name="personal_pairing_turn_off_prompt">འབྲེལ་མཐུད་དཀའ་ངལ་ཡོད་དམ། སྒེར་གྱི་གཉིས་སྦྲེལ་སྒོ་རྒྱག</string>
+  <string name="personal_pairing_data_import_success">སྒེར་གྱི་གཉིས་སྦྲེལ་སྒྲིག་བཀོད་ཉར་ཚགས་བྱས་ཡོད།</string>
+  <string name="personal_pairing_data_update_success">སྒེར་གྱི་གཉིས་སྦྲེལ་སྒྲིག་བཀོད་གསར་བཅོས་བྱས།</string>
+  <string name="personal_pairing_data_already_exists">སྒེར་གྱི་གཉིས་སྦྲེལ་སྒྲིག་བཀོད་ཡོད་ཟིན།</string>
+  <string name="personal_pairing_update_title">སྒེར་གྱི་གཉིས་སྦྲེལ་གཞི་གྲངས་གསར་བཅོས།</string>
+  <string name="personal_pairing_update_current_id_label">ད་ལྟའི Personal Pairing ID:</string>
+  <string name="personal_pairing_update_new_id_label">གསར་པའི Personal Pairing ID:</string>
+  <string name="personal_pairing_update_positive_button">གསར་བཅོས</string>
+  <string name="personal_pairing_update_negative_button">ཕྱིར་བཤོལ</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">སྒེར་གྱི་གཉིས་སྦྲེལ་ཁ་ཕྱེས།</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">ད་ལྟ་སྒེར་གྱི་གཉིས་སྦྲེལ་ཁ་ཕྱེ་རམ། འདིས tunnel འགྲོ་བཞིན་པ་སླར་འགོ་འཛུགས་བྱེད། དེ་མིན་སྒྲིག་བཀོད་ནང་འཇུག་བྱས་ནས་མཉམ་སྤྱོད་སྒྲིག་བཀོད་ནང་ལག་ཐོག་ཁ་ཕྱེ་མ་བྱས་བར་སྤྱོད་མེད་བཞག་ནས་གནས་ཀྱི་རེད།</string>
+  <string name="personal_pairing_reset_title">སྒེར་གྱི་གཉིས་སྦྲེལ་བསྐྱར་སྒྲིག</string>
+  <string name="personal_pairing_reset_summary">སྒེར་གྱི་གཉིས་སྦྲེལ་སྒྲིག་བཀོད་འདི་རྟག་པར་བསུབས།</string>
+  <string name="personal_pairing_reset_dialog_title">སྒེར་གྱི་གཉིས་སྦྲེལ་བསྐྱར་སྒྲིག</string>
+  <string name="personal_pairing_delete_hint">ངེས་གཏན་བྱེད་པར་རྟགས་འདི་འཇུག</string>
+  <string name="personal_pairing_delete_message">སྒེར་གྱི་གཉིས་སྦྲེལ་སྒྲིག་བཀོད་འདི་བསུབ་པར Pairing ID ཡི་མཐའ་མའི %d རྟགས་འཇུག་རོགས།</string>
+  <string name="personal_pairing_reset_error">སྒྲིག་བཀོད་བསྐྱར་སྒྲིག་མ་ཐུབ།</string>
+  <string name="personal_pairing_reset_invalid">དག་མཐུན་རྟགས་འགྲིག་པ་འཇུག་རོགས།</string>
+  <string name="personal_pairing_reset_success">སྒྲིག་བཀོད་བསྐྱར་སྒྲིག་བྱས་ཡོད།</string>
+  <string name="reset_button">བསྐྱར་སྒྲིག</string>
 </resources>

@@ -158,4 +158,44 @@
   <string name="app_update_restart">ติดตั้ง</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">อัปเดตล้มเหลว</string>
+
+  <string name="preference_summary_personal_pairing_enabled">เปิดใช้งานแล้ว</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">ผ่านทาง %1$s</string>
+  <string name="preference_summary_personal_pairing_disabled">พิการ</string>
+  <string name="personal_pairing_screen_title">เชื่อมต่อผ่านสถานี Conduit ของเพื่อนที่เชื่อถือได้เพื่อเพิ่มความเป็นส่วนตัวและการเข้าถึง คุณจะต้องมีลิงก์การจับคู่เพื่อเริ่มต้น</string>
+  <string name="personal_pairing_enable_title">เปิดใช้งานการจับคู่ส่วนบุคคล</string>
+  <string name="personal_pairing_enable_summary">เชื่อมต่อผ่านสถานีท่อร้อยสาย</string>
+  <string name="personal_pairing_import_title">นำเข้า URL การจับคู่</string>
+  <string name="personal_pairing_import_dialog_title">URL การจับคู่</string>
+  <string name="personal_pairing_url_hint">วาง URL การจับคู่ที่นี่</string>
+  <string name="personal_pairing_invalid_url">รูปแบบ URL การจับคู่ไม่ถูกต้อง</string>
+  <string name="personal_pairing_invalid_data">รูปแบบข้อมูลการจับคู่ไม่ถูกต้อง</string>
+  <string name="personal_pairing_unsupported_version">ไม่รองรับเวอร์ชันโทเค็นการจับคู่</string>
+  <string name="personal_pairing_need_compartment_id">โปรดนำเข้า URL การจับคู่ก่อน</string>
+  <string name="personal_pairing_compartment_id_title">รหัสการจับคู่</string>
+  <string name="personal_pairing_compartment_id_summary">ตัวระบุการจับคู่เฉพาะของคุณ</string>
+  <string name="personal_pairing_alias_title">การจับคู่นามแฝง</string>
+  <string name="personal_pairing_alias_summary">ชื่อที่จำง่ายสำหรับการกำหนดค่าการจับคู่นี้</string>
+  <string name="import_button">นำเข้า</string>
+  <string name="label_personal_pairing_settings">การจับคู่ส่วนบุคคล</string>
+  <string name="personal_pairing_turn_off_prompt">มีปัญหาในการเชื่อมต่อใช่ไหม? ปิดการจับคู่ส่วนตัว</string>
+  <string name="personal_pairing_data_import_success">บันทึกการกำหนดค่าการจับคู่ส่วนตัวแล้ว</string>
+  <string name="personal_pairing_data_update_success">อัปเดตการกำหนดค่าการจับคู่ส่วนตัวแล้ว</string>
+  <string name="personal_pairing_data_already_exists">มีการกำหนดค่าการจับคู่ส่วนบุคคลอยู่แล้ว</string>
+  <string name="personal_pairing_update_title">อัปเดตข้อมูลการจับคู่ส่วนบุคคล</string>
+  <string name="personal_pairing_update_current_id_label">ID การจับคู่ส่วนตัวปัจจุบัน:</string>
+  <string name="personal_pairing_update_new_id_label">ID การจับคู่ส่วนตัวใหม่:</string>
+  <string name="personal_pairing_update_positive_button">อัปเดต</string>
+  <string name="personal_pairing_update_negative_button">ยกเลิก</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">เปิดใช้งานการจับคู่ส่วนบุคคล</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">เปิดใช้งานการจับคู่ส่วนตัวตอนนี้หรือไม่ นี่จะรีสตาร์ททันเนลที่ใช้งานอยู่ มิฉะนั้น การตั้งค่าจะถูกนำเข้าและยังคงปิดใช้งานอยู่จนกว่าจะเปิดใช้งานด้วยตนเองในการตั้งค่าแอปพลิเคชัน</string>
+  <string name="personal_pairing_reset_title">รีเซ็ตการจับคู่ส่วนตัว</string>
+  <string name="personal_pairing_reset_summary">ลบการกำหนดค่าการจับคู่ส่วนบุคคลนี้อย่างถาวร</string>
+  <string name="personal_pairing_reset_dialog_title">รีเซ็ตการจับคู่ส่วนตัว</string>
+  <string name="personal_pairing_delete_hint">ป้อนสัญลักษณ์เพื่อยืนยัน</string>
+  <string name="personal_pairing_delete_message">หากต้องการลบการกำหนดค่าการจับคู่ส่วนบุคคลนี้ ให้ป้อนสัญลักษณ์ %d สุดท้ายของรหัสการจับคู่:</string>
+  <string name="personal_pairing_reset_error">ไม่สามารถรีเซ็ตการกำหนดค่าได้</string>
+  <string name="personal_pairing_reset_invalid">กรุณากรอกสัญลักษณ์ยืนยันที่ถูกต้อง</string>
+  <string name="personal_pairing_reset_success">รีเซ็ตการกำหนดค่า</string>
+  <string name="reset_button">รีเซ็ต</string>
 </resources>

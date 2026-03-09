@@ -1,0 +1,12 @@
+<animation-list
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:oneshot="false">
+
+    <item android:drawable="@drawable/notification_icon_connecting_pp_01" android:duration="200" />
+    <item android:drawable="@drawable/notification_icon_connecting_pp_02" android:duration="200" />
+    <item android:drawable="@drawable/notification_icon_connecting_pp_03" android:duration="200" />
+    <item android:drawable="@drawable/notification_icon_connecting_pp_04" android:duration="200" />
+    <item android:drawable="@drawable/notification_icon_connecting_pp_05" android:duration="200" />
+    <item android:drawable="@drawable/notification_icon_connecting_pp_06" android:duration="200" />
+
+</animation-list>

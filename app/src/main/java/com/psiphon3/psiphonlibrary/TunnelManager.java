@@ -39,7 +39,9 @@ import android.net.VpnService.Builder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
@@ -51,6 +53,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.PermissionChecker;
 
+import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.AppUpdatePolicy;
 import com.psiphon3.ConduitState;
@@ -148,6 +151,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     public static final String DATA_TUNNEL_STATE_DOWNSTREAM_RATE_LIMIT = "downstreamRateLimit";
     public static final String DATA_TUNNEL_STATE_VPN_MODE = "vpnMode";
     public static final String DATA_TUNNEL_STATE_VPN_APPS = "vpnApps";
+    public static final String DATA_TUNNEL_STATE_IS_PERSONAL_PAIRING_MODE = "isPersonalPairingMode";
     static final String DATA_TRANSFER_STATS_CONNECTED_TIME = "dataTransferStatsConnectedTime";
     static final String DATA_TRANSFER_STATS_TOTAL_BYTES_SENT = "dataTransferStatsTotalBytesSent";
     static final String DATA_TRANSFER_STATS_TOTAL_BYTES_RECEIVED = "dataTransferStatsTotalBytesReceived";
@@ -183,6 +187,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         long downstreamRateLimitBytesPerSecond = -1;
         VpnAppsUtils.VpnAppsExclusionSetting vpnMode = VpnAppsUtils.VpnAppsExclusionSetting.ALL_APPS;
         ArrayList<String> vpnApps = new ArrayList<>();
+        public boolean isPersonalPairingMode;
 
         boolean isConnected() {
             return networkConnectionState == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED;
@@ -210,6 +215,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     private PendingIntent m_notificationPendingIntent;
 
     private PublishRelay<TunnelState.ConnectionData.NetworkConnectionState> m_networkConnectionStatePublishRelay = PublishRelay.create();
+    private final BehaviorRelay<Boolean> m_desiredPersonalPairingModeRelay = BehaviorRelay.createDefault(false);
     private PublishRelay<Object> m_newClientPublishRelay = PublishRelay.create();
     private CompositeDisposable m_compositeDisposable = new CompositeDisposable();
     private Disposable conduitStateObserver;
@@ -237,6 +243,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         m_context = parentService;
         m_isStopping = new AtomicBoolean(false);
         unsafeTrafficSubjects = new ArrayList<>();
+        m_incomingMessageHandlerThread = new HandlerThread("TunnelManagerIncomingMessageHandler");
+        m_incomingMessageHandlerThread.start();
+        m_incomingMessenger = new Messenger(
+                new IncomingMessageHandler(m_incomingMessageHandlerThread.getLooper(), this));
     }
 
     void onCreate() {
@@ -327,6 +337,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     tunnelConfigManager.initConfiguration(conduitStateSingle(), deviceLocationSingle(), purchaseVerifier.subscriptionStateSingle())
                             .doOnSuccess(config -> {
                                 MyLog.i("TunnelManager: tunnel config initialized");
+                                syncDesiredPersonalPairingModeFromConfig();
                                 m_tunnelThread = new Thread(this::runTunnel);
                                 m_tunnelThread.start();
                                 tunnelThreadStartedLock.countDown();
@@ -340,6 +351,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     tunnelConfigManager.observeTunnelConfig()
                             .skip(1) // Skip the initial config value
                             .doOnNext(config -> {
+                                syncDesiredPersonalPairingModeFromConfig();
                                 // Perform a tunnel restart when a new tunnel config is received and we are not in the process of stopping
                                 if (!m_isStopping.get()) {
                                     TunnelConfigManager.RestartType restartType = config.getRestartType();
@@ -412,8 +424,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
     // Sends handshake intent and tunnel state updates to the client Activity,
     // Also updates service notification and forwards tunnel state data to purchaseVerifier.
     private Disposable connectionStatusUpdaterDisposable() {
-        final AppPreferences multiProcessPreferences = new AppPreferences(getContext());
-        return connectionObservable()
+        Observable<TunnelState.ConnectionData.NetworkConnectionState> networkConnectionStateObservable = connectionObservable()
                 .switchMap(pair -> {
                     TunnelState.ConnectionData.NetworkConnectionState networkConnectionState = pair.first;
                     boolean isRoutingThroughTunnel = pair.second;
@@ -457,8 +468,16 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                     }
                     return Observable.just(networkConnectionState);
                 })
-                .distinctUntilChanged()
-                .doOnNext(networkConnectionState -> {
+                .distinctUntilChanged();
+
+        return Observable.combineLatest(
+                        networkConnectionStateObservable,
+                        m_desiredPersonalPairingModeRelay.distinctUntilChanged(),
+                        ((BiFunction<TunnelState.ConnectionData.NetworkConnectionState, Boolean,
+                                Pair<TunnelState.ConnectionData.NetworkConnectionState, Boolean>>) Pair::new))
+                .doOnNext(stateAndPairingMode -> {
+                    TunnelState.ConnectionData.NetworkConnectionState networkConnectionState = stateAndPairingMode.first;
+                    m_tunnelState.isPersonalPairingMode = stateAndPairingMode.second;
                     m_tunnelState.networkConnectionState = networkConnectionState;
                     sendClientMessage(ServiceToClientMessage.TUNNEL_CONNECTION_STATE.ordinal(), getTunnelStateBundle());
                     // Don't update notification to CONNECTING, etc., when a stop was commanded.
@@ -577,6 +596,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         m_vpnManager.unregisterHostService();
         // Stop and dispose of all observable chains in the purchaseVerifier
         purchaseVerifier.stop();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            m_incomingMessageHandlerThread.quitSafely();
+        } else {
+            m_incomingMessageHandlerThread.quit();
+        }
     }
 
     private void cancelDisallowedTrafficAlertNotification() {
@@ -699,6 +724,27 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                         PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
+    private String getPersonalPairingCompartmentIdFromPreferences() {
+        AppPreferences preferences = new AppPreferences(getContext());
+        boolean personalPairingEnabled = preferences.getBoolean(
+                getContext().getString(R.string.personalPairingEnabledPreference), false);
+        if (!personalPairingEnabled) {
+            return "";
+        }
+        String compartmentId = preferences.getString(
+                getContext().getString(R.string.personalPairingCompartmentIdPreference), "");
+        compartmentId = PersonalPairingHelper.toStandardBase64CompartmentId(compartmentId);
+        return compartmentId == null ? "" : compartmentId;
+    }
+
+    private boolean getDesiredPersonalPairingModeFromPreferences() {
+        return !TextUtils.isEmpty(getPersonalPairingCompartmentIdFromPreferences());
+    }
+
+    private void syncDesiredPersonalPairingModeFromConfig() {
+        m_desiredPersonalPairingModeRelay.accept(getDesiredPersonalPairingModeFromPreferences());
+    }
+
     private Notification createNotification(
             boolean alert,
             TunnelState.ConnectionData.NetworkConnectionState networkConnectionState) {
@@ -708,7 +754,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         int defaults = 0;
 
         if (networkConnectionState == TunnelState.ConnectionData.NetworkConnectionState.CONNECTED) {
-            iconID = R.drawable.notification_icon_connected;
+            iconID = isPersonalPairingMode() ? R.drawable.notification_icon_connected_pp : R.drawable.notification_icon_connected;
             switch (vpnAppsExclusionSetting) {
                 case INCLUDE_APPS:
                     contentText = getContext().getResources()
@@ -730,7 +776,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             contentText = getContext().getString(R.string.waiting_for_network_connectivity);
             ticker = getContext().getText(R.string.waiting_for_network_connectivity);
         } else {
-            iconID = R.drawable.notification_icon_connecting_animation;
+            iconID = isPersonalPairingMode() ? R.drawable.notification_icon_connecting_animation_pp : R.drawable.notification_icon_connecting_animation;
             contentText = getContext().getString(R.string.psiphon_service_notification_message_connecting);
             ticker = getContext().getText(R.string.psiphon_service_notification_message_connecting);
         }
@@ -777,6 +823,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 .addAction(notificationAction)
                 .setOngoing(true)
                 .build();
+    }
+
+    private boolean isPersonalPairingMode() {
+        return Boolean.TRUE.equals(m_desiredPersonalPairingModeRelay.getValue());
     }
 
     /**
@@ -836,8 +886,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         }
     }
 
-    private final Messenger m_incomingMessenger = new Messenger(
-            new IncomingMessageHandler(this));
+    private final HandlerThread m_incomingMessageHandlerThread;
+    private final Messenger m_incomingMessenger;
     private final HashMap<Integer, MessengerWrapper> mClients = new HashMap<>();
 
 
@@ -845,7 +895,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         private final WeakReference<TunnelManager> mTunnelManager;
         private final ClientToServiceMessage[] csm = ClientToServiceMessage.values();
 
-        IncomingMessageHandler(TunnelManager manager) {
+        IncomingMessageHandler(Looper looper, TunnelManager manager) {
+            super(looper);
             mTunnelManager = new WeakReference<>(manager);
         }
 
@@ -876,7 +927,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                                 return;
                             }
                         }
-                        manager.mClients.put(msg.replyTo.hashCode(), client);
+                        synchronized (manager.mClients) {
+                            manager.mClients.put(msg.replyTo.hashCode(), client);
+                        }
                         manager.m_newClientPublishRelay.accept(new Object());
 
                         // Note that we no longer triggering purchaseVerifier.queryAllPurchases here because the purchaseVerifier
@@ -887,20 +940,24 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
                 case UNREGISTER:
                     if (manager != null) {
-                        manager.mClients.remove(msg.replyTo.hashCode());
+                        synchronized (manager.mClients) {
+                            manager.mClients.remove(msg.replyTo.hashCode());
+                        }
                     }
                     break;
 
                 case STOP_SERVICE:
                     if (manager != null) {
                         // Ignore the message if the sender is not registered
-                        if (manager.mClients.get(msg.replyTo.hashCode()) == null) {
-                            return;
+                        synchronized (manager.mClients) {
+                            if (manager.mClients.get(msg.replyTo.hashCode()) == null) {
+                                return;
+                            }
+                            // Do not send any more messages after a stop was commanded.
+                            // Client side will receive a ServiceConnection.onServiceDisconnected callback
+                            // when the service finally stops.
+                            manager.mClients.clear();
                         }
-                        // Do not send any more messages after a stop was commanded.
-                        // Client side will receive a ServiceConnection.onServiceDisconnected callback
-                        // when the service finally stops.
-                        manager.mClients.clear();
                         manager.signalStopService();
                     }
                     break;
@@ -908,13 +965,16 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 case RESTART_TUNNEL:
                     if (manager != null) {
                         // Ignore the message if the sender is not registered
-                        if (manager.mClients.get(msg.replyTo.hashCode()) == null) {
-                            return;
+                        synchronized (manager.mClients) {
+                            if (manager.mClients.get(msg.replyTo.hashCode()) == null) {
+                                return;
+                            }
                         }
 
                         // On a restart, a new tunnel configuration is created and emitted via tunnelConfigManager.observeTunnelConfig()
                         // This emission automatically triggers a tunnel restart through the Rx subscription in the onStartCommand() method.
                         MyLog.i("TunnelManager: received restart tunnel message");
+                        manager.m_desiredPersonalPairingModeRelay.accept(manager.getDesiredPersonalPairingModeFromPreferences());
                         manager.m_compositeDisposable.add(
                                 manager.tunnelConfigManager.initConfiguration(manager.conduitStateSingle(),
                                                 manager.deviceLocationSingle(),
@@ -926,8 +986,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
                 case CHANGED_LOCALE:
                     if (manager != null) {
                         // Ignore the message if the sender is not registered
-                        if (manager.mClients.get(msg.replyTo.hashCode()) == null) {
-                            return;
+                        synchronized (manager.mClients) {
+                            if (manager.mClients.get(msg.replyTo.hashCode()) == null) {
+                                return;
+                            }
                         }
                         setLocale(manager);
                     }
@@ -935,7 +997,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
                 case NFC_CONNECTION_INFO_EXCHANGE_EXPORT:
                     if (manager != null) {
-                        MessengerWrapper client = manager.mClients.get(msg.replyTo.hashCode());
+                        MessengerWrapper client;
+                        synchronized (manager.mClients) {
+                            client = manager.mClients.get(msg.replyTo.hashCode());
+                        }
                         if (client != null) {
                             String exportExchangePayload = manager.m_tunnel.exportExchangePayload();
                             Bundle bundle = new Bundle();
@@ -1030,27 +1095,31 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
 
     private void sendClientMessage(int what, Bundle data) {
         Message msg = composeClientMessage(what, data);
-        for (Iterator i = mClients.entrySet().iterator(); i.hasNext(); ) {
-            Map.Entry pair = (Map.Entry) i.next();
-            MessengerWrapper messenger = (MessengerWrapper) pair.getValue();
-            try {
-                messenger.send(msg);
-            } catch (RemoteException e) {
-                // The client is dead.  Remove it from the list;
-                i.remove();
+        synchronized (mClients) {
+            for (Iterator i = mClients.entrySet().iterator(); i.hasNext(); ) {
+                Map.Entry pair = (Map.Entry) i.next();
+                MessengerWrapper messenger = (MessengerWrapper) pair.getValue();
+                try {
+                    messenger.send(msg);
+                } catch (RemoteException e) {
+                    // The client is dead.  Remove it from the list;
+                    i.remove();
+                }
             }
         }
     }
 
     private boolean pingForActivity() {
         Message msg = composeClientMessage(ServiceToClientMessage.PING.ordinal(), null);
-        for (Map.Entry<Integer, MessengerWrapper> entry : mClients.entrySet()) {
-            MessengerWrapper messenger = entry.getValue();
-            if (messenger.isActivity) {
-                try {
-                    messenger.send(msg);
-                    return true;
-                } catch (RemoteException ignore) {
+        synchronized (mClients) {
+            for (Map.Entry<Integer, MessengerWrapper> entry : mClients.entrySet()) {
+                MessengerWrapper messenger = entry.getValue();
+                if (messenger.isActivity) {
+                    try {
+                        messenger.send(msg);
+                        return true;
+                    } catch (RemoteException ignore) {
+                    }
                 }
             }
         }
@@ -1086,6 +1155,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         data.putLong(DATA_TUNNEL_STATE_DOWNSTREAM_RATE_LIMIT, m_tunnelState.downstreamRateLimitBytesPerSecond);
         data.putSerializable(DATA_TUNNEL_STATE_VPN_MODE, m_tunnelState.vpnMode);
         data.putStringArrayList(DATA_TUNNEL_STATE_VPN_APPS, m_tunnelState.vpnApps);
+        data.putBoolean(DATA_TUNNEL_STATE_IS_PERSONAL_PAIRING_MODE, isPersonalPairingMode());
         return data;
     }
 
@@ -1552,6 +1622,19 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             }
 
             json.put("EmitBytesTransferred", true);
+
+            // Set personal pairing config if preferences contain a non-empty compartment ID.
+            AppPreferences preferences = new AppPreferences(context);
+            boolean personalPairingEnabled = preferences.getBoolean(
+                    context.getString(R.string.personalPairingEnabledPreference), false);
+            if (personalPairingEnabled) {
+                String personalPairingCompartmentId = preferences.getString(
+                        context.getString(R.string.personalPairingCompartmentIdPreference), "");
+                personalPairingCompartmentId = PersonalPairingHelper.toStandardBase64CompartmentId(personalPairingCompartmentId);
+                if (!TextUtils.isEmpty(personalPairingCompartmentId)) {
+                    json.put("InproxyClientPersonalCompartmentID", personalPairingCompartmentId);
+                }
+            }
 
             return json.toString();
         } catch (JSONException e) {

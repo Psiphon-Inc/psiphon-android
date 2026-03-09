@@ -165,4 +165,44 @@
   <string name="app_update_restart">Installa</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Aggiornamento fallito</string>
+
+  <string name="preference_summary_personal_pairing_enabled">Abilitato</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">Tramite %1$s</string>
+  <string name="preference_summary_personal_pairing_disabled">Disabilitato</string>
+  <string name="personal_pairing_screen_title">Connettiti tramite la stazione Conduit di un peer affidabile per una maggiore privacy e accesso. Avrai bisogno di un collegamento di accoppiamento per iniziare.</string>
+  <string name="personal_pairing_enable_title">Abilita abbinamento personale</string>
+  <string name="personal_pairing_enable_summary">Connettersi tramite la stazione Conduit</string>
+  <string name="personal_pairing_import_title">Importa l\'URL di abbinamento</string>
+  <string name="personal_pairing_import_dialog_title">URL di abbinamento</string>
+  <string name="personal_pairing_url_hint">Incolla qui l\'URL di abbinamento</string>
+  <string name="personal_pairing_invalid_url">Formato URL di abbinamento non valido</string>
+  <string name="personal_pairing_invalid_data">Formato dati di abbinamento non valido</string>
+  <string name="personal_pairing_unsupported_version">Versione del token di accoppiamento non supportata</string>
+  <string name="personal_pairing_need_compartment_id">Importa prima un URL di accoppiamento</string>
+  <string name="personal_pairing_compartment_id_title">ID di accoppiamento</string>
+  <string name="personal_pairing_compartment_id_summary">Il tuo identificatore di abbinamento univoco</string>
+  <string name="personal_pairing_alias_title">Alias ​​di abbinamento</string>
+  <string name="personal_pairing_alias_summary">Un nome descrittivo per questa configurazione di accoppiamento</string>
+  <string name="import_button">Importare</string>
+  <string name="label_personal_pairing_settings">Abbinamento personale</string>
+  <string name="personal_pairing_turn_off_prompt">Problemi di connessione? Disattiva l\'abbinamento personale</string>
+  <string name="personal_pairing_data_import_success">Configurazione dell\'abbinamento personale salvata</string>
+  <string name="personal_pairing_data_update_success">Configurazione dell\'abbinamento personale aggiornata</string>
+  <string name="personal_pairing_data_already_exists">La configurazione di abbinamento personale esiste già</string>
+  <string name="personal_pairing_update_title">Aggiorna i dati di abbinamento personale</string>
+  <string name="personal_pairing_update_current_id_label">ID di abbinamento personale attuale:</string>
+  <string name="personal_pairing_update_new_id_label">Nuovo ID di abbinamento personale:</string>
+  <string name="personal_pairing_update_positive_button">Aggiornamento</string>
+  <string name="personal_pairing_update_negative_button">Cancellare</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Abilita abbinamento personale</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">Vuoi abilitare l\'abbinamento personale adesso? Ciò riavvierà il tunnel attivo. In caso contrario, le impostazioni verranno importate e rimarranno disabilitate finché non verranno abilitate manualmente nelle impostazioni dell\'applicazione.</string>
+  <string name="personal_pairing_reset_title">Reimposta l\'abbinamento personale</string>
+  <string name="personal_pairing_reset_summary">Rimuovi permanentemente questa configurazione di abbinamento personale</string>
+  <string name="personal_pairing_reset_dialog_title">Reimposta l\'abbinamento personale</string>
+  <string name="personal_pairing_delete_hint">Inserisci i simboli per confermare</string>
+  <string name="personal_pairing_delete_message">Per rimuovere questa configurazione di abbinamento personale, inserisci gli ultimi simboli %d dell\'ID di abbinamento:</string>
+  <string name="personal_pairing_reset_error">Impossibile reimpostare la configurazione</string>
+  <string name="personal_pairing_reset_invalid">Inserisci i simboli di conferma corretti</string>
+  <string name="personal_pairing_reset_success">Ripristino della configurazione</string>
+  <string name="reset_button">Reset</string>
 </resources>

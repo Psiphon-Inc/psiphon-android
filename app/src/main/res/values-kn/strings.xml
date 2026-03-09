@@ -162,4 +162,44 @@
   <string name="app_update_restart">ಸ್ಥಾಪಿಸಿ</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">ಅಪ್‌ಡೇಟ್ ವಿಫಲ</string>
+
+  <string name="preference_summary_personal_pairing_enabled">ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">%1$s ಮೂಲಕ</string>
+  <string name="preference_summary_personal_pairing_disabled">ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ</string>
+  <string name="personal_pairing_screen_title">ವರ್ಧಿತ ಗೌಪ್ಯತೆ ಮತ್ತು ಪ್ರವೇಶಕ್ಕಾಗಿ ವಿಶ್ವಾಸಾರ್ಹ ಪೀರ್‌ನ ವಾಹಿನಿ ನಿಲ್ದಾಣದ ಮೂಲಕ ಸಂಪರ್ಕಿಸಿ. ಪ್ರಾರಂಭಿಸಲು ನಿಮಗೆ ಜೋಡಿಸುವ ಲಿಂಕ್ ಅಗತ್ಯವಿದೆ.</string>
+  <string name="personal_pairing_enable_title">ವೈಯಕ್ತಿಕ ಜೋಡಣೆಯನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಿ</string>
+  <string name="personal_pairing_enable_summary">ವಾಹಕ ನಿಲ್ದಾಣದ ಮೂಲಕ ಸಂಪರ್ಕಿಸಿ</string>
+  <string name="personal_pairing_import_title">ಜೋಡಿಸುವ URL ಅನ್ನು ಆಮದು ಮಾಡಿ</string>
+  <string name="personal_pairing_import_dialog_title">URL ಅನ್ನು ಜೋಡಿಸಲಾಗುತ್ತಿದೆ</string>
+  <string name="personal_pairing_url_hint">ಜೋಡಿಸುವ URL ಅನ್ನು ಇಲ್ಲಿ ಅಂಟಿಸಿ</string>
+  <string name="personal_pairing_invalid_url">ಅಮಾನ್ಯವಾದ ಜೋಡಣೆ URL ಫಾರ್ಮ್ಯಾಟ್</string>
+  <string name="personal_pairing_invalid_data">ಅಮಾನ್ಯವಾದ ಪೇರಿಂಗ್ ಡೇಟಾ ಫಾರ್ಮ್ಯಾಟ್</string>
+  <string name="personal_pairing_unsupported_version">ಬೆಂಬಲಿತವಲ್ಲದ ಜೋಡಣೆ ಟೋಕನ್ ಆವೃತ್ತಿ</string>
+  <string name="personal_pairing_need_compartment_id">ದಯವಿಟ್ಟು ಮೊದಲು ಜೋಡಿಸುವ URL ಅನ್ನು ಆಮದು ಮಾಡಿ</string>
+  <string name="personal_pairing_compartment_id_title">ಜೋಡಣೆ ID</string>
+  <string name="personal_pairing_compartment_id_summary">ನಿಮ್ಮ ಅನನ್ಯ ಜೋಡಣೆ ಗುರುತಿಸುವಿಕೆ</string>
+  <string name="personal_pairing_alias_title">ಜೋಡಣೆ ಅಲಿಯಾಸ್</string>
+  <string name="personal_pairing_alias_summary">ಈ ಜೋಡಣೆಯ ಕಾನ್ಫಿಗರೇಶನ್‌ಗೆ ಸ್ನೇಹಿ ಹೆಸರು</string>
+  <string name="import_button">ಆಮದು ಮಾಡಿಕೊಳ್ಳಿ</string>
+  <string name="label_personal_pairing_settings">ವೈಯಕ್ತಿಕ ಜೋಡಣೆ</string>
+  <string name="personal_pairing_turn_off_prompt">ಸಂಪರ್ಕಿಸುವಲ್ಲಿ ಸಮಸ್ಯೆ ಇದೆಯೇ? ವೈಯಕ್ತಿಕ ಜೋಡಣೆಯನ್ನು ಆಫ್ ಮಾಡಿ</string>
+  <string name="personal_pairing_data_import_success">ವೈಯಕ್ತಿಕ ಜೋಡಣೆಯ ಸಂರಚನೆಯನ್ನು ಉಳಿಸಲಾಗಿದೆ</string>
+  <string name="personal_pairing_data_update_success">ವೈಯಕ್ತಿಕ ಜೋಡಣೆ ಕಾನ್ಫಿಗರೇಶನ್ ಅನ್ನು ನವೀಕರಿಸಲಾಗಿದೆ</string>
+  <string name="personal_pairing_data_already_exists">ವೈಯಕ್ತಿಕ ಜೋಡಣೆ ಕಾನ್ಫಿಗರೇಶನ್ ಈಗಾಗಲೇ ಅಸ್ತಿತ್ವದಲ್ಲಿದೆ</string>
+  <string name="personal_pairing_update_title">ವೈಯಕ್ತಿಕ ಜೋಡಣೆ ಡೇಟಾವನ್ನು ನವೀಕರಿಸಿ</string>
+  <string name="personal_pairing_update_current_id_label">ಪ್ರಸ್ತುತ ವೈಯಕ್ತಿಕ ಜೋಡಣೆ ID:</string>
+  <string name="personal_pairing_update_new_id_label">ಹೊಸ ವೈಯಕ್ತಿಕ ಜೋಡಣೆ ಐಡಿ:</string>
+  <string name="personal_pairing_update_positive_button">ನವೀಕರಿಸಿ</string>
+  <string name="personal_pairing_update_negative_button">ರದ್ದುಮಾಡು</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">ವೈಯಕ್ತಿಕ ಜೋಡಣೆಯನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಿ</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">ಈಗ ವೈಯಕ್ತಿಕ ಜೋಡಣೆಯನ್ನು ಸಕ್ರಿಯಗೊಳಿಸುವುದೇ? ಇದು ಸಕ್ರಿಯ ಸುರಂಗವನ್ನು ಮರುಪ್ರಾರಂಭಿಸುತ್ತದೆ. ಇಲ್ಲದಿದ್ದರೆ, ಅಪ್ಲಿಕೇಶನ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ ಹಸ್ತಚಾಲಿತವಾಗಿ ಸಕ್ರಿಯಗೊಳಿಸುವವರೆಗೆ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಆಮದು ಮಾಡಿಕೊಳ್ಳಲಾಗುತ್ತದೆ ಮತ್ತು ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಲಾಗುತ್ತದೆ.</string>
+  <string name="personal_pairing_reset_title">ವೈಯಕ್ತಿಕ ಜೋಡಣೆಯನ್ನು ಮರುಹೊಂದಿಸಿ</string>
+  <string name="personal_pairing_reset_summary">ಈ ವೈಯಕ್ತಿಕ ಜೋಡಣೆ ಕಾನ್ಫಿಗರೇಶನ್ ಅನ್ನು ಶಾಶ್ವತವಾಗಿ ತೆಗೆದುಹಾಕಿ</string>
+  <string name="personal_pairing_reset_dialog_title">ವೈಯಕ್ತಿಕ ಜೋಡಣೆಯನ್ನು ಮರುಹೊಂದಿಸಿ</string>
+  <string name="personal_pairing_delete_hint">ದೃಢೀಕರಿಸಲು ಚಿಹ್ನೆಗಳನ್ನು ನಮೂದಿಸಿ</string>
+  <string name="personal_pairing_delete_message">ಈ ವೈಯಕ್ತಿಕ ಜೋಡಿಸುವಿಕೆಯ ಕಾನ್ಫಿಗರೇಶನ್ ಅನ್ನು ತೆಗೆದುಹಾಕಲು, ಜೋಡಿಸುವ ID ಯ ಕೊನೆಯ %d ಚಿಹ್ನೆಗಳನ್ನು ನಮೂದಿಸಿ:</string>
+  <string name="personal_pairing_reset_error">ಕಾನ್ಫಿಗರೇಶನ್ ಅನ್ನು ಮರುಹೊಂದಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ</string>
+  <string name="personal_pairing_reset_invalid">ದಯವಿಟ್ಟು ಸರಿಯಾದ ದೃಢೀಕರಣ ಚಿಹ್ನೆಗಳನ್ನು ನಮೂದಿಸಿ</string>
+  <string name="personal_pairing_reset_success">ಕಾನ್ಫಿಗರೇಶನ್ ರೀಸೆಟ್</string>
+  <string name="reset_button">ಮರುಹೊಂದಿಸಿ</string>
 </resources>

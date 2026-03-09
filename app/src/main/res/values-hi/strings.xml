@@ -165,4 +165,44 @@
   <string name="app_update_restart">इंस्टॉल करें</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">अपडेट विफल</string>
+
+  <string name="preference_summary_personal_pairing_enabled">सक्रिय</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">%1$s के माध्यम से</string>
+  <string name="preference_summary_personal_pairing_disabled">अक्षम</string>
+  <string name="personal_pairing_screen_title">बेहतर गोपनीयता और पहुंच के लिए किसी विश्वसनीय सहकर्मी के कंड्यूट स्टेशन से जुड़ें। आरंभ करने के लिए आपको एक युग्मन लिंक की आवश्यकता होगी।</string>
+  <string name="personal_pairing_enable_title">व्यक्तिगत युग्मन सक्षम करें</string>
+  <string name="personal_pairing_enable_summary">कंड्यूट स्टेशन के माध्यम से कनेक्ट करें</string>
+  <string name="personal_pairing_import_title">युग्मन URL आयात करें</string>
+  <string name="personal_pairing_import_dialog_title">यूआरएल जोड़ना</string>
+  <string name="personal_pairing_url_hint">यहां पेयरिंग यूआरएल चिपकाएं</string>
+  <string name="personal_pairing_invalid_url">अमान्य युग्मन URL प्रारूप</string>
+  <string name="personal_pairing_invalid_data">अमान्य युग्मन डेटा प्रारूप</string>
+  <string name="personal_pairing_unsupported_version">असमर्थित युग्मन टोकन संस्करण</string>
+  <string name="personal_pairing_need_compartment_id">कृपया पहले एक युग्मन URL आयात करें</string>
+  <string name="personal_pairing_compartment_id_title">युग्मन आईडी</string>
+  <string name="personal_pairing_compartment_id_summary">आपका अद्वितीय युग्मन पहचानकर्ता</string>
+  <string name="personal_pairing_alias_title">युग्म उपनाम</string>
+  <string name="personal_pairing_alias_summary">इस युग्मन विन्यास के लिए एक अनुकूल नाम</string>
+  <string name="import_button">आयात</string>
+  <string name="label_personal_pairing_settings">व्यक्तिगत जोड़ी</string>
+  <string name="personal_pairing_turn_off_prompt">कनेक्ट करने में समस्या आ रही है? व्यक्तिगत युग्मन बंद करें</string>
+  <string name="personal_pairing_data_import_success">व्यक्तिगत युग्मन कॉन्फ़िगरेशन सहेजा गया</string>
+  <string name="personal_pairing_data_update_success">व्यक्तिगत युग्मन कॉन्फ़िगरेशन अद्यतन किया गया</string>
+  <string name="personal_pairing_data_already_exists">व्यक्तिगत युग्मन कॉन्फ़िगरेशन पहले से मौजूद है</string>
+  <string name="personal_pairing_update_title">व्यक्तिगत युग्मन डेटा अपडेट करें</string>
+  <string name="personal_pairing_update_current_id_label">वर्तमान व्यक्तिगत जोड़ी आईडी:</string>
+  <string name="personal_pairing_update_new_id_label">नई व्यक्तिगत जोड़ी आईडी:</string>
+  <string name="personal_pairing_update_positive_button">अद्यतन</string>
+  <string name="personal_pairing_update_negative_button">रद्द करना</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">व्यक्तिगत युग्मन सक्षम करें</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">अब व्यक्तिगत युग्मन सक्षम करें? यह सक्रिय सुरंग को पुनः आरंभ करेगा। अन्यथा, सेटिंग्स आयात की जाएंगी और एप्लिकेशन सेटिंग्स में मैन्युअल रूप से सक्षम होने तक अक्षम रहेंगी।</string>
+  <string name="personal_pairing_reset_title">व्यक्तिगत युग्मन रीसेट करें</string>
+  <string name="personal_pairing_reset_summary">इस व्यक्तिगत युग्मन कॉन्फ़िगरेशन को स्थायी रूप से हटा दें</string>
+  <string name="personal_pairing_reset_dialog_title">व्यक्तिगत युग्मन रीसेट करें</string>
+  <string name="personal_pairing_delete_hint">पुष्टि करने के लिए प्रतीक दर्ज करें</string>
+  <string name="personal_pairing_delete_message">इस व्यक्तिगत युग्मन कॉन्फ़िगरेशन को हटाने के लिए, युग्मन आईडी के अंतिम %d प्रतीक दर्ज करें:</string>
+  <string name="personal_pairing_reset_error">कॉन्फ़िगरेशन रीसेट करने में असमर्थ</string>
+  <string name="personal_pairing_reset_invalid">कृपया सही पुष्टि चिह्न दर्ज करें</string>
+  <string name="personal_pairing_reset_success">कॉन्फ़िगरेशन रीसेट</string>
+  <string name="reset_button">रीसेट करें</string>
 </resources>

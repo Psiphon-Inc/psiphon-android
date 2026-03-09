@@ -162,4 +162,44 @@
   <string name="app_update_restart">Installer</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Oppdatering mislyktes</string>
+
+  <string name="preference_summary_personal_pairing_enabled">Aktivert</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">Via %1$s</string>
+  <string name="preference_summary_personal_pairing_disabled">Funksjonshemmet</string>
+  <string name="personal_pairing_screen_title">Koble til via en pålitelig peers Conduit-stasjon for forbedret personvern og tilgang. Du trenger en koblingskobling for å komme i gang.</string>
+  <string name="personal_pairing_enable_title">Aktiver personlig sammenkobling</string>
+  <string name="personal_pairing_enable_summary">Koble til via Conduit-stasjon</string>
+  <string name="personal_pairing_import_title">Importer sammenkoblings-URL</string>
+  <string name="personal_pairing_import_dialog_title">Koblings-URL</string>
+  <string name="personal_pairing_url_hint">Lim inn sammenkoblings-URL her</string>
+  <string name="personal_pairing_invalid_url">Ugyldig nettadresseformat for sammenkobling</string>
+  <string name="personal_pairing_invalid_data">Ugyldig sammenkoblingsdataformat</string>
+  <string name="personal_pairing_unsupported_version">Ustøttet paringstokenversjon</string>
+  <string name="personal_pairing_need_compartment_id">Importer en sammenkoblings-URL først</string>
+  <string name="personal_pairing_compartment_id_title">Parings-ID</string>
+  <string name="personal_pairing_compartment_id_summary">Din unike sammenkoblingsidentifikator</string>
+  <string name="personal_pairing_alias_title">Paringsalias</string>
+  <string name="personal_pairing_alias_summary">Et vennlig navn for denne sammenkoblingskonfigurasjonen</string>
+  <string name="import_button">Import</string>
+  <string name="label_personal_pairing_settings">Personlig sammenkobling</string>
+  <string name="personal_pairing_turn_off_prompt">Problemer med å koble til? Slå av personlig sammenkobling</string>
+  <string name="personal_pairing_data_import_success">Personlig sammenkoblingskonfigurasjon lagret</string>
+  <string name="personal_pairing_data_update_success">Personlig sammenkoblingskonfigurasjon oppdatert</string>
+  <string name="personal_pairing_data_already_exists">Personlig sammenkoblingskonfigurasjon eksisterer allerede</string>
+  <string name="personal_pairing_update_title">Oppdater personlige sammenkoblingsdata</string>
+  <string name="personal_pairing_update_current_id_label">Gjeldende personlig sammenkoblings-ID:</string>
+  <string name="personal_pairing_update_new_id_label">Ny personlig sammenkoblings-ID:</string>
+  <string name="personal_pairing_update_positive_button">Oppdater</string>
+  <string name="personal_pairing_update_negative_button">Kansellere</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Aktiver personlig sammenkobling</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">Vil du aktivere personlig sammenkobling nå? Dette vil starte den aktive tunnelen på nytt. Ellers vil innstillingene importeres og forbli deaktivert til de aktiveres manuelt i applikasjonsinnstillingene.</string>
+  <string name="personal_pairing_reset_title">Tilbakestill personlig sammenkobling</string>
+  <string name="personal_pairing_reset_summary">Fjern denne konfigurasjonen for personlig sammenkobling permanent</string>
+  <string name="personal_pairing_reset_dialog_title">Tilbakestill personlig sammenkobling</string>
+  <string name="personal_pairing_delete_hint">Skriv inn symboler for å bekrefte</string>
+  <string name="personal_pairing_delete_message">For å fjerne denne konfigurasjonen for personlig sammenkobling, skriv inn de siste %d-symbolene for sammenkoblings-IDen:</string>
+  <string name="personal_pairing_reset_error">Kan ikke tilbakestille konfigurasjonen</string>
+  <string name="personal_pairing_reset_invalid">Vennligst skriv inn korrekte bekreftelsessymboler</string>
+  <string name="personal_pairing_reset_success">Konfigurasjon tilbakestilt</string>
+  <string name="reset_button">Tilbakestill</string>
 </resources>

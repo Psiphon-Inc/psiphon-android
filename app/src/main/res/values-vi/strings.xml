@@ -165,4 +165,44 @@
   <string name="app_update_restart">Cài đặt</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Cập nhật thất bại</string>
+
+  <string name="preference_summary_personal_pairing_enabled">Đã bật</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">Qua %1$s</string>
+  <string name="preference_summary_personal_pairing_disabled">Tàn tật</string>
+  <string name="personal_pairing_screen_title">Kết nối thông qua trạm Conduit của một đối tác đáng tin cậy để tăng cường quyền riêng tư và quyền truy cập. Bạn sẽ cần một liên kết ghép nối để bắt đầu.</string>
+  <string name="personal_pairing_enable_title">Bật ghép nối cá nhân</string>
+  <string name="personal_pairing_enable_summary">Kết nối qua trạm Conduit</string>
+  <string name="personal_pairing_import_title">Nhập URL ghép nối</string>
+  <string name="personal_pairing_import_dialog_title">URL ghép nối</string>
+  <string name="personal_pairing_url_hint">Dán URL ghép nối vào đây</string>
+  <string name="personal_pairing_invalid_url">Định dạng URL ghép nối không hợp lệ</string>
+  <string name="personal_pairing_invalid_data">Định dạng dữ liệu ghép nối không hợp lệ</string>
+  <string name="personal_pairing_unsupported_version">Phiên bản mã thông báo ghép nối không được hỗ trợ</string>
+  <string name="personal_pairing_need_compartment_id">Trước tiên hãy nhập URL ghép nối</string>
+  <string name="personal_pairing_compartment_id_title">ID ghép nối</string>
+  <string name="personal_pairing_compartment_id_summary">Mã nhận dạng ghép nối duy nhất của bạn</string>
+  <string name="personal_pairing_alias_title">Bí danh ghép nối</string>
+  <string name="personal_pairing_alias_summary">Một cái tên thân thiện cho cấu hình ghép nối này</string>
+  <string name="import_button">Nhập khẩu</string>
+  <string name="label_personal_pairing_settings">Ghép đôi cá nhân</string>
+  <string name="personal_pairing_turn_off_prompt">Sự cố kết nối? Tắt ghép nối cá nhân</string>
+  <string name="personal_pairing_data_import_success">Đã lưu cấu hình Ghép nối cá nhân</string>
+  <string name="personal_pairing_data_update_success">Đã cập nhật cấu hình Ghép nối cá nhân</string>
+  <string name="personal_pairing_data_already_exists">Cấu hình Ghép nối cá nhân đã tồn tại</string>
+  <string name="personal_pairing_update_title">Cập nhật dữ liệu Ghép đôi cá nhân</string>
+  <string name="personal_pairing_update_current_id_label">ID ghép nối cá nhân hiện tại:</string>
+  <string name="personal_pairing_update_new_id_label">ID ghép nối cá nhân mới:</string>
+  <string name="personal_pairing_update_positive_button">Cập nhật</string>
+  <string name="personal_pairing_update_negative_button">Hủy bỏ</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Bật ghép nối cá nhân</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">Bật ghép nối cá nhân ngay bây giờ? Điều này sẽ khởi động lại đường hầm đang hoạt động. Nếu không, cài đặt sẽ được nhập và vẫn bị tắt cho đến khi được bật thủ công trong cài đặt ứng dụng.</string>
+  <string name="personal_pairing_reset_title">Đặt lại ghép nối cá nhân</string>
+  <string name="personal_pairing_reset_summary">Xóa vĩnh viễn cấu hình Ghép nối cá nhân này</string>
+  <string name="personal_pairing_reset_dialog_title">Đặt lại ghép nối cá nhân</string>
+  <string name="personal_pairing_delete_hint">Nhập ký hiệu để xác nhận</string>
+  <string name="personal_pairing_delete_message">Để xóa cấu hình Ghép nối cá nhân này, hãy nhập ký hiệu %d cuối cùng của ID ghép nối:</string>
+  <string name="personal_pairing_reset_error">Không thể thiết lập lại cấu hình</string>
+  <string name="personal_pairing_reset_invalid">Vui lòng nhập chính xác các ký hiệu xác nhận</string>
+  <string name="personal_pairing_reset_success">Đặt lại cấu hình</string>
+  <string name="reset_button">Cài lại</string>
 </resources>

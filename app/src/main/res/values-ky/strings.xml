@@ -159,4 +159,44 @@
   <string name="app_update_restart">Орнотуу</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Жаңылоо ишке ашпады</string>
+
+  <string name="preference_summary_personal_pairing_enabled">Иштетилди</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">%1$s аркылуу</string>
+  <string name="preference_summary_personal_pairing_disabled">Өчүрүлгөн</string>
+  <string name="personal_pairing_screen_title">Жакшыртылган купуялуулук жана мүмкүнчүлүк алуу үчүн ишенимдүү теңдештин Conduit станциясы аркылуу туташыңыз. Баштоо үчүн сизге жупташтыруу шилтемеси керек болот.</string>
+  <string name="personal_pairing_enable_title">Жеке жупташтыруу</string>
+  <string name="personal_pairing_enable_summary">Conduit станциясы аркылуу туташуу</string>
+  <string name="personal_pairing_import_title">Жупташтыруу URL\'ин импорттоо</string>
+  <string name="personal_pairing_import_dialog_title">Жупташуу URL</string>
+  <string name="personal_pairing_url_hint">Жупташтыруу URL\'ин бул жерге чаптаңыз</string>
+  <string name="personal_pairing_invalid_url">Жупташтыруу URL форматы жараксыз</string>
+  <string name="personal_pairing_invalid_data">Жупташтыруу маалымат форматы жараксыз</string>
+  <string name="personal_pairing_unsupported_version">Колдоого алынбаган жупташтыруучу токен версиясы</string>
+  <string name="personal_pairing_need_compartment_id">Сураныч, адегенде жупташтыруу URL дарегин импорттоо</string>
+  <string name="personal_pairing_compartment_id_title">Жупташуу ID</string>
+  <string name="personal_pairing_compartment_id_summary">Сиздин уникалдуу жупташуу идентификаторуңуз</string>
+  <string name="personal_pairing_alias_title">Жупташуу лакап ат</string>
+  <string name="personal_pairing_alias_summary">Бул жупташтыруу конфигурациясынын ыңгайлуу аталышы</string>
+  <string name="import_button">Импорттоо</string>
+  <string name="label_personal_pairing_settings">Жеке жупташуу</string>
+  <string name="personal_pairing_turn_off_prompt">Туташууда ката кеттиби? Жеке жупташтырууну өчүрүңүз</string>
+  <string name="personal_pairing_data_import_success">Жеке жупташтыруу конфигурациясы сакталды</string>
+  <string name="personal_pairing_data_update_success">Жеке жупташтыруу конфигурациясы жаңырды</string>
+  <string name="personal_pairing_data_already_exists">Жеке жупташуу конфигурациясы мурунтан эле бар</string>
+  <string name="personal_pairing_update_title">Жеке жупташтыруу дайындарын жаңыртыңыз</string>
+  <string name="personal_pairing_update_current_id_label">Учурдагы жеке жупташтыруу ID:</string>
+  <string name="personal_pairing_update_new_id_label">Жаңы жеке жупташтыруу ID:</string>
+  <string name="personal_pairing_update_positive_button">Жаңыртуу</string>
+  <string name="personal_pairing_update_negative_button">Жокко чыгаруу</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Жеке жупташтыруу</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">Жеке жупташтыруу азыр иштетилсинби? Бул активдүү туннелди кайра иштетет. Болбосо, орнотуулар импорттолуп, колдонмо жөндөөлөрүндө кол менен иштетилгенге чейин өчүрүлгөн бойдон калат.</string>
+  <string name="personal_pairing_reset_title">Жеке жупташтыруу</string>
+  <string name="personal_pairing_reset_summary">Бул Жеке жупташуу конфигурациясын биротоло алып салыңыз</string>
+  <string name="personal_pairing_reset_dialog_title">Жеке жупташтыруу</string>
+  <string name="personal_pairing_delete_hint">Ырастоо үчүн символдорду киргизиңиз</string>
+  <string name="personal_pairing_delete_message">Бул Жеке жупташуу конфигурациясын алып салуу үчүн Жупташтыруу IDнин акыркы %d символдорун киргизиңиз:</string>
+  <string name="personal_pairing_reset_error">Конфигурацияны баштапкы абалга келтирүү мүмкүн эмес</string>
+  <string name="personal_pairing_reset_invalid">Сураныч, туура ырастоо белгилерин киргизиңиз</string>
+  <string name="personal_pairing_reset_success">Конфигурацияны баштапкы абалга келтирүү</string>
+  <string name="reset_button">Калыбына келтирүү</string>
 </resources>

@@ -317,16 +317,20 @@ public class HomeTabFragment extends Fragment {
         if (!lastLogEntry.isEmpty()) {
             lastLogEntryTv.setText(lastLogEntry);
         }
+        int statusIconResId;
         if (tunnelState.isRunning()) {
             if (tunnelState.connectionData().isConnected()) {
-                tunnelStateImageView.setImageResource(R.drawable.status_icon_connected);
+                statusIconResId = tunnelState.connectionData().personalPairingEnabled() ?
+                        R.drawable.status_icon_connected_pp : R.drawable.status_icon_connected;
             } else {
-                tunnelStateImageView.setImageResource(R.drawable.status_icon_connecting);
+                statusIconResId = tunnelState.connectionData().personalPairingEnabled() ?
+                        R.drawable.status_icon_connecting_pp : R.drawable.status_icon_connecting;
             }
         } else {
             // the tunnel state is either unknown or not running
-            tunnelStateImageView.setImageResource(R.drawable.status_icon_disconnected);
+            statusIconResId = R.drawable.status_icon_disconnected;
         }
+        tunnelStateImageView.setImageResource(statusIconResId);
     }
 
     private static class UiState {

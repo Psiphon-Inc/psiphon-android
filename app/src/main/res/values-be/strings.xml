@@ -165,4 +165,44 @@
   <string name="app_update_restart">Усталяваць</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Абнаўленне не ўдалося</string>
+
+  <string name="preference_summary_personal_pairing_enabled">Уключана</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">Праз %1$s</string>
+  <string name="preference_summary_personal_pairing_disabled">Інваліды</string>
+  <string name="personal_pairing_screen_title">Падключайцеся праз станцыю Conduit даверанага піра для павышэння прыватнасці і доступу. Каб пачаць, вам спатрэбіцца спасылка для спалучэння.</string>
+  <string name="personal_pairing_enable_title">Уключыць асабістае спалучэнне</string>
+  <string name="personal_pairing_enable_summary">Падключыцеся праз станцыю Conduit</string>
+  <string name="personal_pairing_import_title">Імпарт спалучэння URL</string>
+  <string name="personal_pairing_import_dialog_title">Спалучэнне URL</string>
+  <string name="personal_pairing_url_hint">Устаўце сюды URL для спалучэння</string>
+  <string name="personal_pairing_invalid_url">Няправільны фармат URL-адраса спалучэння</string>
+  <string name="personal_pairing_invalid_data">Няправільны фармат даных спалучэння</string>
+  <string name="personal_pairing_unsupported_version">Версія токена спалучэння не падтрымліваецца</string>
+  <string name="personal_pairing_need_compartment_id">Спачатку імпартуйце URL для спалучэння</string>
+  <string name="personal_pairing_compartment_id_title">Ідэнтыфікатар спалучэння</string>
+  <string name="personal_pairing_compartment_id_summary">Ваш унікальны ідэнтыфікатар спалучэння</string>
+  <string name="personal_pairing_alias_title">Спалучэнне псеўданіма</string>
+  <string name="personal_pairing_alias_summary">Зручная назва для гэтай канфігурацыі спалучэння</string>
+  <string name="import_button">Імпарт</string>
+  <string name="label_personal_pairing_settings">Персанальнае спалучэнне</string>
+  <string name="personal_pairing_turn_off_prompt">Праблемы з падключэннем? Выключыце персанальнае спалучэнне</string>
+  <string name="personal_pairing_data_import_success">Асабістая канфігурацыя спалучэння захавана</string>
+  <string name="personal_pairing_data_update_success">Канфігурацыя персанальнага спалучэння абноўлена</string>
+  <string name="personal_pairing_data_already_exists">Асабістая канфігурацыя спалучэння ўжо існуе</string>
+  <string name="personal_pairing_update_title">Абнавіце асабістыя даныя спалучэння</string>
+  <string name="personal_pairing_update_current_id_label">Бягучы асабісты ідэнтыфікатар спалучэння:</string>
+  <string name="personal_pairing_update_new_id_label">Новы асабісты ідэнтыфікатар спалучэння:</string>
+  <string name="personal_pairing_update_positive_button">Абнаўленне</string>
+  <string name="personal_pairing_update_negative_button">Адмяніць</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Уключыць асабістае спалучэнне</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">Уключыць асабістае спалучэнне? Гэта перазапусціць актыўны тунэль. У адваротным выпадку налады будуць імпартаваны і застануцца адключанымі, пакуль не будуць уключаны ўручную ў наладах прыкладання.</string>
+  <string name="personal_pairing_reset_title">Скінуць персанальнае спалучэнне</string>
+  <string name="personal_pairing_reset_summary">Выдаліце ​​гэту канфігурацыю персанальнага спалучэння назаўжды</string>
+  <string name="personal_pairing_reset_dialog_title">Скінуць персанальнае спалучэнне</string>
+  <string name="personal_pairing_delete_hint">Увядзіце сімвалы для пацверджання</string>
+  <string name="personal_pairing_delete_message">Каб выдаліць гэту персанальную канфігурацыю спалучэння, увядзіце апошнія %d сімвалы ідэнтыфікатара спалучэння:</string>
+  <string name="personal_pairing_reset_error">Немагчыма скінуць канфігурацыю</string>
+  <string name="personal_pairing_reset_invalid">Увядзіце правільныя сімвалы пацверджання</string>
+  <string name="personal_pairing_reset_success">Скід канфігурацыі</string>
+  <string name="reset_button">Скінуць</string>
 </resources>

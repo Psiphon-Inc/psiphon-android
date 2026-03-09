@@ -161,4 +161,44 @@
   <string name="app_update_restart">Shigar</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Sabuntawa ta gaza</string>
+
+  <string name="preference_summary_personal_pairing_enabled">An kunna</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">Ta hanyar %1$s</string>
+  <string name="preference_summary_personal_pairing_disabled">An kashe</string>
+  <string name="personal_pairing_screen_title">Haɗa ta hanyar amintaccen tashar Conduit ta abokin aiki don haɓaka keɓaɓɓu da samun dama. Kuna buƙatar hanyar haɗi don farawa.</string>
+  <string name="personal_pairing_enable_title">Kunna Haɗin Kan Keɓaɓɓu</string>
+  <string name="personal_pairing_enable_summary">Haɗa ta tashar Conduit</string>
+  <string name="personal_pairing_import_title">Shigo URL ɗin haɗin kai</string>
+  <string name="personal_pairing_import_dialog_title">Haɗin URL</string>
+  <string name="personal_pairing_url_hint">Manna URL ɗin haɗin kai anan</string>
+  <string name="personal_pairing_invalid_url">Tsarin URL mara inganci</string>
+  <string name="personal_pairing_invalid_data">Tsarin bayanai mara inganci</string>
+  <string name="personal_pairing_unsupported_version">Sigar alamar haɗin kai mara tallafi</string>
+  <string name="personal_pairing_need_compartment_id">Da fatan za a fara shigo da URL ɗin haɗin gwiwa</string>
+  <string name="personal_pairing_compartment_id_title">ID ɗin haɗin kai</string>
+  <string name="personal_pairing_compartment_id_summary">Mai gano haɗin haɗin ku na musamman</string>
+  <string name="personal_pairing_alias_title">Sunan mai haɗawa da juna</string>
+  <string name="personal_pairing_alias_summary">Sunan abokantaka don wannan daidaitawar haɗin kai</string>
+  <string name="import_button">Shigo da</string>
+  <string name="label_personal_pairing_settings">Haɗin kai na sirri</string>
+  <string name="personal_pairing_turn_off_prompt">Matsalar haɗawa? Kashe Haɗin Kai</string>
+  <string name="personal_pairing_data_import_success">Ajiye saitin Haɗin kai na sirri</string>
+  <string name="personal_pairing_data_update_success">An sabunta saitin Haɗin kai na sirri</string>
+  <string name="personal_pairing_data_already_exists">Tsarin Haɗin kai na sirri ya riga ya wanzu</string>
+  <string name="personal_pairing_update_title">Sabunta bayanan Haɗin kai na sirri</string>
+  <string name="personal_pairing_update_current_id_label">ID na Haɗin Haɗin Kai na Yanzu:</string>
+  <string name="personal_pairing_update_new_id_label">Sabuwar ID Haɗin Haɗin Kai:</string>
+  <string name="personal_pairing_update_positive_button">Sabuntawa</string>
+  <string name="personal_pairing_update_negative_button">Soke</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Kunna Haɗin Kan Keɓaɓɓu</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">Kunna haɗin kai na sirri yanzu? Wannan zai sake kunna rami mai aiki. In ba haka ba, za a shigo da saituna kuma su kasance a kashe har sai an kunna su da hannu a cikin saitunan aikace-aikacen.</string>
+  <string name="personal_pairing_reset_title">Sake saita Haɗin Kan Keɓaɓɓu</string>
+  <string name="personal_pairing_reset_summary">Cire wannan saitin Haɗin Haɗin kai na dindindin</string>
+  <string name="personal_pairing_reset_dialog_title">Sake saita Haɗin Kan Keɓaɓɓu</string>
+  <string name="personal_pairing_delete_hint">Shigar da alamomi don tabbatarwa</string>
+  <string name="personal_pairing_delete_message">Don cire wannan saitin Haɗin Haɗin Kai, shigar da alamomin %d na ƙarshe na ID ɗin Haɗawa:</string>
+  <string name="personal_pairing_reset_error">An kasa sake saita saiti</string>
+  <string name="personal_pairing_reset_invalid">Da fatan za a shigar da daidai alamun tabbatarwa</string>
+  <string name="personal_pairing_reset_success">Sake saitin saitin</string>
+  <string name="reset_button">Sake saitin</string>
 </resources>

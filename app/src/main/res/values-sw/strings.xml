@@ -166,4 +166,44 @@
   <string name="app_update_restart">Sakinisha</string>
   <!--Generic toast message shown when an app update fails to download or install-->
   <string name="app_update_error">Sasisho limeshindwa</string>
+
+  <string name="preference_summary_personal_pairing_enabled">Imewashwa</string>
+  <string name="preference_summary_personal_pairing_enabled_with_alias">Kupitia %1$s</string>
+  <string name="preference_summary_personal_pairing_disabled">Imezimwa</string>
+  <string name="personal_pairing_screen_title">Unganisha kupitia kituo cha mfereji wa rika unaoaminika kwa faragha na ufikiaji ulioimarishwa. Utahitaji kiungo cha kuoanisha ili kuanza.</string>
+  <string name="personal_pairing_enable_title">Washa Uoanishaji wa Kibinafsi</string>
+  <string name="personal_pairing_enable_summary">Unganisha kupitia kituo cha Mfereji</string>
+  <string name="personal_pairing_import_title">Ingiza URL ya kuoanisha</string>
+  <string name="personal_pairing_import_dialog_title">URL ya kuoanisha</string>
+  <string name="personal_pairing_url_hint">Bandika URL ya kuoanisha hapa</string>
+  <string name="personal_pairing_invalid_url">Umbizo batili la URL ya kuoanisha</string>
+  <string name="personal_pairing_invalid_data">Umbizo batili la data ya kuoanisha</string>
+  <string name="personal_pairing_unsupported_version">Toleo la tokeni la kuoanisha halitumiki</string>
+  <string name="personal_pairing_need_compartment_id">Tafadhali ingiza URL ya kuoanisha kwanza</string>
+  <string name="personal_pairing_compartment_id_title">Kitambulisho cha kuoanisha</string>
+  <string name="personal_pairing_compartment_id_summary">Kitambulisho chako cha kipekee cha kuoanisha</string>
+  <string name="personal_pairing_alias_title">Lakabu za kuoanisha</string>
+  <string name="personal_pairing_alias_summary">Jina la kirafiki kwa usanidi huu wa kuoanisha</string>
+  <string name="import_button">Ingiza</string>
+  <string name="label_personal_pairing_settings">Uoanishaji wa Kibinafsi</string>
+  <string name="personal_pairing_turn_off_prompt">Je, una tatizo la kuunganisha? Zima Uoanishaji wa Kibinafsi</string>
+  <string name="personal_pairing_data_import_success">Usanidi wa Kuoanisha Kibinafsi umehifadhiwa</string>
+  <string name="personal_pairing_data_update_success">Usanidi wa Kuoanisha Kibinafsi umesasishwa</string>
+  <string name="personal_pairing_data_already_exists">Tayari usanidi wa Kuoanisha Kibinafsi upo</string>
+  <string name="personal_pairing_update_title">Sasisha data ya Kuoanisha Kibinafsi</string>
+  <string name="personal_pairing_update_current_id_label">Kitambulisho cha Sasa cha Kuoanisha Kibinafsi:</string>
+  <string name="personal_pairing_update_new_id_label">Kitambulisho Kipya cha Kuoanisha Kibinafsi:</string>
+  <string name="personal_pairing_update_positive_button">Sasisha</string>
+  <string name="personal_pairing_update_negative_button">Ghairi</string>
+  <string name="personal_pairing_enable_confirmation_dialog_title">Washa Uoanishaji wa Kibinafsi</string>
+  <string name="personal_pairing_enable_confirmation_dialog_message">Ungependa kuwasha uoanishaji wa kibinafsi sasa? Hii itaanzisha upya handaki inayotumika. Vinginevyo, mipangilio italetwa na kubaki imezimwa hadi iwezeshwe wewe mwenyewe katika mipangilio ya programu.</string>
+  <string name="personal_pairing_reset_title">Weka upya Uoanishaji wa Kibinafsi</string>
+  <string name="personal_pairing_reset_summary">Ondoa usanidi huu wa Kuoanisha Kibinafsi kabisa</string>
+  <string name="personal_pairing_reset_dialog_title">Weka upya Uoanishaji wa Kibinafsi</string>
+  <string name="personal_pairing_delete_hint">Weka alama ili kuthibitisha</string>
+  <string name="personal_pairing_delete_message">Ili kuondoa usanidi huu wa Kuoanisha Kibinafsi, weka alama za %d za mwisho za Kitambulisho cha Kuoanisha:</string>
+  <string name="personal_pairing_reset_error">Imeshindwa kuweka upya usanidi</string>
+  <string name="personal_pairing_reset_invalid">Tafadhali weka alama sahihi za uthibitishaji</string>
+  <string name="personal_pairing_reset_success">Kuweka upya mipangilio</string>
+  <string name="reset_button">Weka upya</string>
 </resources>
