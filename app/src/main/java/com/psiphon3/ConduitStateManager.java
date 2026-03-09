@@ -31,6 +31,8 @@ import com.psiphon3.log.MyLog;
 
 import org.reactivestreams.Subscriber;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -47,6 +49,7 @@ public class ConduitStateManager {
     private static final String ACTION_BIND_CONDUIT_STATE = "ca.psiphon.conduit.ACTION_BIND_CONDUIT_STATE";
     private static final long RECONNECT_DELAY_MS = 500; // 1/2 second delay between reconnection attempts
     private static final int MAX_RETRY_ATTEMPTS = 3; // Maximum number of retry attempts before giving up
+    private static final ExecutorService BINDER_EXECUTOR = Executors.newSingleThreadExecutor();
 
     private final Context applicationContext;
     private final AtomicBoolean isShutdown = new AtomicBoolean(false);
@@ -55,6 +58,7 @@ public class ConduitStateManager {
     private final AtomicInteger retryCount = new AtomicInteger(0);
     private IConduitStateService stateService;
     private boolean isServiceBound = false;
+    private boolean isBinding = false;
     private final CompositeDisposable reconnectDisposable = new CompositeDisposable();
     private final Object lock = new Object();
 
@@ -73,27 +77,18 @@ public class ConduitStateManager {
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
+            IConduitStateService connectedService = IConduitStateService.Stub.asInterface(service);
             synchronized (lock) {
                 if (isShutdown.get()) {
                     return;
                 }
                 MyLog.i("ConduitStateManager: connected to ConduitStateService");
-                stateService = IConduitStateService.Stub.asInterface(service);
+                stateService = connectedService;
                 isServiceBound = true;
+                isBinding = false;
                 retryCount.set(0); // Reset retry count on successful connection
-                try {
-                    stateService.registerClient(stateCallback);
-                } catch (RemoteException e) {
-                    handleServiceError(new ConduitServiceException(ConduitErrorType.BINDING_ERROR,
-                            "Failed to register client: " + e.getMessage()));
-                }
-                catch (SecurityException e) {
-                    // Security exception can occur if the client is not allowed to register
-                    // (e.g. if the client is not signet with a certificate that the service trusts)
-                    handleServiceError(new ConduitServiceException(ConduitErrorType.SECURITY_ERROR,
-                            "Security exception registering client: " + e.getMessage()));
-                }
             }
+            registerClientAsync(connectedService);
         }
 
         @Override
@@ -105,6 +100,7 @@ public class ConduitStateManager {
                 MyLog.w("ConduitStateManager: disconnected from ConduitStateService");
                 stateService = null;
                 isServiceBound = false;
+                isBinding = false;
                 // Attempt to reconnect since this is an unexpected disconnection
                 scheduleReconnect();
             }
@@ -148,18 +144,16 @@ public class ConduitStateManager {
     }
 
     private void handleServiceError(ConduitServiceException error) {
+        final IConduitStateService serviceToUnregister;
+        final boolean shouldUnbind;
         synchronized (lock) {
             MyLog.i("ConduitStateManager: handling service error: " + error.getType() + " - " + error.getMessage());
 
-            if (isServiceBound && applicationContext != null) {
-                try {
-                    applicationContext.unbindService(serviceConnection);
-                } catch (IllegalArgumentException e) {
-                    MyLog.e("ConduitStateManager: error unbinding service: " + e);
-                }
-                isServiceBound = false;
-                stateService = null;
-            }
+            serviceToUnregister = stateService;
+            shouldUnbind = isServiceBound || isBinding;
+            stateService = null;
+            isServiceBound = false;
+            isBinding = false;
 
             // Map the error type to the appropriate action as follows:
             // - PACKAGE_TRUST_ERROR, SERVICE_NOT_FOUND_ERROR: stop retrying, emit "incompatible version" state and complete
@@ -196,6 +190,8 @@ public class ConduitStateManager {
                     throw new IllegalArgumentException("Unhandled error type: " + error.getType());
             }
         }
+
+        closeBindingAsync(serviceToUnregister, shouldUnbind);
     }
 
     // Schedule a reconnect attempt after a delay until the maximum retry attempts are reached
@@ -238,7 +234,7 @@ public class ConduitStateManager {
                 throw new IllegalStateException("Application context is null");
             }
 
-            if (isServiceBound) {
+            if (isServiceBound || isBinding) {
                 return;
             }
 
@@ -267,19 +263,35 @@ public class ConduitStateManager {
 
             Intent intent = new Intent(ACTION_BIND_CONDUIT_STATE);
             intent.setPackage(CONDUIT_PACKAGE);
+            isBinding = true;
 
-            // Attempt to bind to the ConduitStateService. The BIND_AUTO_CREATE flag ensures that
-            // the service is created if it is not already running.
-            boolean bindRequested = applicationContext.bindService(intent,
-                    serviceConnection,
-                    Context.BIND_AUTO_CREATE);
+            BINDER_EXECUTOR.execute(() -> {
+                try {
+                    boolean bindRequested = applicationContext.bindService(intent,
+                            serviceConnection,
+                            Context.BIND_AUTO_CREATE);
 
-            // If the bind request failed, schedule a reconnect
-            if (!bindRequested) {
-                handleServiceError(new ConduitServiceException(
-                        ConduitErrorType.BINDING_ERROR,
-                        "Failed to request bind to ConduitStateService"));
-            }
+                    if (!bindRequested) {
+                        synchronized (lock) {
+                            if (!isShutdown.get() && stateService == null) {
+                                isBinding = false;
+                            }
+                        }
+                        handleServiceError(new ConduitServiceException(
+                                ConduitErrorType.BINDING_ERROR,
+                                "Failed to request bind to ConduitStateService"));
+                    }
+                } catch (Exception e) {
+                    synchronized (lock) {
+                        if (!isShutdown.get() && stateService == null) {
+                            isBinding = false;
+                        }
+                    }
+                    handleServiceError(new ConduitServiceException(
+                            ConduitErrorType.BINDING_ERROR,
+                            "Failed to request bind to ConduitStateService: " + e.getMessage()));
+                }
+            });
         }
     }
 
@@ -291,6 +303,8 @@ public class ConduitStateManager {
     }
 
     private void shutdown() {
+        final IConduitStateService serviceToUnregister;
+        final boolean shouldUnbind;
         if (!isShutdown.compareAndSet(false, true)) {
             throw new IllegalStateException("ConduitStateManager is already shutdown");
         }
@@ -300,9 +314,47 @@ public class ConduitStateManager {
             // Clear any existing scheduled reconnects
             reconnectDisposable.clear();
 
-            if (stateService != null) {
+            serviceToUnregister = stateService;
+            shouldUnbind = isServiceBound || isBinding;
+            stateService = null;
+            isServiceBound = false;
+            isBinding = false;
+        }
+
+        closeBindingAsync(serviceToUnregister, shouldUnbind);
+    }
+
+    private void registerClientAsync(IConduitStateService service) {
+        BINDER_EXECUTOR.execute(() -> {
+            synchronized (lock) {
+                if (isShutdown.get() || !isServiceBound || stateService != service) {
+                    return;
+                }
+            }
+
+            try {
+                service.registerClient(stateCallback);
+            } catch (RemoteException e) {
+                handleServiceError(new ConduitServiceException(ConduitErrorType.BINDING_ERROR,
+                        "Failed to register client: " + e.getMessage()));
+            } catch (SecurityException e) {
+                // Security exception can occur if the client is not allowed to register
+                // (e.g. if the client is not signet with a certificate that the service trusts)
+                handleServiceError(new ConduitServiceException(ConduitErrorType.SECURITY_ERROR,
+                        "Security exception registering client: " + e.getMessage()));
+            }
+        });
+    }
+
+    private void closeBindingAsync(IConduitStateService serviceToUnregister, boolean shouldUnbind) {
+        if (serviceToUnregister == null && !shouldUnbind) {
+            return;
+        }
+
+        BINDER_EXECUTOR.execute(() -> {
+            if (serviceToUnregister != null) {
                 try {
-                    stateService.unregisterClient(stateCallback);
+                    serviceToUnregister.unregisterClient(stateCallback);
                 } catch (RemoteException e) {
                     if (!(e instanceof DeadObjectException)) {
                         MyLog.e("ConduitStateManager: failed to unregister client: " + e);
@@ -310,17 +362,14 @@ public class ConduitStateManager {
                 }
             }
 
-            if (isServiceBound && applicationContext != null) {
+            if (shouldUnbind) {
                 try {
                     applicationContext.unbindService(serviceConnection);
                 } catch (IllegalArgumentException e) {
                     MyLog.e("ConduitStateManager: error unbinding service: " + e);
                 }
-                isServiceBound = false;
             }
-
-            stateService = null;
-        }
+        });
     }
 
     // ConduitState flowable for observing Conduit state changes
@@ -337,7 +386,7 @@ public class ConduitStateManager {
                 .takeUntil(ConduitStateManager::isTerminalState)
                 .doOnSubscribe(subscription -> {
                     synchronized (lock) {
-                        if (!isServiceBound) {
+                        if (!isServiceBound && !isBinding) {
                             checkConduitAndBind();
                         }
                     }
