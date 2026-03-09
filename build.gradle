@@ -54,8 +54,6 @@ ext {
     geoHashVersion = '0.22'
     playServicesAdsVersion = '24.9.0'
     userMessagingPlatformVersion = '4.0.0'
-    liftoffMediationAdapterVersion = '7.7.0.1'
-    vungleAdsVersion = '7.7.0'
     coreKtxVersion = '1.16.0'
     playAppUpdateVersion = '2.1.0'
 }
