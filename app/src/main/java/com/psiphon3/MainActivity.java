@@ -175,7 +175,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
     }
 
     // Ads related fields
-    private boolean adsHandledThisSession = false;
+    private long lastAdsHandledTimestampMs = 0;
     private boolean isFirstAppStartEver;
     private FrameLayout overlayContainer;
     private ProgressBar overlayProgress;
@@ -781,11 +781,15 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         }).subscribeOn(AndroidSchedulers.mainThread());
     }
 
+    private static final long ADS_INTERVAL_MS = 4 * 60 * 60 * 1000L; // 4 hours
+
     private Single<ResumeFlowState> handleAds(ResumeFlowState state) {
-        if (adsHandledThisSession) {
+        long now = SystemClock.elapsedRealtime();
+        if (lastAdsHandledTimestampMs > 0
+                && now - lastAdsHandledTimestampMs < ADS_INTERVAL_MS) {
             return Single.just(state);
         }
-        adsHandledThisSession = true;
+        lastAdsHandledTimestampMs = now;
 
         if (state.shouldSkipAds()) {
             return Single.just(state);
