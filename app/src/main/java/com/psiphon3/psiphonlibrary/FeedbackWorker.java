@@ -24,6 +24,8 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
@@ -32,12 +34,9 @@ import androidx.work.RxWorker;
 import androidx.work.WorkerParameters;
 
 import com.psiphon3.PsiphonCrashService;
-import com.psiphon3.R;
 import com.psiphon3.log.LogEntry;
 import com.psiphon3.log.LoggingContentProvider;
 import com.psiphon3.log.MyLog;
-
-import net.grandcentrix.tray.AppPreferences;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -54,6 +53,7 @@ import java.util.Locale;
 import ca.psiphon.PsiphonTunnel;
 import ca.psiphon.PsiphonTunnel.PsiphonTunnelFeedback;
 import io.reactivex.Completable;
+import io.reactivex.CompletableEmitter;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
 import io.reactivex.schedulers.Schedulers;
@@ -80,7 +80,7 @@ public class FeedbackWorker extends RxWorker {
 
     private final Data inputData;
 
-    private Thread shutdownHook;
+    private final Handler handler = new Handler(Looper.getMainLooper());
 
     /**
      * Create the input data for a regular feedback upload work request.
@@ -178,50 +178,16 @@ public class FeedbackWorker extends RxWorker {
             emitter.setCancellable(() -> {
                 MyLog.i("FeedbackUpload: " + inputData.getString(FEEDBACK_ID) + " disposed");
                 psiphonTunnelFeedback.shutdown();
-                // Remove the shutdown hook since the underlying resources have been cleaned up by
-                // psiphonTunnelFeedback.shutdown().
-                if (this.shutdownHook != null) {
-                    boolean removed = Runtime.getRuntime().removeShutdownHook(this.shutdownHook);
-                    if (!removed) {
-                        // Hook was either never registered or already de-registered
-                        MyLog.i("FeedbackUpload: shutdown hook not de-registered");
-                    }
-                    this.shutdownHook = null;
-                }
             });
-
-            // Create a shutdown hook which stops the feedback upload operation to ensure that any
-            // underlying resources are cleaned up in the event that the JVM is shutdown. This is
-            // required to prevent possible data store corruption.
-            this.shutdownHook = new Thread() {
-                @Override
-                public void run() {
-                    super.run();
-                    psiphonTunnelFeedback.shutdown();
-                    MyLog.i("FeedbackUpload: shutdown hook done");
-                }
-            };
-            Runtime.getRuntime().addShutdownHook(this.shutdownHook);
 
             psiphonTunnelFeedback.startSendFeedback(
                     context,
                     new PsiphonTunnel.HostFeedbackHandler() {
                         public void sendFeedbackCompleted(java.lang.Exception e) {
-                            if (!emitter.isDisposed()) {
-                                MyLog.i("FeedbackUpload: " + inputData.getString(FEEDBACK_ID) + " completed");
-                                if (e != null) {
-                                    emitter.onError(e);
-                                    return;
-                                }
-                                // Complete. This is the last callback invoked by PsiphonTunnel.
-                                emitter.onComplete();
-                            } else {
-                                if (e != null) {
-                                    MyLog.w("FeedbackUpload: " + inputData.getString(FEEDBACK_ID) + " completed with error but emitter disposed: " + e);
-                                    return;
-                                }
-                                MyLog.i("FeedbackUpload: " + inputData.getString(FEEDBACK_ID) + " completed but emitter disposed");
-                            }
+                            // Avoid disposing directly from the feedback callback thread.
+                            // shutdown() waits for feedback callbacks to stop, so completing here can
+                            // deadlock or block teardown. Post the terminal callback first.
+                            handler.post(() -> handleSendFeedbackCompleted(emitter, e));
                         }
                     },
                     new PsiphonTunnel.HostLogger() {
@@ -234,6 +200,24 @@ public class FeedbackWorker extends RxWorker {
                     feedbackConfigJson, diagnosticsJson, uploadPath, clientPlatformPrefix,
                     clientPlatformSuffix);
         });
+    }
+
+    private void handleSendFeedbackCompleted(CompletableEmitter emitter, Exception e) {
+        if (!emitter.isDisposed()) {
+            MyLog.i("FeedbackUpload: " + inputData.getString(FEEDBACK_ID) + " completed");
+            if (e != null) {
+                emitter.onError(e);
+                return;
+            }
+            // Complete. This is the last callback invoked by PsiphonTunnel.
+            emitter.onComplete();
+        } else {
+            if (e != null) {
+                MyLog.w("FeedbackUpload: " + inputData.getString(FEEDBACK_ID) + " completed with error but emitter disposed: " + e);
+                return;
+            }
+            MyLog.i("FeedbackUpload: " + inputData.getString(FEEDBACK_ID) + " completed but emitter disposed");
+        }
     }
 
     @NonNull
