@@ -27,6 +27,7 @@ import android.net.MailTo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
@@ -50,7 +51,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -62,8 +62,37 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.Locale;
 
+import io.reactivex.Completable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.schedulers.Schedulers;
+
 public class FeedbackActivity extends LocalizedActivities.AppCompatActivity {
+    private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private WebView webView;
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        View progressOverlay = findViewById(R.id.progress_overlay);
+
+        progressOverlay.setVisibility(View.VISIBLE);
+        compositeDisposable.add(
+                Completable.fromAction(() ->
+                                CrashReporter.promoteActiveCrashReportIfPresent(getApplicationContext()))
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnError(e -> MyLog.w("FeedbackActivity: failed to promote crash report: " + e))
+                        .onErrorComplete()
+                        .doOnComplete(() -> progressOverlay.setVisibility(View.GONE))
+                        .subscribe());
+    }
+
+    @Override
+    protected void onDestroy() {
+        compositeDisposable.clear();
+        super.onDestroy();
+    }
 
     @Override
     @SuppressLint("SetJavaScriptEnabled")
@@ -170,13 +199,7 @@ public class FeedbackActivity extends LocalizedActivities.AppCompatActivity {
                 Data inputData = FeedbackWorker.generateInputData(
                         sendDiagnosticInfo, email, feedbackText, surveyResponsesJson);
 
-                // Rename the temp crash report file to stop the 'Psiphon crashed' notifications
-                // from the PsiphonCrashService while the feedback is being scheduled.
-                File from = new File(PsiphonCrashService.getTempCrashReportPath(getApplicationContext()));
-                if (from.exists()) {
-                    File to = new File(PsiphonCrashService.getFinalCrashReportPath(getApplicationContext()));
-                    from.renameTo(to);
-                }
+                CrashReporter.clearCrashNotification(getApplicationContext());
 
                 Constraints.Builder constraintsBuilder = new Constraints.Builder();
                 constraintsBuilder.setRequiredNetworkType(NetworkType.CONNECTED);

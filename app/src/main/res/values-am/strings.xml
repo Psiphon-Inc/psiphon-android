@@ -72,7 +72,7 @@
   <!--"Upstream proxy error" alert dialog message-->
   <string name="upstream_proxy_error_alert_message">Psiphonን የላይኛ ወኪል እንዲጠቀም አዋቅረውታል። ነገር ግን በዚህ ወኪል በኩል ከ Psiphon አገልጋይ ጋር መገናኘት አልቻልንም።\n\nእባክዎን ቅንብሮቹን ያስተካክሉና እንደገና ይሞክሩ።\n\nቴክኒካል መረጃ ለማግኘት ምዝገባዎችን ይመልከቱ።</string>
   <!--Notification title for the 'Psiphon crash detected' notification-->
-  <string name="psiphon_native_crash_notification_title">Psiphon ተበላሽቷል</string>
+  <string name="psiphon_native_crash_notification_title">Psiphon ከዚህ ቀደም ተበላሽቷል</string>
   <!--Notification short message for the 'Psiphon crash detected' notification-->
   <string name="psiphon_native_crash_notification_msg">እባክዎን ግብረመልስ ይላኩልን።</string>
   <!--Notification longer message for the 'Psiphon crash detected' notification-->
