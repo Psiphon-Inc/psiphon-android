@@ -76,7 +76,7 @@ Korjaa asetukset ja yritä uudelleen.
 
 Katso lokeista teknisiä tietoja.</string>
   <!--Notification title for the 'Psiphon crash detected' notification-->
-  <string name="psiphon_native_crash_notification_title">Psiphon kaatui</string>
+  <string name="psiphon_native_crash_notification_title">Psiphon kaatui aiemmin</string>
   <!--Notification short message for the 'Psiphon crash detected' notification-->
   <string name="psiphon_native_crash_notification_msg">Lähetä meille palautetta.</string>
   <!--Notification longer message for the 'Psiphon crash detected' notification-->

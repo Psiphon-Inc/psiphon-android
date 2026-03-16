@@ -58,9 +58,9 @@ import com.jakewharton.rxrelay2.PublishRelay;
 import com.psiphon3.AppUpdatePolicy;
 import com.psiphon3.ConduitState;
 import com.psiphon3.ConduitStateManager;
+import com.psiphon3.CrashReporter;
 import com.psiphon3.Location;
 import com.psiphon3.PackageHelper;
-import com.psiphon3.PsiphonCrashService;
 import com.psiphon3.RateLimitHelper;
 import com.psiphon3.TunnelState;
 import com.psiphon3.UnlockOptions;
@@ -95,6 +95,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import ca.psiphon.PsiphonTunnel;
+import psi.Psi;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
@@ -104,7 +105,6 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.schedulers.Schedulers;
-import ru.ivanarh.jndcrash.NDCrash;
 
 public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifier.VerificationResultListener, VpnManager.VpnServiceBuilderProvider {
     // Android IPC messages
@@ -1197,13 +1197,38 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         }
     };
 
+    private void setupCrashHandlingForTunnelRun() {
+        CrashReporter.registerCrashReceiver(this::onCrashSignal);
+
+        try {
+            Psi.configureCrashHandling(
+                    CrashReporter.getActiveCrashReportPathForArming(m_parentService),
+                    Psi.CrashTracebackLevelSingle);
+            MyLog.i("TunnelManager: configured Go crash handling");
+        } catch (Exception e) {
+            MyLog.e("TunnelManager: failed to configure Go crash handling: " + e.getMessage());
+        }
+
+        if (!CrashReporter.nativeInstallCrashSignalNotifier()) {
+            MyLog.e("TunnelManager: failed to install crash signal notifier");
+        }
+    }
+
+    private void cleanupCrashHandlingForTunnelRun() {
+        CrashReporter.nativeUninstallCrashSignalNotifier();
+        try {
+            Psi.resetCrashHandling();
+        } catch (Exception e) {
+            MyLog.w("TunnelManager: failed to reset Go crash handling: " + e.getMessage());
+        }
+        CrashReporter.promoteOrDeleteActiveCrashReport(m_parentService);
+        CrashReporter.unregisterCrashReceiver();
+    }
+
     private void runTunnel() {
         Utils.initializeSecureRandom();
         // Also set locale
         setLocale(this);
-
-        final String stdErrRedirectPath = PsiphonCrashService.getStdRedirectPath(m_parentService);
-        NDCrash.nativeInitializeStdErrRedirect(stdErrRedirectPath);
 
         m_isStopping.set(false);
         m_networkConnectionStatePublishRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
@@ -1216,6 +1241,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         sendDataTransferStatsHandler.postDelayed(sendDataTransferStats, sendDataTransferStatsIntervalMs);
 
         try {
+            setupCrashHandlingForTunnelRun();
+
             m_vpnManager.vpnEstablish();
             MyLog.i(R.string.vpn_service_running, MyLog.Sensitivity.NOT_SENSITIVE);
 
@@ -1239,6 +1266,8 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
         } finally {
             MyLog.i(R.string.stopping_tunnel, MyLog.Sensitivity.NOT_SENSITIVE);
 
+            cleanupCrashHandlingForTunnelRun();
+
             m_isStopping.set(true);
             m_networkConnectionStatePublishRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
             m_vpnManager.vpnTeardown();
@@ -1252,6 +1281,18 @@ public class TunnelManager implements PsiphonTunnel.HostService, PurchaseVerifie
             // Stop service
             m_parentService.stopForeground(true);
             m_parentService.stopSelf();
+        }
+    }
+
+    private void onCrashSignal() {
+        MyLog.e("TunnelManager: handling native crash signal callback");
+        try {
+            m_parentService.stopForeground(true);
+        } catch (RuntimeException e) {
+            MyLog.w("TunnelManager: failed to stop foreground service from crash callback: " + e);
+        }
+        if (mNotificationManager != null) {
+            mNotificationManager.cancel(R.string.psiphon_service_notification_id);
         }
     }
 

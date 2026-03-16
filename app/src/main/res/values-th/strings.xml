@@ -68,7 +68,7 @@
   <!--"Upstream proxy error" alert dialog message-->
   <string name="upstream_proxy_error_alert_message">คุณได้กำหนดค่า Psiphon ให้ใช้พร็อกซีต้นทาง แต่เราไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ Psiphon ผ่านพร็อกซีนั้นได้\\n\\nกรุณาแก้ไขการตั้งค่าและลองอีกครั้ง\\n\\nสำหรับข้อมูลทางเทคนิค โปรดดูบันทึกล็อก</string>
   <!--Notification title for the 'Psiphon crash detected' notification-->
-  <string name="psiphon_native_crash_notification_title">Psiphon ขัดข้อง</string>
+  <string name="psiphon_native_crash_notification_title">Psiphon เคยขัดข้องก่อนหน้านี้</string>
   <!--Notification short message for the 'Psiphon crash detected' notification-->
   <string name="psiphon_native_crash_notification_msg">กรุณาส่งข้อเสนอแนะให้เรา</string>
   <!--Notification longer message for the 'Psiphon crash detected' notification-->

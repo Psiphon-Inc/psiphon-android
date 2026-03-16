@@ -68,7 +68,7 @@
   <!--"Upstream proxy error" alert dialog message-->
   <string name="upstream_proxy_error_alert_message">Сіз Psiphon-ды жоғары прокси арқылы пайдалану үшін баптадыңыз. Дегенмен, біз сол прокси арқылы Psiphon серверіне қосыла алмаймыз.\n\nПараметрлерді түзетіп, қайталап көріңіз.\n\nТехникалық ақпарат үшін журналдарды қараңыз.</string>
   <!--Notification title for the 'Psiphon crash detected' notification-->
-  <string name="psiphon_native_crash_notification_title">Psiphon жұмысы тоқтады</string>
+  <string name="psiphon_native_crash_notification_title">Psiphon қолданбасы бұрын істен шыққан</string>
   <!--Notification short message for the 'Psiphon crash detected' notification-->
   <string name="psiphon_native_crash_notification_msg">Бізге кері байланыс жіберіңіз.</string>
   <!--Notification longer message for the 'Psiphon crash detected' notification-->
