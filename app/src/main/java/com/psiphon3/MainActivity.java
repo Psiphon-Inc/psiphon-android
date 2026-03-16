@@ -78,6 +78,8 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
 import com.psiphon3.ads.AdFlowHelper;
 import com.psiphon3.ads.AdManager;
+import com.psiphon3.CrashReporter;
+import com.psiphon3.VpnRulesHelper;
 import com.psiphon3.log.LogsMaintenanceWorker;
 import com.psiphon3.log.MyLog;
 import com.psiphon3.psiphonlibrary.EmbeddedValues;
@@ -394,7 +396,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         });
 
         EmbeddedValues.initialize(getApplicationContext());
-
         // Load VPN exclusion rules from storage for main app process
         VpnRulesHelper.configureRuntimeVpnRules(
                 VpnRulesHelper.readVpnRulesFromFile(getApplicationContext())
@@ -664,6 +665,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                         .andThen(Single.just(ResumeFlowState.initial()))
                         .flatMap(this::handleStartupPrompts)
                         .flatMap(this::handleUnlockDialog)
+                        .flatMap(this::handlePendingCrashReport)
                         .flatMap(this::handleAds)
                         .flatMap(this::handleUpdateDownloadState)
                         .flatMap(this::handleUpdateAvailabilityCheck)
@@ -884,6 +886,22 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                     }
                 })
                 .onErrorReturnItem(state);
+    }
+
+    private Single<ResumeFlowState> handlePendingCrashReport(ResumeFlowState state) {
+        return Single.fromCallable(() -> {
+                    CrashReporter.promoteActiveCrashReportIfPresent(getApplicationContext());
+                    return CrashReporter.hasPendingCrashReport(getApplicationContext());
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnSuccess(hasPendingCrashReport -> {
+                    if (hasPendingCrashReport &&
+                            CrashReporter.markPendingCrashReportNotifiedThisSession()) {
+                        CrashReporter.showCrashNotification(getApplicationContext());
+                    }
+                })
+                .map(__ -> state);
     }
 
     private Single<ResumeFlowState> handleAutoStart(ResumeFlowState state) {

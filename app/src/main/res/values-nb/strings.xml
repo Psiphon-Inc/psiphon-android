@@ -72,7 +72,7 @@
   Vennligst rett innstillingene og prøv igjen.
   Se logger for teknisk informasjon.</string>
   <!--Notification title for the 'Psiphon crash detected' notification-->
-  <string name="psiphon_native_crash_notification_title">Psiphon krasjet</string>
+  <string name="psiphon_native_crash_notification_title">Psiphon krasjet tidligere</string>
   <!--Notification short message for the 'Psiphon crash detected' notification-->
   <string name="psiphon_native_crash_notification_msg">Vennligst send oss tilbakemelding.</string>
   <!--Notification longer message for the 'Psiphon crash detected' notification-->

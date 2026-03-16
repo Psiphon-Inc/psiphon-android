@@ -72,7 +72,7 @@
   <!--"Upstream proxy error" alert dialog message-->
   <string name="upstream_proxy_error_alert_message">您已設定 Psiphon 使用上層代理，但其似乎無法連接到 Psiphon 伺服器。\n\n 請修正此設定再試試\n\n 請見技術資訊的活動記錄。</string>
   <!--Notification title for the 'Psiphon crash detected' notification-->
-  <string name="psiphon_native_crash_notification_title">Psiphon 崩潰</string>
+  <string name="psiphon_native_crash_notification_title">Psiphon 先前已崩潰</string>
   <!--Notification short message for the 'Psiphon crash detected' notification-->
   <string name="psiphon_native_crash_notification_msg">請向我們發送反饋</string>
   <!--Notification longer message for the 'Psiphon crash detected' notification-->
