@@ -72,7 +72,7 @@
   <!--"Upstream proxy error" alert dialog message-->
   <string name="upstream_proxy_error_alert_message">Ви налаштували Psiphon на використання вихідного проксі. Однак, здається, ми не можемо підключитися до сервера Psiphon через цей проксі.\n\nВиправте налаштування та повторіть спробу.\n\nПерегляньте журнали для отримання технічної інформації.</string>
   <!--Notification title for the 'Psiphon crash detected' notification-->
-  <string name="psiphon_native_crash_notification_title">Psiphon вийшов з ладу</string>
+  <string name="psiphon_native_crash_notification_title">Psiphon раніше вийшов з ладу</string>
   <!--Notification short message for the 'Psiphon crash detected' notification-->
   <string name="psiphon_native_crash_notification_msg">Будь ласка, надішліть нам відгук.</string>
   <!--Notification longer message for the 'Psiphon crash detected' notification-->
