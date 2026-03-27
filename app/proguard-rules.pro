@@ -25,3 +25,10 @@
 -keep class com.psiphon3.VpnManager {
     public static void logTun2Socks(java.lang.String, java.lang.String, java.lang.String);
 }
+
+# Keep CrashReporter JNI entry points and callback names stable.
+-keep class com.psiphon3.CrashReporter {
+    public static native boolean nativeInstallCrashSignalNotifier();
+    public static native void nativeUninstallCrashSignalNotifier();
+    public static void onNativeCrashSignal();
+}

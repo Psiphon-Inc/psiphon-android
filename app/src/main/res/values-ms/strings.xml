@@ -68,7 +68,7 @@
   <!--"Upstream proxy error" alert dialog message-->
   <string name="upstream_proxy_error_alert_message">Anda telah mengkonfigurasi Psiphon untuk menggunakan proksi huluan. Tetapi kami tidak dapat menyambung ke pelayan Psiphon melalui proksi tersebut.\n\nSila betulkan tetapan dan cuba lagi.\n\nUntuk maklumat teknikal, lihat rekod log.</string>
   <!--Notification title for the 'Psiphon crash detected' notification-->
-  <string name="psiphon_native_crash_notification_title">Psiphon ranap</string>
+  <string name="psiphon_native_crash_notification_title">Psiphon telah gagal sebelum ini</string>
   <!--Notification short message for the 'Psiphon crash detected' notification-->
   <string name="psiphon_native_crash_notification_msg">Sila hantar maklum balas kepada kami.</string>
   <!--Notification longer message for the 'Psiphon crash detected' notification-->

@@ -136,10 +136,6 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.psiphon3.MainActivity" />
         </activity>
-        <service
-            android:name="com.psiphon3.PsiphonCrashService"
-            android:exported="false"
-            android:process=":PsiphonCrashService" />
         <activity android:theme="@style/Theme.DialogAlert"
             android:name="com.psiphon3.PsiphonBumpNfcReaderActivity" >
         </activity>
