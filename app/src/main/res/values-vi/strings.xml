@@ -71,7 +71,7 @@
   <!--"Upstream proxy error" alert dialog message-->
   <string name="upstream_proxy_error_alert_message">Bạn cấu hình Psiphon để dùng proxy luồng trên. Tuy nhiên, chúng tôi dường như không thể kết nối với máy chủ Psiphon qua proxy đó.\n\nXin sửa chữa lại các thiết đặt và thử lại.\n\nXem nhật ký để có thông tin kỹ thuật.</string>
   <!--Notification title for the 'Psiphon crash detected' notification-->
-  <string name="psiphon_native_crash_notification_title">Psiphon bị hỏng</string>
+  <string name="psiphon_native_crash_notification_title">Psiphon đã gặp sự cố trước đó</string>
   <!--Notification short message for the 'Psiphon crash detected' notification-->
   <string name="psiphon_native_crash_notification_msg">Xin gửi phản hồi cho chúng tôi</string>
   <!--Notification longer message for the 'Psiphon crash detected' notification-->

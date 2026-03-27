@@ -68,7 +68,7 @@
   <!--"Upstream proxy error" alert dialog message-->
   <string name="upstream_proxy_error_alert_message">Siz Psiphon-ni yuqori proksi ishlatish uchun sozladingiz. Biroq, biz bu proksi orqali Psiphon serveriga ulanishda muammo bor.\n\nIltimos sozlamalarni to\'g\'irlang va qayta urinib ko\'ring.\n\nTexnik ma\'lumotlar uchun jurnallarga qarang.</string>
   <!--Notification title for the 'Psiphon crash detected' notification-->
-  <string name="psiphon_native_crash_notification_title">Psiphon ishlamay qoldi</string>
+  <string name="psiphon_native_crash_notification_title">Psiphon oldin ishlamay qolgan</string>
   <!--Notification short message for the 'Psiphon crash detected' notification-->
   <string name="psiphon_native_crash_notification_msg">Iltimos bizga fikr-mulohaza yuboring.</string>
   <!--Notification longer message for the 'Psiphon crash detected' notification-->

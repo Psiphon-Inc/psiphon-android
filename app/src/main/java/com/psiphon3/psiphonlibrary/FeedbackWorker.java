@@ -33,7 +33,7 @@ import androidx.work.Data;
 import androidx.work.RxWorker;
 import androidx.work.WorkerParameters;
 
-import com.psiphon3.PsiphonCrashService;
+import com.psiphon3.CrashReporter;
 import com.psiphon3.log.LogEntry;
 import com.psiphon3.log.LoggingContentProvider;
 import com.psiphon3.log.MyLog;
@@ -456,22 +456,22 @@ public class FeedbackWorker extends RxWorker {
                 diagnosticInfo.put("StatusHistory", statusHistory);
             }
             // Check if we have native crash data to include
-            File crashReportFile = new File(PsiphonCrashService.getFinalCrashReportPath(context));
+            File crashReportFile = new File(CrashReporter.getPendingCrashReportPath(context));
             if (crashReportFile.exists()) {
                 JSONArray crashHistory = new JSONArray();
-                try {
-                    BufferedReader in;
+                try (BufferedReader in = new BufferedReader(new FileReader(crashReportFile))) {
                     String str;
-                    in = new BufferedReader(new FileReader(crashReportFile));
                     while ((str = in.readLine()) != null) {
                         crashHistory.put(str);
                     }
-                    in.close();
-
-                } catch (IOException ignored) {
+                } catch (IOException e) {
+                    MyLog.w("FeedbackUpload: failed to read crash report: " + e);
                 }
 
-                crashReportFile.delete();
+                if (!crashReportFile.delete()) {
+                    MyLog.w("FeedbackUpload: failed to delete crash report: " +
+                            crashReportFile.getAbsolutePath());
+                }
                 if (crashHistory.length() > 0) {
                     diagnosticInfo.put("CrashHistory", crashHistory);
                 }

@@ -72,7 +72,7 @@
   설정을 수정하고 다시 시도하세요.
   기술 정보는 로그를 참조하세요.</string>
   <!--Notification title for the 'Psiphon crash detected' notification-->
-  <string name="psiphon_native_crash_notification_title">Psiphon 충돌</string>
+  <string name="psiphon_native_crash_notification_title">Psiphon이 이전에 충돌했습니다</string>
   <!--Notification short message for the 'Psiphon crash detected' notification-->
   <string name="psiphon_native_crash_notification_msg">피드백을 보내주세요.</string>
   <!--Notification longer message for the 'Psiphon crash detected' notification-->

@@ -72,7 +72,7 @@
   <!--"Upstream proxy error" alert dialog message-->
   <string name="upstream_proxy_error_alert_message">നിങ്ങൾ ഒരു അപ്‌സ്ട്രീം പ്രോക്സി ഉപയോഗിക്കാൻ സൈഫോൺ കോൺഫിഗർ ചെയ്തിട്ടുണ്ട്. എന്നിരുന്നാലും, ആ പ്രോക്സി വഴി സൈഫോൺ സെർവറുമായി ബന്ധിപ്പിക്കാൻ കഴിയുന്നില്ലെന്ന് തോന്നുന്നു.\\n\\nദയവായി ക്രമീകരണങ്ങൾ ശരിയാക്കി വീണ്ടും ശ്രമിക്കുക.\\n\\nസാങ്കേതിക വിവരങ്ങൾക്ക് ലോഗുകൾ കാണുക.</string>
   <!--Notification title for the 'Psiphon crash detected' notification-->
-  <string name="psiphon_native_crash_notification_title">സൈഫോൺ തകർന്നു</string>
+  <string name="psiphon_native_crash_notification_title">Psiphon മുമ്പ് തകരാറിലായി</string>
   <!--Notification short message for the 'Psiphon crash detected' notification-->
   <string name="psiphon_native_crash_notification_msg">ദയവായി ഞങ്ങൾക്ക് ഫീഡ്‌ബാക്ക് അയയ്ക്കുക.</string>
   <!--Notification longer message for the 'Psiphon crash detected' notification-->
