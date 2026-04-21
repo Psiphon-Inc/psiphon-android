@@ -33,18 +33,18 @@
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="150dp"
+            android:layout_height="50dp"
             android:background="@android:color/transparent">
 
             <ImageView
                 android:id="@+id/banner"
                 android:layout_width="0dp"
                 android:layout_height="0dp"
-                app:layout_constraintWidth_max="640dp"
+                app:layout_constraintWidth_max="200dp"
                 app:layout_constraintWidth_default="percent"
                 app:layout_constraintWidth_percent="1"
                 android:scaleType="centerCrop"
-                android:src="@drawable/top_banner_640x360"
+                android:src="@drawable/top_banner_400x100"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
