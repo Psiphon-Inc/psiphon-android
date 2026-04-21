@@ -15,7 +15,6 @@ import com.psiphon3.log.MyLog
 import io.reactivex.Flowable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
-import kotlin.math.roundToInt
 
 class BannerAdHelper private constructor(
     private val activity: Activity,
@@ -91,13 +90,9 @@ class BannerAdHelper private constructor(
             return
         }
 
-        val density = activity.resources.displayMetrics.density
-        val adWidth = (widthPx / density).roundToInt().coerceAtLeast(1)
-        val adHeight = (heightPx / density).roundToInt().coerceAtLeast(1)
+        MyLog.i("$TAG: starting banner load")
 
-        MyLog.i("$TAG: starting banner load (w=$adWidth, h=$adHeight)")
-
-        val size = AdSize.getInlineAdaptiveBannerAdSize(adWidth, adHeight)
+        val size = AdSize.BANNER
         val view = AdView(activity)
         view.adUnitId = config.adUnitId
         view.setAdSize(size)
