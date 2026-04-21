@@ -134,6 +134,13 @@ class AdManager : DefaultLifecycleObserver {
         callback: AdLoadingCallback
     ): Completable {
         requireLifecycleRegistered()
+        // TODO: app-open ad temporarily disabled
+        val appOpenAdEnabled = false
+        if (!appOpenAdEnabled) {
+            MyLog.i("$TAG: app-open ad disabled, skipping")
+            callback.done()
+            return Completable.complete()
+        }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || !canRequestAds(activity)) {
             callback.done()
             return Completable.complete()
@@ -264,6 +271,12 @@ class AdManager : DefaultLifecycleObserver {
         placeholder: View,
         tunnelStateFlowable: Flowable<TunnelState>
     ) {
+        // TODO: banner ad temporarily disabled
+        val bannerAdEnabled = false
+        if (!bannerAdEnabled) {
+            MyLog.i("$TAG: banner ad disabled, skipping")
+            return
+        }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || !canRequestAds(activity)) {
             placeholder.visibility = View.VISIBLE
             clearBannerAdHelper()
