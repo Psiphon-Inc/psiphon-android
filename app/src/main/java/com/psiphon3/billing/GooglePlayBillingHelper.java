@@ -63,12 +63,20 @@ public class GooglePlayBillingHelper {
     static public final String IAB_LIMITED_MONTHLY_SUBSCRIPTION_SKU = "speed_limited_ad_free_subscription";
     static public final String IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU = "basic_ad_free_subscription_5";
 
+    // All unlimited subscription product IDs. Despite the "MONTHLY" name this is just a recognition
+    // set with no billing-period meaning: membership maps a purchase to HAS_UNLIMITED_SUBSCRIPTION
+    // and sets is_subscription=true for purchase verification.
     private static final String[] IAB_ALL_UNLIMITED_MONTHLY_SUBSCRIPTION_SKUS = {
             IAB_UNLIMITED_MONTHLY_SUBSCRIPTION_SKU,
             "basic_ad_free_subscription",
             "basic_ad_free_subscription_2",
             "basic_ad_free_subscription_3",
-            "basic_ad_free_subscription_4"
+            "basic_ad_free_subscription_4",
+            // Sold by the newer (beta) app version; not offered here, but recognized so a user who
+            // subscribes in beta then installs this prod build keeps their subscription.
+            "psiphon4_weekly",
+            "psiphon4_monthly",
+            "psiphon4_yearly"
     };
 
     static public final Map<String, Long> IAB_TIMEPASS_SKUS_TO_DAYS;
