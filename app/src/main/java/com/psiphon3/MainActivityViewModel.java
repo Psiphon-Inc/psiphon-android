@@ -205,7 +205,7 @@ public class MainActivityViewModel extends AndroidViewModel implements DefaultLi
 
     // Observes pairing state changes and triggers tunnel restart when necessary. Restart occurs when:
     // - Pairing is enabled/ disabled
-    // - Compartment ID changes while pairing is enabled
+    // - The pairing changes while enabled (compartment ID and/or light proxy entry)
     // returns a flowable that emits true when a restart is needed
     public Flowable<Boolean> pairingStateRestartTunnelFlowable() {
         return personalPairingStateFlowable()
@@ -218,10 +218,15 @@ public class MainActivityViewModel extends AndroidViewModel implements DefaultLi
                                 lastKnownPersonalPairingState.data == null ? null : lastKnownPersonalPairingState.data.compartmentId;
                         String currentCompartmentId =
                                 currentState.data == null ? null : currentState.data.compartmentId;
-                        boolean compartmentChanged = lastKnownPersonalPairingState.enabled && currentState.enabled &&
-                                !Objects.equals(previousCompartmentId, currentCompartmentId);
+                        String previousLightProxyEntry =
+                                lastKnownPersonalPairingState.data == null ? null : lastKnownPersonalPairingState.data.lightProxyEntry;
+                        String currentLightProxyEntry =
+                                currentState.data == null ? null : currentState.data.lightProxyEntry;
+                        boolean pairingChanged = lastKnownPersonalPairingState.enabled && currentState.enabled &&
+                                (!Objects.equals(previousCompartmentId, currentCompartmentId) ||
+                                        !Objects.equals(previousLightProxyEntry, currentLightProxyEntry));
 
-                        shouldRestart = enableChanged || compartmentChanged;
+                        shouldRestart = enableChanged || pairingChanged;
                     }
 
                     lastKnownPersonalPairingState = currentState;

@@ -158,13 +158,16 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
         String sponsorId = EmbeddedValues.SPONSOR_ID;
         String deviceLocation = "";
         String personalPairingCompartmentId = "";
+        String personalPairingLightProxyEntry = "";
     }
 
     private Config m_tunnelConfig;
 
     private void setTunnelConfig(Config config) {
         m_tunnelConfig = config;
-        m_desiredPersonalPairingModeRelay.accept(!TextUtils.isEmpty(config.personalPairingCompartmentId));
+        m_desiredPersonalPairingModeRelay.accept(
+                !TextUtils.isEmpty(config.personalPairingCompartmentId) ||
+                        !TextUtils.isEmpty(config.personalPairingLightProxyEntry));
     }
 
     // Shared tunnel state, sent to the client in the HANDSHAKE
@@ -561,16 +564,25 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
             boolean personalPairingModePreference = multiProcessPreferences.getBoolean(
                     getContext().getString(R.string.personalPairingEnabledPreference), false);
 
-            // If personal pairing is enabled, get the compartment ID from the preferences
+            // If personal pairing is enabled, resolve the connection method from the
+            // preferences. A pairing may carry a light proxy entry, an inproxy
+            // personal compartment ID, or both. When both are present the light proxy is
+            // preferred for now.
             String compartmentId = "";
+            String lightProxyEntry = "";
             if (personalPairingModePreference) {
-                compartmentId = multiProcessPreferences.getString(getContext().getString(R.string.personalPairingCompartmentIdPreference), "");
-                compartmentId = PersonalPairingHelper.toStandardBase64CompartmentId(compartmentId);
-                if (TextUtils.isEmpty(compartmentId)) {
-                    MyLog.w("TunnelManager::getTunnelConfigSingle: personal pairing is enabled but the compartment ID is empty.");
+                lightProxyEntry = multiProcessPreferences.getString(
+                        getContext().getString(R.string.personalPairingLightProxyEntryPreference), "");
+                if (TextUtils.isEmpty(lightProxyEntry)) {
+                    compartmentId = multiProcessPreferences.getString(getContext().getString(R.string.personalPairingCompartmentIdPreference), "");
+                    compartmentId = PersonalPairingHelper.toStandardBase64CompartmentId(compartmentId);
+                    if (TextUtils.isEmpty(compartmentId)) {
+                        MyLog.w("TunnelManager::getTunnelConfigSingle: personal pairing is enabled but no light proxy entry or compartment ID is set.");
+                    }
                 }
             }
             tunnelConfig.personalPairingCompartmentId = compartmentId;
+            tunnelConfig.personalPairingLightProxyEntry = lightProxyEntry;
             return tunnelConfig;
         });
 
@@ -597,6 +609,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
                 getContext().getString(R.string.personalPairingEnabledPreference), false);
         if (!personalPairingEnabled) {
             return false;
+        }
+        String lightProxyEntry = preferences.getString(
+                getContext().getString(R.string.personalPairingLightProxyEntryPreference), "");
+        if (!TextUtils.isEmpty(lightProxyEntry)) {
+            return true;
         }
         String compartmentId = preferences.getString(
                 getContext().getString(R.string.personalPairingCompartmentIdPreference), "");
@@ -1438,8 +1455,14 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
 
             json.put("EmitBytesTransferred", true);
 
-            // Set the personal pairing config if config has a non-empty personal pairing compartment ID
-            if (!TextUtils.isEmpty(tunnelConfig.personalPairingCompartmentId)) {
+            // Set the personal pairing config. Prefer the light proxy entry
+            // when present; otherwise use the inproxy personal pairing compartment ID.
+            if (!TextUtils.isEmpty(tunnelConfig.personalPairingLightProxyEntry)) {
+                json.put("EnablePersonalLightProxyTunnels", true);
+                // LightProxyEntry is a tunnel-core []byte, decoded from standard base64.
+                // The stored entry is already standard base64, so pass it through as-is.
+                json.put("LightProxyEntry", tunnelConfig.personalPairingLightProxyEntry);
+            } else if (!TextUtils.isEmpty(tunnelConfig.personalPairingCompartmentId)) {
                 json.put("InproxyClientPersonalCompartmentID", tunnelConfig.personalPairingCompartmentId);
             }
 

@@ -496,14 +496,14 @@ public class OptionsTabFragment extends PsiphonPreferenceFragmentCompat {
 
     private void updatePersonalPairingFromPreferences() {
         String prefName = getString(R.string.moreOptionsPreferencesName);
-        boolean isEnabled = requireContext().getSharedPreferences(prefName, MODE_PRIVATE)
-                .getBoolean(getString(R.string.personalPairingEnabledPreference), false);
-        String compartmentId = requireContext().getSharedPreferences(prefName, MODE_PRIVATE)
-                .getString(getString(R.string.personalPairingCompartmentIdPreference), "");
-        String alias = requireContext().getSharedPreferences(prefName, MODE_PRIVATE)
-                .getString(getString(R.string.personalPairingAliasPreference), "");
+        SharedPreferences prefs = requireContext().getSharedPreferences(prefName, MODE_PRIVATE);
+        boolean isEnabled = prefs.getBoolean(getString(R.string.personalPairingEnabledPreference), false);
+        String compartmentId = prefs.getString(getString(R.string.personalPairingCompartmentIdPreference), "");
+        String alias = prefs.getString(getString(R.string.personalPairingAliasPreference), "");
+        String lightProxyEntry = prefs.getString(getString(R.string.personalPairingLightProxyEntryPreference), "");
 
-        PersonalPairingHelper.PersonalPairingData data = new PersonalPairingHelper.PersonalPairingData(compartmentId, alias);
+        PersonalPairingHelper.PersonalPairingData data = new PersonalPairingHelper.PersonalPairingData(
+                compartmentId, alias, lightProxyEntry);
         viewModel.setPersonalPairingState(isEnabled, data);
     }
 }

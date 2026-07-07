@@ -23,6 +23,10 @@
         android:selectable="false" />
 
     <EditTextPreference
+        android:key="@string/personalPairingLightProxyEntryPreference"
+        android:selectable="false" />
+
+    <EditTextPreference
         android:key="@string/personalPairingAliasPreference"
         android:title="@string/personal_pairing_alias_title"
         android:summary="@string/personal_pairing_alias_summary" />

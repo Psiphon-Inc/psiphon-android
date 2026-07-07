@@ -66,6 +66,7 @@ public class PersonalPairingPreferenceActivity extends LocalizedActivities.AppCo
         private Preference importPref;
         private EditTextPreference compartmentIdPref;
         private EditTextPreference aliasPref;
+        private EditTextPreference lightEntryPref;
         private Preference resetPref;
         private Toast currentToast;
         private PersonalPairingHelper personalPairingHelper;
@@ -81,14 +82,18 @@ public class PersonalPairingPreferenceActivity extends LocalizedActivities.AppCo
             importPref = preferences.findPreference(getString(R.string.personalPairingImportPreference));
             compartmentIdPref = preferences.findPreference(getString(R.string.personalPairingCompartmentIdPreference));
             aliasPref = preferences.findPreference(getString(R.string.personalPairingAliasPreference));
+            lightEntryPref = preferences.findPreference(getString(R.string.personalPairingLightProxyEntryPreference));
             resetPref = preferences.findPreference(getString(R.string.personalPairingResetPreference));
             personalPairingHelper = new PersonalPairingHelper(requireContext());
+
+            lightEntryPref.setVisible(false);
 
             // Set initial values from current preferences
             final PreferenceGetter preferenceGetter = getPreferenceGetter();
             enabledPref.setChecked(preferenceGetter.getBoolean(getString(R.string.personalPairingEnabledPreference), false));
             compartmentIdPref.setText(preferenceGetter.getString(getString(R.string.personalPairingCompartmentIdPreference), ""));
             aliasPref.setText(preferenceGetter.getString(getString(R.string.personalPairingAliasPreference), ""));
+            lightEntryPref.setText(preferenceGetter.getString(getString(R.string.personalPairingLightProxyEntryPreference), ""));
 
             // Set up import button click listener
             importPref.setOnPreferenceClickListener(preference -> {
@@ -98,7 +103,7 @@ public class PersonalPairingPreferenceActivity extends LocalizedActivities.AppCo
 
             // Set up name preference change listener
             aliasPref.setOnPreferenceChangeListener((preference, newValue) -> {
-                if (TextUtils.isEmpty(compartmentIdPref.getText())) {
+                if (!hasPairing()) {
                     showToast(R.string.personal_pairing_need_compartment_id, Toast.LENGTH_SHORT);
                     return false;
                 }
@@ -108,7 +113,7 @@ public class PersonalPairingPreferenceActivity extends LocalizedActivities.AppCo
             // Set up enabled preference change listener
             enabledPref.setOnPreferenceChangeListener((preference, newValue) -> {
                 boolean newEnabled = (Boolean) newValue;
-                if (newEnabled && TextUtils.isEmpty(compartmentIdPref.getText())) {
+                if (newEnabled && !hasPairing()) {
                     showToast(R.string.personal_pairing_need_compartment_id, Toast.LENGTH_SHORT);
                     return false;
                 }
@@ -149,17 +154,17 @@ public class PersonalPairingPreferenceActivity extends LocalizedActivities.AppCo
         }
 
         private void showResetDialog() {
-            String compartmentId = compartmentIdPref.getText();
+            String reference = getPairingReference();
 
-            // Guard against empty ID
-            if (compartmentId == null || compartmentId.isEmpty()) {
+            // Guard against an empty pairing reference
+            if (TextUtils.isEmpty(reference)) {
                 showToast(R.string.personal_pairing_reset_error, Toast.LENGTH_SHORT);
                 return;
             }
 
             // Determine how many characters to request
-            int charsToRequest = Math.min(compartmentId.length(), 4);
-            String lastChars = compartmentId.substring(compartmentId.length() - charsToRequest);
+            int charsToRequest = Math.min(reference.length(), 4);
+            String lastChars = reference.substring(reference.length() - charsToRequest);
 
             View dialogView = LayoutInflater.from(getContext())
                     .inflate(R.layout.dialog_reset_pairing, null);
@@ -212,56 +217,67 @@ public class PersonalPairingPreferenceActivity extends LocalizedActivities.AppCo
         private void resetPairingPreferences() {
             compartmentIdPref.setText("");
             compartmentIdPref.setSummary(R.string.personal_pairing_compartment_id_summary);
+            lightEntryPref.setText("");
             aliasPref.setText("");
             aliasPref.setSummary(R.string.personal_pairing_alias_summary);
             enabledPref.setChecked(false);
             PersonalPairingHelper.resetPersonalPairingPreferences(getContext());
+            updatePersonalPairingPreferencesUI();
         }
 
         private void updatePairingData(PersonalPairingHelper.PersonalPairingData data) {
             compartmentIdPref.setText(data.compartmentId);
             aliasPref.setText(data.alias);
+            lightEntryPref.setText(data.lightProxyEntry);
             updatePersonalPairingPreferencesUI();
             persistPersonalPairingState();
         }
 
         private void persistPersonalPairingState() {
-            String compartmentId = compartmentIdPref.getText();
-            String alias = aliasPref.getText();
-            boolean enabled = enabledPref.isChecked();
-
-            if (compartmentId == null) {
-                compartmentId = "";
-            }
-            if (alias == null) {
-                alias = "";
-            }
-
             personalPairingHelper.setPersonalPairingState(
-                    enabled,
-                    new PersonalPairingHelper.PersonalPairingData(compartmentId, alias));
+                    enabledPref.isChecked(),
+                    new PersonalPairingHelper.PersonalPairingData(
+                            compartmentIdPref.getText(),
+                            aliasPref.getText(),
+                            lightEntryPref.getText()));
+        }
+
+        private boolean hasPairing() {
+            return !TextUtils.isEmpty(compartmentIdPref.getText()) || !TextUtils.isEmpty(lightEntryPref.getText());
+        }
+
+        private String getPairingReference() {
+            if (!TextUtils.isEmpty(lightEntryPref.getText())) {
+                String name = aliasPref.getText();
+                return !TextUtils.isEmpty(name) ? name : lightEntryPref.getText();
+            }
+            return compartmentIdPref.getText();
         }
 
         private void updatePersonalPairingPreferencesUI() {
             boolean hasCompartmentId = !TextUtils.isEmpty(compartmentIdPref.getText());
+            boolean hasLightProxy = !TextUtils.isEmpty(lightEntryPref.getText());
+            boolean hasPairing = hasCompartmentId || hasLightProxy;
             boolean isEnabled = enabledPref.isChecked();
 
-            // Update preference states
-            aliasPref.setEnabled(hasCompartmentId); // Keep editable if compartment ID is set even if the feature is disabled
-            resetPref.setEnabled(hasCompartmentId);
+            aliasPref.setEnabled(hasPairing);
+            resetPref.setEnabled(hasPairing);
 
-            compartmentIdPref.setEnabled(isEnabled && hasCompartmentId);
+            boolean showCompartment = hasCompartmentId && !hasLightProxy;
 
-            // If no compartment ID, ensure feature is disabled
-            if (!hasCompartmentId && isEnabled) {
+            compartmentIdPref.setVisible(showCompartment);
+            compartmentIdPref.setEnabled(isEnabled && showCompartment);
+
+            // If no pairing is set, ensure the feature is disabled
+            if (!hasPairing && isEnabled) {
                 enabledPref.setChecked(false);
             }
 
-            // Update compartment ID and alias summaries if the compartment ID is set, otherwise show the default summary
-            if (hasCompartmentId) {
+            if (showCompartment) {
                 String compartmentId = compartmentIdPref.getText();
                 compartmentIdPref.setSummary(!TextUtils.isEmpty(compartmentId) ? compartmentId : null);
-
+            }
+            if (hasPairing) {
                 String name = aliasPref.getText();
                 aliasPref.setSummary(!TextUtils.isEmpty(name) ? name.replace("\n", " ") : null);
             }
