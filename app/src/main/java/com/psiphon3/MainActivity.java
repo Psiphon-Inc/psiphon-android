@@ -464,7 +464,8 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                         .doOnNext(state -> {
                             personalPairingEnabled = state.enabled;
 
-                            if (state.data == null || state.data.compartmentId == null || state.data.compartmentId.isEmpty()) {
+                            boolean hasPairingData = state.data != null && state.data.hasAnyPairing();
+                            if (!hasPairingData) {
                                 // Hide the personal pairing toggle layout if there is no data
                                 personalPairingToggleContainer.setVisibility(View.GONE);
                             } else {
@@ -472,7 +473,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                                 personalPairingToggleContainer.setVisibility(View.VISIBLE);
                             }
 
-                            if (state.enabled && state.data != null && state.data.compartmentId != null && !state.data.compartmentId.isEmpty()) {
+                            if (state.enabled && hasPairingData) {
                                 String alias = state.data.alias;
                                 personalPairingToggle.setChecked(true);
                                 if (alias != null && !alias.isEmpty()) {
@@ -1106,7 +1107,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
                                     showEnableConfirmationDialog(result.data);
                                     break;
                                 case PROMPT_UPDATE:
-                                    showUpdateConfirmationDialog(result.data, result.existingCompartmentId, result.existingEnabled);
+                                    showUpdateConfirmationDialog(result.data, result.existingReference, result.existingEnabled);
                                     break;
                             }
                         }, error -> showToast(getPairingImportErrorString(
@@ -1148,7 +1149,7 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         TextView oldIdView = dialogView.findViewById(R.id.old_compartment_id);
         TextView newIdView = dialogView.findViewById(R.id.new_compartment_id);
         oldIdView.setText(existingId);
-        newIdView.setText(newData.compartmentId);
+        newIdView.setText(newData.displayReference());
 
         updateConfirmationDialog =  new AlertDialog.Builder(this)
                 .setIcon(R.drawable.ic_psiphon_alert_notification)

@@ -17,6 +17,8 @@ public class PersonalPairingHelperTest {
     // spec/fixtures/pairing/token.malformed.txt
     private static final String MALFORMED_TOKEN = "not-base64-token!!";
 
+    private static final String LIGHT_PROXY_ENTRY = "aGVsbG8gbGlnaHQgcHJveHk=";
+
     private static final String VALID_DEEP_LINK = "psiphon://pair/" + VALID_TOKEN_BASE64URL;
     private static final String VALID_WRAPPER_URL = "https://example.net/pair/" + VALID_TOKEN_BASE64URL;
 
@@ -96,6 +98,75 @@ public class PersonalPairingHelperTest {
         assertValidationError(
                 malformedSchemaToken,
                 PersonalPairingHelper.ImportValidationError.MALFORMED_TOKEN);
+    }
+
+    @Test
+    public void extractPersonalPairingData_acceptsNewCombinedLightAndIdToken() {
+        // Combined token: light entry under "light" and inproxy compartment ID under
+        // "id". Both connection methods must be extracted and kept.
+        String token = encodeToken("{\"v\":\"1\",\"data\":{\"name\":\"" + EXPECTED_ALIAS
+                + "\",\"light\":\"" + LIGHT_PROXY_ENTRY
+                + "\",\"id\":\"" + EXPECTED_COMPARTMENT_ID + "\"}}", true);
+        PersonalPairingHelper.PersonalPairingData data =
+                PersonalPairingHelper.extractPersonalPairingData(token);
+        Assert.assertTrue(data.hasInproxyPairing());
+        Assert.assertTrue(data.hasLightProxy());
+        Assert.assertEquals(EXPECTED_COMPARTMENT_ID, data.compartmentId);
+        Assert.assertEquals(EXPECTED_ALIAS, data.alias);
+        Assert.assertEquals(LIGHT_PROXY_ENTRY, data.lightProxyEntry);
+    }
+
+    @Test
+    public void extractPersonalPairingData_acceptsNewLightOnlyToken() {
+        String token = encodeToken("{\"v\":\"1\",\"data\":{\"light\":\"" + LIGHT_PROXY_ENTRY + "\"}}", true);
+        PersonalPairingHelper.PersonalPairingData data =
+                PersonalPairingHelper.extractPersonalPairingData(token);
+        Assert.assertTrue(data.hasLightProxy());
+        Assert.assertFalse(data.hasInproxyPairing());
+        Assert.assertEquals(LIGHT_PROXY_ENTRY, data.lightProxyEntry);
+        Assert.assertEquals("", data.compartmentId);
+    }
+
+    @Test
+    public void extractPersonalPairingData_rejectsTokenWithNoConnectionMethod() {
+        String token = encodeToken("{\"v\":\"1\",\"data\":{\"name\":\"" + EXPECTED_ALIAS + "\"}}", true);
+        assertValidationError(token, PersonalPairingHelper.ImportValidationError.MALFORMED_TOKEN);
+    }
+
+    @Test
+    public void extractPersonalPairingData_rejectsUnknownDataField() {
+        String token = encodeToken("{\"v\":\"1\",\"data\":{\"id\":\"" + EXPECTED_COMPARTMENT_ID
+                + "\",\"name\":\"" + EXPECTED_ALIAS + "\",\"bogus\":\"x\"}}", true);
+        assertValidationError(token, PersonalPairingHelper.ImportValidationError.MALFORMED_TOKEN);
+    }
+
+    @Test
+    public void extractPersonalPairingData_rejectsMalformedLightProxyEntry() {
+        String token = encodeToken("{\"v\":\"1\",\"data\":{\"light\":\"!!!not-base64\"}}", true);
+        assertValidationError(token, PersonalPairingHelper.ImportValidationError.MALFORMED_TOKEN);
+    }
+
+    @Test
+    public void personalPairingData_hasAnyPairing() {
+        Assert.assertFalse(new PersonalPairingHelper.PersonalPairingData("", "").hasAnyPairing());
+        Assert.assertTrue(new PersonalPairingHelper.PersonalPairingData(EXPECTED_COMPARTMENT_ID, "").hasAnyPairing());
+        Assert.assertTrue(new PersonalPairingHelper.PersonalPairingData("", "", LIGHT_PROXY_ENTRY).hasAnyPairing());
+    }
+
+    @Test
+    public void personalPairingData_displayReference() {
+        // Inproxy only -> compartment ID
+        Assert.assertEquals(EXPECTED_COMPARTMENT_ID,
+                new PersonalPairingHelper.PersonalPairingData(EXPECTED_COMPARTMENT_ID, "").displayReference());
+        // Light with a name -> the name
+        Assert.assertEquals(EXPECTED_ALIAS,
+                new PersonalPairingHelper.PersonalPairingData("", EXPECTED_ALIAS, LIGHT_PROXY_ENTRY).displayReference());
+        // Light without a name -> raw entry
+        Assert.assertEquals(LIGHT_PROXY_ENTRY,
+                new PersonalPairingHelper.PersonalPairingData("", "", LIGHT_PROXY_ENTRY).displayReference());
+        // Combined -> name preferred (light is preferred over the compartment ID)
+        Assert.assertEquals(EXPECTED_ALIAS,
+                new PersonalPairingHelper.PersonalPairingData(EXPECTED_COMPARTMENT_ID, EXPECTED_ALIAS, LIGHT_PROXY_ENTRY).displayReference());
     }
 
     private static String encodeToken(String json, boolean urlSafe) {

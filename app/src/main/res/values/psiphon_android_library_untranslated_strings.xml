@@ -55,6 +55,7 @@
     <string name="personalPairingImportPreference" translatable="false">personalPairingImportPreference</string>
     <string name="personalPairingCompartmentIdPreference" translatable="false">personalPairingCompartmentIdPreference</string>
     <string name="personalPairingAliasPreference" translatable="false">personalPairingAliasPreference</string>
+    <string name="personalPairingLightProxyEntryPreference" translatable="false">personalPairingLightProxyEntryPreference</string>
     <string name="personalPairingResetPreference" translatable="false">personalPairingResetPreference</string>
 
     <string-array name="languages">

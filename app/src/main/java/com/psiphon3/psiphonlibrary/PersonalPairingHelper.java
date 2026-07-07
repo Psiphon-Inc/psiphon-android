@@ -59,6 +59,7 @@ public class PersonalPairingHelper {
     private static final String DATA_KEY = "data";
     private static final String ID_KEY = "id";
     private static final String NAME_KEY = "name";
+    private static final String LIGHT_KEY = "light";
     private static final Pattern BASE64URL_PATTERN = Pattern.compile("^[A-Za-z0-9_-]+$");
     private static final Pattern BASE64_PATTERN = Pattern.compile("^[A-Za-z0-9+/]+={0,2}$");
     private static final Pattern COMPARTMENT_ID_STANDARD_PATTERN = Pattern.compile("^[A-Za-z0-9+/]{43}$");
@@ -107,12 +108,38 @@ public class PersonalPairingHelper {
     }
 
     public static class PersonalPairingData {
+        // Inproxy personal pairing compartment ID
         public final String compartmentId;
         public final String alias;
+        public final String lightProxyEntry;
 
         public PersonalPairingData(String compartmentId, String alias) {
-            this.compartmentId = compartmentId;
-            this.alias = alias;
+            this(compartmentId, alias, null);
+        }
+
+        public PersonalPairingData(String compartmentId, String alias, String lightProxyEntry) {
+            this.compartmentId = compartmentId != null ? compartmentId : "";
+            this.alias = alias != null ? alias : "";
+            this.lightProxyEntry = lightProxyEntry != null ? lightProxyEntry : "";
+        }
+
+        public boolean hasInproxyPairing() {
+            return !compartmentId.isEmpty();
+        }
+
+        public boolean hasLightProxy() {
+            return !lightProxyEntry.isEmpty();
+        }
+
+        public boolean hasAnyPairing() {
+            return hasInproxyPairing() || hasLightProxy();
+        }
+
+        public String displayReference() {
+            if (hasLightProxy()) {
+                return !alias.isEmpty() ? alias : lightProxyEntry;
+            }
+            return compartmentId;
         }
 
         @Override
@@ -121,12 +148,13 @@ public class PersonalPairingHelper {
             if (o == null || getClass() != o.getClass()) return false;
             PersonalPairingData that = (PersonalPairingData) o;
             return Objects.equals(compartmentId, that.compartmentId) &&
-                    Objects.equals(alias, that.alias);
+                    Objects.equals(alias, that.alias) &&
+                    Objects.equals(lightProxyEntry, that.lightProxyEntry);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(compartmentId, alias);
+            return Objects.hash(compartmentId, alias, lightProxyEntry);
         }
     }
 
@@ -156,10 +184,18 @@ public class PersonalPairingHelper {
                 context.getString(R.string.personalPairingCompartmentIdPreference), "");
         String alias = prefs.getString(
                 context.getString(R.string.personalPairingAliasPreference), "");
+        String lightProxyEntry = prefs.getString(
+                context.getString(R.string.personalPairingLightProxyEntryPreference), "");
+
+        boolean hasCompartmentId = compartmentId != null && !compartmentId.isEmpty();
+        boolean hasLightProxyEntry = lightProxyEntry != null && !lightProxyEntry.isEmpty();
 
         PersonalPairingData data = null;
-        if (compartmentId != null && !compartmentId.isEmpty()) {
-            data = new PersonalPairingData(toStandardBase64CompartmentId(compartmentId), alias != null ? alias : "");
+        if (hasCompartmentId || hasLightProxyEntry) {
+            data = new PersonalPairingData(
+                    hasCompartmentId ? toStandardBase64CompartmentId(compartmentId) : null,
+                    alias,
+                    lightProxyEntry);
         }
 
         return new PersonalPairingState(enabled, data);
@@ -187,8 +223,9 @@ public class PersonalPairingHelper {
         }
 
         PersonalPairingData normalizedData = new PersonalPairingData(
-                toStandardBase64CompartmentId(data.compartmentId),
-                data.alias);
+                data.hasInproxyPairing() ? toStandardBase64CompartmentId(data.compartmentId) : null,
+                data.alias,
+                data.lightProxyEntry);
 
         PersonalPairingState currentState = personalPairingStateRelay.getValue();
         if (currentState != null && (currentState.enabled != enabled ||
@@ -196,6 +233,7 @@ public class PersonalPairingHelper {
             prefs.put(context.getString(R.string.personalPairingEnabledPreference), enabled);
             prefs.put(context.getString(R.string.personalPairingCompartmentIdPreference), normalizedData.compartmentId);
             prefs.put(context.getString(R.string.personalPairingAliasPreference), normalizedData.alias);
+            prefs.put(context.getString(R.string.personalPairingLightProxyEntryPreference), normalizedData.lightProxyEntry);
             personalPairingStateRelay.accept(PersonalPairingState.create(enabled, normalizedData));
         }
     }
@@ -217,18 +255,18 @@ public class PersonalPairingHelper {
 
         public final Action action;
         public final PersonalPairingData data;
-        public final String existingCompartmentId;
+        public final String existingReference;
         public final Boolean existingEnabled;
         public final ImportValidationError validationError;
 
         private ImportResult(Action action,
                              PersonalPairingData data,
-                             String existingCompartmentId,
+                             String existingReference,
                              Boolean existingEnabled,
                              ImportValidationError validationError) {
             this.action = action;
             this.data = data;
-            this.existingCompartmentId = existingCompartmentId;
+            this.existingReference = existingReference;
             this.existingEnabled = existingEnabled;
             this.validationError = validationError;
         }
@@ -249,8 +287,8 @@ public class PersonalPairingHelper {
             return new ImportResult(Action.PROMPT_ENABLE, data, null, null, null);
         }
 
-        public static ImportResult needsUpdate(PersonalPairingData data, String existingId, Boolean existingEnabled) {
-            return new ImportResult(Action.PROMPT_UPDATE, data, existingId, existingEnabled, null);
+        public static ImportResult needsUpdate(PersonalPairingData data, String existingReference, Boolean existingEnabled) {
+            return new ImportResult(Action.PROMPT_UPDATE, data, existingReference, existingEnabled, null);
         }
     }
 
@@ -394,15 +432,17 @@ public class PersonalPairingHelper {
     }
 
     private static PersonalPairingData parsePayload(byte[] decodedToken) {
+        // v1 token JSON: {"v":"1","data":{"name":<optional>,"light":<base64 light proxy entry>,"id":<base64 inproxy compartment ID>}}
         try (JsonParser parser = JSON_FACTORY.createParser(decodedToken)) {
             if (parser.nextToken() != JsonToken.START_OBJECT) {
                 throw malformedToken();
             }
 
             String version = null;
+            boolean sawData = false;
             String compartmentId = null;
             String alias = null;
-            int topLevelFieldCount = 0;
+            String lightProxyEntry = null;
 
             while (parser.nextToken() != JsonToken.END_OBJECT) {
                 if (parser.getCurrentToken() != JsonToken.FIELD_NAME) {
@@ -410,44 +450,40 @@ public class PersonalPairingHelper {
                 }
 
                 String fieldName = parser.getCurrentName();
-                topLevelFieldCount++;
                 parser.nextToken();
 
                 if (VERSION_KEY.equals(fieldName)) {
                     version = requireNonEmptyString(parser);
                 } else if (DATA_KEY.equals(fieldName)) {
+                    sawData = true;
                     if (parser.getCurrentToken() != JsonToken.START_OBJECT) {
                         throw malformedToken();
                     }
 
-                    int dataFieldCount = 0;
                     while (parser.nextToken() != JsonToken.END_OBJECT) {
                         if (parser.getCurrentToken() != JsonToken.FIELD_NAME) {
                             throw malformedToken();
                         }
 
                         String dataFieldName = parser.getCurrentName();
-                        dataFieldCount++;
                         parser.nextToken();
 
                         if (ID_KEY.equals(dataFieldName)) {
                             compartmentId = requireNonEmptyString(parser);
                         } else if (NAME_KEY.equals(dataFieldName)) {
                             alias = requireNonEmptyString(parser);
+                        } else if (LIGHT_KEY.equals(dataFieldName)) {
+                            lightProxyEntry = requireNonEmptyString(parser);
                         } else {
                             throw malformedToken();
                         }
-                    }
-
-                    if (dataFieldCount != 2 || compartmentId == null || alias == null) {
-                        throw malformedToken();
                     }
                 } else {
                     throw malformedToken();
                 }
             }
 
-            if (topLevelFieldCount != 2 || version == null) {
+            if (version == null || !sawData) {
                 throw malformedToken();
             }
 
@@ -455,8 +491,20 @@ public class PersonalPairingHelper {
                 throw unsupportedVersion();
             }
 
-            String normalizedCompartmentId = validateAndNormalizeCompartmentId(compartmentId);
-            return new PersonalPairingData(normalizedCompartmentId, alias);
+            // A token must carry at least one connection method: an inproxy
+            // compartment ID and/or a light proxy entry. Both may be present in a
+            // combined token, in which case the light proxy is preferred right now
+            if (compartmentId == null && lightProxyEntry == null) {
+                throw malformedToken();
+            }
+
+            String normalizedCompartmentId = compartmentId != null
+                    ? validateAndNormalizeCompartmentId(compartmentId) : null;
+            if (lightProxyEntry != null) {
+                validateLightProxyEntry(lightProxyEntry);
+            }
+
+            return new PersonalPairingData(normalizedCompartmentId, alias, lightProxyEntry);
         } catch (PersonalPairingImportException e) {
             throw e;
         } catch (IOException | RuntimeException e) {
@@ -481,6 +529,21 @@ public class PersonalPairingHelper {
         }
 
         return normalizedCompartmentId;
+    }
+
+    // Verify entry is a well formed standard base64 of non-empty bytes
+    private static void validateLightProxyEntry(String lightProxyEntry) {
+        if (!BASE64_PATTERN.matcher(lightProxyEntry).matches() || lightProxyEntry.length() % 4 != 0) {
+            throw malformedToken();
+        }
+        try {
+            byte[] decoded = Utils.Base64.decode(lightProxyEntry);
+            if (decoded.length == 0) {
+                throw malformedToken();
+            }
+        } catch (IllegalArgumentException e) {
+            throw malformedToken(e);
+        }
     }
 
     private static byte[] decodeUrlSafeBase64(String token) {
@@ -509,14 +572,22 @@ public class PersonalPairingHelper {
     private ImportResult validatePersonalPairingData(String input) {
         try {
             PersonalPairingData personalPairingData = extractPersonalPairingData(input);
-            String storedCompartmentId = prefs.getString(context.getString(R.string.personalPairingCompartmentIdPreference), "");
+            String storedCompartmentId = emptyIfNull(prefs.getString(
+                    context.getString(R.string.personalPairingCompartmentIdPreference), ""));
+            String storedLightProxyEntry = emptyIfNull(prefs.getString(
+                    context.getString(R.string.personalPairingLightProxyEntryPreference), ""));
+            String storedAlias = emptyIfNull(prefs.getString(
+                    context.getString(R.string.personalPairingAliasPreference), ""));
             Boolean storedEnabled = prefs.getBoolean(context.getString(R.string.personalPairingEnabledPreference), false);
-            if (storedCompartmentId == null || storedCompartmentId.isEmpty()) {
+            if (storedCompartmentId.isEmpty() && storedLightProxyEntry.isEmpty()) {
                 return ImportResult.promptEnable(personalPairingData);
-            } else if (storedCompartmentId.equals(personalPairingData.compartmentId)) {
+            } else if (storedCompartmentId.equals(personalPairingData.compartmentId) &&
+                    storedLightProxyEntry.equals(personalPairingData.lightProxyEntry)) {
                 return ImportResult.alreadyExists(personalPairingData);
             } else {
-                return ImportResult.needsUpdate(personalPairingData, storedCompartmentId, storedEnabled);
+                PersonalPairingData storedData = new PersonalPairingData(
+                        storedCompartmentId, storedAlias, storedLightProxyEntry);
+                return ImportResult.needsUpdate(personalPairingData, storedData.displayReference(), storedEnabled);
             }
         } catch (IllegalArgumentException e) {
             ImportValidationError validationError = validationErrorFromException(e);
@@ -561,5 +632,10 @@ public class PersonalPairingHelper {
         prefs.remove(context.getString(R.string.personalPairingEnabledPreference));
         prefs.remove(context.getString(R.string.personalPairingCompartmentIdPreference));
         prefs.remove(context.getString(R.string.personalPairingAliasPreference));
+        prefs.remove(context.getString(R.string.personalPairingLightProxyEntryPreference));
+    }
+
+    private static String emptyIfNull(String value) {
+        return value != null ? value : "";
     }
 }
