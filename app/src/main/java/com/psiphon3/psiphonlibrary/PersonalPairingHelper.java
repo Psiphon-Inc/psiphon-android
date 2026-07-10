@@ -60,6 +60,7 @@ public class PersonalPairingHelper {
     private static final String ID_KEY = "id";
     private static final String NAME_KEY = "name";
     private static final String LIGHT_KEY = "light";
+    private static final int MAX_TOKEN_LENGTH = 64 * 1024;
     private static final Pattern BASE64URL_PATTERN = Pattern.compile("^[A-Za-z0-9_-]+$");
     private static final Pattern BASE64_PATTERN = Pattern.compile("^[A-Za-z0-9+/]+={0,2}$");
     private static final Pattern COMPARTMENT_ID_STANDARD_PATTERN = Pattern.compile("^[A-Za-z0-9+/]{43}$");
@@ -397,7 +398,7 @@ public class PersonalPairingHelper {
     }
 
     private static byte[] decodeToken(String token) {
-        if (token == null || token.isEmpty()) {
+        if (token == null || token.isEmpty() || token.length() > MAX_TOKEN_LENGTH) {
             throw malformedToken();
         }
 
@@ -439,6 +440,7 @@ public class PersonalPairingHelper {
             }
 
             String version = null;
+            boolean sawVersion = false;
             boolean sawData = false;
             String compartmentId = null;
             String alias = null;
@@ -453,13 +455,23 @@ public class PersonalPairingHelper {
                 parser.nextToken();
 
                 if (VERSION_KEY.equals(fieldName)) {
+                    if (sawVersion) {
+                        throw malformedToken();
+                    }
+                    sawVersion = true;
                     version = requireNonEmptyString(parser);
                 } else if (DATA_KEY.equals(fieldName)) {
+                    if (sawData) {
+                        throw malformedToken();
+                    }
                     sawData = true;
                     if (parser.getCurrentToken() != JsonToken.START_OBJECT) {
                         throw malformedToken();
                     }
 
+                    boolean sawId = false;
+                    boolean sawName = false;
+                    boolean sawLight = false;
                     while (parser.nextToken() != JsonToken.END_OBJECT) {
                         if (parser.getCurrentToken() != JsonToken.FIELD_NAME) {
                             throw malformedToken();
@@ -469,10 +481,22 @@ public class PersonalPairingHelper {
                         parser.nextToken();
 
                         if (ID_KEY.equals(dataFieldName)) {
+                            if (sawId) {
+                                throw malformedToken();
+                            }
+                            sawId = true;
                             compartmentId = requireNonEmptyString(parser);
                         } else if (NAME_KEY.equals(dataFieldName)) {
+                            if (sawName) {
+                                throw malformedToken();
+                            }
+                            sawName = true;
                             alias = requireNonEmptyString(parser);
                         } else if (LIGHT_KEY.equals(dataFieldName)) {
+                            if (sawLight) {
+                                throw malformedToken();
+                            }
+                            sawLight = true;
                             lightProxyEntry = requireNonEmptyString(parser);
                         } else {
                             throw malformedToken();

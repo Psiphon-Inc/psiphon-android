@@ -4,6 +4,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
 
 public class PersonalPairingHelperTest {
@@ -138,6 +139,22 @@ public class PersonalPairingHelperTest {
         String token = encodeToken("{\"v\":\"1\",\"data\":{\"id\":\"" + EXPECTED_COMPARTMENT_ID
                 + "\",\"name\":\"" + EXPECTED_ALIAS + "\",\"bogus\":\"x\"}}", true);
         assertValidationError(token, PersonalPairingHelper.ImportValidationError.MALFORMED_TOKEN);
+    }
+
+    @Test
+    public void extractPersonalPairingData_rejectsDuplicateField() {
+        String token = encodeToken("{\"v\":\"1\",\"data\":{\"light\":\"" + LIGHT_PROXY_ENTRY
+                + "\",\"light\":\"" + LIGHT_PROXY_ENTRY + "\"}}", true);
+        assertValidationError(token, PersonalPairingHelper.ImportValidationError.MALFORMED_TOKEN);
+    }
+
+    @Test
+    public void extractPersonalPairingData_rejectsOversizedToken() {
+        char[] tokenChars = new char[64 * 1024 + 1];
+        Arrays.fill(tokenChars, 'A');
+        assertValidationError(
+                new String(tokenChars),
+                PersonalPairingHelper.ImportValidationError.MALFORMED_TOKEN);
     }
 
     @Test
