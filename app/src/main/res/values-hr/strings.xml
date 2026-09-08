@@ -72,7 +72,7 @@
   <!--"Upstream proxy error" alert dialog message-->
   <string name="upstream_proxy_error_alert_message">Konfigurirali ste Psiphon da koristi uzvodni proksi. Međutim, čini se da se ne možemo spojiti na Psiphon poslužitelj kroz taj proksi.\n\nMolimo popravite postavke i pokušajte ponovno.\n\nPogledajte zapisnike za tehničke informacije.</string>
   <!--Notification title for the 'Psiphon crash detected' notification-->
-  <string name="psiphon_native_crash_notification_title">Psiphon se srušio</string>
+  <string name="psiphon_native_crash_notification_title">Psiphon se ranije srušio</string>
   <!--Notification short message for the 'Psiphon crash detected' notification-->
   <string name="psiphon_native_crash_notification_msg">Molimo pošaljite nam povratne informacije.</string>
   <!--Notification longer message for the 'Psiphon crash detected' notification-->

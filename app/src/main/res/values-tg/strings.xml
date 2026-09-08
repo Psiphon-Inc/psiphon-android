@@ -69,7 +69,7 @@
   <!--"Upstream proxy error" alert dialog message-->
   <string name="upstream_proxy_error_alert_message">Шумо Psiphon-ро барои истифодаи прокси болоӣ танзим кардаед. Аммо мо наметавонем тавассути он прокси ба сервери Psiphon пайваст шавем.\n\nЛутфан танзимотро ислоҳ карда, аз нав кӯшиш кунед.\n\nБарои маълумоти техникӣ, бақайдҳои логро бинед.</string>
   <!--Notification title for the 'Psiphon crash detected' notification-->
-  <string name="psiphon_native_crash_notification_title">Psiphon вайрон шуд</string>
+  <string name="psiphon_native_crash_notification_title">Psiphon қаблан вайрон шуд</string>
   <!--Notification short message for the 'Psiphon crash detected' notification-->
   <string name="psiphon_native_crash_notification_msg">Лутфан ба мо фикру мулоҳизаҳо фиристед.</string>
   <!--Notification longer message for the 'Psiphon crash detected' notification-->

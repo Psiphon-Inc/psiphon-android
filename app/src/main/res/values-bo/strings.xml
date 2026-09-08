@@ -68,7 +68,7 @@
   <!--"Upstream proxy error" alert dialog message-->
   <string name="upstream_proxy_error_alert_message">ཁྱེད་ཀྱིས་Psiphon ལ་སྔོན་གྱི་ལས་ཚབ་སྤྱོད་པར་སྒྲིག་བཀོད་གནང་འདུག། འོན་ཀྱང་ལས་ཚབ་དེའི་བརྒྱུད་ནས་Psiphon ཞབས་ཞུ་ཆས་དང་འབྲེལ་མཐུད་མི་ཐུབ་པ་འདྲ།\n\nསྒྲིག་བཀོད་བཅོས་ཏེ་ཡང་སྐྱར་ཐབས་ཤེས་གནང་།\n\nབཀོལ་སྤྱོད་ཆ་འཕྲིན་ཤེས་རྟོགས་ཆེད་ཐོ་འགོད་ལ་གཟིགས།</string>
   <!--Notification title for the 'Psiphon crash detected' notification-->
-  <string name="psiphon_native_crash_notification_title">Psiphon བཤིག་འདུག</string>
+  <string name="psiphon_native_crash_notification_title">Psiphon སྔོན་ལ་བཤིག་ཡོད།</string>
   <!--Notification short message for the 'Psiphon crash detected' notification-->
   <string name="psiphon_native_crash_notification_msg">ང་ཚོར་ལན་འདེབས་གནང་རོགས།</string>
   <!--Notification longer message for the 'Psiphon crash detected' notification-->

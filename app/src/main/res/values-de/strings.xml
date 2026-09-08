@@ -72,7 +72,7 @@
   <!--"Upstream proxy error" alert dialog message-->
   <string name="upstream_proxy_error_alert_message">Sie haben Psiphon so konfiguriert, dass es einen Upstream-Proxy verwendet. Allerdings können wir über diesen Proxy anscheinend keine Verbindung zu einem Psiphon-Server herstellen.\n\nBitte korrigieren Sie die Einstellungen und versuchen Sie es erneut.\n\nTechnische Informationen finden Sie in den Protokollen.</string>
   <!--Notification title for the 'Psiphon crash detected' notification-->
-  <string name="psiphon_native_crash_notification_title">Psiphon ist abgestürzt</string>
+  <string name="psiphon_native_crash_notification_title">Psiphon ist früher abgestürzt</string>
   <!--Notification short message for the 'Psiphon crash detected' notification-->
   <string name="psiphon_native_crash_notification_msg">Bitte senden Sie uns eine Rückmeldung.</string>
   <!--Notification longer message for the 'Psiphon crash detected' notification-->

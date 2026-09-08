@@ -24,13 +24,15 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.annotation.NonNull;
 import androidx.work.Data;
 import androidx.work.RxWorker;
 import androidx.work.WorkerParameters;
 
-import com.psiphon3.PsiphonCrashService;
+import com.psiphon3.CrashReporter;
 import com.psiphon3.R;
 import com.psiphon3.log.LogEntry;
 import com.psiphon3.log.LoggingContentProvider;
@@ -54,6 +56,7 @@ import java.util.Locale;
 import ca.psiphon.PsiphonTunnel;
 import ca.psiphon.PsiphonTunnel.PsiphonTunnelFeedback;
 import io.reactivex.Completable;
+import io.reactivex.CompletableEmitter;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
 import io.reactivex.schedulers.Schedulers;
@@ -78,7 +81,7 @@ public class FeedbackWorker extends RxWorker {
     private final String feedbackId;
     private final long feedbackSubmitTimeMillis;
 
-    private Thread shutdownHook;
+    private final Handler handler = new Handler(Looper.getMainLooper());
 
     /**
      * Create the input data for a feedback upload work request.
@@ -173,50 +176,16 @@ public class FeedbackWorker extends RxWorker {
             emitter.setCancellable(() -> {
                 MyLog.i("FeedbackUpload: " + feedbackId + " disposed");
                 psiphonTunnelFeedback.shutdown();
-                // Remove the shutdown hook since the underlying resources have been cleaned up by
-                // psiphonTunnelFeedback.shutdown().
-                if (this.shutdownHook != null) {
-                    boolean removed = Runtime.getRuntime().removeShutdownHook(this.shutdownHook);
-                    if (!removed) {
-                        // Hook was either never registered or already de-registered
-                        MyLog.i("FeedbackUpload: shutdown hook not de-registered");
-                    }
-                    this.shutdownHook = null;
-                }
             });
-
-            // Create a shutdown hook which stops the feedback upload operation to ensure that any
-            // underlying resources are cleaned up in the event that the JVM is shutdown. This is
-            // required to prevent possible data store corruption.
-            this.shutdownHook = new Thread() {
-                @Override
-                public void run() {
-                    super.run();
-                    psiphonTunnelFeedback.shutdown();
-                    MyLog.i("FeedbackUpload: shutdown hook done");
-                }
-            };
-            Runtime.getRuntime().addShutdownHook(this.shutdownHook);
 
             psiphonTunnelFeedback.startSendFeedback(
                     context,
                     new PsiphonTunnel.HostFeedbackHandler() {
                         public void sendFeedbackCompleted(java.lang.Exception e) {
-                            if (!emitter.isDisposed()) {
-                                MyLog.i("FeedbackUpload: " + feedbackId + " completed");
-                                if (e != null) {
-                                    emitter.onError(e);
-                                    return;
-                                }
-                                // Complete. This is the last callback invoked by PsiphonTunnel.
-                                emitter.onComplete();
-                            } else {
-                                if (e != null) {
-                                    MyLog.w("FeedbackUpload: " + feedbackId + " completed with error but emitter disposed: " + e);
-                                    return;
-                                }
-                                MyLog.i("FeedbackUpload: " + feedbackId + " completed but emitter disposed");
-                            }
+                            // Avoid disposing directly from the feedback callback thread.
+                            // shutdown() waits for feedback callbacks to stop, so completing here can
+                            // deadlock or block teardown. Post the terminal callback first.
+                            handler.post(() -> handleSendFeedbackCompleted(emitter, e));
                         }
                     },
                     new PsiphonTunnel.HostLogger() {
@@ -229,6 +198,24 @@ public class FeedbackWorker extends RxWorker {
                     feedbackConfigJson, diagnosticsJson, uploadPath, clientPlatformPrefix,
                     clientPlatformSuffix);
         });
+    }
+
+    private void handleSendFeedbackCompleted(CompletableEmitter emitter, Exception e) {
+        if (!emitter.isDisposed()) {
+            MyLog.i("FeedbackUpload: " + feedbackId + " completed");
+            if (e != null) {
+                emitter.onError(e);
+                return;
+            }
+            // Complete. This is the last callback invoked by PsiphonTunnel.
+            emitter.onComplete();
+        } else {
+            if (e != null) {
+                MyLog.w("FeedbackUpload: " + feedbackId + " completed with error but emitter disposed: " + e);
+                return;
+            }
+            MyLog.i("FeedbackUpload: " + feedbackId + " completed but emitter disposed");
+        }
     }
 
     @NonNull
@@ -464,22 +451,22 @@ public class FeedbackWorker extends RxWorker {
                 diagnosticInfo.put("StatusHistory", statusHistory);
             }
             // Check if we have native crash data to include
-            File crashReportFile = new File(PsiphonCrashService.getFinalCrashReportPath(context));
+            File crashReportFile = new File(CrashReporter.getPendingCrashReportPath(context));
             if (crashReportFile.exists()) {
                 JSONArray crashHistory = new JSONArray();
-                try {
-                    BufferedReader in;
+                try (BufferedReader in = new BufferedReader(new FileReader(crashReportFile))) {
                     String str;
-                    in = new BufferedReader(new FileReader(crashReportFile));
                     while ((str = in.readLine()) != null) {
                         crashHistory.put(str);
                     }
-                    in.close();
-
-                } catch (IOException ignored) {
+                } catch (IOException e) {
+                    MyLog.w("FeedbackUpload: failed to read crash report: " + e);
                 }
 
-                crashReportFile.delete();
+                if (!crashReportFile.delete()) {
+                    MyLog.w("FeedbackUpload: failed to delete crash report: " +
+                            crashReportFile.getAbsolutePath());
+                }
                 if (crashHistory.length() > 0) {
                     diagnosticInfo.put("CrashHistory", crashHistory);
                 }

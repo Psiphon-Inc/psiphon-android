@@ -72,7 +72,7 @@
   <!--"Upstream proxy error" alert dialog message-->
   <string name="upstream_proxy_error_alert_message">Umesanidi Psiphon kutumia seva mbadala ya mkondo wa juu. Hata hivyo, inaonekana hatuwezi kuunganisha kwenye seva ya Psiphon kupitia seva mbadala.\n\nTafadhali rekebisha mipangilio na ujaribu tena.\n\nAngalia kumbukumbu kwa maelezo ya kiufundi.</string>
   <!--Notification title for the 'Psiphon crash detected' notification-->
-  <string name="psiphon_native_crash_notification_title">Psiphon Imekwama</string>
+  <string name="psiphon_native_crash_notification_title">Psiphon iliwahi kuharibika awali</string>
   <!--Notification short message for the 'Psiphon crash detected' notification-->
   <string name="psiphon_native_crash_notification_msg">Tafadhali tutumie mrejesho.</string>
   <!--Notification longer message for the 'Psiphon crash detected' notification-->

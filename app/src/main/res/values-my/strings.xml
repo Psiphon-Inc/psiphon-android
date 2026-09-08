@@ -72,7 +72,7 @@
   <!--"Upstream proxy error" alert dialog message-->
   <string name="upstream_proxy_error_alert_message">သင်သည် Psiphon အား upstream proxy အသုံးပြုရန် ပြင်ဆင်ထားသည်။ သို့သော် ကျွန်ုပ်တို့သည် ထို proxy မှတစ်ဆင့် Psiphon ဆာဗာသို့ ချိတ်ဆက်၍မရပါ။\n\nကျေးဇူးပြု၍ ဆက်တင်များကို ပြင်ဆင်ပြီး နောက်တစ်ကြိမ် ကြိုးစားပါ။\n\nနည်းပညာအချက်အလက်များအတွက် logs များကို ကြည့်ပါ။</string>
   <!--Notification title for the 'Psiphon crash detected' notification-->
-  <string name="psiphon_native_crash_notification_title">Psiphon ပျက်စီးသွားပါသည်</string>
+  <string name="psiphon_native_crash_notification_title">Psiphon သည် ယခင်က ပျက်စီးခဲ့သည်</string>
   <!--Notification short message for the 'Psiphon crash detected' notification-->
   <string name="psiphon_native_crash_notification_msg">ကျေးဇူးပြု၍ ကျွန်ုပ်တို့အား အကြံပြုချက် ပေးပို့ပါ။</string>
   <!--Notification longer message for the 'Psiphon crash detected' notification-->

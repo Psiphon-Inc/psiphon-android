@@ -68,7 +68,7 @@
   <!--"Upstream proxy error" alert dialog message-->
   <string name="upstream_proxy_error_alert_message">আপনি Psiphon কে একটি আপস্ট্রিম প্রক্সি ব্যবহার করার জন্য কনফিগার করেছেন। যাইহোক, আমরা সেই প্রক্সির মাধ্যমে Psiphon সার্ভারের সাথে সংযোগ করতে অক্ষম বলে মনে হচ্ছে।\n\nদয়া করে সেটিংস ঠিক করুন এবং আবার চেষ্টা করুন।\n\nপ্রযুক্তিগত তথ্যের জন্য লগ দেখুন।</string>
   <!--Notification title for the 'Psiphon crash detected' notification-->
-  <string name="psiphon_native_crash_notification_title">Psiphon ক্র্যাশ হয়েছে</string>
+  <string name="psiphon_native_crash_notification_title">Psiphon আগে ক্র্যাশ হয়েছিল</string>
   <!--Notification short message for the 'Psiphon crash detected' notification-->
   <string name="psiphon_native_crash_notification_msg">দয়া করে আমাদের ফিডব্যাক পাঠান।</string>
   <!--Notification longer message for the 'Psiphon crash detected' notification-->

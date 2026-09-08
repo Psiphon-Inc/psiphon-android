@@ -73,6 +73,7 @@ import androidx.viewpager.widget.ViewPager;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
+import com.psiphon3.CrashReporter;
 import com.psiphon3.VpnRulesHelper;
 import com.psiphon3.log.LogsMaintenanceWorker;
 import com.psiphon3.log.MyLog;
@@ -103,6 +104,7 @@ import java.util.concurrent.TimeUnit;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Maybe;
+import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
@@ -247,7 +249,6 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
 
 
         EmbeddedValues.initialize(getApplicationContext());
-
         // Load VPN exclusion rules from storage for main app process
         VpnRulesHelper.configureRuntimeVpnRules(
                 VpnRulesHelper.readVpnRulesFromFile(getApplicationContext())
@@ -423,6 +424,19 @@ public class MainActivity extends LocalizedActivities.AppCompatActivity {
         compositeDisposable.add(
                 vpnServiceDataCollectionDisclosureCompletable()
                         .andThen(unsafeTrafficAlertsCompletable())
+                        .andThen(Single.fromCallable(() -> {
+                                    CrashReporter.promoteActiveCrashReportIfPresent(getApplicationContext());
+                                    return CrashReporter.hasPendingCrashReport(getApplicationContext());
+                                })
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .doOnSuccess(hasPendingCrashReport -> {
+                                    if (hasPendingCrashReport &&
+                                            CrashReporter.markPendingCrashReportNotifiedThisSession()) {
+                                        CrashReporter.showCrashNotification(getApplicationContext());
+                                    }
+                                })
+                                .ignoreElement())
                         .andThen(autoStartMaybe())
                         .doOnSuccess(__ -> startTunnel())
                         .subscribe());

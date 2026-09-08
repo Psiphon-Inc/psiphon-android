@@ -73,7 +73,7 @@
   <!--"Upstream proxy error" alert dialog message-->
   <string name="upstream_proxy_error_alert_message">لقد قمت بتهيئ Psiphon لاستخدام بروكسي upstream. ومع ذلك، يبدو أننا غير قادرين على الاتصال بخادم Psiphon من خلال هذا البروكسي ‎.\n\nPlease أصلح الإعدادات وحاول مرة أخرى ‎.\n\nSee راجع السجلات للحصول على معلومات فنية.</string>
   <!--Notification title for the 'Psiphon crash detected' notification-->
-  <string name="psiphon_native_crash_notification_title">تعطل  Psiphon</string>
+  <string name="psiphon_native_crash_notification_title">تعطل Psiphon سابقًا</string>
   <!--Notification short message for the 'Psiphon crash detected' notification-->
   <string name="psiphon_native_crash_notification_msg">يرجى إرسال ملاحظاتك إلينا.</string>
   <!--Notification longer message for the 'Psiphon crash detected' notification-->
