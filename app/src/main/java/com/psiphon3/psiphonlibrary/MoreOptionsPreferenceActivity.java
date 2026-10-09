@@ -86,7 +86,8 @@ public class MoreOptionsPreferenceActivity extends LocalizedActivities.AppCompat
             }
             CheckBoxPreference upgradeWiFiOnlyCheckBox =
                     (CheckBoxPreference) preferences.findPreference(getString(R.string.downloadWifiOnlyPreference));
-            if (!EmbeddedValues.IS_PLAY_STORE_BUILD && hasUpgradeChecker) {
+            if (!UpgradeChecker.isLegacyMode() &&
+                    !EmbeddedValues.IS_PLAY_STORE_BUILD && hasUpgradeChecker) {
                 upgradeWiFiOnlyCheckBox.setChecked(preferenceGetter.getBoolean(getString(R.string.downloadWifiOnlyPreference), false));
             } else {
                 preferences.removePreferenceRecursively(getString(R.string.downloadWifiOnlyPreference));

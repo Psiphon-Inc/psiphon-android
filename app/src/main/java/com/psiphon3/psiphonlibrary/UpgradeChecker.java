@@ -73,6 +73,10 @@ public class UpgradeChecker extends BroadcastReceiver {
     public static final String UPGRADE_FILE_AVAILABLE_INTENT_ACTION = UpgradeChecker.class.getName()+":UPGRADE_AVAILABLE";
     public static final String UPGRADE_FILE_AVAILABLE_INTENT_EXTRA_FILENAME = UpgradeChecker.class.getName()+":UPGRADE_FILENAME";
 
+    public static boolean isLegacyMode() {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.N;
+    }
+
     /**
      * Checks whether an upgrade check should be performed. False will be returned if there's already
      * an upgrade file downloaded.
@@ -143,6 +147,11 @@ public class UpgradeChecker extends BroadcastReceiver {
      * @return true if the app is allowed to self-upgrade, false otherwise.
      */
     private static boolean allowedToSelfUpgrade(Context appContext) {
+        if (isLegacyMode()) {
+            // Psiphon 4 requires Android 7. Older devices cannot install its upgrades.
+            return false;
+        }
+
         if (EmbeddedValues.UPGRADE_URLS_JSON.length() == "[]".length()) {
             // We don't know where to find an upgrade.
             return false;
@@ -153,6 +162,33 @@ public class UpgradeChecker extends BroadcastReceiver {
         }
 
         return true;
+    }
+
+    /** Disable upgrade activity left by earlier installs on Android 4 to 6. */
+    public static void disableLegacyUpgrades(Context context) {
+        if (!isLegacyMode()) {
+            return;
+        }
+
+        Context appContext = context.getApplicationContext();
+        Intent intent = new Intent(appContext, UpgradeChecker.class);
+        intent.setAction(ALARM_INTENT_ACTION);
+        // Older builds created a mutable alarm on Android 6. Mutability is part of the
+        // PendingIntent identity, so look up both forms when the immutable flag is available.
+        int[] mutabilityFlags = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ?
+                new int[]{PendingIntent.FLAG_IMMUTABLE, 0} : new int[]{0};
+        AlarmManager alarmMgr = (AlarmManager) appContext.getSystemService(Context.ALARM_SERVICE);
+        for (int flags : mutabilityFlags) {
+            PendingIntent alarmIntent = PendingIntent.getBroadcast(
+                    appContext, ALARM_INTENT_REQUEST_CODE, intent,
+                    PendingIntent.FLAG_NO_CREATE | flags);
+            if (alarmIntent != null) {
+                alarmMgr.cancel(alarmIntent);
+                alarmIntent.cancel();
+            }
+        }
+
+        UpgradeManager.UpgradeInstaller.clearLegacyUpgrades(appContext);
     }
 
     @Override
@@ -283,6 +319,10 @@ public class UpgradeChecker extends BroadcastReceiver {
         @Override
         protected void onHandleWork(@NonNull Intent intent) {
             MyLog.i("UpgradeCheckerService: check starting");
+
+            if (isLegacyMode()) {
+                return;
+            }
 
             if (mUpgradeCheckInProgress) {
                 // A check is already in progress, log and return

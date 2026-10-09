@@ -318,6 +318,25 @@ public interface UpgradeManager
         private static NotificationManager mNotificationManager;
         private static NotificationCompat.Builder mNotificationBuilder;
 
+        /** Clear an installable upgrade left by an older installation. */
+        public static void clearLegacyUpgrades(Context context) {
+            NotificationManager manager =
+                    (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (manager != null) {
+                manager.cancel(R.string.UpgradeManager_UpgradeAvailableNotificationId);
+            }
+
+            deleteLegacyUpgradeFile(new VerifiedUpgradeFile(context));
+            deleteLegacyUpgradeFile(new UnverifiedUpgradeFile(context));
+            deleteLegacyUpgradeFile(new OldDownloadedUpgradeFile(context));
+        }
+
+        private static void deleteLegacyUpgradeFile(UpgradeFile file) {
+            if (file.getFile().exists() && !file.delete()) {
+                MyLog.w("Failed to delete legacy upgrade file: " + file.getFilename());
+            }
+        }
+
         /**
          * Check if an upgrade file is available, and if it's actually a higher
          * version.
@@ -429,6 +448,10 @@ public interface UpgradeManager
          * @return true if an upgrade is available and the notification was shown
          */
         public static boolean notifyUpgrade(Context context, String filename) {
+            if (UpgradeChecker.isLegacyMode()) {
+                return false;
+            }
+
             VerifiedUpgradeFile file = getAvailableCompleteUpgradeFile(context, new File(filename));
             if (file == null) {
                 return false;

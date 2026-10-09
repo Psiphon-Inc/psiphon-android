@@ -32,6 +32,7 @@ import com.psiphon3.log.MyLog;
 import com.psiphon3.psiphonlibrary.LocaleManager;
 import com.psiphon3.psiphonlibrary.PsiphonConstants;
 import com.psiphon3.psiphonlibrary.TunnelVpnService;
+import com.psiphon3.psiphonlibrary.UpgradeChecker;
 import com.psiphon3.psiphonlibrary.Utils;
 
 import java.io.IOException;
@@ -92,6 +93,12 @@ public class PsiphonApplication extends Application {
     public void onCreate() {
         super.onCreate();
         MyLog.init(this);
+
+        try {
+            UpgradeChecker.disableLegacyUpgrades(this);
+        } catch (RuntimeException e) {
+            MyLog.w("Failed to disable legacy upgrades: " + e);
+        }
 
         // Make sure VPN service is ALWAYS enabled because app upgrade will not automatically re-enable it
         PackageManager packageManager = getPackageManager();
