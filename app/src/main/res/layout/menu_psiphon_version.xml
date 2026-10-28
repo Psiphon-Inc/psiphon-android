@@ -8,5 +8,6 @@
         android:id="@+id/toolbar_version_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical|end" />
+        android:layout_gravity="center_vertical|end"
+        android:textDirection="ltr" />
 </LinearLayout>

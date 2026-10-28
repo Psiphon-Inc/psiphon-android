@@ -396,8 +396,15 @@ public class Utils {
         int unit = si ? 1000 : 1024;
         if (bytes < unit) return bytes + " B";
         int exp = (int) (Math.log(bytes) / Math.log(unit));
+        double value = bytes / Math.pow(unit, exp);
+        // Rounded to one decimal, a value just under the next unit would show as "1024.0 KiB"
+        // (or "1000.0 kB"); show it in the next unit instead, as "1.0 MiB".
+        if (value >= unit - 0.05 && exp < 6) {
+            exp++;
+            value = bytes / Math.pow(unit, exp);
+        }
         String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
-        return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
+        return String.format("%.1f %sB", value, pre);
     }
 
     @TargetApi(Build.VERSION_CODES.GINGERBREAD)
